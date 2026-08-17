@@ -1,47 +1,55 @@
 import { CONFIG } from "../core/config.js";
 
+function nextTradeDay(state){
+  const absolute=(Math.max(1,state.year)-1)*CONFIG.DAYS_PER_YEAR+Math.max(1,state.day);
+  if(absolute<CONFIG.FIRST_TRADE_DAY) return CONFIG.FIRST_TRADE_DAY;
+  const visits=Math.floor((absolute-CONFIG.FIRST_TRADE_DAY)/CONFIG.TRADE_INTERVAL_DAYS)+1;
+  return CONFIG.FIRST_TRADE_DAY+visits*CONFIG.TRADE_INTERVAL_DAYS;
+}
+
 export function createGameState(contract){
   return {
-    version:2,
+    version:3,
     seed:(Math.random()*0x7fffffff)|0,
     company:{cash:CONFIG.START_CASH,rep:0,wins:0,earn:0,licenses:[]},
     contract,
     day:1,year:1,pop:CONFIG.START_POPULATION,speed:1,status:"playing",
     camera:{x:-4,y:-4},
     tiles:{},scans:[],scanQueue:[],offers:[],offerSig:"",
-    metrics:{food:0,industry:0,fm:1,im:1,pm:1,sl:1,sf:1,hint:0,income:0,slots:1}
+    inventory:{},
+    trade:{active:false,nextArrivalDay:CONFIG.FIRST_TRADE_DAY,visits:0,returnSpeed:1,arrivedAt:null},
+    metrics:{food:0,industry:0,fm:1,im:1,pm:1,sl:1,sf:1,hint:0,income:0,stockValue:0,slots:1}
   };
 }
 
 export function normalizeState(state){
   state.company = Object.assign({cash:CONFIG.START_CASH,rep:0,wins:0,earn:0,licenses:[]},state.company||{});
-  state.metrics = Object.assign({food:0,industry:0,fm:1,im:1,pm:1,sl:1,sf:1,hint:0,income:0,slots:1},state.metrics||{});
+  state.metrics = Object.assign({food:0,industry:0,fm:1,im:1,pm:1,sl:1,sf:1,hint:0,income:0,stockValue:0,slots:1},state.metrics||{});
   state.camera ||= {x:-4,y:-4};
   state.tiles ||= {};
   state.scans ||= [];
   state.scanQueue ||= [];
   state.offers ||= [];
   state.offerSig ||= "";
+  state.inventory ||= {};
+  state.trade = Object.assign({active:false,nextArrivalDay:nextTradeDay(state),visits:0,returnSpeed:1,arrivedAt:null},state.trade||{});
+  if(!Number.isFinite(state.trade.nextArrivalDay)) state.trade.nextArrivalDay=nextTradeDay(state);
   state.status ||= "playing";
   if(![0,1,2,4].includes(state.speed)) state.speed=1;
-
+  for(const entry of Object.values(state.inventory)) entry.amount=Math.max(0,Number(entry.amount)||0);
   for(const tile of Object.values(state.tiles)){
     if(!tile.revealed) continue;
     if(tile.type==="food"){
-      tile.sustainability="renewable";
-      tile.abundance ||= 1;
-      tile.abundanceLabel ||= "Established";
-      tile.reserve=null;
-      tile.initialReserve=null;
+      tile.sustainability="renewable";tile.abundance ||= 1;tile.abundanceLabel ||= "Established";
+      tile.reserve=null;tile.initialReserve=null;
       if(tile.depleted&&tile.level>0){tile.depleted=false;tile.developed=true;}
     }else{
-      tile.sustainability="finite";
-      tile.abundance ||= 1;
+      tile.sustainability="finite";tile.abundance ||= 1;
       if(!Number.isFinite(tile.reserve)) tile.reserve=0;
       if(!Number.isFinite(tile.initialReserve)) tile.initialReserve=tile.reserve;
       tile.depositScale ||= "Legacy deposit";
     }
   }
-  state.version=2;
+  state.version=3;
   return state;
 }
