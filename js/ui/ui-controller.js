@@ -2,8 +2,8 @@ import { clamp, formatMoney, formatNumber } from "../core/utils.js";
 import { CONFIG } from "../core/config.js";
 
 export class UIController {
-  constructor({state,repo,resources,sites,technology,survey,contracts,world,icons,diagnostics,onHardReset,onNewContract}){
-    Object.assign(this,{state,repo,resources,sites,technology,survey,contracts,world,icons,diagnostics,onHardReset,onNewContract});
+  constructor({state,repo,resources,collection,sites,technology,survey,contracts,world,icons,diagnostics,onHardReset,onNewContract}){
+    Object.assign(this,{state,repo,resources,collection,sites,technology,survey,contracts,world,icons,diagnostics,onHardReset,onNewContract});
     this.tilePanel=document.querySelector("#tilePanel");
     this.modal=document.querySelector("#modal");
     this.toastEl=document.querySelector("#toast");
@@ -13,6 +13,7 @@ export class UIController {
 
   bind(){
     document.querySelector("#companyBtn").onclick=()=>this.company();
+    document.querySelector("#collectionBtn").onclick=()=>this.currentCollection();
     document.querySelector("#techBtn").onclick=()=>this.tech();
     document.querySelector("#goalsBtn").onclick=()=>this.goals();
     document.querySelector("#menuBtn").onclick=()=>this.menu();
@@ -74,12 +75,15 @@ export class UIController {
       return;
     }
 
-    const output=this.resources.siteOutput(this.state,tile);
+    const rate=this.resources.collectionRate(this.state,tile);
     const family=tile.type==="food"?"FOOD":tile.type==="industry"?"INDUSTRIAL ORE":"VALUABLE";
     const cls=tile.type==="food"?"food":tile.type==="industry"?"industry":"valuable";
-    const reward=tile.type==="valuable"?`${formatMoney(this.resources.annualCash(this.state,tile))}/yr`:tile.type==="industry"?`+${formatNumber(output)} Industry`:`+${formatNumber(output)} Food`;
-    const extraction=Math.max(.55,this.resources.baseOutput(tile.quality)*(1+(tile.level-1)*.22)*(tile.resourceMult||1)*.33);
-    const life=tile.developed?tile.reserve/extraction/CONFIG.DAYS_PER_YEAR:null;
+    const reward=tile.type==="valuable"?`${formatMoney(this.resources.annualCash(this.state,tile))}/yr`:tile.type==="industry"?`+${formatNumber(rate)} Industry`:`+${formatNumber(rate)} Food`;
+    const renewable=this.resources.isRenewable(tile);
+    const life=tile.developed?this.resources.estimatedLifeYears(this.state,tile):null;
+    const remaining=renewable?"Sustainable":formatNumber(tile.reserve);
+    const lifeText=life===null?"—":renewable?"Permanent":life>=100?`${Math.round(life)}y`:`${life.toFixed(1)}y`;
+    const scale=renewable?(tile.abundanceLabel||"Sustainable"):(tile.depositScale||"Finite");
     const icon=this.icons.svg(tile.resourceId,this.icons.colorFor(tile),30);
 
     this.tilePanel.innerHTML=`${this.panelTitle(tile.depleted?`${tile.name} — DEPLETED`:tile.name,icon)}
@@ -87,14 +91,17 @@ export class UIController {
         <div class="metric"><small>Family</small><strong class="${cls}">${family}</strong></div>
         <div class="metric"><small>Rarity</small><strong>${tile.resourceRarity}</strong></div>
         <div class="metric"><small>Quality</small><strong>${this.quality(tile.quality)}</strong></div>
+        <div class="metric"><small>Collection rate</small><strong class="${cls}">${formatNumber(rate)}/day</strong></div>
+        <div class="metric"><small>Remaining</small><strong>${remaining}</strong></div>
+        <div class="metric"><small>${renewable?"Capacity":"Deposit"}</small><strong>${scale}</strong></div>
         <div class="metric"><small>${tile.type==="valuable"?"Cash output":"Contribution"}</small><strong class="${cls}">${reward}</strong></div>
-        <div class="metric"><small>Reserve</small><strong>${formatNumber(tile.reserve)}</strong></div>
-        <div class="metric"><small>Est. life</small><strong>${life===null?"—":`${life.toFixed(1)}y`}</strong></div>
+        <div class="metric"><small>Est. life</small><strong>${lifeText}</strong></div>
+        <div class="metric"><small>Site level</small><strong>${tile.developed?`L${tile.level}`:"Undeveloped"}</strong></div>
       </div>`;
 
     if(!tile.depleted&&!tile.developed){
       const cost=this.sites.developCost(this.state,tile);
-      this.tilePanel.innerHTML+=`<button class="action" data-develop ${this.state.company.cash<cost?"disabled":""}>DEVELOP • ${formatMoney(cost)}</button>`;
+      this.tilePanel.innerHTML+=`<button class="action" data-develop ${this.state.company.cash<cost?"disabled":""}>DEVELOP & COLLECT • ${formatMoney(cost)}</button>`;
     }else if(tile.developed){
       const cost=this.sites.upgradeCost(this.state,tile);
       this.tilePanel.innerHTML+=`<button class="action" data-upgrade ${this.state.company.cash<cost?"disabled":""}>UPGRADE TO L${tile.level+1} • ${formatMoney(cost)}</button>`;
@@ -103,9 +110,26 @@ export class UIController {
     this.tilePanel.classList.remove("hidden");
     this.tilePanel.querySelector("[data-close]").onclick=()=>this.tilePanel.classList.add("hidden");
     const develop=this.tilePanel.querySelector("[data-develop]");
-    if(develop) develop.onclick=()=>{if(this.sites.develop(this.state,tile)){this.toast("Site developed.");this.tile(tile)}};
+    if(develop) develop.onclick=()=>{if(this.sites.develop(this.state,tile)){this.toast("Collection started.");this.tile(tile)}};
     const upgrade=this.tilePanel.querySelector("[data-upgrade]");
-    if(upgrade) upgrade.onclick=()=>{if(this.sites.upgrade(this.state,tile)){this.toast(`Upgraded to L${tile.level}.`);this.tile(tile)}};
+    if(upgrade) upgrade.onclick=()=>{if(this.sites.upgrade(this.state,tile)){this.toast(`Collection upgraded to L${tile.level}.`);this.tile(tile)}};
+  }
+
+  currentCollection(){
+    const sites=this.collection.current(this.state);
+    if(!sites.length){
+      this.open("Current Collection",`<article class="card"><h3>No active collection sites</h3><p>Survey a resource tile and develop it to start continuous collection.</p></article>`);
+      return;
+    }
+    this.open("Current Collection",`<div class="collection-table">
+      <div class="collection-row collection-head"><span>Resource</span><span>Category</span><span>Rate</span><span>Remaining</span></div>
+      ${sites.map(site=>`<div class="collection-row">
+        <strong>${site.name}</strong>
+        <span>${site.category}</span>
+        <span>${formatNumber(site.rate)}/day</span>
+        <span>${site.renewable?"Sustainable":formatNumber(site.remaining)}</span>
+      </div>`).join("")}
+    </div>`);
   }
 
   company(){
@@ -159,8 +183,9 @@ export class UIController {
     this.modal.querySelector("[data-center]").onclick=()=>{this.state.camera={x:-4,y:-4};this.modal.classList.add("hidden")};
     this.modal.querySelector("[data-help]").onclick=()=>this.open("How to Play",`<div class="cards one">
       <div class="card"><h3>Survey</h3><p>Tap a black tile to survey it. Hold and drag across visible unexplored cells to queue several.</p></div>
-      <div class="card"><h3>Develop</h3><p>Food supports population, industrial ore raises Industry, and valuables are the major money-makers.</p></div>
-      <div class="card"><h3>Advance</h3><p>Upgrade strong sites and buy permanent corporate technologies before the contract deadline.</p></div>
+      <div class="card"><h3>Collect</h3><p>Develop a discovered tile to begin continuous collection. Food sites have a sustainable rate and do not run out. Mineral and valuable deposits are finite and can range from small finds to deposits lasting centuries.</p></div>
+      <div class="card"><h3>Upgrade</h3><p>Upgrades increase collection rate. On finite deposits that also consumes the reserve faster, so extraction speed is a real trade-off.</p></div>
+      <div class="card"><h3>Advance</h3><p>Use Food to support population, industrial ore to build Industry, and valuables to drive corporate profit before the deadline.</p></div>
     </div>`);
     this.modal.querySelector("[data-reset]").onclick=()=>this.onHardReset();
   }
@@ -173,10 +198,11 @@ export class UIController {
   rare(tile){
     this.state.speed=0;this.syncSpeed();
     const icon=this.icons.svg(tile.resourceId,this.icons.colorFor(tile),38);
+    const remaining=this.resources.isRenewable(tile)?"Sustainable":`reserve ${formatNumber(tile.reserve)}`;
     this.open("Exceptional Discovery",`<article class="card">
       <div class="resource-title">${icon}<h3>${tile.name} • Q${formatNumber(tile.quality)}</h3></div>
-      <p>${tile.resourceRarity} • reserve ${formatNumber(tile.reserve)}</p>
-      <div class="effect">${tile.type==="valuable"?"This site can transform the contract profit score.":"This could become a cornerstone of the contract."}</div>
+      <p>${tile.resourceRarity} • ${remaining}</p>
+      <div class="effect">${tile.type==="valuable"?"This site can transform the contract profit score.":tile.type==="food"?"A permanent high-yield food source can support major population growth.":"This could become a cornerstone of the contract."}</div>
       <button data-view>VIEW SITE</button>
     </article>`);
     this.modal.querySelector("[data-view]").onclick=()=>{this.modal.classList.add("hidden");this.tile(tile)};

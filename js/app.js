@@ -3,6 +3,7 @@ import { Diagnostics } from "./core/diagnostics.js";
 import { ContractService } from "./domain/contract-service.js";
 import { createGameState, normalizeState } from "./domain/game-state.js";
 import { ResourceService } from "./domain/resource-service.js";
+import { CollectionService } from "./domain/collection-service.js";
 import { WorldService } from "./domain/world-service.js";
 import { SiteService } from "./domain/site-service.js";
 import { TechnologyService } from "./domain/technology-service.js";
@@ -19,11 +20,12 @@ class MineITApp {
     this.contracts=new ContractService();
     this.repo=new SaveRepository(this.diagnostics);
     this.resources=new ResourceService();
+    this.collection=new CollectionService(this.resources);
     this.technology=new TechnologyService();
     this.world=new WorldService(this.resources,this.contracts);
     this.sites=new SiteService(this.contracts);
     this.survey=new SurveyService(this.world,this.contracts);
-    this.engine=new SimulationEngine(this.resources,this.technology);
+    this.engine=new SimulationEngine(this.resources,this.technology,this.collection);
     this.icons=new ResourceIcons();
 
     const saved=this.repo.load();
@@ -33,7 +35,7 @@ class MineITApp {
     this.survey.fill(this.state);
 
     this.ui=new UIController({
-      state:this.state,repo:this.repo,resources:this.resources,sites:this.sites,technology:this.technology,
+      state:this.state,repo:this.repo,resources:this.resources,collection:this.collection,sites:this.sites,technology:this.technology,
       survey:this.survey,contracts:this.contracts,world:this.world,icons:this.icons,diagnostics:this.diagnostics,
       onHardReset:()=>this.hardReset(),onNewContract:contract=>this.startContract(contract)
     });
