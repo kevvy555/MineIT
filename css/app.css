@@ -32,8 +32,8 @@ button:disabled{opacity:.35}
 .stat strong{display:block;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat span{display:block;font-size:7px;color:var(--muted)}
 button.stat{min-height:0}
-.controls{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:4px}
-.controls button{min-height:27px;padding:2px;font-size:9px}
+.controls{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;margin-top:4px}
+.controls button{min-height:27px;padding:2px;font-size:8px}
 .controls .active{outline:2px solid var(--accent)}
 .small{font-size:9px;color:var(--muted)}
 .tiny{font-size:8px;color:var(--muted)}
@@ -43,4 +43,5 @@ button.stat{min-height:0}
   .stats-grid{grid-template-columns:repeat(3,1fr)}
   .brand{font-size:10px}
   .contract-name{font-size:8px}
+  .controls button{font-size:7px}
 }

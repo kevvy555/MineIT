@@ -38,19 +38,35 @@ export class ResourceService {
 
   baseOutput(q){ return 8 + 7*Math.pow(q,.52); }
 
-  siteOutput(state,tile){
+  isRenewable(tile){ return tile.sustainability==="renewable" || tile.type==="food"; }
+
+  baselineRate(tile){
+    return this.baseOutput(tile.quality)*(tile.resourceMult||1)*(tile.abundance||1);
+  }
+
+  collectionRate(state,tile){
     const level = 1 + Math.max(0,tile.level-1)*.22;
     const population = state.metrics.pm || 1;
-    const base = this.baseOutput(tile.quality)*level*(tile.resourceMult||1)*population;
+    const base = this.baselineRate(tile)*level*population;
     if(tile.type==="food") return base*state.metrics.fm;
     if(tile.type==="industry") return base*state.metrics.im;
     return base;
   }
 
-  annualCash(state,tile){
-    const output = this.siteOutput(state,tile);
-    if(tile.type==="valuable") return output*2.5*360;
-    if(tile.type==="industry") return output*.30*360;
-    return output*.08*360;
+  siteOutput(state,tile){ return this.collectionRate(state,tile); }
+
+  annualCashForRate(tile,rate){
+    if(tile.type==="valuable") return rate*2.5*360;
+    if(tile.type==="industry") return rate*.30*360;
+    return rate*.08*360;
+  }
+
+  annualCash(state,tile){ return this.annualCashForRate(tile,this.collectionRate(state,tile)); }
+
+  estimatedLifeYears(state,tile){
+    if(this.isRenewable(tile)) return Infinity;
+    const rate=this.collectionRate(state,tile);
+    if(rate<=0) return Infinity;
+    return Math.max(0,tile.reserve||0)/rate/360;
   }
 }

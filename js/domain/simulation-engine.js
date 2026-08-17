@@ -1,9 +1,10 @@
 import { CONFIG } from "../core/config.js";
 
 export class SimulationEngine {
-  constructor(resourceService,technologyService){
+  constructor(resourceService,technologyService,collectionService){
     this.resources=resourceService;
     this.technology=technologyService;
+    this.collection=collectionService;
   }
 
   recalculate(state){
@@ -12,12 +13,11 @@ export class SimulationEngine {
     state.metrics.pm=populationMultiplier;
 
     let food=0,industry=0,income=0;
-    for(const tile of Object.values(state.tiles)){
-      if(!tile.developed||tile.depleted) continue;
-      const output=this.resources.siteOutput(state,tile);
+    for(const tile of this.collection.activeSites(state)){
+      const output=this.resources.collectionRate(state,tile);
       if(tile.type==="food") food+=output;
       else if(tile.type==="industry") industry+=output;
-      income+=this.resources.annualCash(state,tile);
+      income+=this.resources.annualCashForRate(tile,output);
     }
     Object.assign(state.metrics,{food,industry,income});
   }
@@ -28,18 +28,13 @@ export class SimulationEngine {
     state.metrics.pm=populationMultiplier;
 
     let food=0,industry=0,dailyRevenue=0;
-    for(const tile of Object.values(state.tiles)){
-      if(!tile.developed||tile.depleted) continue;
-
-      const output=this.resources.siteOutput(state,tile);
-      if(tile.type==="food") food+=output;
-      else if(tile.type==="industry") industry+=output;
-
-      const extraction=Math.max(.55,this.resources.baseOutput(tile.quality)*(1+(tile.level-1)*.22)*(tile.resourceMult||1)*.33);
-      tile.reserve=Math.max(0,tile.reserve-extraction);
-      if(tile.reserve<=0){ tile.depleted=true;tile.developed=false;continue; }
-
-      dailyRevenue+=this.resources.annualCash(state,tile)/CONFIG.DAYS_PER_YEAR;
+    const active=[...this.collection.activeSites(state)];
+    for(const tile of active){
+      const result=this.collection.collectDay(state,tile);
+      const collected=result.collected;
+      if(tile.type==="food") food+=collected;
+      else if(tile.type==="industry") industry+=collected;
+      dailyRevenue+=this.resources.annualCashForRate(tile,collected)/CONFIG.DAYS_PER_YEAR;
     }
 
     Object.assign(state.metrics,{food,industry,income:dailyRevenue*CONFIG.DAYS_PER_YEAR});

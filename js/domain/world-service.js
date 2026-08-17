@@ -26,6 +26,26 @@ export class WorldService {
     return roll<food ? "food" : roll<food+industry ? "industry" : "valuable";
   }
 
+  renewableAbundance(random){
+    const roll=random();
+    if(roll<.52) return {label:"Limited",factor:.45+random()*.45};
+    if(roll<.82) return {label:"Established",factor:.90+random()*.55};
+    if(roll<.96) return {label:"Large",factor:1.45+random()*.85};
+    return {label:"Vast",factor:2.30+random()*2.20};
+  }
+
+  finiteDeposit(random,reserveBias=1,family="industry"){
+    const roll=random();
+    let label,years;
+    if(roll<.16){ label="Small";years=1.5+random()*5.5; }
+    else if(roll<.52){ label="Modest";years=7+random()*20; }
+    else if(roll<.80){ label="Large";years=27+random()*55; }
+    else if(roll<.95){ label="Huge";years=82+random()*120; }
+    else { label="Colossal";years=202+random()*350; }
+    years*=reserveBias*(family==="valuable"?.78:1);
+    return {label,years:Math.max(.5,years)};
+  }
+
   reveal(state,x,y){
     const tile = this.get(state,x,y);
     if(tile.revealed) return tile;
@@ -39,10 +59,26 @@ export class WorldService {
     if(family==="food") quality=clamp(Math.round(quality*Math.pow(a.f,.22)),1,10000);
     if(family==="industry") quality=clamp(Math.round(quality*Math.pow(a.i,.22)),1,10000);
 
-    const reserve = Math.round((4500+Math.pow(random(),1.8)*150000)*a.res*(family==="valuable"?.72:1));
-    Object.assign(tile,{
+    const shared={
       revealed:true,type:family,family,resourceId:def.id,name:def.name,resourceRarity:def.rarity,
-      resourceMult:def.multiplier,quality,reserve,initialReserve:reserve
+      resourceMult:def.multiplier,quality
+    };
+
+    if(family==="food"){
+      const abundance=this.renewableAbundance(random);
+      Object.assign(tile,shared,{
+        sustainability:"renewable",abundance:abundance.factor,abundanceLabel:abundance.label,
+        reserve:null,initialReserve:null,depleted:false
+      });
+      return tile;
+    }
+
+    const deposit=this.finiteDeposit(random,a.res,family);
+    const baseline=this.resources.baseOutput(quality)*(def.multiplier||1);
+    const reserve=Math.max(1,Math.round(baseline*360*deposit.years));
+    Object.assign(tile,shared,{
+      sustainability:"finite",abundance:1,depositScale:deposit.label,
+      reserve,initialReserve:reserve
     });
     return tile;
   }

@@ -2,7 +2,7 @@ import { CONFIG } from "../core/config.js";
 
 export function createGameState(contract){
   return {
-    version:1,
+    version:2,
     seed:(Math.random()*0x7fffffff)|0,
     company:{cash:CONFIG.START_CASH,rep:0,wins:0,earn:0,licenses:[]},
     contract,
@@ -24,5 +24,24 @@ export function normalizeState(state){
   state.offerSig ||= "";
   state.status ||= "playing";
   if(![0,1,2,4].includes(state.speed)) state.speed=1;
+
+  for(const tile of Object.values(state.tiles)){
+    if(!tile.revealed) continue;
+    if(tile.type==="food"){
+      tile.sustainability="renewable";
+      tile.abundance ||= 1;
+      tile.abundanceLabel ||= "Established";
+      tile.reserve=null;
+      tile.initialReserve=null;
+      if(tile.depleted&&tile.level>0){tile.depleted=false;tile.developed=true;}
+    }else{
+      tile.sustainability="finite";
+      tile.abundance ||= 1;
+      if(!Number.isFinite(tile.reserve)) tile.reserve=0;
+      if(!Number.isFinite(tile.initialReserve)) tile.initialReserve=tile.reserve;
+      tile.depositScale ||= "Legacy deposit";
+    }
+  }
+  state.version=2;
   return state;
 }
