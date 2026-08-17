@@ -1,0 +1,9 @@
+{
+  "name": "mineit",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/domain-smoke.test.js"
+  }
+}
