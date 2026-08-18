@@ -1,31 +1,31 @@
-import { CONFIG } from "./core/config.js?v=4.0.1";
-import { Diagnostics } from "./core/diagnostics.js?v=4.0.1";
-import { ContractService } from "./domain/contract-service.js?v=4.0.1";
-import { createGameState, normalizeState, starterInventory } from "./domain/game-state.js?v=4.0.1";
-import { ResourceService } from "./domain/resource-service.js?v=4.0.1";
-import { InventoryService } from "./domain/inventory-service.js?v=4.0.1";
-import { CollectionService } from "./domain/collection-service.js?v=4.0.1";
-import { ColonyService } from "./domain/colony-service.js?v=4.0.1";
-import { TradeService } from "./domain/trade-service.js?v=4.0.1";
-import { WorldService } from "./domain/world-service.js?v=4.0.1";
-import { SiteService } from "./domain/site-service.js?v=4.0.1";
-import { TechnologyService } from "./domain/technology-service.js?v=4.0.1";
-import { SurveyService } from "./domain/survey-service.js?v=4.0.1";
-import { SimulationEngine } from "./domain/simulation-engine.js?v=4.0.1";
-import { SaveRepository } from "./persistence/save-repository.js?v=4.0.1";
-import { ResourceIcons } from "./ui/resource-icons.js?v=4.0.1";
-import { WorldView } from "./ui/world-view.js?v=4.0.1";
-import { UIController } from "./ui/ui-controller.js?v=4.0.1";
-import { TradeUI } from "./ui/trade-ui.js?v=4.0.1";
+import { CONFIG } from "./core/config.js?v=4.0.2";
+import { Diagnostics } from "./core/diagnostics.js?v=4.0.2";
+import { ContractService } from "./domain/contract-service.js?v=4.0.2";
+import { createGameState, normalizeState, starterInventory } from "./domain/game-state.js?v=4.0.2";
+import { ResourceService } from "./domain/resource-service.js?v=4.0.2";
+import { InventoryService } from "./domain/inventory-service.js?v=4.0.2";
+import { CollectionService } from "./domain/collection-service.js?v=4.0.2";
+import { ColonyService } from "./domain/colony-service.js?v=4.0.2";
+import { TradeService } from "./domain/trade-service.js?v=4.0.2";
+import { WorldService } from "./domain/world-service.js?v=4.0.2";
+import { SiteService } from "./domain/site-service.js?v=4.0.2";
+import { TechnologyService } from "./domain/technology-service.js?v=4.0.2";
+import { SurveyService } from "./domain/survey-service.js?v=4.0.2";
+import { SimulationEngine } from "./domain/simulation-engine.js?v=4.0.2";
+import { SaveRepository } from "./persistence/save-repository.js?v=4.0.2";
+import { ResourceIcons } from "./ui/resource-icons.js?v=4.0.2";
+import { WorldView } from "./ui/world-view.js?v=4.0.2";
+import { UIController } from "./ui/ui-controller.js?v=4.0.2";
+import { TradeUI } from "./ui/trade-ui.js?v=4.0.2";
 class MineITApp{
   constructor(){
     this.diagnostics=new Diagnostics();window.mineITBoot=this;
     addEventListener("error",e=>this.diagnostics.error("window.error",e.error||e.message));addEventListener("unhandledrejection",e=>this.diagnostics.error("unhandledrejection",e.reason));
     this.contracts=new ContractService();this.repo=new SaveRepository(this.diagnostics);this.resources=new ResourceService();this.inventory=new InventoryService(this.resources);this.technology=new TechnologyService();this.collection=new CollectionService(this.resources,this.inventory,this.technology);this.colony=new ColonyService(this.inventory,this.technology);this.trade=new TradeService(this.resources,this.inventory);this.world=new WorldService(this.resources,this.contracts);this.sites=new SiteService(this.contracts,this.technology,this.inventory);this.survey=new SurveyService(this.world,this.contracts);this.engine=new SimulationEngine(this.resources,this.technology,this.collection,this.trade,this.inventory,this.colony);this.icons=new ResourceIcons();
     const saved=this.repo.load();this.state=normalizeState(saved||createGameState(this.contracts.first()));this.technology.recompute(this.state);this.engine.recalculate(this.state);this.survey.fill(this.state);
-    this.ui=new UIController({state:this.state,repo:this.repo,resources:this.resources,inventory:this.inventory,collection:this.collection,colony:this.colony,sites:this.sites,technology:this.technology,survey:this.survey,contracts:this.contracts,world:this.world,icons:this.icons,diagnostics:this.diagnostics,onHardReset:()=>this.hardReset(),onNewContract:c=>this.startContract(c),onRecalculate:()=>this.engine.recalculate(this.state)});
+    this.ui=new UIController({state:this.state,repo:this.repo,resources:this.resources,inventory:this.inventory,collection:this.collection,colony:this.colony,sites:this.sites,technology:this.technology,survey:this.survey,contracts:this.contracts,world:this.world,icons:this.icons,diagnostics:this.diagnostics,onHardReset:()=>this.hardReset(),onNewContract:c=>this.startContract(c),onRecalculate:()=>{this.engine.recalculate(this.state);this.view?.safeDraw()}});
     this.tradeUI=new TradeUI({state:this.state,trade:this.trade,repo:this.repo,ui:this.ui});
-    this.view=new WorldView({state:this.state,world:this.world,survey:this.survey,resources:this.resources,icons:this.icons,diagnostics:this.diagnostics,onTap:(x,y)=>this.tap(x,y),onMulti:cells=>this.multi(cells)});
+    this.view=new WorldView({state:this.state,world:this.world,survey:this.survey,resources:this.resources,technology:this.technology,icons:this.icons,diagnostics:this.diagnostics,onTap:(x,y)=>this.tap(x,y),onMulti:cells=>this.multi(cells)});
     this.accumulator=0;this.lastFrame=performance.now();this.ui.render();this.tradeUI.render();this.ui.syncSpeed();requestAnimationFrame(now=>this.loop(now));document.addEventListener("visibilitychange",()=>{if(document.hidden)this.repo.save(this.state)});
   }
   tap(x,y){if(x===0&&y===0){this.ui.company();return}const tile=this.world.get(this.state,x,y);if(!tile.revealed){const r=this.survey.enqueue(this.state,x,y);if(r.ok){this.ui.toast(r.active?`Surveying ${x},${y}...`:`Queued ${x},${y}.`);this.view.safeDraw()}else this.ui.tile(tile);return}this.ui.tile(tile);}
