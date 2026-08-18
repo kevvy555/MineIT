@@ -15,7 +15,7 @@ import { SurveyService } from "./domain/survey-service.js?v=5.0.0";
 import { SimulationEngine } from "./domain/simulation-engine.js?v=5.0.0";
 import { SaveRepository } from "./persistence/save-repository.js?v=5.0.0";
 import { ResourceIcons } from "./ui/resource-icons.js?v=5.0.0";
-import { WorldView } from "./ui/world-view.js?v=5.0.0";
+import { WorldView } from "./ui/world-view.js?v=5.0.1";
 import { UIController } from "./ui/ui-controller.js?v=5.0.0";
 import { TradeUI } from "./ui/trade-ui.js?v=5.0.0";
 
