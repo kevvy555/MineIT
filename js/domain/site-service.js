@@ -1,25 +1,14 @@
 export class SiteService {
-  constructor(contractService){ this.contracts = contractService; }
-  distance(tile){ return Math.hypot(tile.x,tile.y); }
-
-  developCost(state,tile){
-    const a = this.contracts.archetype(state.contract);
-    return Math.round((2600+Math.sqrt(tile.quality)*115)*(1+this.distance(tile)*.018)*a.cost);
-  }
-
-  upgradeCost(state,tile){
-    return Math.round(this.developCost(state,tile)*Math.pow(1.82,Math.max(0,tile.level)));
-  }
-
-  develop(state,tile){
-    const cost=this.developCost(state,tile);
-    if(!tile.revealed||tile.developed||tile.depleted||state.company.cash<cost) return false;
-    state.company.cash-=cost; tile.developed=true; tile.level=1; return true;
-  }
-
-  upgrade(state,tile){
-    const cost=this.upgradeCost(state,tile);
-    if(!tile.developed||tile.depleted||state.company.cash<cost) return false;
-    state.company.cash-=cost; tile.level++; return true;
-  }
+  constructor(contractService,technologyService,inventoryService){this.contracts=contractService;this.technology=technologyService;this.inventory=inventoryService;}
+  distance(tile){return Math.hypot(tile.x,tile.y);}
+  developCashCost(state,tile){const a=this.contracts.archetype(state.contract);return Math.round((1800+Math.sqrt(tile.quality)*70)*(1+this.distance(tile)*.018)*a.cost);}
+  developBuildCost(state,tile){const a=this.contracts.archetype(state.contract);return Math.round((28+Math.sqrt(tile.quality)*.42+this.distance(tile)*1.2)*a.cost);}
+  upgradeCashCost(state,tile){return Math.round(this.developCashCost(state,tile)*Math.pow(1.68,Math.max(0,tile.level)));}
+  upgradeBuildCost(state,tile){return Math.round(this.developBuildCost(state,tile)*Math.pow(1.38,Math.max(0,tile.level)));}
+  developCost(state,tile){return this.developCashCost(state,tile);}
+  upgradeCost(state,tile){return this.upgradeCashCost(state,tile);}
+  developRequirements(state,tile){const cash=this.developCashCost(state,tile),build=this.developBuildCost(state,tile),requiredLevel=tile.requiredMiningLevel||1,techOk=this.technology.canExploit(state,tile);if(!tile.revealed||tile.developed||tile.depleted)return{ok:false,cash,build,requiredLevel,reason:"Site unavailable."};if(!techOk)return{ok:false,cash,build,requiredLevel,reason:`Requires Mining L${requiredLevel}: ${tile.requiredMiningTech||"Extraction technology"}.`};if(this.inventory.amount(state,"build")<build)return{ok:false,cash,build,requiredLevel,reason:`Need ${build} Build materials.`};if(state.company.cash<cash)return{ok:false,cash,build,requiredLevel,reason:"Insufficient cash."};return{ok:true,cash,build,requiredLevel};}
+  develop(state,tile){const r=this.developRequirements(state,tile);if(!r.ok)return r;this.inventory.consumeCategory(state,"build",r.build);state.company.cash-=r.cash;tile.developed=true;tile.level=1;return{ok:true,...r};}
+  upgradeRequirements(state,tile){const cash=this.upgradeCashCost(state,tile),build=this.upgradeBuildCost(state,tile);if(!tile.developed||tile.depleted)return{ok:false,cash,build,reason:"Site unavailable."};if(!this.technology.canExploit(state,tile))return{ok:false,cash,build,reason:`Requires Mining L${tile.requiredMiningLevel||1}.`};if(this.inventory.amount(state,"build")<build)return{ok:false,cash,build,reason:`Need ${build} Build materials.`};if(state.company.cash<cash)return{ok:false,cash,build,reason:"Insufficient cash."};return{ok:true,cash,build};}
+  upgrade(state,tile){const r=this.upgradeRequirements(state,tile);if(!r.ok)return r;this.inventory.consumeCategory(state,"build",r.build);state.company.cash-=r.cash;tile.level++;return{ok:true,...r};}
 }
