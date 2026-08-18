@@ -1,0 +1,27 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { ContractService } from "../js/domain/contract-service.js";
+import { createGameState, normalizeState } from "../js/domain/game-state.js";
+import { ResourceService, QUALITY_VALUE_BANDS } from "../js/domain/resource-service.js";
+import { InventoryService } from "../js/domain/inventory-service.js";
+import { TradeService } from "../js/domain/trade-service.js";
+
+const resources=new ResourceService(),inventory=new InventoryService(resources),trade=new TradeService(resources,inventory);
+assert.deepEqual(QUALITY_VALUE_BANDS.map(b=>[b.key,b.multiplier]),[["common",.75],["good",.9],["excellent",1],["exceptional",1.25],["rare",1.75],["extraordinary",3]]);
+assert.equal(resources.qualityBandDetails(1).key,"common");assert.equal(resources.qualityBandDetails(200).key,"good");assert.equal(resources.qualityBandDetails(750).key,"excellent");assert.equal(resources.qualityBandDetails(2500).key,"exceptional");assert.equal(resources.qualityBandDetails(7500).key,"rare");assert.equal(resources.qualityBandDetails(10000).key,"extraordinary");
+
+const state={inventory:{},company:{cash:0,earn:0},contract:{localRevenue:0,localCosts:0},trade:{active:true}};
+const commonGold={type:"ore",resourceId:"gold",name:"Gold",quality:30},extraGold={...commonGold,quality:9000};
+inventory.storeTile(state,commonGold,100);inventory.storeTile(state,extraGold,20);
+const gold=state.inventory["ore:gold"];
+assert.equal(gold.amount,120,"Resource stays collapsed to one top-level inventory item");assert.equal(gold.qualityBands.common.amount,100);assert.equal(gold.qualityBands.extraordinary.amount,20);
+assert.equal(trade.sellPrice("ore","gold","common"),3.75);assert.equal(trade.sellPrice("ore","gold","excellent"),5);assert.equal(trade.sellPrice("ore","gold","extraordinary"),15);
+assert.equal(trade.stockValue(state),675,"Stock value must use band-specific prices");
+const sale=trade.sellBand(state,"ore:gold","common",40);assert.equal(sale.revenue,150);assert.equal(gold.qualityBands.common.amount,60);assert.equal(gold.qualityBands.extraordinary.amount,20);assert.equal(gold.amount,80);
+
+const consumption={inventory:{}};const commonIron={type:"ore",resourceId:"iron",name:"Iron Ore",quality:20},extraIron={...commonIron,quality:9000};inventory.storeTile(consumption,commonIron,50);inventory.storeTile(consumption,extraIron,50);const use=inventory.consumeCategory(consumption,"ore",60);assert.equal(use.consumed,60);assert.equal(consumption.inventory["ore:iron"].qualityBands.common.amount,0,"Cheap quality must be consumed first");assert.equal(consumption.inventory["ore:iron"].qualityBands.extraordinary.amount,40,"High-value stock should be preserved where possible");
+
+const contracts=new ContractService(),legacy=createGameState(contracts.first());legacy.version=5;legacy.inventory={"ore:gold":{key:"ore:gold",type:"ore",resourceId:"gold",name:"Gold",category:"Ore",amount:123}};legacy.portfolio.colonies[0].data.inventory={"ore:gold":{key:"ore:gold",type:"ore",resourceId:"gold",name:"Gold",category:"Ore",amount:321}};legacy.portfolio.colonies.push({id:"legacy-2",name:"Colony 02",data:{inventory:{"fuel:coal":{key:"fuel:coal",type:"fuel",resourceId:"coal",name:"Coal Seam",category:"Fuel",amount:77}}}});normalizeState(legacy);assert.equal(legacy.version,6);assert.equal(legacy.inventory["ore:gold"].qualityBands.excellent.amount,123,"Active legacy stock migrates to base grade");assert.equal(legacy.portfolio.colonies[0].data.inventory["ore:gold"].qualityBands.excellent.amount,321,"Saved active snapshot migrates too");assert.equal(legacy.portfolio.colonies[1].data.inventory["fuel:coal"].qualityBands.excellent.amount,77,"Inactive colony inventory must also migrate");
+
+const ui=readFileSync(new URL("../js/ui/trade-ui.js",import.meta.url),"utf8");assert.match(ui,/trade-resource-head/);assert.match(ui,/trade-quality-row/);assert.match(ui,/data-band-sell/);assert.match(ui,/qualityRows/);assert.match(ui,/Excellent\/base-grade stock/);
+console.log("MineIT quality-banded pricing and trade grouping test passed");
