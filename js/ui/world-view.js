@@ -56,6 +56,20 @@ export class WorldView {
     return bucket===null||this.filters[bucket]!==false;
   }
 
+  compactAmount(value){
+    const n=Math.max(0,Number(value)||0),fmt=(v,s)=>`${v>=100?Math.round(v):v>=10?v.toFixed(1):v.toFixed(2)}`.replace(/\.0+$|(?<=\.[0-9])0+$/g,"")+s;
+    if(n>=1e9)return fmt(n/1e9,"B");
+    if(n>=1e6)return fmt(n/1e6,"M");
+    if(n>=1e3)return fmt(n/1e3,"K");
+    return String(Math.round(n));
+  }
+
+  depositText(tile){
+    if(this.resources.isRenewable(tile))return `${String(tile.abundanceLabel||"Renewable").toUpperCase()} • ∞`;
+    const amount=tile.initialReserve??tile.reserve??0;
+    return `${String(tile.depositScale||"Finite").toUpperCase()} • ${this.compactAmount(amount)}`;
+  }
+
   resize(){
     const r=this.shell.getBoundingClientRect(),dpr=Math.max(1,devicePixelRatio||1);
     this.canvas.width=r.width*dpr;this.canvas.height=r.height*dpr;
@@ -135,19 +149,20 @@ export class WorldView {
 
       c.save();
       if(techLocked)c.globalAlpha=.26;
-      if(tile.depleted){c.fillStyle="#9aa7ad";c.font=`${Math.max(16,this.cell*.28)}px system-ui`;c.fillText("×",px+this.cell/2,py+this.cell*.35);}
-      else this.icons.draw(c,tile,px+this.cell/2,py+this.cell*.30,this.cell*.36);
-      c.fillStyle=col[1];c.font=`bold ${Math.max(8,this.cell*.13)}px system-ui`;c.fillText(`Q${Math.round(tile.quality)}`,px+this.cell/2,py+this.cell*.62);
+      if(tile.depleted){c.fillStyle="#9aa7ad";c.font=`${Math.max(16,this.cell*.28)}px system-ui`;c.fillText("×",px+this.cell/2,py+this.cell*.31);}
+      else this.icons.draw(c,tile,px+this.cell/2,py+this.cell*.27,this.cell*.33);
+      c.fillStyle=col[1];c.font=`bold ${Math.max(8,this.cell*.13)}px system-ui`;c.fillText(`Q${Math.round(tile.quality)}`,px+this.cell/2,py+this.cell*.56);
+      c.fillStyle="#b6c4ca";c.font=`bold ${Math.max(6,this.cell*.09)}px system-ui`;c.fillText(this.depositText(tile),px+this.cell/2,py+this.cell*.70,this.cell*.86);
       if(tile.developed&&!tile.depleted){
         const renewable=this.resources.isRenewable(tile),pct=renewable?1:clamp((tile.reserve||0)/Math.max(1,tile.initialReserve||1),0,1);
-        c.fillStyle="#162027";c.fillRect(px+this.cell*.13,py+this.cell*.82,this.cell*.74,3);c.fillStyle=col[2];c.fillRect(px+this.cell*.13,py+this.cell*.82,this.cell*.74*pct,3);
-        c.fillStyle="#d9e3e8";c.font=`${Math.max(7,this.cell*.1)}px system-ui`;c.fillText(`L${tile.level}`,px+this.cell*.78,py+this.cell*.72);
+        c.fillStyle="#162027";c.fillRect(px+this.cell*.13,py+this.cell*.86,this.cell*.74,3);c.fillStyle=col[2];c.fillRect(px+this.cell*.13,py+this.cell*.86,this.cell*.74*pct,3);
+        c.fillStyle="#d9e3e8";c.font=`${Math.max(7,this.cell*.1)}px system-ui`;c.fillText(`L${tile.level}`,px+this.cell*.79,py+this.cell*.16);
       }
       c.restore();
 
       if(techLocked){
         c.fillStyle="#9aa4aa";c.font=`bold ${Math.max(7,this.cell*.095)}px system-ui`;
-        c.fillText(`LOCK • M${tile.requiredMiningLevel||1}`,px+this.cell/2,py+this.cell*.78);
+        c.fillText(`LOCK • M${tile.requiredMiningLevel||1}`,px+this.cell/2,py+this.cell*.84,this.cell*.88);
       }
     }
     document.querySelector("#cameraText").textContent=`Sector ${this.state.camera.x},${this.state.camera.y}`;
