@@ -8,9 +8,52 @@ export class WorldView {
     this.shell=document.querySelector("#worldShell");
     this.ctx=this.canvas.getContext("2d");
     this.selection=new Map();
+    this.filters={developed:true,notDeveloped:true,locked:true};
+    this.bindFilters();
     this.bindInput();
     new ResizeObserver(()=>this.resize()).observe(this.shell);
     this.resize();
+  }
+
+  bindFilters(){
+    const existing=this.shell.querySelector("#mapFilters");
+    if(existing)existing.remove();
+    const bar=document.createElement("div");
+    bar.id="mapFilters";bar.className="map-filters";bar.setAttribute("aria-label","Map tile filters");
+    const definitions=[
+      ["developed","DEVELOPED"],
+      ["notDeveloped","NOT DEVELOPED"],
+      ["locked","LOCKED"]
+    ];
+    for(const [key,label] of definitions){
+      const button=document.createElement("button");
+      button.type="button";button.className="map-filter active";button.dataset.mapFilter=key;button.textContent=label;button.setAttribute("aria-pressed","true");
+      button.onclick=()=>{this.filters[key]=!this.filters[key];this.syncFilters();this.safeDraw();};
+      bar.appendChild(button);
+    }
+    this.shell.appendChild(bar);this.filterBar=bar;this.syncFilters();
+  }
+
+  syncFilters(){
+    if(!this.filterBar)return;
+    this.filterBar.querySelectorAll("[data-map-filter]").forEach(button=>{
+      const active=this.filters[button.dataset.mapFilter]!==false;
+      button.classList.toggle("active",active);button.setAttribute("aria-pressed",String(active));
+    });
+  }
+
+  tileFilterBucket(tile){
+    if(!tile?.revealed)return null;
+    const locked=!tile.developed&&!tile.depleted&&!this.technology.canExploit(this.state,tile);
+    if(locked)return"locked";
+    if(tile.developed)return"developed";
+    return"notDeveloped";
+  }
+
+  isTileVisible(tile,x,y){
+    if(x===0&&y===0)return true;
+    const bucket=this.tileFilterBucket(tile);
+    return bucket===null||this.filters[bucket]!==false;
   }
 
   resize(){
@@ -47,7 +90,10 @@ export class WorldView {
     this.canvas.addEventListener("pointerup",e=>{
       if(!p||p.id!==e.pointerId)return;clearTimeout(t);
       if(sel){const a=[...this.selection.values()];this.selection.clear();sel=false;this.onMulti(a);}
-      else if(Math.hypot(e.clientX-p.x,e.clientY-p.y)<=7){const c=this.coords(e);this.onTap(c.x,c.y);}
+      else if(Math.hypot(e.clientX-p.x,e.clientY-p.y)<=7){
+        const cell=this.coords(e),tile=this.world.get(this.state,cell.x,cell.y);
+        if(this.isTileVisible(tile,cell.x,cell.y))this.onTap(cell.x,cell.y);
+      }
       p=null;this.safeDraw();
     });
     this.canvas.addEventListener("pointercancel",()=>{clearTimeout(t);p=null;sel=false;this.selection.clear();this.safeDraw()});
@@ -70,7 +116,14 @@ export class WorldView {
       const x=this.state.camera.x+gx,y=this.state.camera.y+gy,tile=this.world.get(this.state,x,y),
         active=this.survey.isActive(this.state,x,y),queued=this.survey.isQueued(this.state,x,y),
         selected=this.selection.has(`${x},${y}`),px=ox+gx*this.cell,py=oy+gy*this.cell,col=this.colors(tile.type),
-        techLocked=tile.revealed&&!tile.depleted&&!this.technology.canExploit(this.state,tile);
+        techLocked=tile.revealed&&!tile.developed&&!tile.depleted&&!this.technology.canExploit(this.state,tile),
+        visible=this.isTileVisible(tile,x,y);
+
+      if(!visible){
+        c.fillStyle="#020304";c.fillRect(px+1,py+1,this.cell-2,this.cell-2);
+        c.strokeStyle="#172028";c.lineWidth=1;c.strokeRect(px+.5,py+.5,this.cell-1,this.cell-1);
+        continue;
+      }
 
       c.fillStyle=tile.revealed?(tile.depleted?"#11161a":techLocked?"#0b0e10":col[0]):active?"#0b2c45":queued?"#091c2a":"#020304";
       c.fillRect(px+1,py+1,this.cell-2,this.cell-2);

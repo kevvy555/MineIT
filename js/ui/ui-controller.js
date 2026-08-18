@@ -1,7 +1,7 @@
-import { formatNumber } from "../core/utils.js?v=4.0.2";
-import { ResourceUIMixin } from "./resource-ui.js?v=4.0.2";
-import { ColonyTechUIMixin } from "./colony-tech-ui.js?v=4.0.2";
-import { ContractUIMixin } from "./contract-ui.js?v=4.0.2";
+import { formatNumber } from "../core/utils.js?v=4.0.3";
+import { ResourceUIMixin } from "./resource-ui.js?v=4.0.3";
+import { ColonyTechUIMixin } from "./colony-tech-ui.js?v=4.0.3";
+import { ContractUIMixin } from "./contract-ui.js?v=4.0.3";
 
 export class UIController {
   constructor({state,repo,resources,inventory,collection,colony,sites,technology,survey,contracts,world,icons,diagnostics,onHardReset,onNewContract,onRecalculate}){

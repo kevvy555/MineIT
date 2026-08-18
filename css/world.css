@@ -7,5 +7,10 @@
 .hud-chip span{font-size:8px;color:var(--muted)}
 .scan-progress{height:3px;margin-top:3px}
 .scan-progress i{background:var(--survey)}
+.map-filters{position:absolute;left:5px;top:39px;z-index:9;display:flex;gap:3px;padding:3px;background:rgba(5,8,10,.9);border:1px solid var(--line);border-radius:7px;touch-action:manipulation}
+.map-filter{min-height:25px;padding:3px 6px;font-size:7px;font-weight:800;letter-spacing:.02em;opacity:.42;background:#0b1116;border-color:#26333d;color:var(--muted)}
+.map-filter.active{opacity:1;background:#13222c;border-color:var(--accent);color:#e6f6ff;box-shadow:0 0 0 1px rgba(118,198,255,.18) inset}
+.map-filter[data-map-filter="locked"].active{border-color:var(--warn);color:var(--warn);box-shadow:0 0 0 1px rgba(255,209,102,.16) inset}
 .toast{position:absolute;left:50%;top:7px;transform:translateX(-50%);z-index:30;background:#101820;border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:9px;pointer-events:none;max-width:85%;text-align:center}
 .error-badge{position:absolute;right:5px;bottom:5px;z-index:35;background:#4d1111;border-color:#ff7777;color:#fff;font-size:9px;font-weight:800}
+@media(max-width:370px){.map-filter{font-size:6.4px;padding:3px 5px}.map-filters{gap:2px}}

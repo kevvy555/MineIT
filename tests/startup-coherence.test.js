@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const BUILD = "4.0.2";
+const BUILD = "4.0.3";
 const read = path => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
 const index = read("index.html");
