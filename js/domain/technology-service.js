@@ -1,5 +1,5 @@
-import { TECH_TREES, TECHNOLOGIES } from "../data/technologies.js";
-import { clamp } from "../core/utils.js";
+import { TECH_TREES, TECHNOLOGIES } from "../data/technologies.js?v=4.0.1";
+import { clamp } from "../core/utils.js?v=4.0.1";
 
 export class TechnologyService {
   get(id){return TECHNOLOGIES.find(t=>t.id===id)||null;}

@@ -1,5 +1,5 @@
-import { RESOURCE_TYPES } from "../data/resources.js";
-import { clamp, hashString, seededRandom, tileKey } from "../core/utils.js";
+import { RESOURCE_TYPES } from "../data/resources.js?v=4.0.1";
+import { clamp, hashString, seededRandom, tileKey } from "../core/utils.js?v=4.0.1";
 
 export class WorldService {
   constructor(resourceService,contractService){this.resources=resourceService;this.contracts=contractService;}

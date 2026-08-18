@@ -1,5 +1,5 @@
-import { RESOURCE_TYPES, CATEGORY_NAMES, CATEGORY_ORDER } from "../data/resources.js";
-import { clamp } from "../core/utils.js";
+import { RESOURCE_TYPES, CATEGORY_NAMES, CATEGORY_ORDER } from "../data/resources.js?v=4.0.1";
+import { clamp } from "../core/utils.js?v=4.0.1";
 
 export class ResourceService {
   pick(list,random){const eligible=list.filter(x=>(x.weight||0)>0);const total=eligible.reduce((s,i)=>s+i.weight,0);let roll=random()*total;for(const item of eligible){roll-=item.weight;if(roll<=0)return item;}return eligible[eligible.length-1];}

@@ -1,4 +1,4 @@
-import { CATEGORY_NAMES } from "../data/resources.js";
+import { CATEGORY_NAMES } from "../data/resources.js?v=4.0.1";
 
 export class InventoryService {
   constructor(resourceService){ this.resources=resourceService; }

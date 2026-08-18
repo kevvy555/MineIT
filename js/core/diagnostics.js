@@ -36,7 +36,7 @@ export class Diagnostics {
 
   snapshot(state){
     return {
-      version: "2.0.0-modular",
+      version: "4.0.1-modular",
       date: state ? `Y${state.year} D${state.day}` : "no state",
       speed: state?.speed,
       status: state?.status,

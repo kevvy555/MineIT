@@ -1,5 +1,5 @@
-import { CONFIG } from "../core/config.js";
-import { RESOURCE_TYPES, CATEGORY_NAMES } from "../data/resources.js";
+import { CONFIG } from "../core/config.js?v=4.0.1";
+import { RESOURCE_TYPES, CATEGORY_NAMES } from "../data/resources.js?v=4.0.1";
 
 function nextTradeDay(state){const absolute=(Math.max(1,state.year)-1)*CONFIG.DAYS_PER_YEAR+Math.max(1,state.day);if(absolute<CONFIG.FIRST_TRADE_DAY)return CONFIG.FIRST_TRADE_DAY;const visits=Math.floor((absolute-CONFIG.FIRST_TRADE_DAY)/CONFIG.TRADE_INTERVAL_DAYS)+1;return CONFIG.FIRST_TRADE_DAY+visits*CONFIG.TRADE_INTERVAL_DAYS;}
 function starterInventory(){return{
