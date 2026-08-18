@@ -1,13 +1,13 @@
 import { CONFIG } from "./core/config.js?v=5.0.0";
-import { Diagnostics } from "./core/diagnostics.js?v=5.0.0";
+import { Diagnostics } from "./core/diagnostics.js?v=5.1.0";
 import { ContractService } from "./domain/contract-service.js?v=5.0.0";
-import { createGameState, normalizeState } from "./domain/game-state.js?v=5.0.0";
-import { PortfolioService } from "./domain/portfolio-service.js?v=5.0.0";
-import { ResourceService } from "./domain/resource-service.js?v=5.0.0";
-import { InventoryService } from "./domain/inventory-service.js?v=5.0.0";
+import { createGameState, normalizeState } from "./domain/game-state.js?v=5.1.0";
+import { PortfolioService } from "./domain/portfolio-service.js?v=5.1.0";
+import { ResourceService } from "./domain/resource-service.js?v=5.1.0";
+import { InventoryService } from "./domain/inventory-service.js?v=5.1.0";
 import { CollectionService } from "./domain/collection-service.js?v=5.0.0";
 import { ColonyService } from "./domain/colony-service.js?v=5.0.0";
-import { TradeService } from "./domain/trade-service.js?v=5.0.0";
+import { TradeService } from "./domain/trade-service.js?v=5.1.0";
 import { WorldService } from "./domain/world-service.js?v=5.0.0";
 import { SiteService } from "./domain/site-service.js?v=5.0.0";
 import { TechnologyService } from "./domain/technology-service.js?v=5.0.0";
@@ -17,7 +17,7 @@ import { SaveRepository } from "./persistence/save-repository.js?v=5.0.0";
 import { ResourceIcons } from "./ui/resource-icons.js?v=5.0.0";
 import { WorldView } from "./ui/world-view.js?v=5.0.1";
 import { UIController } from "./ui/ui-controller.js?v=5.0.0";
-import { TradeUI } from "./ui/trade-ui.js?v=5.0.0";
+import { TradeUI } from "./ui/trade-ui.js?v=5.1.0";
 
 class MineITApp {
   constructor(){

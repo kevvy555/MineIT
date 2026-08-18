@@ -1,4 +1,4 @@
-import { cloneColonyState, createColonyState, COLONY_STATE_KEYS } from "./game-state.js?v=5.0.0";
+import { cloneColonyState, createColonyState, COLONY_STATE_KEYS } from "./game-state.js?v=5.1.0";
 
 const clone=value=>JSON.parse(JSON.stringify(value));
 export class PortfolioService {
