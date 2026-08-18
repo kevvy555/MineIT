@@ -1,54 +1,9 @@
 export class Diagnostics {
-  constructor(limit=120){
-    this.limit = limit;
-    this.entries = [];
-    this.errors = 0;
-    this.heartbeat = 0;
-    this.ticks = 0;
-    this.lastTick = 0;
-    this.listeners = new Set();
-  }
-
-  subscribe(listener){ this.listeners.add(listener); return () => this.listeners.delete(listener); }
-  emit(){ for(const listener of this.listeners) listener(this); }
-
-  add(level,message,data){
-    const stamp = new Date().toISOString().slice(11,19);
-    let suffix = "";
-    if(data !== undefined){
-      try { suffix = " " + (typeof data === "string" ? data : JSON.stringify(data)); }
-      catch { suffix = " [unserializable]"; }
-    }
-    this.entries.push(`[${stamp}] ${level.toUpperCase()} ${message}${suffix}`);
-    if(this.entries.length > this.limit) this.entries.shift();
-    if(level === "error") this.errors++;
-    this.emit();
-  }
-
-  info(message,data){ this.add("info",message,data); }
-  warn(message,data){ this.add("warn",message,data); }
-  error(message,error){
-    const detail = error instanceof Error
-      ? `${error.name}: ${error.message}${error.stack ? `\n${error.stack}` : ""}`
-      : String(error ?? "Unknown error");
-    this.add("error",message,detail);
-  }
-
-  snapshot(state){
-    return {
-      version: "4.0.3-modular",
-      date: state ? `Y${state.year} D${state.day}` : "no state",
-      speed: state?.speed,
-      status: state?.status,
-      heartbeat: this.heartbeat,
-      ticks: this.ticks,
-      msSinceLastTick: this.lastTick ? Date.now()-this.lastTick : null,
-      activeScans: state?.scans?.length ?? 0,
-      queuedScans: state?.scanQueue?.length ?? 0
-    };
-  }
-
-  text(state){
-    return ["MINEIT DIAGNOSTICS",JSON.stringify(this.snapshot(state),null,2),"",...this.entries].join("\n");
-  }
+  constructor(limit=120){this.limit=limit;this.entries=[];this.errors=0;this.heartbeat=0;this.ticks=0;this.lastTick=0;this.listeners=new Set();}
+  subscribe(listener){this.listeners.add(listener);return()=>this.listeners.delete(listener);}
+  emit(){for(const listener of this.listeners)listener(this);}
+  add(level,message,data){const stamp=new Date().toISOString().slice(11,19);let suffix="";if(data!==undefined){try{suffix=" "+(typeof data==="string"?data:JSON.stringify(data));}catch{suffix=" [unserializable]";}}this.entries.push(`[${stamp}] ${level.toUpperCase()} ${message}${suffix}`);if(this.entries.length>this.limit)this.entries.shift();if(level==="error")this.errors++;this.emit();}
+  info(message,data){this.add("info",message,data);}warn(message,data){this.add("warn",message,data);}error(message,error){const detail=error instanceof Error?`${error.name}: ${error.message}${error.stack?`\n${error.stack}`:""}`:String(error??"Unknown error");this.add("error",message,detail);}
+  snapshot(state){return{version:"5.0.0-multi-colony",date:state?`Y${state.year} D${state.day}`:"no state",colony:state?.contract?.colonyName,colonies:state?.portfolio?.colonies?.length??0,speed:state?.speed,status:state?.status,heartbeat:this.heartbeat,ticks:this.ticks,msSinceLastTick:this.lastTick?Date.now()-this.lastTick:null,activeScans:state?.scans?.length??0,queuedScans:state?.scanQueue?.length??0};}
+  text(state){return["MINEIT DIAGNOSTICS",JSON.stringify(this.snapshot(state),null,2),"",...this.entries].join("\n");}
 }

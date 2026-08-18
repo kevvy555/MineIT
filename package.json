@@ -1,7 +1,7 @@
 {
   "name":"mineit",
-  "version":"4.0.3",
+  "version":"5.0.0",
   "private":true,
   "type":"module",
-  "scripts":{"test":"node tests/colony-economy.test.js && node tests/startup-coherence.test.js && node tests/tech-visibility.test.js && node tests/map-filters.test.js"}
+  "scripts":{"test":"node tests/colony-economy.test.js && node tests/startup-coherence.test.js && node tests/tech-visibility.test.js && node tests/map-filters.test.js && node tests/multi-colony.test.js"}
 }

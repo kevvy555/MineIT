@@ -41,7 +41,8 @@ const miningNames=[
   ["Quantum Bore Systems","Top-tier extraction unlocks the most extreme element deposits."]
 ];
 const miningMult=[1,1.12,1.28,1.48,1.72,2.00,2.35,2.80,3.40,4.20];
-function cost(level){return level===1?0:Math.round(9000*Math.pow(1.62,level-2));}
+const techCosts=[0,25000,90000,300000,1000000,3500000,12000000,40000000,130000000,400000000];
+function cost(level){return techCosts[Math.max(0,Math.min(9,level-1))];}
 export const TECH_TREES=Object.freeze({
   power:powerNames.map((x,i)=>({id:`power-${i+1}`,category:"power",level:i+1,name:x[0],description:x[1],cost:cost(i+1),powerCapacity:powerCapacity[i],fuelIntensity:fuelIntensity[i],populationCap:popCaps[i],industryCap:industryCaps[i]})),
   food:foodNames.map((x,i)=>({id:`food-${i+1}`,category:"food",level:i+1,name:x[0],description:x[1],cost:cost(i+1),productionMultiplier:foodMult[i],syntheticFood:synthetic[i]})),

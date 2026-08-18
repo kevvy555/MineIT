@@ -1,14 +1,6 @@
 export class CollectionService {
   constructor(resourceService,inventoryService,technologyService){this.resources=resourceService;this.inventory=inventoryService;this.technology=technologyService;}
-  activeSites(state){return Object.values(state.tiles).filter(tile=>tile.developed&&!tile.depleted&&this.technology.canExploit(state,tile));}
+  activeSites(state){if(state.contract?.ended)return[];return Object.values(state.tiles).filter(tile=>tile.developed&&!tile.depleted&&this.technology.canExploit(state,tile));}
   collectDay(state,tile){const rate=this.resources.collectionRate(state,tile);if(this.resources.isRenewable(tile))return{rate,collected:rate,renewable:true,exhausted:false};const remaining=Math.max(0,tile.reserve||0),collected=Math.min(rate,remaining);tile.reserve=Math.max(0,remaining-collected);const exhausted=tile.reserve<=0;if(exhausted){tile.depleted=true;tile.developed=false;}return{rate,collected,renewable:false,exhausted};}
-  current(state){
-    const groups=new Map();
-    for(const tile of this.activeSites(state)){
-      const key=this.inventory.key(tile.type,tile.resourceId),renewable=this.resources.isRenewable(tile);
-      let row=groups.get(key);if(!row){row={key,name:tile.name,category:this.resources.categoryName(tile.type),type:tile.type,resourceId:tile.resourceId,rate:0,stock:this.inventory.amountFor(state,tile.type,tile.resourceId),renewable:true,remaining:0,sites:0};groups.set(key,row);}
-      row.rate+=this.resources.collectionRate(state,tile);row.sites++;if(!renewable){row.renewable=false;row.remaining+=Math.max(0,tile.reserve||0);}
-    }
-    return[...groups.values()].sort((a,b)=>a.category.localeCompare(b.category)||a.name.localeCompare(b.name));
-  }
+  current(state){const groups=new Map();for(const tile of this.activeSites(state)){const key=this.inventory.key(tile.type,tile.resourceId),renewable=this.resources.isRenewable(tile);let row=groups.get(key);if(!row){row={key,name:tile.name,category:this.resources.categoryName(tile.type),type:tile.type,resourceId:tile.resourceId,rate:0,stock:this.inventory.amountFor(state,tile.type,tile.resourceId),renewable:true,remaining:0,sites:0};groups.set(key,row);}row.rate+=this.resources.collectionRate(state,tile);row.sites++;if(!renewable){row.renewable=false;row.remaining+=Math.max(0,tile.reserve||0);}}return[...groups.values()].sort((a,b)=>a.category.localeCompare(b.category)||a.name.localeCompare(b.name));}
 }
