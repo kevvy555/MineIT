@@ -1,4 +1,4 @@
-import { CONTRACT_ARCHETYPES } from "../data/contracts.js";
+import { CONTRACT_ARCHETYPES } from "../data/contracts.js?v=4.0.1";
 
 export class ContractService {
   first(){const a=CONTRACT_ARCHETYPES[0];return this.make(a,1,0,true);}
