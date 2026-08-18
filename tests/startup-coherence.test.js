@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const BUILD = "4.0.1";
+const BUILD = "4.0.2";
 const read = path => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
 const index = read("index.html");
@@ -16,6 +16,11 @@ for (const line of app.split("\n").filter(line => line.startsWith("import "))) {
 }
 assert.match(app, /startup failed/);
 assert.match(app, /STARTUP ERROR • TAP FOR DETAILS/);
+
+const uiController = read("js/ui/ui-controller.js");
+for (const line of uiController.split("\n").filter(line => line.startsWith("import "))) {
+  assert.match(line, new RegExp(`\\?v=${BUILD.replaceAll(".", "\\.")}`), `Unversioned UI import: ${line}`);
+}
 
 const nestedChecks = {
   "js/domain/resource-service.js": "data/resources.js?v=4.0.1",
