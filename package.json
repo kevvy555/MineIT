@@ -1,1 +1,7 @@
-{"name":"mineit","version":"2.0.0","private":true,"type":"module","scripts":{"test":"node tests/domain-smoke.test.js && node tests/trade-smoke.test.js"}}
+{
+  "name":"mineit",
+  "version":"3.0.0",
+  "private":true,
+  "type":"module",
+  "scripts":{"test":"node tests/colony-economy.test.js"}
+}

@@ -1,55 +1,22 @@
 import { CONFIG } from "../core/config.js";
+import { RESOURCE_TYPES, CATEGORY_NAMES } from "../data/resources.js";
 
-function nextTradeDay(state){
-  const absolute=(Math.max(1,state.year)-1)*CONFIG.DAYS_PER_YEAR+Math.max(1,state.day);
-  if(absolute<CONFIG.FIRST_TRADE_DAY) return CONFIG.FIRST_TRADE_DAY;
-  const visits=Math.floor((absolute-CONFIG.FIRST_TRADE_DAY)/CONFIG.TRADE_INTERVAL_DAYS)+1;
-  return CONFIG.FIRST_TRADE_DAY+visits*CONFIG.TRADE_INTERVAL_DAYS;
-}
-
-export function createGameState(contract){
-  return {
-    version:3,
-    seed:(Math.random()*0x7fffffff)|0,
-    company:{cash:CONFIG.START_CASH,rep:0,wins:0,earn:0,licenses:[]},
-    contract,
-    day:1,year:1,pop:CONFIG.START_POPULATION,speed:1,status:"playing",
-    camera:{x:-4,y:-4},
-    tiles:{},scans:[],scanQueue:[],offers:[],offerSig:"",
-    inventory:{},
-    trade:{active:false,nextArrivalDay:CONFIG.FIRST_TRADE_DAY,visits:0,returnSpeed:1,arrivedAt:null},
-    metrics:{food:0,industry:0,fm:1,im:1,pm:1,sl:1,sf:1,hint:0,income:0,stockValue:0,slots:1}
-  };
-}
-
+function nextTradeDay(state){const absolute=(Math.max(1,state.year)-1)*CONFIG.DAYS_PER_YEAR+Math.max(1,state.day);if(absolute<CONFIG.FIRST_TRADE_DAY)return CONFIG.FIRST_TRADE_DAY;const visits=Math.floor((absolute-CONFIG.FIRST_TRADE_DAY)/CONFIG.TRADE_INTERVAL_DAYS)+1;return CONFIG.FIRST_TRADE_DAY+visits*CONFIG.TRADE_INTERVAL_DAYS;}
+function starterInventory(){return{
+  "food:fungal":{key:"food:fungal",type:"food",resourceId:"fungal",name:"Fungal Shelf",category:"Food",amount:650},
+  "build:fiber":{key:"build:fiber",type:"build",resourceId:"fiber",name:"Construction Fibre",category:"Build",amount:850},
+  "fuel:biomass":{key:"fuel:biomass",type:"fuel",resourceId:"biomass",name:"Biomass",category:"Fuel",amount:700},
+  "ore:surface-iron":{key:"ore:surface-iron",type:"ore",resourceId:"surface-iron",name:"Surface Iron Nodules",category:"Ore",amount:300}
+};}
+function migrateType(type,id){if(type==="food")return{type:"food",id};if(type==="valuable")return{type:"ore",id};if(type==="industry"){if(id==="carbon")return{type:"fuel",id:"coal"};if(id==="bulk")return{type:"build",id:"stone"};return{type:"ore",id};}return{type,id};}
+export function createGameState(contract){return{version:4,seed:(Math.random()*0x7fffffff)|0,company:{cash:CONFIG.START_CASH,rep:0,wins:0,earn:0,licenses:[],tech:{power:1,food:1,mining:1}},contract,day:1,year:1,pop:CONFIG.START_POPULATION,speed:1,status:"playing",camera:{x:-4,y:-4},tiles:{},scans:[],scanQueue:[],inventory:starterInventory(),trade:{active:false,nextArrivalDay:CONFIG.FIRST_TRADE_DAY,visits:0,returnSpeed:1,arrivedAt:null},colony:{housingCapacity:CONFIG.START_HOUSING,housingLevel:1,industryLevel:CONFIG.START_INDUSTRY_LEVEL},metrics:{food:0,industry:100,stockValue:0,foodStock:650,buildStock:850,fuelStock:700,oreStock:300,foodDemand:0,fuelDemand:0,oreDemand:0,foodSupply:1,fuelSupply:1,oreSupply:1,powerDemand:0,powerCapacity:30,powerFactor:1,foodMult:1,miningMult:1,syntheticFood:0,powerTech:1,foodTech:1,miningTech:1,powerPopulationCap:250,powerIndustryCap:2,fuelIntensity:.1,sl:1,sf:1,hint:0,slots:1}};}
 export function normalizeState(state){
-  state.company = Object.assign({cash:CONFIG.START_CASH,rep:0,wins:0,earn:0,licenses:[]},state.company||{});
-  state.metrics = Object.assign({food:0,industry:0,fm:1,im:1,pm:1,sl:1,sf:1,hint:0,income:0,stockValue:0,slots:1},state.metrics||{});
-  state.camera ||= {x:-4,y:-4};
-  state.tiles ||= {};
-  state.scans ||= [];
-  state.scanQueue ||= [];
-  state.offers ||= [];
-  state.offerSig ||= "";
-  state.inventory ||= {};
-  state.trade = Object.assign({active:false,nextArrivalDay:nextTradeDay(state),visits:0,returnSpeed:1,arrivedAt:null},state.trade||{});
-  if(!Number.isFinite(state.trade.nextArrivalDay)) state.trade.nextArrivalDay=nextTradeDay(state);
-  state.status ||= "playing";
-  if(![0,1,2,4].includes(state.speed)) state.speed=1;
-  for(const entry of Object.values(state.inventory)) entry.amount=Math.max(0,Number(entry.amount)||0);
-  for(const tile of Object.values(state.tiles)){
-    if(!tile.revealed) continue;
-    if(tile.type==="food"){
-      tile.sustainability="renewable";tile.abundance ||= 1;tile.abundanceLabel ||= "Established";
-      tile.reserve=null;tile.initialReserve=null;
-      if(tile.depleted&&tile.level>0){tile.depleted=false;tile.developed=true;}
-    }else{
-      tile.sustainability="finite";tile.abundance ||= 1;
-      if(!Number.isFinite(tile.reserve)) tile.reserve=0;
-      if(!Number.isFinite(tile.initialReserve)) tile.initialReserve=tile.reserve;
-      tile.depositScale ||= "Legacy deposit";
-    }
-  }
-  state.version=3;
-  return state;
+  state.company=Object.assign({cash:CONFIG.START_CASH,rep:0,wins:0,earn:0,licenses:[],tech:{power:1,food:1,mining:1}},state.company||{});state.company.tech=Object.assign({power:1,food:1,mining:1},state.company.tech||{});
+  if((state.version||0)<4&&Array.isArray(state.company.licenses)){const food=state.company.licenses.filter(x=>String(x).startsWith("food-")).length,mining=state.company.licenses.filter(x=>String(x).startsWith("industry-")||String(x).startsWith("survey-")).length;state.company.tech.food=Math.max(state.company.tech.food,Math.min(10,1+food));state.company.tech.mining=Math.max(state.company.tech.mining,Math.min(10,1+mining));}
+  state.metrics=Object.assign({food:0,industry:100,stockValue:0,foodStock:0,buildStock:0,fuelStock:0,oreStock:0,foodSupply:1,fuelSupply:1,oreSupply:1,powerFactor:1},state.metrics||{});state.contract.colonyTier||=1;state.contract.environment||="Temperate / breathable";state.contract.hazard||="Minimal environmental support required.";state.contract.supportSystem||="Open Habitat";state.contract.techAccess||="direct";state.contract.requiredTech||={power:1,food:1,mining:1};if(state.contract.naturalFood===undefined)state.contract.naturalFood=true;state.camera||={x:-4,y:-4};state.tiles||={};state.scans||=[];state.scanQueue||=[];state.inventory||={};state.colony=Object.assign({housingCapacity:CONFIG.START_HOUSING,housingLevel:1,industryLevel:1},state.colony||{});state.trade=Object.assign({active:false,nextArrivalDay:nextTradeDay(state),visits:0,returnSpeed:1,arrivedAt:null},state.trade||{});if(!Number.isFinite(state.trade.nextArrivalDay))state.trade.nextArrivalDay=nextTradeDay(state);state.status||="playing";if(![0,1,2,4].includes(state.speed))state.speed=1;
+  const migrated={};for(const entry of Object.values(state.inventory)){const m=migrateType(entry.type,entry.resourceId),key=`${m.type}:${m.id}`;const def=RESOURCE_TYPES[m.type]?.find(x=>x.id===m.id);migrated[key]||={key,type:m.type,resourceId:m.id,name:def?.name||entry.name,category:CATEGORY_NAMES[m.type]||m.type,amount:0};migrated[key].amount+=Math.max(0,Number(entry.amount)||0);}state.inventory=migrated;
+  if(!Object.keys(state.inventory).length)state.inventory=starterInventory();
+  for(const tile of Object.values(state.tiles)){if(!tile.revealed)continue;const m=migrateType(tile.type,tile.resourceId);tile.type=m.type;tile.family=m.type;tile.resourceId=m.id;const def=RESOURCE_TYPES[m.type]?.find(x=>x.id===m.id);if(def){tile.name=def.name;tile.resourceRarity=def.rarity;tile.resourceMult=def.multiplier;tile.requiredMiningLevel=def.miningLevel;tile.requiredMiningTech=def.unlock;}if(tile.type==="food"||tile.resourceId==="biomass"||tile.resourceId==="fiber"){tile.sustainability="renewable";tile.reserve=null;tile.initialReserve=null;tile.abundance||=1;tile.abundanceLabel||="Established";}else{tile.sustainability="finite";if(!Number.isFinite(tile.reserve))tile.reserve=0;if(!Number.isFinite(tile.initialReserve))tile.initialReserve=tile.reserve;tile.depositScale||="Legacy deposit";}tile.requiredMiningLevel||=1;}
+  state.version=4;return state;
 }
+export { starterInventory };

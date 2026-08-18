@@ -1,51 +1,21 @@
-import { TECHNOLOGIES } from "../data/technologies.js";
+import { TECH_TREES, TECHNOLOGIES } from "../data/technologies.js";
 import { clamp } from "../core/utils.js";
 
 export class TechnologyService {
-  get(id){ return TECHNOLOGIES.find(x=>x.id===id); }
-
+  get(id){return TECHNOLOGIES.find(t=>t.id===id)||null;}
+  tree(category){return TECH_TREES[category]||[];}
+  level(state,category){return clamp(Number(state.company.tech?.[category])||1,1,10);}
+  current(state,category){return this.tree(category)[this.level(state,category)-1];}
+  next(state,category){return this.tree(category)[this.level(state,category)]||null;}
+  accessMode(state){return state.contract?.techAccess||"direct";}
+  canAccessStore(state){return this.accessMode(state)==="direct"||!!state.trade?.active;}
+  accessText(state){return this.canAccessStore(state)?(this.accessMode(state)==="direct"?"Corporate link online":"Corporate trade ship link online"):"Technology purchases on this deep-reach claim require a docked corporate trade ship.";}
+  canExploit(state,tile){return this.level(state,"mining")>=((tile.requiredMiningLevel)||1);}
+  meetsRequirements(state,required={}){return ["power","food","mining"].every(k=>this.level(state,k)>=(required[k]||1));}
+  buy(state,category){const next=this.next(state,category);if(!next)return{ok:false,reason:"Maximum technology level reached."};if(!this.canAccessStore(state))return{ok:false,reason:this.accessText(state)};if(state.company.cash<next.cost)return{ok:false,reason:"Insufficient cash."};state.company.cash-=next.cost;state.company.tech[category]=next.level;this.recompute(state);return{ok:true,tech:next};}
   recompute(state){
-    let food=1,industry=1,scan=1,hint=0,surveyLicenses=0;
-    for(const id of state.company.licenses){
-      const tech=this.get(id);
-      if(!tech) continue;
-      if(tech.category==="food") food*=tech.multiplier;
-      if(tech.category==="industry") industry*=tech.multiplier;
-      if(tech.category==="survey"){
-        scan*=tech.scanMultiplier;
-        hint+=tech.hintIncrease;
-        surveyLicenses++;
-      }
-    }
-    const surveyLevel=1+surveyLicenses;
-    const slots=clamp(1+Math.floor((surveyLevel-1)/3),1,5);
-    Object.assign(state.metrics,{fm:food,im:industry,sf:scan,hint:clamp(hint,0,3),sl:surveyLevel,slots});
-  }
-
-  eligible(state,tech){
-    if(state.company.licenses.includes(tech.id)) return false;
-    if(tech.tier>1 && !state.company.licenses.includes(`${tech.category}-${tech.tier-1}`)) return false;
-    return state.metrics.food>=tech.foodRequired &&
-      state.metrics.industry>=tech.industryRequired &&
-      state.metrics.sl>=tech.surveyRequired;
-  }
-
-  refreshOffers(state){
-    const eligible = TECHNOLOGIES.filter(t=>this.eligible(state,t));
-    const ids = eligible.slice(0,3).map(x=>x.id);
-    const signature=ids.join("|");
-    const changed=signature!==state.offerSig;
-    state.offers=ids;state.offerSig=signature;
-    return changed;
-  }
-
-  buy(state,id){
-    const tech=this.get(id);
-    if(!tech||!this.eligible(state,tech)||state.company.cash<tech.cost) return false;
-    state.company.cash-=tech.cost;
-    state.company.licenses.push(id);
-    this.recompute(state);
-    this.refreshOffers(state);
-    return true;
+    const power=this.current(state,"power"),food=this.current(state,"food"),mining=this.current(state,"mining");
+    const ml=this.level(state,"mining"),slots=clamp(1+Math.floor((ml-1)/2),1,5),scan=Math.max(.72,1-(ml-1)*.025),hint=clamp(Math.floor((ml-1)/3),0,3);
+    Object.assign(state.metrics,{powerTech:power.level,foodTech:food.level,miningTech:mining.level,powerCapacity:power.powerCapacity,powerPopulationCap:power.populationCap,powerIndustryCap:power.industryCap,fuelIntensity:power.fuelIntensity,foodMult:food.productionMultiplier,miningMult:mining.extractionMultiplier,syntheticFood:food.syntheticFood,fm:food.productionMultiplier,im:mining.extractionMultiplier,sl:ml,sf:scan,hint,slots});
   }
 }
