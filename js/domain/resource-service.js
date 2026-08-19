@@ -1,5 +1,6 @@
-import { RESOURCE_TYPES, CATEGORY_NAMES, CATEGORY_ORDER } from "../data/resources.js?v=4.0.1";
-import { clamp } from "../core/utils.js?v=4.0.1";
+import { RESOURCE_TYPES, CATEGORY_NAMES, CATEGORY_ORDER } from "../data/resources.js?v=5.3.0";
+import { clamp } from "../core/utils.js?v=5.3.0";
+import { CONFIG } from "../core/config.js?v=5.3.0";
 
 export const QUALITY_VALUE_BANDS=Object.freeze([
   Object.freeze({key:"common",label:"Common",className:"q0",min:1,max:50,multiplier:.75}),
@@ -22,13 +23,13 @@ export class ResourceService {
   qualityBandByKey(key){return QUALITY_VALUE_BANDS.find(b=>b.key===key)||QUALITY_VALUE_BANDS.find(b=>b.key===DEFAULT_QUALITY_BAND);}
   qualityBand(q){const b=this.qualityBandDetails(q);return[b.label,b.className];}
   qualityMultiplier(qOrKey){return typeof qOrKey==="string"?this.qualityBandByKey(qOrKey).multiplier:this.qualityBandDetails(qOrKey).multiplier;}
-  baseOutput(q){return 8+7*Math.pow(q,.52);}
+  baseOutput(q){return 2+2*Math.pow(q,.42);}
   isRenewable(tile){const def=this.get(tile.type,tile.resourceId);return tile.sustainability==="renewable"||!!def?.renewable;}
   requiredMiningLevel(tile){return this.get(tile.type,tile.resourceId)?.miningLevel||1;}
   unlockName(tile){return this.get(tile.type,tile.resourceId)?.unlock||"Mining technology";}
   baselineRate(tile){return this.baseOutput(tile.quality)*(tile.resourceMult||1)*(tile.abundance||1);}
   collectionRate(state,tile){const level=1+Math.max(0,tile.level-1)*.22;let mult=1;if(tile.type==="food")mult=state.metrics.foodMult||1;else mult=state.metrics.miningMult||1;return this.baselineRate(tile)*level*mult;}
   estimatedLifeYears(state,tile){if(this.isRenewable(tile))return Infinity;const rate=this.collectionRate(state,tile);return rate>0?Math.max(0,tile.reserve||0)/rate/360:Infinity;}
-  baseSellPrice(type,resourceId){return this.get(type,resourceId)?.sellPrice ?? ({food:.08,build:.12,fuel:.20,ore:.40}[type]||.10);}
+  baseSellPrice(type,resourceId){const base=this.get(type,resourceId)?.sellPrice ?? ({food:.08,build:.12,fuel:.20,ore:.40}[type]||.10);return base*CONFIG.RESOURCE_VALUE_SCALE;}
   sellPrice(type,resourceId,qualityBandKey=null){const base=this.baseSellPrice(type,resourceId);return qualityBandKey?base*this.qualityBandByKey(qualityBandKey).multiplier:base;}
 }
