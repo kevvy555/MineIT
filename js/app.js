@@ -1,9 +1,9 @@
 import { CONFIG } from "./core/config.js?v=5.0.0";
-import { Diagnostics } from "./core/diagnostics.js?v=5.1.0";
+import { Diagnostics } from "./core/diagnostics.js?v=5.2.0";
 import { ContractService } from "./domain/contract-service.js?v=5.0.0";
 import { createGameState, normalizeState } from "./domain/game-state.js?v=5.1.0";
 import { PortfolioService } from "./domain/portfolio-service.js?v=5.1.0";
-import { ResourceService } from "./domain/resource-service.js?v=5.1.0";
+import { ResourceService } from "./domain/resource-service.js?v=5.2.0";
 import { InventoryService } from "./domain/inventory-service.js?v=5.1.0";
 import { CollectionService } from "./domain/collection-service.js?v=5.0.0";
 import { ColonyService } from "./domain/colony-service.js?v=5.0.0";
@@ -15,8 +15,8 @@ import { SurveyService } from "./domain/survey-service.js?v=5.0.0";
 import { SimulationEngine } from "./domain/simulation-engine.js?v=5.0.0";
 import { SaveRepository } from "./persistence/save-repository.js?v=5.0.0";
 import { ResourceIcons } from "./ui/resource-icons.js?v=5.0.0";
-import { WorldView } from "./ui/world-view.js?v=5.0.1";
-import { UIController } from "./ui/ui-controller.js?v=5.0.0";
+import { WorldView } from "./ui/world-view.js?v=5.2.0";
+import { UIController } from "./ui/ui-controller.js?v=5.2.0";
 import { TradeUI } from "./ui/trade-ui.js?v=5.1.0";
 
 class MineITApp {

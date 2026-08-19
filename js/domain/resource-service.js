@@ -16,6 +16,7 @@ export class ResourceService {
   get(type,id){return RESOURCE_TYPES[type]?.find(x=>x.id===id)||null;}
   catalog(){return CATEGORY_ORDER.flatMap(type=>(RESOURCE_TYPES[type]||[]).map(def=>({...def,type,category:CATEGORY_NAMES[type]})));}
   categoryName(type){return CATEGORY_NAMES[type]||type;}
+  qualityBands(){return QUALITY_VALUE_BANDS.map(b=>({...b}));}
   quality(random,bias=1,contractRare=1){const raw=random(),z=1-Math.pow(1-raw,clamp(bias*Math.sqrt(contractRare),.55,2.4));let q;if(z<.60)q=1+Math.floor(random()*100);else if(z<.85)q=101+Math.floor(random()*400);else if(z<.95)q=501+Math.floor(random()*1500);else if(z<.99)q=2001+Math.floor(random()*3000);else if(z<.999)q=5001+Math.floor(random()*4000);else q=9001+Math.floor(random()*1000);return clamp(q,1,10000);}
   qualityBandDetails(q){const n=clamp(Math.round(Number(q)||QUALITY_VALUE_BANDS[2].min),1,10000);return QUALITY_VALUE_BANDS.find(b=>n<=b.max)||QUALITY_VALUE_BANDS[QUALITY_VALUE_BANDS.length-1];}
   qualityBandByKey(key){return QUALITY_VALUE_BANDS.find(b=>b.key===key)||QUALITY_VALUE_BANDS.find(b=>b.key===DEFAULT_QUALITY_BAND);}
