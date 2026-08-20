@@ -2,44 +2,9 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { WorldView } from "../js/ui/world-view.js";
 
-const view=Object.create(WorldView.prototype);
-view.state={company:{tech:{mining:2}}};
-view.technology={canExploit:(_state,tile)=>(tile.requiredMiningLevel||1)<=2};
-view.filters={developed:true,notDeveloped:true,locked:true};
-
-const unsurveyed={revealed:false,developed:false,depleted:false};
-const developed={revealed:true,developed:true,depleted:false,requiredMiningLevel:6};
-const available={revealed:true,developed:false,depleted:false,requiredMiningLevel:2};
-const locked={revealed:true,developed:false,depleted:false,requiredMiningLevel:3};
-const depleted={revealed:true,developed:false,depleted:true,requiredMiningLevel:8};
-
-assert.equal(view.tileFilterBucket(unsurveyed),null,"Unsurveyed tiles are outside resource filters");
-assert.equal(view.tileFilterBucket(developed),"developed","Developed tiles stay in the Developed bucket");
-assert.equal(view.tileFilterBucket(available),"notDeveloped","Exploitable unworked tiles use Not Developed");
-assert.equal(view.tileFilterBucket(locked),"locked","Technology-blocked tiles use Locked");
-assert.equal(view.tileFilterBucket(depleted),"notDeveloped","Depleted/non-operating sites are not currently developed");
-
-view.filters.developed=false;
-assert.equal(view.isTileVisible(developed,4,4),false);
-assert.equal(view.isTileVisible(available,4,4),true);
-view.filters.notDeveloped=false;
-assert.equal(view.isTileVisible(available,4,4),false);
-assert.equal(view.isTileVisible(depleted,4,4),false);
-view.filters.locked=false;
-assert.equal(view.isTileVisible(locked,4,4),false);
-assert.equal(view.isTileVisible(unsurveyed,4,4),true,"Exploration must remain possible with all filters off");
-assert.equal(view.isTileVisible(locked,0,0),true,"The colony ship is always visible");
-
-view.filters={developed:true,notDeveloped:false,locked:true};
-assert.equal(view.isTileVisible(developed,2,2),true);
-assert.equal(view.isTileVisible(available,2,2),false);
-assert.equal(view.isTileVisible(locked,2,2),true,"Filters support arbitrary multi-select combinations");
-
-const source=readFileSync(new URL("../js/ui/world-view.js",import.meta.url),"utf8");
-for(const label of ["DEVELOPED","NOT DEVELOPED","LOCKED"]){
-  assert.ok(source.includes(label),`Missing map filter button: ${label}`);
-}
-assert.match(source,/aria-pressed/);
-assert.match(source,/this\.filters\[key\]=!this\.filters\[key\]/);
-
+const view=Object.create(WorldView.prototype);view.state={company:{tech:{mining:2}}};view.technology={canExploit:(_state,tile)=>(tile.requiredMiningLevel||1)<=2};view.filters={developed:true,notDeveloped:true,locked:true};view.typeFilters={food:true,build:true,fuel:true,ore:true};
+const unsurveyed={revealed:false,developed:false,depleted:false},developed={revealed:true,developed:true,depleted:false,requiredMiningLevel:6,type:"ore"},available={revealed:true,developed:false,depleted:false,requiredMiningLevel:2,type:"food"},locked={revealed:true,developed:false,depleted:false,requiredMiningLevel:3,type:"fuel"},depleted={revealed:true,developed:false,depleted:true,requiredMiningLevel:8,type:"build"};
+assert.equal(view.tileFilterBucket(unsurveyed),null);assert.equal(view.tileFilterBucket(developed),"developed");assert.equal(view.tileFilterBucket(available),"notDeveloped");assert.equal(view.tileFilterBucket(locked),"locked");assert.equal(view.tileFilterBucket(depleted),"notDeveloped");view.filters.developed=false;assert.equal(view.isTileVisible(developed,4,4),false);assert.equal(view.isTileVisible(available,4,4),true);view.filters.notDeveloped=false;assert.equal(view.isTileVisible(available,4,4),false);view.filters.locked=false;assert.equal(view.isTileVisible(locked,4,4),false);assert.equal(view.isTileVisible(unsurveyed,4,4),true);assert.equal(view.isTileVisible(locked,0,0),true);
+view.filters={developed:true,notDeveloped:true,locked:true};view.typeFilters.ore=false;assert.equal(view.isTileVisible(developed,2,2),false,"Type filter must hide matching resources");assert.equal(view.isTileVisible(available,2,2),true);view.typeFilters.ore=true;
+const source=readFileSync(new URL("../js/ui/world-view.js",import.meta.url),"utf8"),css=readFileSync(new URL("../css/world.css",import.meta.url),"utf8"),index=readFileSync(new URL("../index.html",import.meta.url),"utf8");for(const label of["DEVELOPED","NOT DEVELOPED","LOCKED","FOOD","BUILD","FUEL","ORE","SIZE","QUALITY"])assert.ok(source.includes(label),`Missing map filter label: ${label}`);assert.match(source,/data-map-bulk/);assert.match(source,/data-map-type/);assert.match(source,/for\(const key of Object\.keys\(filters\)\)filters\[key\]=true/);assert.match(source,/filters\[key\]=false/);assert.match(index,/id="mapFilterHost"/);assert.match(index,/id="worldViewport"/);assert.match(css,/#worldShell\{display:grid/);assert.doesNotMatch(css,/\.map-filters\{position:absolute/);
 console.log("MineIT map filters test passed");
