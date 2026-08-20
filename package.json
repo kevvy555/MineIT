@@ -1,7 +1,7 @@
 {
   "name":"mineit",
-  "version":"5.4.0",
+  "version":"5.5.0",
   "private":true,
   "type":"module",
-  "scripts":{"test":"node tests/colony-economy.test.js && node tests/startup-coherence.test.js && node tests/tech-visibility.test.js && node tests/map-filters.test.js && node tests/multi-colony.test.js && node tests/tile-deposit-size.test.js && node tests/quality-pricing.test.js && node tests/ui-enhancements.test.js && node tests/survival-rebalance.test.js && node tests/industry-purpose.test.js"}
+  "scripts":{"test":"node tests/colony-economy.test.js && node tests/startup-coherence.test.js && node tests/tech-visibility.test.js && node tests/map-filters.test.js && node tests/multi-colony.test.js && node tests/tile-deposit-size.test.js && node tests/quality-pricing.test.js && node tests/ui-enhancements.test.js && node tests/survival-rebalance.test.js && node tests/industry-purpose.test.js && node tests/land-view.test.js"}
 }

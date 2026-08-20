@@ -1,6 +1,6 @@
-import { RESOURCE_TYPES, CATEGORY_NAMES, CATEGORY_ORDER } from "../data/resources.js?v=5.4.0";
-import { clamp } from "../core/utils.js?v=5.4.0";
-import { CONFIG } from "../core/config.js?v=5.4.0";
+import { RESOURCE_TYPES, CATEGORY_NAMES, CATEGORY_ORDER } from "../data/resources.js?v=5.5.0";
+import { clamp } from "../core/utils.js?v=5.5.0";
+import { CONFIG } from "../core/config.js?v=5.5.0";
 
 export const QUALITY_VALUE_BANDS=Object.freeze([
   Object.freeze({key:"common",label:"Common",className:"q0",min:1,max:50,multiplier:.75}),
@@ -24,12 +24,12 @@ export class ResourceService {
   qualityBand(q){const b=this.qualityBandDetails(q);return[b.label,b.className];}
   qualityMultiplier(qOrKey){return typeof qOrKey==="string"?this.qualityBandByKey(qOrKey).multiplier:this.qualityBandDetails(qOrKey).multiplier;}
   baseOutput(q){return 2+2*Math.pow(q,.42);}
-  isRenewable(tile){const def=this.get(tile.type,tile.resourceId);return tile.sustainability==="renewable"||!!def?.renewable;}
+  isRenewable(tile){if(!tile?.resourceId)return false;const def=this.get(tile.type,tile.resourceId);return tile.sustainability==="renewable"||!!def?.renewable;}
   requiredMiningLevel(tile){return this.get(tile.type,tile.resourceId)?.miningLevel||1;}
   unlockName(tile){return this.get(tile.type,tile.resourceId)?.unlock||"Mining technology";}
-  baselineRate(tile){return this.baseOutput(tile.quality)*(tile.resourceMult||1)*(tile.abundance||1);}
+  baselineRate(tile){return this.baseOutput(tile.quality)*(tile.resourceMult||1)*(tile.abundance||1)*(tile.terrainYieldFactor||1);}
   unthrottledCollectionRate(state,tile){const level=1+Math.max(0,(Number(tile.level)||1)-1)*.22;let mult=1;if(tile.type==="food")mult=state.metrics.foodMult||1;else mult=state.metrics.miningMult||1;return this.baselineRate(tile)*level*mult;}
-  collectionRate(state,tile){const rate=this.unthrottledCollectionRate(state,tile);if(tile.type==="build"||tile.type==="ore")return rate*(state.metrics.industryCommercialFactor??1);return rate;}
+  collectionRate(state,tile){if(!tile?.resourceId||tile.resourceCovered)return 0;const rate=this.unthrottledCollectionRate(state,tile);if(tile.type==="build"||tile.type==="ore")return rate*(state.metrics.industryCommercialFactor??1);return rate;}
   estimatedLifeYears(state,tile){if(this.isRenewable(tile))return Infinity;const rate=this.collectionRate(state,tile);return rate>0?Math.max(0,tile.reserve||0)/rate/360:Infinity;}
   baseSellPrice(type,resourceId){const base=this.get(type,resourceId)?.sellPrice ?? ({food:.08,build:.12,fuel:.20,ore:.40}[type]||.10);return base*CONFIG.RESOURCE_VALUE_SCALE;}
   sellPrice(type,resourceId,qualityBandKey=null){const base=this.baseSellPrice(type,resourceId);return qualityBandKey?base*this.qualityBandByKey(qualityBandKey).multiplier:base;}

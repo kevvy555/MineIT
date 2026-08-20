@@ -1,0 +1,15 @@
+import assert from "node:assert/strict";
+import { LandService } from "../js/domain/land-service.js?v=5.5.0";
+import { DevelopmentService } from "../js/domain/development-service.js?v=5.5.0";
+import { WorldService } from "../js/domain/world-service.js?v=5.5.0";
+import { ResourceService } from "../js/domain/resource-service.js?v=5.5.0";
+import { InventoryService } from "../js/domain/inventory-service.js?v=5.5.0";
+import { ContractService } from "../js/domain/contract-service.js?v=5.5.0";
+import { CONFIG } from "../js/core/config.js?v=5.5.0";
+
+const makeState=()=>({seed:123456789,contract:{uid:"land-test",arch:"verdant",ended:false,localCosts:0,colonyTier:1},tiles:{},scans:[],scanQueue:[],year:1,day:1,status:"playing",speed:1,camera:{x:-4,y:-4},colony:{housingCapacity:CONFIG.START_HOUSING,housingLevel:1,industryLevel:1,emergencyMode:false},company:{cash:1_000_000},metrics:{powerPopulationCap:10000,powerIndustryCap:10,powerTech:10},inventory:{}});
+const land=new LandService(),a=makeState(),b=makeState();land.ensure(a);land.ensure(b);assert.equal(a.status,"site-selection");assert.equal(a.colony.land.candidates.length,8);for(const candidate of a.colony.land.candidates){assert.equal(candidate.cells.length,64);assert.equal(candidate.cells.find(c=>c.x===0&&c.y===0).terrain,"plain");for(const cell of candidate.cells)assert.ok(["plain","hill","mountain","lake"].includes(cell.terrain));}assert.deepEqual(a.colony.land.candidates.map(c=>c.cells.map(x=>x.terrain)),b.colony.land.candidates.map(c=>c.cells.map(x=>x.terrain)),"candidate terrain must be deterministic");
+assert.ok(land.settle(a,3).ok);assert.equal(Object.keys(a.tiles).length,64);assert.equal(a.colony.land.selectedIndex,3);assert.equal(a.status,"playing");
+const resources=new ResourceService(),contracts=new ContractService(),world=new WorldService(resources,contracts,land);for(const tile of Object.values(a.tiles)){if(land.isShipTile(tile.x,tile.y))continue;world.reveal(a,tile.x,tile.y);}const revealed=Object.values(a.tiles).filter(t=>t.revealed),empty=revealed.filter(t=>!t.resourceId);assert.ok(empty.length>0,"surveying should produce some clear land");for(const tile of revealed.filter(t=>t.resourceId)){assert.ok(!["oil","gas","diamond","exotic","crystal","advanced"].includes(tile.resourceId),`${tile.resourceId} must remain a deep resource`);}
+const inventory=new InventoryService(resources);inventory.store(a,"build","fiber","Construction Fibre",100000);const development=new DevelopmentService(inventory,land);development.sync(a);const clear=empty.find(t=>t.terrain!=="lake"&&!land.isShipTile(t.x,t.y));assert.ok(clear,"test map must contain buildable clear land");const placed=development.place(a,clear,"housing");assert.ok(placed.ok);assert.equal(clear.development.level,1);const upgraded=development.upgrade(a,clear);assert.ok(upgraded.ok);assert.equal(clear.development.level,2);const demolished=development.demolish(a,clear);assert.ok(demolished.ok);assert.equal(clear.development,null);
+console.log("MineIT colony land generation/development test passed");
