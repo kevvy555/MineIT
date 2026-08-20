@@ -1,10 +1,11 @@
-import { formatNumber } from "../core/utils.js?v=5.3.0";
-import { ResourceUIMixin } from "./resource-ui.js?v=5.3.0";
-import { ColonyTechUIMixin } from "./colony-tech-ui.js?v=5.3.0";
-import { ContractUIMixin } from "./contract-ui.js?v=5.3.0";
-import { PortfolioUIMixin } from "./portfolio-ui.js?v=5.3.0";
-import { UIEnhancementsMixin } from "./ui-enhancements.js?v=5.3.0";
-import { SurvivalUIMixin } from "./survival-ui.js?v=5.3.0";
+import { formatNumber } from "../core/utils.js?v=5.4.0";
+import { ResourceUIMixin } from "./resource-ui.js?v=5.4.0";
+import { ColonyTechUIMixin } from "./colony-tech-ui.js?v=5.4.0";
+import { ContractUIMixin } from "./contract-ui.js?v=5.4.0";
+import { PortfolioUIMixin } from "./portfolio-ui.js?v=5.4.0";
+import { UIEnhancementsMixin } from "./ui-enhancements.js?v=5.4.0";
+import { SurvivalUIMixin } from "./survival-ui.js?v=5.4.0";
+import { IndustryUIMixin } from "./industry-ui.js?v=5.4.0";
 
 export class UIController {
   constructor({state,repo,resources,inventory,collection,colony,portfolio,sites,technology,survey,contracts,world,icons,diagnostics,onHardReset,onNewContract,onSwitchColony,onRemoveColony,onMakeLiability,onRelocateColony,onRecalculate}){
@@ -24,4 +25,4 @@ export class UIController {
   stockFor(tile){return this.inventory.amountFor(this.state,tile.type,tile.resourceId);}
 }
 function mix(target,source){const descriptors=Object.getOwnPropertyDescriptors(source.prototype);delete descriptors.constructor;Object.defineProperties(target.prototype,descriptors);}
-mix(UIController,ResourceUIMixin);mix(UIController,ColonyTechUIMixin);mix(UIController,ContractUIMixin);mix(UIController,PortfolioUIMixin);mix(UIController,UIEnhancementsMixin);mix(UIController,SurvivalUIMixin);
+mix(UIController,ResourceUIMixin);mix(UIController,ColonyTechUIMixin);mix(UIController,ContractUIMixin);mix(UIController,PortfolioUIMixin);mix(UIController,UIEnhancementsMixin);mix(UIController,SurvivalUIMixin);mix(UIController,IndustryUIMixin);

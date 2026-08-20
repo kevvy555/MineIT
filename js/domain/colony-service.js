@@ -1,5 +1,5 @@
-import { CONFIG } from "../core/config.js?v=5.3.0";
-import { clamp } from "../core/utils.js?v=5.3.0";
+import { CONFIG } from "../core/config.js?v=5.4.0";
+import { clamp } from "../core/utils.js?v=5.4.0";
 
 export class ColonyService {
   constructor(inventoryService,technologyService){this.inventory=inventoryService;this.technology=technologyService;}
@@ -9,6 +9,21 @@ export class ColonyService {
   populationCapacity(state){return Math.max(0,Math.min(state.colony.housingCapacity,state.metrics.powerPopulationCap||state.colony.housingCapacity));}
   industryPopulationRequirement(level){const l=Math.max(1,Math.round(Number(level)||1));if(l<=10){const n=l-1;return Math.round(100+80*n+10*n*n);}return Math.round(1630+(l-10)*330);}
   industryPopulationFactor(state,level=state.colony.industryLevel){const required=this.industryPopulationRequirement(level);return clamp((Number(state.pop)||0)/Math.max(1,required),0,1);}
+  siteIndustryLoad(tile){const level=Math.max(1,Math.round(Number(tile?.level)||1));return Math.round(CONFIG.INDUSTRY_SITE_LOAD_BASE*Math.pow(CONFIG.INDUSTRY_SITE_LOAD_GROWTH,level-1));}
+  industryOperationalCapacity(state){if(state.status==="dead"||state.colony?.emergencyMode)return 0;return Math.max(0,state.colony.industryLevel*100*this.industryPopulationFactor(state));}
+  industryNetwork(state,sites=[]){
+    const capacity=this.industryOperationalCapacity(state);let survivalLoad=0,commercialLoad=0;
+    for(const tile of sites){const load=this.siteIndustryLoad(tile);if(tile.type==="food"||tile.type==="fuel")survivalLoad+=load;else commercialLoad+=load;}
+    const remaining=Math.max(0,capacity-survivalLoad),commercialFactor=state.colony?.emergencyMode?0:commercialLoad>0?clamp(remaining/commercialLoad,0,1):1,totalLoad=survivalLoad+commercialLoad;
+    return{industryCapacity:capacity,industryLoad:totalLoad,industrySurvivalLoad:survivalLoad,industryCommercialLoad:commercialLoad,industryCommercialFactor:commercialFactor,industryOverloaded:totalLoad>capacity+.001};
+  }
+  processingBonus(industryValue){
+    const value=Math.max(0,Number(industryValue)||0),points=[[100,0],[200,.05],[300,.10],[500,.20],[1000,.35],[2000,CONFIG.INDUSTRY_PROCESSING_MAX_BONUS]];
+    if(value<=points[0][0])return 0;for(let i=1;i<points.length;i++){const [hi,bonus]=points[i],[lo,loBonus]=points[i-1];if(value<=hi){const t=(value-lo)/(hi-lo);return loBonus+t*(bonus-loBonus);}}
+    return CONFIG.INDUSTRY_PROCESSING_MAX_BONUS;
+  }
+  processingMultiplier(state){return 1+this.processingBonus(state.metrics?.industry||0);}
+  siteUpgradeIndustryRequirement(siteLevel){const level=Math.max(1,Math.round(Number(siteLevel)||1));if(level<=1)return 1;if(level===2)return 2;if(level===3)return 3;if(level===4)return 5;if(level===5)return 7;return 7+(level-5)*3;}
   housingBuildCost(state){return Math.round(70*Math.pow(1.42,Math.max(0,state.colony.housingLevel-1)));}
   housingCashCost(state){return Math.round(1800*Math.pow(1.28,Math.max(0,state.colony.housingLevel-1)));}
   industryBuildCost(state){return Math.round(95*Math.pow(1.48,Math.max(0,state.colony.industryLevel-1)));}
