@@ -1,4 +1,4 @@
-import { CONFIG } from "../core/config.js?v=5.5.1";
+import { CONFIG } from "../core/config.js?v=5.5.2";
 
 export class TradeService {
   constructor(resourceService,inventoryService){this.resources=resourceService;this.inventory=inventoryService;}

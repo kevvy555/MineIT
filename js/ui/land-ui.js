@@ -1,5 +1,5 @@
-import { CONFIG } from "../core/config.js?v=5.5.1";
-import { formatMoney, formatNumber } from "../core/utils.js?v=5.5.1";
+import { CONFIG } from "../core/config.js?v=5.5.2";
+import { formatMoney, formatNumber } from "../core/utils.js?v=5.5.2";
 
 export class LandUIMixin{
   landPreview(candidate){return`<div class="land-preview">${candidate.cells.map(cell=>`<i class="terrain-${cell.terrain} v${cell.variant}" title="${this.land.terrainLabel(cell.terrain)}"></i>`).join("")}</div>`;}

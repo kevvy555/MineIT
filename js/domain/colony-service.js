@@ -1,5 +1,5 @@
-import { CONFIG } from "../core/config.js?v=5.5.1";
-import { clamp } from "../core/utils.js?v=5.5.1";
+import { CONFIG } from "../core/config.js?v=5.5.2";
+import { clamp } from "../core/utils.js?v=5.5.2";
 
 export class ColonyService {
   constructor(inventoryService,technologyService){this.inventory=inventoryService;this.technology=technologyService;}
