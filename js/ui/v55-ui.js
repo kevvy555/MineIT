@@ -1,8 +1,8 @@
-import { CONFIG } from "../core/config.js?v=5.5.4";
-import { clamp, formatMoney, formatNumber } from "../core/utils.js?v=5.5.4";
-import { ContractUIMixin } from "./contract-ui.js?v=5.5.4";
-import { IndustryUIMixin } from "./industry-ui.js?v=5.5.4";
-import { UIEnhancementsMixin } from "./ui-enhancements.js?v=5.5.4";
+import { CONFIG } from "../core/config.js?v=5.5.5";
+import { clamp, formatMoney, formatNumber } from "../core/utils.js?v=5.5.5";
+import { ContractUIMixin } from "./contract-ui.js?v=5.5.5";
+import { IndustryUIMixin } from "./industry-ui.js?v=5.5.5";
+import { UIEnhancementsMixin } from "./ui-enhancements.js?v=5.5.5";
 
 const TECH_LABELS={power:"POWER",food:"FOOD PRODUCTION",mining:"MINING"};
 export class V55UIMixin {
