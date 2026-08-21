@@ -1,6 +1,6 @@
-import { RESOURCE_TYPES, CATEGORY_NAMES, CATEGORY_ORDER } from "../data/resources.js?v=5.5.2";
-import { clamp } from "../core/utils.js?v=5.5.2";
-import { CONFIG } from "../core/config.js?v=5.5.2";
+import { RESOURCE_TYPES, CATEGORY_NAMES, CATEGORY_ORDER } from "../data/resources.js?v=5.5.3";
+import { clamp } from "../core/utils.js?v=5.5.3";
+import { CONFIG } from "../core/config.js?v=5.5.3";
 
 export const QUALITY_VALUE_BANDS=Object.freeze([
   Object.freeze({key:"common",label:"Common",className:"q0",min:1,max:50,multiplier:.75}),

@@ -1,4 +1,4 @@
-import { CONFIG } from "../core/config.js?v=5.5.2";
+import { CONFIG } from "../core/config.js?v=5.5.3";
 
 export class SaveRepository {
   constructor(diagnostics){this.diagnostics=diagnostics;this.beforeSave=null;}

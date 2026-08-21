@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import { LandService } from "../js/domain/land-service.js?v=5.5.2";
-import { DevelopmentService } from "../js/domain/development-service.js?v=5.5.2";
-import { WorldService } from "../js/domain/world-service.js?v=5.5.2";
-import { ResourceService } from "../js/domain/resource-service.js?v=5.5.2";
-import { InventoryService } from "../js/domain/inventory-service.js?v=5.5.2";
-import { ContractService } from "../js/domain/contract-service.js?v=5.5.2";
-import { CONFIG } from "../js/core/config.js?v=5.5.2";
+import { LandService } from "../js/domain/land-service.js?v=5.5.3";
+import { DevelopmentService } from "../js/domain/development-service.js?v=5.5.3";
+import { WorldService } from "../js/domain/world-service.js?v=5.5.3";
+import { ResourceService } from "../js/domain/resource-service.js?v=5.5.3";
+import { InventoryService } from "../js/domain/inventory-service.js?v=5.5.3";
+import { ContractService } from "../js/domain/contract-service.js?v=5.5.3";
+import { CONFIG } from "../js/core/config.js?v=5.5.3";
 
 const makeState=()=>({seed:123456789,contract:{uid:"land-test",arch:"verdant",ended:false,localCosts:0,colonyTier:1},tiles:{},scans:[],scanQueue:[],year:1,day:1,status:"playing",speed:1,camera:{x:-4,y:-4},colony:{housingCapacity:CONFIG.START_HOUSING,housingLevel:1,industryLevel:1,emergencyMode:false},company:{cash:1_000_000},metrics:{powerPopulationCap:10000,powerIndustryCap:10,powerTech:10},inventory:{}});
 const land=new LandService(),a=makeState(),b=makeState();land.ensure(a);land.ensure(b);assert.equal(a.status,"site-selection");assert.equal(a.colony.land.candidates.length,8);for(const candidate of a.colony.land.candidates){assert.equal(candidate.cells.length,64);assert.equal(candidate.cells.find(c=>c.x===0&&c.y===0).terrain,"plain");for(const cell of candidate.cells)assert.ok(["plain","hill","mountain","lake"].includes(cell.terrain));}assert.deepEqual(a.colony.land.candidates.map(c=>c.cells.map(x=>x.terrain)),b.colony.land.candidates.map(c=>c.cells.map(x=>x.terrain)),"candidate terrain must be deterministic");
