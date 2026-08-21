@@ -1,6 +1,6 @@
 # MineIT
 
-MineIT is a mobile-first contract-mining and colony strategy game based on the Koplin mining charter scenario.
+MineIT is a mobile-first contract-mining and colony strategy game based on the Koplin mining charter scenario. 
 
 ## Core loop
 
