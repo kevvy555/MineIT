@@ -20,11 +20,6 @@ function walk(dir){
   }
 }
 walk(root);
-let total=0,max=0;
-for(const file of files){
-  const size=fs.statSync(file).size,name=file.pathname.split("/").pop();
-  total+=size;max=Math.max(max,size);
-  const limit=name==="buildings-levels.webp"?96*1024:64*1024;
-  assert.ok(size<limit,`map WebP unexpectedly large: ${name} ${size} bytes (limit ${limit})`);
-}
+const sizes=files.map(f=>fs.statSync(f).size),max=Math.max(...sizes),total=sizes.reduce((a,b)=>a+b,0);
+assert.ok(max<64*1024,`map WebP unexpectedly large: ${max} bytes`);
 console.log(`render performance guard passed (${files.length} WebPs, total ${total} bytes, max ${max} bytes)`);
