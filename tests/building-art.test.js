@@ -40,4 +40,7 @@ for(const family of families){
   assert.equal(header.slice(8,12),"WEBP");
 }
 
+const obsoleteMaster=new URL("../assets/art/development/buildings-levels.webp",import.meta.url);
+assert.equal(fs.existsSync(obsoleteMaster),false,"obsolete master atlas should not remain in the repo");
+
 console.log(`building artwork integration test passed (${families.length} atlases, ${total} bytes)`);
