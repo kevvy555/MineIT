@@ -1,4 +1,4 @@
-import { WorldView as CanvasWorldView } from "./world-view.js?v=5.5.5";
+import { WorldView as CanvasWorldView } from "./world-view.js?v=5.5.5&legacy=1";
 import { MapControls } from "./map-controls.js?v=5.6.0";
 import { CONFIG } from "../core/config.js?v=5.5.5";
 
