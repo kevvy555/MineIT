@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - hotfix/browser-startup-cache
+  pull_request:
+    branches:
+      - develop
 
 permissions:
   contents: write
