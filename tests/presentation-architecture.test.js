@@ -14,7 +14,7 @@ assert.doesNotMatch(index,/world-view-hotfix/);
 assert.match(index,/id="overlayRoot"/);
 assert.doesNotMatch(index,/mapFilterHost/);
 assert.match(index,/type="importmap"/);
-assert.match(index,/world-view-v56\.js\?v=5\.6\.0/);
+assert.match(index,/world-view-v56\.js\?v=5\.6\.1/);
 assert.match(index,/ui-controller-v56\.js\?v=5\.6\.0/);
 assert.match(index,/v55-trade-ui-v56\.js\?v=5\.6\.0/);
 
