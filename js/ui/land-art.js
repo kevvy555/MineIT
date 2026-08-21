@@ -11,6 +11,10 @@ export const DEVELOPMENT_ART={
   housing:"housing",industry:"industry",quarry:"quarry",mine:"mine","deep-mine":"deep-mine",rig:"rig",farm:"farm",ranch:"ranch",bio:"bio-harvester",algae:"algae-facility"
 };
 
+export const DEVELOPMENT_ROWS={
+  housing:0,industry:1,quarry:2,mine:3,"deep-mine":4,rig:5,farm:6,ranch:7,"bio-harvester":8,"algae-facility":9
+};
+
 const imageCache=new Map();
 const terrainFolder={plain:"plains",hill:"hills",mountain:"mountains",lake:"lakes"};
 
@@ -35,10 +39,10 @@ export function developmentPath(dev){
   return kind?`./assets/art/development/${kind}/${kind}-l${level}.webp?v=${VERSION}`:null;
 }
 
-// Runtime uses one five-frame horizontal atlas per development family (L1 -> L5).
+// Runtime uses one compact atlas: 10 development-family rows x 5 level columns.
 export function developmentAtlasPath(dev){
   const kind=developmentKind(dev);
-  return kind?`./assets/art/development/${kind}/${kind}-levels.webp?v=${VERSION}`:null;
+  return kind!=null&&DEVELOPMENT_ROWS[kind]!=null?`./assets/art/development/buildings-levels.webp?v=${VERSION}`:null;
 }
 
 export function artImage(src,onReady){
@@ -67,10 +71,12 @@ export function drawContain(ctx,img,x,y,w,h,scale=1){
   ctx.drawImage(img,x+(w-dw)/2,y+(h-dh)/2,dw,dh);return true;
 }
 
-export function drawDevelopmentFrame(ctx,img,level,x,y,w,h,scale=.94){
+export function drawDevelopmentFrame(ctx,img,kind,level,x,y,w,h,scale=.94){
   if(!img?.complete||!img.naturalWidth||!img.naturalHeight)return false;
-  const frames=5,frameWidth=img.naturalWidth/frames,frameHeight=img.naturalHeight,index=Math.max(1,Math.min(frames,Number(level)||1))-1;
+  const columns=5,rows=10,row=DEVELOPMENT_ROWS[kind];
+  if(row==null)return false;
+  const frameWidth=img.naturalWidth/columns,frameHeight=img.naturalHeight/rows,column=Math.max(1,Math.min(columns,Number(level)||1))-1;
   const ratio=Math.min(w/frameWidth,h/frameHeight)*scale,dw=frameWidth*ratio,dh=frameHeight*ratio;
-  ctx.drawImage(img,frameWidth*index,0,frameWidth,frameHeight,x+(w-dw)/2,y+(h-dh)/2,dw,dh);
+  ctx.drawImage(img,frameWidth*column,frameHeight*row,frameWidth,frameHeight,x+(w-dw)/2,y+(h-dh)/2,dw,dh);
   return true;
 }
