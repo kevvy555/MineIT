@@ -1,0 +1,14 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const read=p=>fs.readFileSync(new URL(`../${p}`,import.meta.url),"utf8");
+const view=read("js/ui/world-view.js"),css=read("css/world.css");
+assert.match(view,/this\.filtersOpen=false;this\.filterCategory="type"/);
+assert.match(view,/id="mapFilterToggle"|mapFilterToggle/);
+assert.match(view,/dataFilterCategory|filterCategory/);
+assert.match(view,/this\.filterHost\?\.classList\.toggle\("hidden",!resource\|\|selecting\|\|!this\.filtersOpen\)/);
+assert.match(view,/height=r\.height>=2\?r\.height:fallbackHeight/);
+assert.doesNotMatch(view,/height=Math\.max\(160,r\.height/);
+assert.match(css,/\.map-filter-options\{[^}]*flex-wrap:nowrap[^}]*overflow-x:auto/);
+assert.match(css,/\.map-filter-tabs\{[^}]*overflow-x:auto/);
+assert.match(css,/\.map-filter-toggle\{/);
+console.log("compact resource filters / full map viewport regression test passed");

@@ -1,4 +1,4 @@
-import { CONFIG } from "../core/config.js?v=5.5.4";
+import { CONFIG } from "../core/config.js?v=5.5.5";
 
 const MAX_SITE_LEVEL=5;
 export class SiteService {

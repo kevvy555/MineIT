@@ -34,6 +34,8 @@ jobs:
           fi
           "$chrome" --headless --no-sandbox --disable-gpu --window-size=412,915 --virtual-time-budget=5000 --dump-dom http://127.0.0.1:8123/ >/tmp/mineit-dom.html 2>/tmp/mineit-chrome.log
           grep -q 'id="mapViewToggle"' /tmp/mineit-dom.html
+          grep -q 'id="mapFilterToggle"' /tmp/mineit-dom.html
+          grep -q 'map-filter-tabs' /tmp/mineit-dom.html
           grep -q 'landing-choice-grid' /tmp/mineit-dom.html
           if grep -Eq 'id="world"[^>]*(height="0"|height: 0px)' /tmp/mineit-dom.html; then
             echo "Map canvas collapsed to zero height"

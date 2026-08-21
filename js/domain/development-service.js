@@ -1,4 +1,4 @@
-import { CONFIG } from "../core/config.js?v=5.5.4";
+import { CONFIG } from "../core/config.js?v=5.5.5";
 
 const MAX_LEVEL=5,HOUSING_PER_LEVEL=160,RECOVERY=.25;
 const LABELS={housing:"Housing",industry:"Industry",extract:"Extraction"};
