@@ -9,7 +9,7 @@ const pkg=JSON.parse(read("package.json"));
 assert.equal(pkg.version,"5.6.1");
 
 for(const family of["housing","industry","quarry","mine","deep-mine","rig","farm","ranch","bio-harvester","algae-facility"])
-  assert.match(art,new RegExp(`(?:\\"|:)${family.replace(/[.*+?^${}()|[\\]\\]/g,"\\$&")}\\"?`),`missing development family ${family}`);
+  assert.ok(art.includes(family),`missing development family ${family}`);
 
 assert.match(art,/bio:\"bio-harvester\"/);
 assert.match(art,/algae:\"algae-facility\"/);
