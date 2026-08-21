@@ -1,4 +1,4 @@
-import { TradeUI as LegacyTradeUI } from "./v55-trade-ui.js?v=5.5.5";
+import { TradeUI as LegacyTradeUI } from "./v55-trade-ui.js?v=5.5.5&legacy=1";
 
 /**
  * Compatibility adapter for the existing trade presentation.
