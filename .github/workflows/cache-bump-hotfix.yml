@@ -35,7 +35,7 @@ jobs:
                   text = path.read_text(encoding='utf-8')
               except UnicodeDecodeError:
                   continue
-              updated = text.replace('5.5.0', '5.5.1').replace(r'5\\.5\\.0', r'5\\.5\\.1')
+              updated = text.replace('5.5.0', '5.5.1').replace(r'5\.5\.0', r'5\.5\.1')
               if updated == text:
                   continue
               path.write_text(updated, encoding='utf-8')
