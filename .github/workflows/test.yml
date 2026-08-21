@@ -19,4 +19,24 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm test
+      - name: Run unit and regression tests
+        run: npm test
+      - name: Browser startup smoke test
+        run: |
+          python3 -m http.server 8123 --bind 127.0.0.1 >/tmp/mineit-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          sleep 1
+          chrome="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
+          if [ -z "$chrome" ]; then
+            echo "No Chrome/Chromium executable available on runner"
+            exit 1
+          fi
+          "$chrome" --headless --no-sandbox --disable-gpu --virtual-time-budget=5000 --dump-dom http://127.0.0.1:8123/ >/tmp/mineit-dom.html 2>/tmp/mineit-chrome.log
+          grep -q 'id="mapViewToggle"' /tmp/mineit-dom.html
+          grep -q 'landing-choice-grid' /tmp/mineit-dom.html
+          if grep -q 'STARTUP ERROR' /tmp/mineit-dom.html; then
+            cat /tmp/mineit-dom.html
+            cat /tmp/mineit-chrome.log
+            exit 1
+          fi
