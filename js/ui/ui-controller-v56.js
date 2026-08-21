@@ -1,4 +1,4 @@
-import { UIController as LegacyUIController } from "./ui-controller.js?v=5.5.5";
+import { UIController as LegacyUIController } from "./ui-controller.js?v=5.5.5&legacy=1";
 
 /**
  * v5.6 presentation controller.
