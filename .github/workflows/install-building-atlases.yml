@@ -1,0 +1,28 @@
+name: Install building artwork atlases
+
+on:
+  push:
+    branches:
+      - feature/building-art-integration
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/building-art-integration
+      - name: Install optimized building artwork
+        run: |
+          unzip -o .github/building-atlases.zip -d .
+          test "$(find assets/art/development -name '*-levels.webp' | wc -l)" -eq 10
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- assets/art/development
+          git rm -- .github/building-atlases.zip .github/workflows/install-building-atlases.yml
+          git commit -m "Add optimized building artwork atlases"
+          git push origin HEAD:feature/building-art-integration
