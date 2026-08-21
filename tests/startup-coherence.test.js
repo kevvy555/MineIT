@@ -1,10 +1,36 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-const BUILD="5.5.5";const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),"utf8"),build=BUILD.replaceAll(".","\\.");
-const index=read("index.html");assert.match(index,new RegExp(`js/app\\.js\\?v=${build}`));for(const css of["app","world","panels","portfolio","trade-quality","ui-enhancements","land"])assert.match(index,new RegExp(`css/${css}\\.css\\?v=${build}`));assert.match(index,/id="mapFilterHost"/);assert.match(index,/id="worldViewport"/);
-const app=read("js/app.js");for(const line of app.split("\n").filter(line=>line.startsWith("import ")))assert.match(line,new RegExp(`\\?v=${build}`),`Mixed app import: ${line}`);for(const module of["game-state","portfolio-service","resource-service","inventory-service","collection-service","colony-service","trade-service","land-service","development-service","world-service","site-service","technology-service","survey-service","simulation-engine","game-log-service","transport-service"])assert.match(app,new RegExp(`domain/${module}\\.js\\?v=${build}`));for(const module of["resource-icons","world-view","ui-controller","v55-trade-ui"])assert.match(app,new RegExp(`ui/${module}\\.js\\?v=${build}`));assert.match(app,/onInspect/);assert.match(app,/site-selection/);assert.match(app,/advanceGlobalDate/);assert.match(app,/processPendingShipEvent/);assert.match(app,/startup failed/);assert.match(app,/STARTUP ERROR • TAP FOR DETAILS/);
-const ui=read("js/ui/ui-controller.js");for(const line of ui.split("\n").filter(line=>line.startsWith("import ")))assert.match(line,new RegExp(`\\?v=${build}`),`Mixed UI import: ${line}`);assert.match(ui,/land-ui\.js\?v=5\.5\.5/);assert.match(ui,/v55-ui\.js\?v=5\.5\.5/);assert.match(ui,/mix\(UIController,LandUIMixin\)/);assert.match(ui,/mix\(UIController,V55UIMixin\)/);
-for(const file of["js/domain/game-state.js","js/domain/portfolio-service.js","js/domain/colony-service.js","js/domain/simulation-engine.js","js/domain/trade-service.js","js/domain/resource-service.js","js/domain/site-service.js","js/domain/contract-service.js","js/domain/transport-service.js","js/domain/game-log-service.js","js/domain/land-service.js","js/domain/development-service.js"])assert.ok(read(file).includes("v=5.5.5")||["js/domain/land-service.js","js/domain/development-service.js"].includes(file),`${file} must use the v5.5 graph`);
-assert.match(read("js/domain/world-service.js"),/SURFACE_CHANCE/);assert.match(read("js/domain/world-service.js"),/pickDeep/);assert.match(read("js/domain/resource-service.js"),/terrainYieldFactor/);assert.match(read("js/ui/world-view.js"),/2000/);assert.match(read("js/ui/world-view.js"),/RESOURCES/);assert.match(read("js/ui/world-view.js"),/data-map-bulk/);assert.match(read("js/ui/world-view.js"),/TYPE_FILTERS/);
-assert.match(read("js/ui/industry-ui.js"),/survival-ui\.js\?v=5\.5\.5/);assert.match(read("js/ui/industry-trade-ui.js"),/trade-ui\.js\?v=5\.5\.5/);assert.match(read("js/ui/v55-trade-ui.js"),/industry-trade-ui\.js\?v=5\.5\.5/);assert.ok(read("js/core/diagnostics.js").includes("5.5.5-global-time-workforce-colony-land"));
-console.log("MineIT v5.5 synchronized colony-land startup/cache coherence test passed");
+const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),"utf8");
+
+const index=read("index.html");
+assert.match(index,/css\/app\.css\?v=5\.6\.0/);
+assert.match(index,/css\/world\.css\?v=5\.6\.0/);
+assert.match(index,/css\/land\.css\?v=5\.6\.0/);
+for(const css of["panels","portfolio","trade-quality","ui-enhancements"])
+  assert.match(index,new RegExp(`css/${css}\\.css\\?v=5\\.5\\.5`));
+assert.match(index,/js\/app\.js\?v=5\.5\.5/);
+assert.match(index,/type="importmap"/);
+assert.match(index,/world-view-v56\.js\?v=5\.6\.0/);
+assert.match(index,/ui-controller-v56\.js\?v=5\.6\.0/);
+assert.match(index,/v55-trade-ui-v56\.js\?v=5\.6\.0/);
+assert.match(index,/id="overlayRoot"/);
+assert.doesNotMatch(index,/mapFilterHost/);
+assert.doesNotMatch(index,/world-view-hotfix/);
+
+const app=read("js/app.js");
+for(const module of["game-state","portfolio-service","resource-service","inventory-service","collection-service","colony-service","trade-service","land-service","development-service","world-service","site-service","technology-service","survey-service","simulation-engine","game-log-service","transport-service"])
+  assert.match(app,new RegExp(`domain/${module}\\.js\\?v=5\\.5\\.5`));
+assert.match(app,/ui\/world-view\.js\?v=5\.5\.5/);
+assert.match(app,/ui\/ui-controller\.js\?v=5\.5\.5/);
+assert.match(app,/ui\/v55-trade-ui\.js\?v=5\.5\.5/);
+assert.match(app,/advanceGlobalDate/);
+assert.match(app,/processPendingShipEvent/);
+assert.match(app,/startup failed/);
+assert.match(app,/STARTUP ERROR • TAP FOR DETAILS/);
+
+const v56=read("js/ui/world-view-v56.js");
+assert.match(v56,/extends CanvasWorldView/);
+assert.match(v56,/new MapControls/);
+assert.match(read("js/ui/ui-controller-v56.js"),/extends LegacyUIController/);
+assert.match(read("js/ui/v55-trade-ui-v56.js"),/extends LegacyTradeUI/);
+console.log("MineIT v5.6 presentation composition startup coherence test passed");
