@@ -62,13 +62,13 @@ export class WorldView extends CanvasWorldView{
   drawDevelopment(ctx,tile,px,py){
     const dev=tile?.development;
     if(!dev)return;
-    const kind=developmentKind(dev),src=developmentAtlasPath(dev),img=artImage(src,this.assetReady);
-    if(!img||!drawDevelopmentFrame(ctx,img,kind,developmentLevel(dev),px+1,py+1,this.cell-2,this.cell-2)){
+    const src=developmentAtlasPath(dev),img=artImage(src,this.assetReady);
+    if(!img||!drawDevelopmentFrame(ctx,img,developmentLevel(dev),px+1,py+1,this.cell-2,this.cell-2)){
       super.drawDevelopment(ctx,tile,px,py);
       return;
     }
 
-    const label=DEVELOPMENT_LABELS[kind]||String(kind||"?").slice(0,2).toUpperCase(),level=developmentLevel(dev);
+    const kind=developmentKind(dev),label=DEVELOPMENT_LABELS[kind]||String(kind||"?").slice(0,2).toUpperCase(),level=developmentLevel(dev);
     ctx.save();
     const badge=`${label} L${level}`;
     ctx.font=`bold ${Math.max(6,this.cell*.09)}px system-ui`;
