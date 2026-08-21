@@ -1,6 +1,4 @@
-export const STATE_FILTERS=[["developed","DEVELOPED"],["notDeveloped","NOT DEVELOPED"],["locked","LOCKED"]];
-export const TYPE_FILTERS=[["food","FOOD"],["build","BUILD"],["fuel","FUEL"],["ore","ORE"]];
-export const SIZE_FILTERS=[["limited","LIMITED"],["established","ESTABLISHED"],["small","SMALL"],["modest","MODEST"],["large","LARGE"],["huge","HUGE"],["colossal","COLOSSAL"],["vast","VAST"],["legacy","LEGACY"]];
+import { STATE_FILTERS, TYPE_FILTERS, SIZE_FILTERS } from "./map-filter-definitions.js?v=5.6.0";
 
 export class MapControls{
   constructor({host,state,land,resources,filters,typeFilters,sizeFilters,qualityFilters,onViewChange,onFilterChange}){
@@ -41,6 +39,7 @@ export class MapControls{
       };
       views.appendChild(button);
     }
+
     const filter=document.createElement("button");
     filter.id="mapFilterToggle";
     filter.className="map-filter-toggle";
@@ -57,6 +56,7 @@ export class MapControls{
     panel.id="mapFilters";
     panel.className="map-filters hidden";
     panel.setAttribute("aria-label","Map tile filters");
+
     const back=document.createElement("button");
     back.type="button";
     back.className="map-filter-back";
