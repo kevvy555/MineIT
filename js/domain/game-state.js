@@ -1,5 +1,5 @@
-import { CONFIG } from "../core/config.js?v=5.5.0";
-import { RESOURCE_TYPES, CATEGORY_NAMES } from "../data/resources.js?v=5.5.0";
+import { CONFIG } from "../core/config.js?v=5.5.1";
+import { RESOURCE_TYPES, CATEGORY_NAMES } from "../data/resources.js?v=5.5.1";
 
 export const COLONY_STATE_KEYS=Object.freeze(["colonyId","seed","contract","pop","status","camera","tiles","scans","scanQueue","inventory","trade","colony","metrics"]);
 const clone=value=>JSON.parse(JSON.stringify(value)),QUALITY_KEYS=new Set(["common","good","excellent","exceptional","rare","extraordinary"]),DEFAULT_QUALITY="excellent",SUPPORT_LOADS={temperate:1,verdant:.9,arid:1.15,frozen:1.35,barren:1.5,volcanic:1.7,deep:2},RENEWABLE_LABELS=["Limited","Established","Large","Vast"],FINITE_RATE={small:.75,modest:.90,large:1.05,huge:1.20,colossal:1.35,legacy:1};

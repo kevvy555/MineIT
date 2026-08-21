@@ -1,5 +1,5 @@
-import { TradeUI as BaseTradeUI } from "./trade-ui.js?v=5.5.0";
-import { formatMoney, formatNumber } from "../core/utils.js?v=5.5.0";
+import { TradeUI as BaseTradeUI } from "./trade-ui.js?v=5.5.1";
+import { formatMoney, formatNumber } from "../core/utils.js?v=5.5.1";
 
 export class TradeUI extends BaseTradeUI {
   sellMarkup(stock){return stock.map(e=>`<article class="trade-resource-group"><div class="trade-resource-head"><strong>${e.name}</strong><span>${formatNumber(e.amount)}</span></div><div class="trade-quality-list">${this.trade.qualityRows(e,this.state).map(b=>`<div class="trade-quality-row"><span class="trade-quality-name ${b.className}"><strong>${b.label}</strong><small>Q${this.qualityRange(b)} • ×${b.multiplier.toFixed(2)}</small></span><span class="trade-quality-qty">${formatNumber(b.amount)}</span><span class="trade-quality-price">${this.price(b.unitPrice)}/u</span><span class="trade-actions"><button data-band-sell="25" data-stock-key="${e.key}" data-band-key="${b.key}">25%</button><button data-band-sell="100" data-stock-key="${e.key}" data-band-key="${b.key}">ALL</button></span></div>`).join("")}</div></article>`).join("");}

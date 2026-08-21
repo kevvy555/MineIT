@@ -1,5 +1,5 @@
-import { formatMoney, formatNumber } from "../core/utils.js?v=5.5.0";
-import { CONFIG } from "../core/config.js?v=5.5.0";
+import { formatMoney, formatNumber } from "../core/utils.js?v=5.5.1";
+import { CONFIG } from "../core/config.js?v=5.5.1";
 
 export class PortfolioUIMixin {
   colonyStatus(summary){if(summary.status==="dead")return{label:"DEAD",cls:"bad"};if(summary.emergencyMode)return{label:"EMERGENCY",cls:"warn"};if(summary.survivalSupply<.4)return{label:"COLLAPSE",cls:"bad"};if(summary.survivalSupply<.9)return{label:"STRAINED",cls:"warn"};if(summary.status==="liability")return{label:"LIABILITY",cls:"bad"};if(summary.status==="holdover")return{label:"HOLDOVER",cls:"warn"};if(summary.status==="deadline-missed")return{label:"ACTION REQUIRED",cls:"warn"};if(summary.status==="failed")return{label:"FAILED",cls:"bad"};if(summary.completed)return{label:"RENEWED",cls:"good"};return{label:`CONTRACT Y${summary.year}`,cls:"good"};}

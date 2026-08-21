@@ -1,5 +1,5 @@
-import { cloneColonyState, createColonyState, COLONY_STATE_KEYS } from "./game-state.js?v=5.5.0";
-import { CONFIG } from "../core/config.js?v=5.5.0";
+import { cloneColonyState, createColonyState, COLONY_STATE_KEYS } from "./game-state.js?v=5.5.1";
+import { CONFIG } from "../core/config.js?v=5.5.1";
 
 const clone=value=>JSON.parse(JSON.stringify(value));
 export class PortfolioService {
