@@ -26,10 +26,10 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          allowed = {'.js', '.html', '.json', '.css', '.md', '.yml', '.yaml'}
+          allowed = {'.js', '.html', '.json', '.css', '.md'}
           changed = []
           for path in Path('.').rglob('*'):
-              if not path.is_file() or '.git' in path.parts or path.suffix.lower() not in allowed:
+              if not path.is_file() or '.git' in path.parts or '.github' in path.parts or path.suffix.lower() not in allowed:
                   continue
               try:
                   text = path.read_text(encoding='utf-8')
