@@ -23,6 +23,14 @@ jobs:
         run: |
           awk '/^          python3 - <<'"'"'PY'"'"'$/{flag=1;next}/^          PY$/{flag=0}flag{sub(/^          /,"");print}' .github/workflows/compact-resource-filters-builder.yml > /tmp/compact-filter-patch.py
           python3 /tmp/compact-filter-patch.py
+          python3 - <<'PY'
+          from pathlib import Path
+          path=Path('js/ui/world-view.js')
+          text=path.read_text()
+          text=text.replace('for(const itemKey of Object.keys(filters))filters[itemKey]=true','for(const key of Object.keys(filters))filters[key]=true')
+          text=text.replace('for(const itemKey of Object.keys(filters))filters[itemKey]=false','for(const key of Object.keys(filters))filters[key]=false')
+          path.write_text(text)
+          PY
           npm test
       - name: Commit compact filter redesign
         run: |
