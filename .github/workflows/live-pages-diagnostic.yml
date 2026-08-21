@@ -1,0 +1,39 @@
+name: Live Pages Diagnostic
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect live HTML
+        run: |
+          set -euxo pipefail
+          curl -fsSL -D /tmp/headers.txt https://kevvy555.github.io/MineIT/ -o /tmp/live.html
+          echo '--- HEADERS ---'
+          cat /tmp/headers.txt
+          echo '--- VERSION MARKERS ---'
+          grep -oE 'v=5\.5\.[0-9]+' /tmp/live.html | sort -u || true
+          echo '--- APP SCRIPT ---'
+          grep -oE 'js/app\.js\?v=[^"< ]+' /tmp/live.html || true
+          test -s /tmp/live.html
+      - name: Boot live site in Chrome
+        run: |
+          set -euxo pipefail
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          "$CHROME" --headless --disable-gpu --no-sandbox --virtual-time-budget=8000 --dump-dom https://kevvy555.github.io/MineIT/ > /tmp/dom.html 2>/tmp/chrome.err || true
+          echo '--- DYNAMIC UI CHECK ---'
+          grep -E 'mapViewToggle|SELECT ONE OF 8 LOCATIONS|STARTUP ERROR' /tmp/dom.html | head -20 || true
+          echo '--- CHROME STDERR TAIL ---'
+          tail -80 /tmp/chrome.err || true
+          if grep -q 'STARTUP ERROR' /tmp/dom.html; then
+            echo 'Production DOM shows startup error'
+            exit 1
+          fi
+          if ! grep -q 'mapViewToggle' /tmp/dom.html; then
+            echo 'Production DOM did not create mapViewToggle'
+            exit 2
+          fi
