@@ -1,0 +1,28 @@
+name: Live Pages 5.5.2 Check
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  check:
+    if: github.head_ref == 'diagnostic/live-pages-552'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check deployed version and mobile canvas
+        run: |
+          set -euxo pipefail
+          curl -fsSL -D /tmp/headers.txt 'https://kevvy555.github.io/MineIT/?cb=552' -o /tmp/live.html
+          echo '--- VERSION ---'
+          grep -oE 'v=5\.5\.[0-9]+' /tmp/live.html | sort -u || true
+          grep -q 'js/app.js?v=5.5.2' /tmp/live.html
+          chrome="$(command -v google-chrome || command -v chromium || true)"
+          "$chrome" --headless --no-sandbox --disable-gpu --window-size=412,915 --virtual-time-budget=8000 --dump-dom 'https://kevvy555.github.io/MineIT/?cb=552' > /tmp/dom.html 2>/tmp/chrome.err
+          grep -q 'id="mapViewToggle"' /tmp/dom.html
+          if grep -q 'style="width: [^"]*; height: 0px;"' /tmp/dom.html; then
+            echo 'Canvas is still zero height'
+            exit 2
+          fi
+          grep -oE '<canvas id="world"[^>]*>' /tmp/dom.html | head -1
+          echo 'LIVE_552_OK'
