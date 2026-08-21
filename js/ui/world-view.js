@@ -1,6 +1,6 @@
-import { CONFIG } from "../core/config.js?v=5.5.3";
-import { clamp } from "../core/utils.js?v=5.5.3";
-import { terrainPath, artImage, drawCover } from "./land-art.js?v=5.5.3";
+import { CONFIG } from "../core/config.js?v=5.5.4";
+import { clamp } from "../core/utils.js?v=5.5.4";
+import { terrainPath, artImage, drawCover } from "./land-art.js?v=5.5.4";
 
 const SIZE_FILTERS=[["limited","LIMITED"],["established","ESTABLISHED"],["small","SMALL"],["modest","MODEST"],["large","LARGE"],["huge","HUGE"],["colossal","COLOSSAL"],["vast","VAST"],["legacy","LEGACY"]];
 const TYPE_FILTERS=[["food","FOOD"],["build","BUILD"],["fuel","FUEL"],["ore","ORE"]];
@@ -26,10 +26,10 @@ export class WorldView {
   view(){return this.land?(this.state.colony?.land?.view||"land"):"resource";}
   isShipTile(x,y){return this.land?.isShipTile?this.land.isShipTile(x,y):x===0&&y===0;}
   bindViewToggle(){
-    const old=this.shell.querySelector("#mapViewToggle");if(old)old.remove();
+    const host=document.querySelector("#mapViewHost")||this.shell,old=document.querySelector("#mapViewToggle");if(old)old.remove();
     const wrap=document.createElement("div");wrap.id="mapViewToggle";wrap.className="map-view-toggle";
     for(const[key,label]of[["land","LAND"],["resource","RESOURCES"]]){const b=document.createElement("button");b.type="button";b.dataset.mapView=key;b.textContent=label;b.onclick=()=>{if(!this.state.colony?.land)return;this.state.colony.land.view=key;this.syncView();this.safeDraw();};wrap.appendChild(b);}
-    this.shell.appendChild(wrap);this.viewToggle=wrap;this.syncView();
+    host.appendChild(wrap);this.viewToggle=wrap;this.syncView();
   }
   syncView(){const view=this.view(),selecting=this.state.status==="site-selection";this.viewToggle?.querySelectorAll("[data-map-view]").forEach(b=>b.classList.toggle("active",b.dataset.mapView===view));this.viewToggle?.classList.toggle("hidden",selecting||!this.land);this.filterHost?.classList.toggle("hidden",view!=="resource"||selecting);}
   bindFilters(){

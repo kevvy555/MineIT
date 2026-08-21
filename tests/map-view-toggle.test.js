@@ -1,0 +1,14 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const read=p=>fs.readFileSync(new URL(`../${p}`,import.meta.url),"utf8");
+const index=read("index.html"),view=read("js/ui/world-view.js"),world=read("css/world.css"),land=read("css/land.css");
+assert.match(index,/id="mapViewHost"[^>]*><\/div><div id="mapFilterHost"/);
+assert.match(view,/document\.querySelector\("#mapViewHost"\)\|\|this\.shell/);
+assert.match(view,/host\.appendChild\(wrap\)/);
+assert.doesNotMatch(view,/this\.shell\.appendChild\(wrap\)/);
+assert.match(world,/#worldShell\{[^}]*grid-template-rows:auto auto minmax\(0,1fr\)/);
+assert.match(world,/#mapViewHost\{[^}]*z-index:20/);
+const toggleRule=land.match(/\.map-view-toggle\{([^}]*)\}/)?.[1]||"";
+assert.doesNotMatch(toggleRule,/position:absolute/);
+assert.doesNotMatch(toggleRule,/bottom:/);
+console.log("persistent Land/Resources map toggle regression test passed");

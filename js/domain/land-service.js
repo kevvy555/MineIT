@@ -1,5 +1,5 @@
-import { CONFIG } from "../core/config.js?v=5.5.3";
-import { hashString, seededRandom, tileKey } from "../core/utils.js?v=5.5.3";
+import { CONFIG } from "../core/config.js?v=5.5.4";
+import { hashString, seededRandom, tileKey } from "../core/utils.js?v=5.5.4";
 
 export const TERRAIN_TYPES=Object.freeze(["plain","hill","mountain","lake"]);
 export const TERRAIN_LABELS=Object.freeze({plain:"Plains",hill:"Hills",mountain:"Mountains",lake:"Lake"});

@@ -1,4 +1,4 @@
-import { CONFIG } from "../core/config.js?v=5.5.3";
+import { CONFIG } from "../core/config.js?v=5.5.4";
 
 export class SimulationEngine {
   constructor(resourceService,technologyService,collectionService,tradeService,inventoryService,colonyService){Object.assign(this,{resources:resourceService,technology:technologyService,collection:collectionService,trade:tradeService,inventory:inventoryService,colony:colonyService});}

@@ -1,6 +1,6 @@
-import { TradeUI as IndustryTradeUI } from "./industry-trade-ui.js?v=5.5.3";
-import { CONFIG } from "../core/config.js?v=5.5.3";
-import { formatMoney, formatNumber } from "../core/utils.js?v=5.5.3";
+import { TradeUI as IndustryTradeUI } from "./industry-trade-ui.js?v=5.5.4";
+import { CONFIG } from "../core/config.js?v=5.5.4";
+import { formatMoney, formatNumber } from "../core/utils.js?v=5.5.4";
 
 export class TradeUI extends IndustryTradeUI {
   constructor(opts){super(opts);this.onDepart=opts.onDepart;this.gameLog=opts.gameLog;document.querySelectorAll("[data-speed]").forEach(button=>button.onclick=()=>{const next=+button.dataset.speed;if(next>0&&(this.state.company?.pendingEvents?.length||this.state.trade.active)){this.ui.toast("Resolve the pending corporate ship before resuming time.");return;}if(this.state.company?.gameOver){this.ui.toast("All colonies have been lost.");return;}this.state.speed=next;this.ui.syncSpeed();this.render();});}
