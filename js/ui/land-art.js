@@ -1,4 +1,4 @@
-const VERSION="5.5.1";
+const VERSION="5.5.2";
 
 export const TERRAIN_ART={
   plain:["plains-01","plains-02","plains-03","plains-04"],

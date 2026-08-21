@@ -1,8 +1,8 @@
-import { formatNumber } from "../core/utils.js?v=5.5.1";
-import { ColonyTechUIMixin } from "./colony-tech-ui.js?v=5.5.1";
-import { ResourceUIMixin } from "./resource-ui.js?v=5.5.1";
-import { UIEnhancementsMixin } from "./ui-enhancements.js?v=5.5.1";
-import { SurvivalUIMixin } from "./survival-ui.js?v=5.5.1";
+import { formatNumber } from "../core/utils.js?v=5.5.2";
+import { ColonyTechUIMixin } from "./colony-tech-ui.js?v=5.5.2";
+import { ResourceUIMixin } from "./resource-ui.js?v=5.5.2";
+import { UIEnhancementsMixin } from "./ui-enhancements.js?v=5.5.2";
+import { SurvivalUIMixin } from "./survival-ui.js?v=5.5.2";
 
 export class IndustryUIMixin {
   industryPct(value){return `${Math.round(Math.max(0,Math.min(1,Number(value)||0))*100)}%`;}
