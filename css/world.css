@@ -1,4 +1,5 @@
-#worldShell{display:grid;grid-template-rows:auto minmax(0,1fr);overflow:hidden;min-height:160px;background:#000}
+#worldShell{display:grid;grid-template-rows:auto auto minmax(0,1fr);overflow:hidden;min-height:160px;background:#000}
+#mapViewHost{position:relative;z-index:20;display:flex;align-items:center;justify-content:flex-start;min-height:34px;padding:3px 4px;background:#05080a;border-bottom:1px solid var(--line);touch-action:manipulation}
 #mapFilterHost{position:relative;z-index:12;background:#05080a;border-bottom:1px solid var(--line);touch-action:manipulation}
 #worldViewport{position:relative;overflow:hidden;touch-action:none;min-height:0}
 #world{position:absolute;inset:0;width:100%;height:100%;background:#000}

@@ -1,6 +1,6 @@
-import { ContractUIMixin } from "./contract-ui.js?v=5.5.3";
-import { V55UIMixin } from "./v55-ui.js?v=5.5.3";
-import { formatMoney } from "../core/utils.js?v=5.5.3";
+import { ContractUIMixin } from "./contract-ui.js?v=5.5.4";
+import { V55UIMixin } from "./v55-ui.js?v=5.5.4";
+import { formatMoney } from "../core/utils.js?v=5.5.4";
 
 export class V55ContractLogUIMixin {
   contractLogOnce(type,message,data={}){const uid=this.state.contract?.uid;if(this.state.gameLog?.events?.some(e=>e.type===type&&e.data?.contractUid===uid&&e.data?.renewal===data.renewal&&e.data?.extension===data.extension))return;this.logEvent(type,message,{contractUid:uid,...data});this.repo.save(this.state);}
