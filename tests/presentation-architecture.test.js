@@ -26,6 +26,7 @@ assert.match(worldCss,/#overlayRoot>\.panel,#overlayRoot>\.error-badge\{pointer-
 
 assert.match(view,/extends CanvasWorldView/);
 assert.match(view,/new MapControls/);
+assert.match(view,/world-view\.js\?v=5\.5\.5&legacy=1/);
 assert.match(view,/canvas\.style\.removeProperty\("width"\)/);
 assert.match(view,/canvas\.style\.removeProperty\("height"\)/);
 assert.doesNotMatch(view,/prototype\./);
@@ -35,9 +36,11 @@ assert.match(controls,/replaceChildren\(\)/);
 assert.match(controls,/map-toolbar-main/);
 
 assert.match(ui,/class UIController extends LegacyUIController/);
+assert.match(ui,/ui-controller\.js\?v=5\.5\.5&legacy=1/);
 assert.match(ui,/addEventListener\("click"/);
 assert.match(ui,/stopImmediatePropagation\(\)/);
 assert.match(ui,/setSpeed\(next\)/);
+assert.match(tradeAdapter,/v55-trade-ui\.js\?v=5\.5\.5&legacy=1/);
 assert.match(tradeAdapter,/button\.onclick=null/);
 assert.match(tradeAdapter,/bindSpeedInputs/);
 
