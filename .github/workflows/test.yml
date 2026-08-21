@@ -5,6 +5,8 @@ on:
     branches:
       - develop
       - 'feature/**'
+      - 'refactor/**'
+      - 'hotfix/**'
   pull_request:
     branches:
       - develop
@@ -21,7 +23,7 @@ jobs:
           node-version: 22
       - name: Run unit and regression tests
         run: npm test
-      - name: Browser startup and mobile layout smoke test
+      - name: Browser startup and presentation interaction tests
         run: |
           python3 -m http.server 8123 --bind 127.0.0.1 >/tmp/mineit-http.log 2>&1 &
           server_pid=$!
@@ -32,10 +34,12 @@ jobs:
             echo "No Chrome/Chromium executable available on runner"
             exit 1
           fi
+
           "$chrome" --headless --no-sandbox --disable-gpu --window-size=412,915 --virtual-time-budget=5000 --dump-dom http://127.0.0.1:8123/ >/tmp/mineit-dom.html 2>/tmp/mineit-chrome.log
           grep -q 'id="mapViewToggle"' /tmp/mineit-dom.html
           grep -q 'id="mapFilterToggle"' /tmp/mineit-dom.html
           grep -q 'map-filter-tabs' /tmp/mineit-dom.html
+          grep -q 'id="overlayRoot"' /tmp/mineit-dom.html
           grep -q 'landing-choice-grid' /tmp/mineit-dom.html
           if grep -Eq 'id="world"[^>]*(height="0"|height: 0px)' /tmp/mineit-dom.html; then
             echo "Map canvas collapsed to zero height"
@@ -52,10 +56,14 @@ jobs:
             cat /tmp/mineit-chrome.log
             exit 1
           fi
-          "$chrome" --headless --no-sandbox --disable-gpu --window-size=412,915 --virtual-time-budget=9000 --dump-dom http://127.0.0.1:8123/tests/mobile-layout-probe.html >/tmp/layout-probe.html 2>/tmp/layout-probe-chrome.log
-          if ! grep -q 'PASS mobile layout and footer hit targets' /tmp/layout-probe.html; then
-            echo "Mobile layout/footer interaction probe failed"
-            cat /tmp/layout-probe.html
-            cat /tmp/layout-probe-chrome.log
-            exit 1
-          fi
+
+          for size in 360,640 375,667 390,844 412,915 915,412; do
+            echo "Testing viewport $size"
+            "$chrome" --headless --no-sandbox --disable-gpu --window-size="$size" --virtual-time-budget=9000 --dump-dom http://127.0.0.1:8123/tests/mobile-layout-probe.html >"/tmp/layout-$size.html" 2>"/tmp/layout-$size.log"
+            if ! grep -q 'PASS presentation layout, map transitions and footer actions' "/tmp/layout-$size.html"; then
+              echo "Presentation interaction probe failed at $size"
+              cat "/tmp/layout-$size.html"
+              cat "/tmp/layout-$size.log"
+              exit 1
+            fi
+          done
