@@ -54,6 +54,8 @@ js/
   ui/
 assets/
   art/resources/
+  art/terrain/
+  art/development/
 tests/
 ```
 
@@ -61,7 +63,11 @@ The **domain layer never calls the DOM or canvas**. Simulation state, resource r
 
 ### Resource visuals
 
-The map uses lightweight vector glyphs rendered directly with Canvas `Path2D`. It deliberately avoids `new Image()`, SVG `data:` URLs and `drawImage()` for resource icons, preventing the Android `content://` SVG failure found in the original prototype.
+The resource map uses optimized WebP tile artwork with canvas overlays for state, quality and collection information.
+
+### Building visuals
+
+The land map uses optimized transparent WebP artwork for Housing, Industry, Quarry, Mine, Deep Mine, Rig, Farm, Ranch, Bio Harvester and Algae Facility. Each family is stored as a five-frame horizontal atlas representing development levels L1–L5. The canvas renderer selects the appropriate frame and retains the vector building renderer as a fallback if an image is unavailable.
 
 ## Run locally
 
@@ -78,13 +84,3 @@ Then open `http://localhost:8000`.
 ```bash
 npm test
 ```
-
-The current smoke test validates the four resource categories, stock accumulation and consumption, Build-material construction costs, resource-specific Mining locks, Power limits, 10-level technology progression, hostile-world requirements, sealed food production, corporate trade pricing and six-month ship cadence.
-
-## Save data
-
-Current saves are normalised to state version 4. The migration converts older Food/Industrial/Valuable inventory and discovered sites into the new four-category model where possible, and carries earlier technology licences forward into the nearest matching permanent technology levels.
-
-## GitHub Pages
-
-The repository root can be published directly from `main` using GitHub Pages. No compilation step is required.

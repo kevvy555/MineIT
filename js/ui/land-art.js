@@ -1,4 +1,4 @@
-const VERSION="5.5.5";
+const VERSION="5.6.1";
 
 export const TERRAIN_ART={
   plain:["plains-01","plains-02","plains-03","plains-04"],
@@ -25,9 +25,20 @@ export function developmentKind(dev){
   return DEVELOPMENT_ART[raw]||raw;
 }
 
+export function developmentLevel(dev){
+  return Math.max(1,Math.min(5,Number(dev?.level)||1));
+}
+
+// Retained for compatibility with the original individual-file art contract.
 export function developmentPath(dev){
-  const kind=developmentKind(dev),level=Math.max(1,Math.min(5,Number(dev?.level)||1));
+  const kind=developmentKind(dev),level=developmentLevel(dev);
   return kind?`./assets/art/development/${kind}/${kind}-l${level}.webp?v=${VERSION}`:null;
+}
+
+// Runtime uses one five-frame horizontal atlas per development family (L1 -> L5).
+export function developmentAtlasPath(dev){
+  const kind=developmentKind(dev);
+  return kind?`./assets/art/development/${kind}/${kind}-levels.webp?v=${VERSION}`:null;
 }
 
 export function artImage(src,onReady){
@@ -54,4 +65,12 @@ export function drawContain(ctx,img,x,y,w,h,scale=1){
   if(!img?.complete||!img.naturalWidth||!img.naturalHeight)return false;
   const ratio=Math.min(w/img.naturalWidth,h/img.naturalHeight)*scale,dw=img.naturalWidth*ratio,dh=img.naturalHeight*ratio;
   ctx.drawImage(img,x+(w-dw)/2,y+(h-dh)/2,dw,dh);return true;
+}
+
+export function drawDevelopmentFrame(ctx,img,level,x,y,w,h,scale=.94){
+  if(!img?.complete||!img.naturalWidth||!img.naturalHeight)return false;
+  const frames=5,frameWidth=img.naturalWidth/frames,frameHeight=img.naturalHeight,index=Math.max(1,Math.min(frames,Number(level)||1))-1;
+  const ratio=Math.min(w/frameWidth,h/frameHeight)*scale,dw=frameWidth*ratio,dh=frameHeight*ratio;
+  ctx.drawImage(img,frameWidth*index,0,frameWidth,frameHeight,x+(w-dw)/2,y+(h-dh)/2,dw,dh);
+  return true;
 }
