@@ -14,8 +14,8 @@ assert.doesNotMatch(index,/world-view-hotfix/);
 assert.match(index,/id="overlayRoot"/);
 assert.doesNotMatch(index,/mapFilterHost/);
 assert.match(index,/type="importmap"/);
-assert.match(index,/world-view-v56\.js\?v=5\.6\.1/);
-assert.match(index,/ui-controller-v56\.js\?v=5\.6\.0/);
+assert.match(index,/world-view-v56\.js\?v=5\.6\.2/);
+assert.match(index,/ui-controller-v56\.js\?v=5\.6\.2/);
 assert.match(index,/v55-trade-ui-v56\.js\?v=5\.6\.0/);
 
 assert.match(appCss,/grid-template-rows:auto minmax\(0,1fr\) auto/);
@@ -36,7 +36,7 @@ assert.match(controls,/replaceChildren\(\)/);
 assert.match(controls,/map-toolbar-main/);
 
 assert.match(ui,/class UIController extends LegacyUIController/);
-assert.match(ui,/ui-controller\.js\?v=5\.5\.5&legacy=1/);
+assert.match(ui,/ui-controller\.js\?v=5\.6\.2&legacy=1/);
 assert.match(ui,/addEventListener\("click"/);
 assert.match(ui,/stopImmediatePropagation\(\)/);
 assert.match(ui,/setSpeed\(next\)/);

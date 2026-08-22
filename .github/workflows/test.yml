@@ -35,12 +35,13 @@ jobs:
             exit 1
           fi
 
-          "$chrome" --headless --no-sandbox --disable-gpu --window-size=412,915 --virtual-time-budget=5000 --dump-dom http://127.0.0.1:8123/ >/tmp/mineit-dom.html 2>/tmp/mineit-chrome.log
+          "$chrome" --headless --no-sandbox --disable-gpu --enable-logging=stderr --window-size=412,915 --virtual-time-budget=5000 --dump-dom http://127.0.0.1:8123/ >/tmp/mineit-dom.html 2>/tmp/mineit-chrome.log
           for pattern in 'id="mapViewToggle"' 'id="mapFilterToggle"' 'map-filter-tabs' 'id="overlayRoot"' 'landing-choice-grid'; do
             if ! grep -q "$pattern" /tmp/mineit-dom.html; then
               echo "Startup DOM is missing: $pattern"
               cat /tmp/mineit-dom.html
               cat /tmp/mineit-chrome.log
+              cat /tmp/mineit-http.log
               exit 1
             fi
           done
@@ -57,6 +58,7 @@ jobs:
           if grep -q 'STARTUP ERROR' /tmp/mineit-dom.html; then
             cat /tmp/mineit-dom.html
             cat /tmp/mineit-chrome.log
+            cat /tmp/mineit-http.log
             exit 1
           fi
 
@@ -67,6 +69,7 @@ jobs:
               echo "Presentation interaction probe failed at $size"
               cat "/tmp/layout-$size.html"
               cat "/tmp/layout-$size.log"
+              cat /tmp/mineit-http.log
               exit 1
             fi
           done
