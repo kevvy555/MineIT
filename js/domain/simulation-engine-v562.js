@@ -11,8 +11,10 @@ export class SimulationEngine extends LegacySimulationEngine{
       if(tile.lastAccident&&tile.lastAccident!==beforeAccidents.get(key))accidents.push({tile,event:tile.lastAccident});
     }
     const accidentDeaths=accidents.reduce((sum,item)=>sum+(Number(item.event?.deaths)||0),0);
+    let colonyDied=!!result.colonyDied;
+    if(accidentDeaths>=beforePop&&beforePop>0&&!colonyDied){state.pop=0;colonyDied=this.killColony(state)||state.status==="dead";}
     state.metrics.populationDelta=(Number(state.pop)||0)-beforePop;
     state.metrics.lastAccidentDeaths=accidentDeaths;
-    return{...result,populationDelta:state.metrics.populationDelta,accidents,accidentDeaths};
+    return{...result,colonyDied,populationDelta:state.metrics.populationDelta,accidents,accidentDeaths};
   }
 }
