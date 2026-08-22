@@ -1,5 +1,5 @@
 import { ResourceService as LegacyResourceService } from "./resource-service.js?v=5.5.5&legacy=1";
-export { QUALITY_BANDS, DEFAULT_QUALITY_BAND } from "./resource-service.js?v=5.5.5&legacy=1";
+export { QUALITY_VALUE_BANDS, DEFAULT_QUALITY_BAND } from "./resource-service.js?v=5.5.5&legacy=1";
 import { outputMultiplier } from "./extraction-overdrive.js?v=5.6.2";
 
 export class ResourceService extends LegacyResourceService{
