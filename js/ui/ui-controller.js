@@ -1,5 +1,5 @@
 import { formatNumber } from "../core/utils.js?v=5.5.5";
-import { ResourceUIMixin } from "./resource-ui.js?v=5.5.5";
+import { ResourceUIMixin } from "./resource-ui-v562.js?v=5.6.2";
 import { ColonyTechUIMixin } from "./colony-tech-ui.js?v=5.5.5";
 import { ContractUIMixin } from "./contract-ui.js?v=5.5.5";
 import { PortfolioUIMixin } from "./portfolio-ui.js?v=5.5.5";
