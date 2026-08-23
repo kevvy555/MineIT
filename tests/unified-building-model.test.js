@@ -43,10 +43,10 @@ state.company.tech.mining=3;state.company.tech.industry=1;technology.recompute(s
 let mineUpgrade=siteService.upgradeRequirements(state,mine);
 assert.notEqual(mineUpgrade.reason?.includes("Mining L4"),true,"mine development level must not demand a higher Mining licence than the deposit unlock");
 assert.equal(mineUpgrade.ok,true,"L2 mine should be allowed once local Industry/Power/workforce/material requirements are met");
-assert.ok(siteService.upgrade(state,mine).ok);assert.equal(mine.level,2);
+assert.ok(siteService.upgrade(state,mine).ok);assert.equal(mine.level,2);assert.equal(mine.development.level,2,"site development state must stay aligned with extraction level for map/UI rendering");
 
 const food={x:4,y:3,terrain:"plain",type:"food",resourceId:"fungal",revealed:true,developed:true,depleted:false,resourceCovered:false,level:1,requiredMiningLevel:1,requiredMiningTech:"Surface Recovery",development:{kind:"extract",family:"bio",level:1}};
 state.tiles.food=food;state.company.tech.food=1;let foodUpgrade=siteService.upgradeRequirements(state,food);assert.equal(foodUpgrade.ok,false);assert.match(foodUpgrade.reason,/Food Production Tech L2/);state.company.tech.food=2;technology.recompute(state);foodUpgrade=siteService.upgradeRequirements(state,food);assert.equal(foodUpgrade.ok,true);
 
-const cashBefore=state.company.cash;const bought=technology.buy(state,"industry");assert.equal(bought.ok,true);assert.equal(bought.tech.level,2);assert.equal(state.company.cash,cashBefore-25000,"corporation technology remains an external cash purchase");
+const staffingBefore=colony.industryPopulationRequirement(state),cashBefore=state.company.cash,bought=technology.buy(state,"industry");assert.equal(bought.ok,true);assert.equal(bought.tech.level,2);assert.equal(state.company.cash,cashBefore-25000,"corporation technology remains an external cash purchase");assert.ok(colony.industryPopulationRequirement(state)<staffingBefore,"Industry technology should improve staffing efficiency as well as unlock higher Industry buildings");
 console.log("v5.7 unified stackable building and technology model tests passed");
