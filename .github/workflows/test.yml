@@ -36,7 +36,7 @@ jobs:
           fi
 
           "$chrome" --headless --no-sandbox --disable-gpu --enable-logging=stderr --window-size=412,915 --virtual-time-budget=5000 --dump-dom http://127.0.0.1:8123/ >/tmp/mineit-dom.html 2>/tmp/mineit-chrome.log
-          for pattern in 'id="mapViewToggle"' 'id="mapFilterToggle"' 'map-filter-tabs' 'id="overlayRoot"' 'landing-choice-grid'; do
+          for pattern in 'id="mapViewToggle"' 'id="mapFilterToggle"' 'map-filter-tabs' 'id="overlayRoot"' 'id="attentionStrip"' 'id="contextBar"' 'landing-choice-grid'; do
             if ! grep -q "$pattern" /tmp/mineit-dom.html; then
               echo "Startup DOM is missing: $pattern"
               cat /tmp/mineit-dom.html
@@ -65,7 +65,7 @@ jobs:
           for size in 360,640 375,667 390,844 412,915 915,412; do
             echo "Testing viewport $size"
             "$chrome" --headless --no-sandbox --disable-gpu --window-size="$size" --virtual-time-budget=9000 --dump-dom http://127.0.0.1:8123/tests/mobile-layout-probe.html >"/tmp/layout-$size.html" 2>"/tmp/layout-$size.log"
-            if ! grep -q 'PASS presentation layout, map transitions and footer actions' "/tmp/layout-$size.html"; then
+            if ! grep -q 'PASS presentation layout, unified map, contextual actions and footer controls' "/tmp/layout-$size.html"; then
               echo "Presentation interaction probe failed at $size"
               cat "/tmp/layout-$size.html"
               cat "/tmp/layout-$size.log"
