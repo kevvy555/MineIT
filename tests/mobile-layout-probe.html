@@ -18,7 +18,14 @@ async function run(){
   for(const id of['housingHud','powerHud','industryHud','workforceHud','foodStock','buildStock','fuelStock','oreStock'])if(!d.getElementById(id))fail.push('missing HUD '+id);
   for(const b of d.querySelectorAll('.app-footer button')){const r=b.getBoundingClientRect();if(r.width<1||r.height<1)continue;const hit=d.elementFromPoint(r.left+r.width/2,r.top+r.height/2);if(!(hit===b||b.contains(hit)))fail.push('footer blocked:'+b.id+':'+(hit?.id||hit?.className||hit?.tagName));}
   for(const speed of d.querySelectorAll('[data-speed]'))if(speed.onclick!==null)fail.push('legacy speed onclick remains:'+speed.dataset.speed);
-  for(const id of['tradeBtn','coloniesBtn','techBtn','menuBtn']){const b=d.getElementById(id);if(!b||b.disabled)continue;b.click();await sleep(60);const modal=d.getElementById('modal');if(!modal||modal.classList.contains('hidden'))fail.push(id+':did not open modal');modal?.querySelector('[data-close]')?.click();await sleep(25);}
+  const modal=d.getElementById('modal'),tilePanel=d.getElementById('tilePanel');
+  for(const id of['coloniesBtn','techBtn','menuBtn','tradeBtn']){
+    const b=d.getElementById(id);if(!b||b.disabled)continue;
+    modal?.classList.add('hidden');tilePanel?.classList.add('hidden');
+    const errorsBefore=w.mineITBoot?.diagnostics?.errors||0;b.click();await sleep(100);
+    if(!modal||modal.classList.contains('hidden')){const errorsAfter=w.mineITBoot?.diagnostics?.errors||0;fail.push(id+':did not open modal'+(errorsAfter>errorsBefore?':runtime error':''));}
+    modal?.querySelector('[data-close]')?.click();modal?.classList.add('hidden');await sleep(30);
+  }
   out.textContent=fail.length?'FAIL '+fail.join(' | '):'PASS presentation layout, unified map, contextual actions and footer controls';
 }
 run().catch(e=>document.querySelector('#result').textContent='FAIL '+e.stack);
