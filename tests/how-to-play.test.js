@@ -2,32 +2,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),"utf8");
 
-const pkg=JSON.parse(read("package.json"));
-const index=read("index.html");
-const help=read("js/ui/ui-controller-v564.js");
-
-assert.equal(pkg.version,"5.6.4");
-assert.match(index,/ui-controller-v564\.js\?v=5\.6\.4/);
-assert.match(help,/SurvivalUIMixin\.prototype\.help\.call\(this\)/,"How to Play must open the complete field manual");
-assert.match(help,/help\.onclick=\(\)=>this\.help\(\)/,"Game menu must route How to Play to the field manual");
-
-for(const rule of[
-  "Local construction does not consume corporation cash",
-  "Quality affects economic value, not the basic collection rate",
-  "Surveying costs <strong>time, not cash</strong>",
-  "Housing, Industry and extraction construction do not spend corporation cash",
-  "Finite <strong>Quarry, Mine, Deep Mine and Rig</strong> sites can run NORMAL, PUSHED or HARD",
-  "Every 30 accumulated risk-days triggers a <strong>25% accident check</strong>",
-  "3 full game days",
-  "Renewable does <strong>not</strong> mean impossible to destroy",
-  "State</strong> (Developed / Not Developed / Locked)",
-  "<strong>Type</strong> (Food / Build / Fuel / Ore)",
-  "no generic daily corporate cash surcharge"
-])assert.ok(help.includes(rule),`missing current rule in How to Play: ${rule}`);
-
-assert.match(help,/DEDICATED_TRANSPORT_DAYS/);
-assert.match(help,/TRADE_INTERVAL_DAYS/);
-assert.match(help,/SITE_OUTPUT_LEVELS\.slice\(0,5\)/);
-assert.match(help,/tracked <strong>external cash costs<\/strong>/);
-
-console.log("v5.6.4 How to Play rules test passed");
+const pkg=JSON.parse(read("package.json")),index=read("index.html"),legacy=read("js/ui/ui-controller-v564.js"),help=read("js/ui/ui-controller-v570.js");
+assert.equal(pkg.version,"5.7.0");assert.match(index,/ui-controller-v570\.js\?v=5\.7\.0/);assert.match(legacy,/SurvivalUIMixin\.prototype\.help\.call\(this\)/);assert.match(help,/super\.help\(\)/);
+for(const rule of["Housing, Power and Industry are individual L1–L5 map buildings","five corporation technology families","Mining is the exception","technology limits sophistication, not quantity","Local construction uses physical colony resources, not corporation cash","PUSHED uses 125% staff for 115% output","Every 30 accumulated risk-days triggers a 25% accident check"])assert.ok(help.includes(rule),`missing v5.7 rule: ${rule}`);
+for(const retained of["Quality affects economic value, not the basic collection rate","Surveying costs <strong>time, not cash</strong>","Renewable does <strong>not</strong> mean impossible to destroy"])assert.ok(legacy.includes(retained),`missing retained rule: ${retained}`);
+console.log("v5.7.0 How to Play rules test passed");
