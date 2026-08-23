@@ -1,0 +1,52 @@
+import assert from "node:assert/strict";
+import { DevelopmentService } from "../js/domain/development-service-v570.js";
+import { TechnologyService } from "../js/domain/technology-service-v570.js";
+import { ColonyService } from "../js/domain/colony-service-v570.js";
+import { SiteService } from "../js/domain/site-service-v570.js";
+import { buildingCapacity,syncBuildingTotals,SHIP_INFRASTRUCTURE } from "../js/domain/building-model.js";
+
+let build=100000,ore=100000;
+const inventory={
+  amount:(_state,type)=>type==="build"?build:type==="ore"?ore:100000,
+  consumeCategory:(_state,type,amount)=>{if(type==="build")build-=amount;if(type==="ore")ore-=amount;return{consumed:amount,ratio:1};},
+  store(){},
+};
+const land={terrainCostMultiplier:()=>1,isShipTile:(x,y)=>x===0&&y===0};
+const state={status:"playing",company:{cash:32000,tech:{housing:1,power:1,food:1,industry:1,mining:3}},contract:{ended:false,localCosts:0,supportLoad:1},tiles:{},colony:{land:{baseHousingLevel:4,baseHousingCapacity:900,baseIndustryLevel:4},emergencyMode:false},metrics:{},pop:120};
+const development=new DevelopmentService(inventory,land),technology=new TechnologyService(),colony=new ColonyService(inventory,technology);
+
+const tile=(x,y,terrain="plain")=>({x,y,terrain,revealed:true,developed:false,development:null,resourceId:null});
+state.tiles.a=tile(1,1);state.tiles.b=tile(2,1);state.tiles.c=tile(3,1);
+assert.ok(development.place(state,state.tiles.a,"housing").ok,"fresh L1 Housing must be placeable at Housing Tech L1");
+assert.ok(development.place(state,state.tiles.b,"housing").ok,"multiple L1 Housing buildings must stack without a global level cap");
+let totals=syncBuildingTotals(state);
+assert.equal(totals.housing,SHIP_INFRASTRUCTURE.housing+buildingCapacity("housing",1)*2);
+assert.equal(state.colony.land.baseHousingLevel,undefined,"legacy hidden Housing base must not affect capacity");
+assert.equal(state.colony.land.baseIndustryLevel,undefined,"legacy hidden Industry base must not affect capacity");
+let upgrade=development.canUpgrade(state,state.tiles.a);assert.equal(upgrade.ok,false);assert.match(upgrade.reason,/Housing Tech L2/);
+state.company.tech.housing=2;upgrade=development.upgrade(state,state.tiles.a);assert.equal(upgrade.ok,true);totals=syncBuildingTotals(state);assert.equal(totals.housing,SHIP_INFRASTRUCTURE.housing+buildingCapacity("housing",2)+buildingCapacity("housing",1));
+
+assert.ok(development.place(state,state.tiles.c,"power").ok,"Power must be a normal stackable map building");
+totals=syncBuildingTotals(state);assert.equal(totals.power,SHIP_INFRASTRUCTURE.power+buildingCapacity("power",1));
+let powerUpgrade=development.canUpgrade(state,state.tiles.c);assert.equal(powerUpgrade.ok,false);assert.match(powerUpgrade.reason,/Power Plant Tech L2/);
+state.company.tech.power=2;assert.ok(development.upgrade(state,state.tiles.c).ok);totals=syncBuildingTotals(state);assert.equal(totals.power,SHIP_INFRASTRUCTURE.power+buildingCapacity("power",2));
+
+state.tiles.d=tile(-1,1);assert.ok(development.place(state,state.tiles.d,"industry").ok);totals=syncBuildingTotals(state);assert.equal(totals.industry,SHIP_INFRASTRUCTURE.industry+buildingCapacity("industry",1));
+technology.recompute(state);assert.equal(state.metrics.powerCapacity,totals.power,"Power Tech must not create generation by itself");assert.equal(state.metrics.industryInstalled,totals.industry);
+assert.equal(colony.populationCapacity(state),totals.housing,"population capacity must be Housing, not a Power-Tech population cap");
+const demand=colony.demand(state);assert.equal(demand.installedIndustry,totals.industry);assert.ok(demand.powerDemand>0);
+
+const contracts={archetype:()=>({cost:1})},resources={isRenewable:()=>false,finiteCostFactor:()=>1},siteService=new SiteService(contracts,technology,inventory,colony,resources);
+const mine={x:4,y:4,terrain:"plain",type:"ore",resourceId:"iron",revealed:true,developed:true,depleted:false,resourceCovered:false,level:1,requiredMiningLevel:3,requiredMiningTech:"Shaft Mining",development:{kind:"extract",family:"mine",level:1}};
+state.tiles.mine=mine;
+state.company.tech.mining=3;state.company.tech.industry=1;technology.recompute(state);
+let mineUpgrade=siteService.upgradeRequirements(state,mine);
+assert.notEqual(mineUpgrade.reason?.includes("Mining L4"),true,"mine development level must not demand a higher Mining licence than the deposit unlock");
+assert.equal(mineUpgrade.ok,true,"L2 mine should be allowed once local Industry/Power/workforce/material requirements are met");
+assert.ok(siteService.upgrade(state,mine).ok);assert.equal(mine.level,2);assert.equal(mine.development.level,2,"site development state must stay aligned with extraction level for map/UI rendering");
+
+const food={x:4,y:3,terrain:"plain",type:"food",resourceId:"fungal",revealed:true,developed:true,depleted:false,resourceCovered:false,level:1,requiredMiningLevel:1,requiredMiningTech:"Surface Recovery",development:{kind:"extract",family:"bio",level:1}};
+state.tiles.food=food;state.company.tech.food=1;let foodUpgrade=siteService.upgradeRequirements(state,food);assert.equal(foodUpgrade.ok,false);assert.match(foodUpgrade.reason,/Food Production Tech L2/);state.company.tech.food=2;technology.recompute(state);foodUpgrade=siteService.upgradeRequirements(state,food);assert.equal(foodUpgrade.ok,true);
+
+const staffingBefore=colony.industryPopulationRequirement(state),cashBefore=state.company.cash,bought=technology.buy(state,"industry");assert.equal(bought.ok,true);assert.equal(bought.tech.level,2);assert.equal(state.company.cash,cashBefore-25000,"corporation technology remains an external cash purchase");assert.ok(colony.industryPopulationRequirement(state)<staffingBefore,"Industry technology should improve staffing efficiency as well as unlock higher Industry buildings");
+console.log("v5.7 unified stackable building and technology model tests passed");
