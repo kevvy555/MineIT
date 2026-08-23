@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="./css/trade-quality.css?v=5.5.5">
   <link rel="stylesheet" href="./css/ui-enhancements.css?v=5.5.5">
   <link rel="stylesheet" href="./css/land.css?v=5.6.0">
+  <link rel="stylesheet" href="./css/map-first.css?v=5.8.0">
   <script type="importmap">
   {
     "imports": {
@@ -24,8 +25,9 @@
       "./js/domain/technology-service.js?v=5.5.5": "./js/domain/technology-service-v570.js?v=5.7.0",
       "./js/domain/simulation-engine.js?v=5.5.5": "./js/domain/simulation-engine-v570.js?v=5.7.0",
       "./js/ui/portfolio-ui.js?v=5.5.5": "./js/ui/portfolio-ui-v570.js?v=5.7.0",
-      "./js/ui/world-view.js?v=5.5.5": "./js/ui/world-view-v570.js?v=5.7.0",
-      "./js/ui/ui-controller.js?v=5.5.5": "./js/ui/ui-controller-v570.js?v=5.7.0",
+      "./js/ui/map-controls.js?v=5.6.0": "./js/ui/map-controls-v580.js?v=5.8.0",
+      "./js/ui/world-view.js?v=5.5.5": "./js/ui/world-view-v580.js?v=5.8.0",
+      "./js/ui/ui-controller.js?v=5.5.5": "./js/ui/ui-controller-v580.js?v=5.8.0",
       "./js/ui/v55-trade-ui.js?v=5.5.5": "./js/ui/v55-trade-ui-v56.js?v=5.6.0"
     }
   }
@@ -34,20 +36,43 @@
 <body>
   <div id="app">
     <header class="app-header">
-      <div class="top-row"><strong class="brand">MINEIT</strong><span id="contractName" class="contract-name"></span></div>
-      <div class="time-row"><div class="progress"><i id="timeBar"></i></div><span id="dateText" class="date"></span></div>
-      <div class="goal-grid">
-        <article class="goal-card"><small><span>FOOD PROD</span><span id="foodGoal"></span></small><strong id="foodVal" class="food">0</strong><div class="mini"><i id="foodBar" class="food-bg"></i></div></article>
-        <article class="goal-card"><small><span>INDUSTRY</span><span id="indGoal"></span></small><strong id="indVal" class="ore">0</strong><div class="mini"><i id="indBar" class="ore-bg"></i></div></article>
-        <article class="goal-card"><small><span>POPULATION</span><span id="popGoal"></span></small><strong id="popVal">0</strong><div class="mini"><i id="popBar" class="population-bg"></i></div></article>
+      <div class="map-first-top">
+        <strong class="brand">MINEIT</strong>
+        <span id="contractName" class="contract-name"></span>
+        <span id="dateText" class="date"></span>
+        <button id="companyBtn" class="cash-chip"><strong id="cash">£0</strong><span>CASH</span></button>
+      </div>
+      <div class="contract-progress">
+        <div class="progress"><i id="timeBar"></i></div>
+        <div class="stock-value">STOCK <strong id="income">£0</strong></div>
+      </div>
+      <div class="goal-grid map-first-goals">
+        <article class="goal-card"><small>FOOD</small><div class="mini"><i id="foodBar" class="food-bg"></i></div><strong id="foodVal" class="food">0%</strong><span id="foodGoal" class="goal-target"></span></article>
+        <article class="goal-card"><small>IND</small><div class="mini"><i id="indBar" class="ore-bg"></i></div><strong id="indVal" class="ore">0%</strong><span id="indGoal" class="goal-target"></span></article>
+        <article class="goal-card"><small>POP</small><div class="mini"><i id="popBar" class="population-bg"></i></div><strong id="popVal">0%</strong><span id="popGoal" class="goal-target"></span></article>
+      </div>
+      <div id="attentionStrip" class="attention-strip good" role="button" tabindex="0">
+        <span class="attention-icon">◆</span><span class="attention-copy"><strong id="attentionTitle">COLONY STABLE</strong><small id="attentionDetail">No immediate operational constraint needs attention.</small></span><span id="attentionAction" class="attention-go">PROBLEMS ›</span>
+      </div>
+      <div class="operational-grid">
+        <div id="housingOp" class="op-card good"><small>HOUSING</small><strong id="housingHud">0 / 0</strong></div>
+        <div id="powerOp" class="op-card good"><small>POWER</small><strong id="powerHud">0 / 0</strong></div>
+        <div id="industryOp" class="op-card good"><small>INDUSTRY</small><strong id="industryHud">0 / 0</strong></div>
+        <div id="workforceOp" class="op-card good"><small>WORKFORCE</small><strong id="workforceHud">0 FREE</strong></div>
+      </div>
+      <div class="resource-grid">
+        <div class="resource-hud food"><small>FOOD • <span id="foodDaysHud" class="resource-days">—</span></small><strong id="foodStock">0</strong></div>
+        <div class="resource-hud build"><small>BUILD</small><strong id="buildStock">0</strong></div>
+        <div class="resource-hud fuel"><small>FUEL • <span id="fuelDaysHud" class="resource-days">—</span></small><strong id="fuelStock">0</strong></div>
+        <div class="resource-hud ore"><small>ORE • <span id="oreDaysHud" class="resource-days">—</span></small><strong id="oreStock">0</strong></div>
       </div>
     </header>
 
     <main id="worldShell">
-      <div id="mapViewHost" aria-label="Map view controls"></div>
+      <div id="mapViewHost" aria-label="Unified colony map controls"></div>
       <div id="worldViewport">
         <canvas id="world"></canvas>
-        <div id="cornerHud" class="hud-chip"><strong id="cameraText">LAND VIEW • 8×8</strong><span>Tap to act • drag unsurveyed tiles to multi-survey • hold 2s for details</span></div>
+        <div id="cornerHud" class="hud-chip"><strong id="cameraText">COLONY MAP • 8×8</strong><span>Tap to select • drag unsurveyed tiles to multi-survey</span></div>
         <div id="scanHud" class="hud-chip scan-hud hidden"><strong>SCANNING</strong><span id="scanText"></span><div class="scan-progress"><i id="scanBar"></i></div></div>
       </div>
       <div id="overlayRoot" aria-label="Application overlays">
@@ -58,19 +83,18 @@
       </div>
     </main>
 
+    <section id="contextBar" class="context-bar">
+      <div class="context-head"><div class="context-copy"><strong id="contextTitle">COLONY MAP</strong><small id="contextSub">Tap a surveyed tile to see its actions. Tap an unsurveyed tile to survey it.</small></div></div>
+      <div id="contextActions" class="context-actions"></div>
+      <div id="contextRequirement" class="context-requirement"></div>
+    </section>
+
     <footer class="app-footer">
-      <div class="stats-grid">
-        <button id="companyBtn" class="stat"><strong id="cash">£0</strong><span>CASH</span></button>
-        <div class="stat"><strong id="income">£0</strong><span>STOCK VALUE</span></div>
-        <div class="stat"><strong id="foodStock">0</strong><span>FOOD</span></div>
-        <div class="stat"><strong id="buildStock">0</strong><span>BUILD</span></div>
-        <div class="stat"><strong id="fuelStock">0</strong><span>FUEL</span></div>
-        <div class="stat"><strong id="oreStock">0</strong><span>ORE</span></div>
+      <div class="primary-controls">
+        <div class="speed-controls"><button data-speed="0">⏸</button><button data-speed="1" class="active">▶</button><button data-speed="2">▶▶</button><button data-speed="4">▶▶▶</button></div>
+        <button id="coloniesBtn">COLONIES</button><button id="techBtn">TECH</button><button id="tradeBtn">SHIP</button><button id="menuBtn">☰</button>
       </div>
-      <div class="controls">
-        <button data-speed="0">⏸</button><button data-speed="1" class="active">▶</button><button data-speed="2">▶▶</button><button data-speed="4">▶▶▶</button>
-        <button id="collectionBtn">COLLECT</button><button id="tradeBtn">SHIP</button><button id="colonyBtn">COLONY</button><button id="coloniesBtn">COLONIES</button><button id="techBtn">TECH</button><button id="goalsBtn">GOALS</button><button id="menuBtn">☰</button>
-      </div>
+      <div class="legacy-actions hidden" aria-hidden="true"><button id="collectionBtn">COLLECT</button><button id="colonyBtn">COLONY</button><button id="goalsBtn">GOALS</button></div>
     </footer>
   </div>
   <script type="module" src="./js/app.js?v=5.5.5"></script>
