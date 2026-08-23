@@ -1,10 +1,10 @@
 import { UIController as V580UIController } from "./ui-controller-v580.js?v=5.8.0&legacy=1";
 import { operatingMode,riskExposure,supportsOverdrive } from "../domain/extraction-overdrive.js?v=5.6.2";
-import { clamp,formatNumber } from "../core/utils.js?v=5.5.5";
+import { clamp } from "../core/utils.js?v=5.5.5";
 
 const NEXT_MODE={normal:"pushed",pushed:"hard",hard:"normal"};
 
-/** v5.8.1 flow refinements: direct site controls, synchronized selection and clearer shortcuts. */
+/** v5.8 flow refinements: direct site controls, synchronized selection and clearer shortcuts. */
 export class UIController extends V580UIController{
   constructor(options){
     super(options);
@@ -66,6 +66,6 @@ export class UIController extends V580UIController{
     setDaysState("foodDaysHud",this.state.metrics?.foodDays);setDaysState("fuelDaysHud",this.state.metrics?.fuelDays);setDaysState("oreDaysHud",this.state.metrics?.oreDays);
   }
   help(){
-    super.help();const intro=this.modal.querySelector("#help-index .card .effect");if(intro)intro.textContent="Rules current through v5.8.1. The map-first interface keeps routine colony actions on the main screen, including renewable harvest controls and direct Normal/Pushed/Hard extraction changes.";
+    super.help();const intro=this.modal.querySelector("#help-index .card .effect");if(intro)intro.textContent="Rules current through v5.8.0. The map-first interface keeps routine colony actions on the main screen, including renewable harvest controls and direct Normal/Pushed/Hard extraction changes.";
   }
 }
