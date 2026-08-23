@@ -28,6 +28,6 @@ for(const rule of[
 assert.match(help,/DEDICATED_TRANSPORT_DAYS/);
 assert.match(help,/TRADE_INTERVAL_DAYS/);
 assert.match(help,/SITE_OUTPUT_LEVELS\.slice\(0,5\)/);
-assert.match(help,/local <strong>external cash costs<\/strong>/);
+assert.match(help,/tracked <strong>external cash costs<\/strong>/);
 
 console.log("v5.6.4 How to Play rules test passed");
