@@ -9,7 +9,7 @@ export class PortfolioUIMixin extends LegacyPortfolioUIMixin{
     const entries=this.portfolio.entries(this.state);
     for(const card of this.modal.querySelectorAll("[data-colony-id]")){
       const entry=entries.find(item=>item.id===card.dataset.colonyId);if(!entry)continue;
-      const installed=SHIP_INFRASTRUCTURE.industry+builtCapacity(entry.data,"industry"),effective=Math.max(0,Number(entry.data?.metrics?.industry)||0),staff=Math.round(Math.max(0,Math.min(1,Number(entry.data?.metrics?.industryStaffFactor)??1))*100),grid=card.querySelector(".colony-card-grid"),industry=grid?.children?.[1]?.querySelector("strong");
+      const installed=SHIP_INFRASTRUCTURE.industry+builtCapacity(entry.data,"industry"),effective=Math.max(0,Number(entry.data?.metrics?.industry)||0),rawStaff=Number(entry.data?.metrics?.industryStaffFactor),staff=Math.round(Math.max(0,Math.min(1,Number.isFinite(rawStaff)?rawStaff:1))*100),grid=card.querySelector(".colony-card-grid"),industry=grid?.children?.[1]?.querySelector("strong");
       if(industry)industry.textContent=`${formatNumber(effective)} / ${formatNumber(installed)} • ${staff}%`;
     }
   }
