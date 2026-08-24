@@ -7,11 +7,13 @@ on:
       - 'feature/**'
       - 'refactor/**'
       - 'hotfix/**'
+      - 'fix/**'
   pull_request:
     branches:
       - develop
       - main
       - 'feature/**'
+      - 'fix/**'
 
 jobs:
   test:
@@ -73,3 +75,13 @@ jobs:
               exit 1
             fi
           done
+
+          echo "Testing first-contract renewal and multi-colony event lifecycle"
+          "$chrome" --headless --no-sandbox --disable-gpu --window-size=390,844 --virtual-time-budget=12000 --dump-dom http://127.0.0.1:8123/tests/multi-colony-lifecycle-probe.html >/tmp/lifecycle.html 2>/tmp/lifecycle.log
+          if ! grep -q 'PASS first contract renewal, second colony, recovered ship queue and colony switching' /tmp/lifecycle.html; then
+            echo "Multi-colony lifecycle probe failed"
+            cat /tmp/lifecycle.html
+            cat /tmp/lifecycle.log
+            cat /tmp/mineit-http.log
+            exit 1
+          fi
