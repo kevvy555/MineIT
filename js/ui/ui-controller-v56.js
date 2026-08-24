@@ -20,7 +20,7 @@ export class UIController extends LegacyUIController{
   }
 
   bindSpeedInputs(){
-    const controls=document.querySelector(".controls");
+    const controls=document.querySelector(".controls")||document.querySelector(".app-footer");
     if(!controls||this.speedInputBound)return;
     this.speedInputBound=true;
     controls.addEventListener("click",event=>{
@@ -37,8 +37,8 @@ export class UIController extends LegacyUIController{
       this.toast("Choose a landing site before starting time.");
       return false;
     }
-    if(next>0&&(this.state.company?.pendingEvents?.length||this.state.trade?.active)){
-      this.toast("Resolve the pending corporate ship before resuming time.");
+    if(next>0&&(this.state.company?.pendingEvents?.length||this.state.trade?.active||this.state.status==="contract-decision")){
+      this.toast("Resolve the pending corporate event before resuming time.");
       return false;
     }
     if(this.state.company?.gameOver){
