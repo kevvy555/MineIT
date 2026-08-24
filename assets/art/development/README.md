@@ -45,3 +45,7 @@ The original PNGs remain available for future high-detail building views, panels
 Uploading or replacing an image under an `originals/` directory automatically triggers `.github/workflows/rebuild-building-atlases.yml`. The workflow runs `tools/build-building-atlases.py` and commits any changed high-resolution atlases back to the same branch.
 
 The previous `<family>-levels.webp` files are legacy low-resolution atlases. The v5.9.1 renderer no longer uses them; they can be removed after the high-resolution rollout is verified.
+
+## Current rollout status
+
+All 10 building families now have five source PNGs and a generated 1280×256 high-resolution runtime atlas on `feature/high-res-building-atlases`.
