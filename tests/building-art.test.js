@@ -3,7 +3,7 @@ import fs from "node:fs";
 
 const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),"utf8");
 const art=read("js/ui/land-art.js"),view=read("js/ui/world-view-v56.js"),view570=read("js/ui/world-view-v570.js"),view580=read("js/ui/world-view-v580.js"),pkg=JSON.parse(read("package.json"));
-assert.equal(pkg.version,"5.8.0");
+assert.equal(pkg.version,"5.8.1");
 const families=["housing","industry","quarry","mine","deep-mine","rig","farm","ranch","bio-harvester","algae-facility"];
 for(const family of families)assert.ok(art.includes(family),`missing development family ${family}`);
 assert.match(art,/bio:\"bio-harvester\"/);assert.match(art,/algae:\"algae-facility\"/);assert.match(art,/function developmentLevel\(dev\)/);assert.match(art,/Math\.max\(1,Math\.min\(5,Number\(dev\?\.level\)\|\|1\)\)/);assert.match(art,/function developmentAtlasPath\(dev\)/);assert.match(art,/assets\/art\/development\/\$\{kind\}\/\$\{kind\}-levels\.webp/);assert.match(art,/function drawDevelopmentFrame\(/);assert.match(art,/const frames=5/);assert.match(art,/frameWidth\*index,0,frameWidth,frameHeight/);
