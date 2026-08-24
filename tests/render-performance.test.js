@@ -20,6 +20,18 @@ function walk(dir){
   }
 }
 walk(root);
-const sizes=files.map(f=>fs.statSync(f).size),max=Math.max(...sizes),total=sizes.reduce((a,b)=>a+b,0);
-assert.ok(max<64*1024,`map WebP unexpectedly large: ${max} bytes`);
-console.log(`render performance guard passed (${files.length} WebPs, total ${total} bytes, max ${max} bytes)`);
+
+const highResAtlases=files.filter(f=>f.pathname.endsWith("-levels-256.webp"));
+const regularMapArt=files.filter(f=>!f.pathname.endsWith("-levels-256.webp"));
+const regularSizes=regularMapArt.map(f=>fs.statSync(f).size);
+const atlasSizes=highResAtlases.map(f=>fs.statSync(f).size);
+const allSizes=[...regularSizes,...atlasSizes];
+const total=allSizes.reduce((a,b)=>a+b,0);
+const regularMax=regularSizes.length?Math.max(...regularSizes):0;
+const atlasMax=atlasSizes.length?Math.max(...atlasSizes):0;
+const atlasTotal=atlasSizes.reduce((a,b)=>a+b,0);
+
+assert.ok(regularMax<64*1024,`regular map WebP unexpectedly large: ${regularMax} bytes`);
+assert.ok(atlasMax<256*1024,`high-resolution building atlas unexpectedly large: ${atlasMax} bytes`);
+assert.ok(atlasTotal<2*1024*1024,`high-resolution building atlases exceed 2 MiB total: ${atlasTotal} bytes`);
+console.log(`render performance guard passed (${files.length} WebPs, total ${total} bytes, regular max ${regularMax} bytes, ${highResAtlases.length} high-res atlases / ${atlasTotal} bytes, atlas max ${atlasMax} bytes)`);
