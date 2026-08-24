@@ -12,7 +12,7 @@ export class CorporateEventService{
   sort(company){this.ensure(company);company.pendingEvents.sort((a,b)=>this.priority(a)-this.priority(b)||(Number(a.sequence)||0)-(Number(b.sequence)||0));return company.pendingEvents;}
   enqueue(company,event){
     this.ensure(company);const key=this.key(event),existing=company.pendingEvents.find(e=>this.key(e)===key);
-    if(existing){if(event.recovered)existing.recovered=true;return existing;}
+    if(existing){if(event.recovered)existing.recovered=true;this.sort(company);return existing;}
     const queued={...event,sequence:company.nextEventSequence++};company.pendingEvents.push(queued);this.sort(company);return queued;
   }
   queueShip(local,colonyName,{recovered=false}={}){return this.enqueue(local.company,{type:"ship",colonyId:local.colonyId,colonyName:colonyName||local.contract?.colonyName||"Colony",recovered:!!recovered});}
@@ -30,11 +30,14 @@ export class CorporateEventService{
       const key=this.key(event);if(seen.has(key))return false;seen.add(key);if(!Number.isFinite(Number(event.sequence)))event.sequence=company.nextEventSequence++;return true;
     });this.sort(company);return company.pendingEvents;
   }
+  legacyPendingDecision(local){if(local?.status==="deadline-missed")return"extension";if(local?.status==="failed")return"failed";return null;}
+  shipDueWhileDecisionPending(local){
+    if(local?.status!=="contract-decision")return this.trade.shouldArrive(local);
+    const current=local.status,previous=local.contract?.pendingDecisionPreviousStatus||"playing";local.status=previous;
+    try{return this.trade.shouldArrive(local);}finally{local.status=current;}
+  }
   recoverLocal(local,colonyName){
-    const results=[];const existingDecision=local.contract?.pendingDecision||null;
-    const deadline=existingDecision?null:this.contracts.deadlineState(local);
-    const wasDocked=!!local.trade?.active;
-    const shipDue=!wasDocked&&this.trade.shouldArrive(local);
+    const results=[],existingDecision=local.contract?.pendingDecision||this.legacyPendingDecision(local),deadline=existingDecision?null:this.contracts.deadlineState(local),wasDocked=!!local.trade?.active,shipDue=!wasDocked&&this.shipDueWhileDecisionPending(local);
     if(wasDocked)results.push(this.queueShip(local,colonyName,{recovered:true}));
     if(existingDecision)results.push(this.queueContract(local,colonyName,existingDecision,{recovered:true}));
     else if(deadline)results.push(this.queueContract(local,colonyName,deadline,{recovered:true}));
