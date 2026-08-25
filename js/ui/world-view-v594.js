@@ -1,25 +1,29 @@
 import { WorldView as V593WorldView } from "./world-view-v591.js?v=5.9.1&legacy=1";
 import { artImage } from "./land-art-v591.js?v=5.9.1";
 
-const SHIP_ART="./assets/art/colony-ship.webp?v=2";
+const SHIP_ART="./assets/art/colony-ship.webp?v=3";
 
 /**
- * v5.9.4: render the colony ship from a direct raster asset.
- * The previous SVG wrapper embedded a WebP data URI and could silently fail
- * when decoded as a canvas Image. Keep a visible fallback so the ship tile
- * can never become blank while the asset is loading or if decoding fails.
+ * v5.9.5: render the colony ship as a prominent diagonal tile asset.
+ * The source sprite is very wide (256x90), so drawing it straight with a
+ * contain fit made it only about one third of a tile high on mobile. Rotating
+ * it diagonally preserves its aspect ratio while using much more of the tile.
  */
 export class WorldView extends V593WorldView{
   drawShip(c,px,py){
     const img=artImage(SHIP_ART,this.assetReady);
     if(img?.complete&&img.naturalWidth>0&&img.naturalHeight>0){
-      const maxW=this.cell*.96,maxH=this.cell*.62,ratio=Math.min(maxW/img.naturalWidth,maxH/img.naturalHeight),w=img.naturalWidth*ratio,h=img.naturalHeight*ratio;
+      const angle=Math.PI*0.155,cos=Math.abs(Math.cos(angle)),sin=Math.abs(Math.sin(angle));
+      const boundW=img.naturalWidth*cos+img.naturalHeight*sin,boundH=img.naturalWidth*sin+img.naturalHeight*cos;
+      const scale=Math.min((this.cell*.94)/boundW,(this.cell*.94)/boundH),w=img.naturalWidth*scale,h=img.naturalHeight*scale;
       c.save();
-      c.shadowColor="rgba(0,0,0,.80)";
-      c.shadowBlur=Math.max(2,this.cell*.055);
-      c.shadowOffsetY=Math.max(1,this.cell*.015);
+      c.translate(px+this.cell/2,py+this.cell/2);
+      c.rotate(angle);
+      c.shadowColor="rgba(0,0,0,.88)";
+      c.shadowBlur=Math.max(2,this.cell*.065);
+      c.shadowOffsetY=Math.max(1,this.cell*.02);
       try{
-        c.drawImage(img,px+(this.cell-w)/2,py+(this.cell-h)/2,w,h);
+        c.drawImage(img,-w/2,-h/2,w,h);
         c.restore();
         return true;
       }catch{}
