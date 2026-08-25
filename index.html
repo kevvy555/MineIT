@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#050708">
   <title>MineIT</title>
+  <link rel="preload" as="image" type="image/webp" href="./assets/art/resources/resource-atlas-256.webp?v=5.9.7" fetchpriority="high">
   <link rel="stylesheet" href="./css/app.css?v=5.6.0">
   <link rel="stylesheet" href="./css/world.css?v=5.6.0">
   <link rel="stylesheet" href="./css/panels.css?v=5.5.5">
@@ -14,6 +15,9 @@
   <link rel="stylesheet" href="./css/ui-enhancements.css?v=5.5.5">
   <link rel="stylesheet" href="./css/land.css?v=5.6.0">
   <link rel="stylesheet" href="./css/map-first.css?v=5.8.0">
+  <link rel="stylesheet" href="./css/building-details.css?v=5.9.2">
+  <link rel="stylesheet" href="./css/resource-details.css?v=5.9.9">
+  <link rel="stylesheet" href="./css/adaptive-building-details.css?v=5.10.0">
   <script type="importmap">
   {
     "imports": {
@@ -31,8 +35,9 @@
       "./js/ui/ui-controller.js?v=5.6.2&legacy=1": "./js/ui/ui-controller.js?v=5.8.1",
       "./js/ui/ui-controller-v56.js?v=5.6.2&legacy=1": "./js/ui/ui-controller-v56.js?v=5.8.1",
       "./js/ui/map-controls.js?v=5.6.0": "./js/ui/map-controls-v581.js?v=5.8.0",
-      "./js/ui/world-view.js?v=5.5.5": "./js/ui/world-view-v580.js?v=5.8.0",
-      "./js/ui/ui-controller.js?v=5.5.5": "./js/ui/ui-controller-v590.js?v=5.9.0",
+      "./js/ui/resource-icons.js?v=5.5.5": "./js/ui/resource-icons-v597.js?v=5.9.7",
+      "./js/ui/world-view.js?v=5.5.5": "./js/ui/world-view-v594.js?v=5.9.7",
+      "./js/ui/ui-controller.js?v=5.5.5": "./js/ui/ui-controller-v5100.js?v=5.10.0",
       "./js/ui/v55-trade-ui.js?v=5.5.5": "./js/ui/quick-trade-ui.js?v=5.9.0"
     }
   }
@@ -102,6 +107,6 @@
       <div class="legacy-actions hidden" aria-hidden="true"><button id="collectionBtn">COLLECT</button><button id="colonyBtn">COLONY</button><button id="goalsBtn">GOALS</button></div>
     </footer>
   </div>
-  <script type="module" src="./js/app.js?v=5.9.0"></script>
+  <script type="module" src="./js/app.js?v=5.10.0"></script>
 </body>
 </html>
