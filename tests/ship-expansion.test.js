@@ -1,0 +1,48 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { CONFIG } from "../js/core/config.js";
+import { ContractService } from "../js/domain/contract-service.js";
+import { ResourceService } from "../js/domain/resource-service.js";
+import { InventoryService } from "../js/domain/inventory-service.js";
+import { createGameState } from "../js/domain/game-state-v511.js";
+import { PortfolioService } from "../js/domain/portfolio-service-v511.js";
+import { TradeService } from "../js/domain/trade-service-v511.js";
+import { ExpansionService, HOME_SYSTEM_ID, PROBE_UNLOCK_INDUSTRY_LEVEL, PLAYER_SHIP_CAPACITY, CORPORATE_SERVICE_RADIUS_LY } from "../js/domain/expansion-service.js";
+
+const contracts=new ContractService(),resources=new ResourceService(),inventory=new InventoryService(resources),portfolio=new PortfolioService(),trade=new TradeService(resources,inventory),expansion=new ExpansionService(inventory,resources,contracts);
+const state=createGameState(contracts.first());portfolio.ensure(state);expansion.ensure(state);
+assert.equal(state.version,9,"ShipExpansion save wrapper should advance the browser save model to v9");
+assert.ok(state.company.expansion.systems.length>=15,"A persistent 2D galaxy should be generated");
+assert.equal(expansion.ship(state).status,"docked");
+assert.equal(state.contract.systemId,"koplin-frontier");
+assert.ok(expansion.system(state.company.expansion,HOME_SYSTEM_ID)?.home,"Corporate homeworld must exist separately from Colony 01");
+assert.equal(state.company.expansion.serviceRadiusLy,CORPORATE_SERVICE_RADIUS_LY);
+
+const unknown=state.company.expansion.systems.find(s=>!s.home&&!s.surveyed);assert.ok(unknown);
+let probeCheck=expansion.canLaunchProbe(state,unknown.id);assert.equal(probeCheck.ok,false);assert.match(probeCheck.reason,new RegExp(`Industry L${PROBE_UNLOCK_INDUSTRY_LEVEL}`));
+state.company.tech.industry=PROBE_UNLOCK_INDUSTRY_LEVEL;probeCheck=expansion.canLaunchProbe(state,unknown.id);assert.equal(probeCheck.ok,true);
+const beforeBuild=inventory.amount(state,"build"),probe=expansion.launchProbe(state,unknown.id);assert.equal(probe.ok,true);assert.ok(inventory.amount(state,"build")<beforeBuild,"Survey probe construction must consume existing colony resources");
+const setAbsolute=(s,day)=>{s.year=Math.floor((day-1)/CONFIG.DAYS_PER_YEAR)+1;s.day=(day-1)%CONFIG.DAYS_PER_YEAR+1;};
+setAbsolute(state,probe.probe.arrivalAbsoluteDay);expansion.processDay(state);assert.equal(unknown.surveyed,true,"Probe arrival should reveal broad system survey data");assert.ok(unknown.planets.every(p=>p.indicators&&p.surveyConfidence),"Surveyed planets should expose broad indicators, not exact deposits");
+
+inventory.store(state,"food","fungal","Fungal Shelf",12000,500);
+inventory.store(state,"fuel","biomass","Biomass",12000,500);
+inventory.store(state,"build","stone","Stone",5000,500);
+inventory.store(state,"ore","surface-iron","Surface Iron Nodules",5000,500);
+const sourcePop=state.pop;assert.equal(expansion.loadPassengers(state,20).ok,true);assert.equal(state.pop,sourcePop-20,"Colonists must physically leave the source colony when boarded");
+const foodKey=Object.keys(state.inventory).find(k=>state.inventory[k]?.type==="food"&&state.inventory[k]?.amount>1000),fuelKey=Object.keys(state.inventory).find(k=>state.inventory[k]?.type==="fuel"&&state.inventory[k]?.amount>1000),buildKey=Object.keys(state.inventory).find(k=>state.inventory[k]?.type==="build"&&state.inventory[k]?.amount>1000);
+assert.equal(expansion.setTarget(state,unknown.id).ok,true,"Destination choice before launch should be system-level only");
+let profile=expansion.travelProfile(state,unknown.id);assert.ok(profile.days>=7&&profile.distanceLy>0);
+assert.equal(expansion.loadFuel(state,fuelKey,profile.fuelRequired+250).ok,true);assert.equal(expansion.loadCargo(state,foodKey,profile.foodRequired+500).ok,true);assert.equal(expansion.loadCargo(state,buildKey,800).ok,true);assert.ok(expansion.capacityUsed(state)<=PLAYER_SHIP_CAPACITY);
+const launch=expansion.launch(state);assert.equal(launch.ok,true);assert.equal(expansion.ship(state).status,"travelling");assert.equal(expansion.ship(state).colonyId,null,"The sole player ship must physically leave its source colony");
+for(let day=launch.profile.arrivalAbsoluteDay-launch.profile.days+1;day<=launch.profile.arrivalAbsoluteDay;day++){setAbsolute(state,day);expansion.processDay(state);}assert.equal(expansion.ship(state).status,"arrived");assert.equal(expansion.ship(state).systemId,unknown.id);assert.equal(expansion.ship(state).awaitingDestination,true,"Planet selection happens only after arrival in the target system");
+
+state.company.tech={housing:5,power:5,food:5,industry:5,mining:10};const planet=unknown.planets[0],contract=expansion.makePlanetContract(state,unknown.id,planet.id);assert.equal(contract.systemId,unknown.id);assert.equal(contract.planetId,planet.id);assert.equal(contract.advance,0,"Expedition colonies must not receive a free cash advance");const manifest=expansion.expeditionManifest(state),entry=portfolio.addColony(state,contract);assert.equal(state.colonyId,entry.id);assert.equal(Math.floor(state.pop),manifest.passengers,"New colony population must come entirely from ship passengers");assert.equal(expansion.ship(state).status,"docked");assert.equal(expansion.ship(state).colonyId,entry.id);assert.equal(expansion.cargoAmount(state),0,"All expedition cargo becomes the new colony's initial stock");assert.ok(inventory.amount(state,"build")>0,"New colony must receive the resources physically carried by the ship");
+
+state.contract.distanceLy=CORPORATE_SERVICE_RADIUS_LY+2;state.trade.active=false;state.trade.nextArrivalDay=1;assert.equal(trade.serviceAvailable(state),false);assert.equal(trade.shouldArrive(state),false);
+state.contract.distanceLy=1;assert.equal(trade.serviceAvailable(state),true);
+
+const firstId=state.portfolio.colonies[0].id;assert.ok(state.portfolio.colonies.length>=2);expansion.dockAtColony(state,state.colonyId);const lost=expansion.onColonyDied(state);assert.equal(lost.shipLost,true);assert.equal(expansion.ship(state).status,"lost");assert.equal(state.company.gameOver,true,"Sole player ship loss must force game over");assert.ok(state.portfolio.colonies.some(e=>e.id===firstId),"Ship loss is campaign failure, not deletion of existing colony records");
+
+const uiSource=readFileSync(new URL("../js/ui/ui-controller-v511.js",import.meta.url),"utf8"),serviceSource=readFileSync(new URL("../js/domain/expansion-service.js",import.meta.url),"utf8");for(const marker of["starMapCanvas","BUILD + LAUNCH SURVEY PROBE","AS DESTINATION","SHIP FUEL TANK","Koplin Corporate Home"])assert.ok(uiSource.includes(marker));for(const marker of["CORPORATE_SERVICE_RADIUS_LY","probe-en-route","awaitingDestination","sellCargoAtHome"])assert.ok(serviceSource.includes(marker));
+console.log("MineIT ShipExpansion regression test passed");
