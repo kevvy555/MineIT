@@ -39,4 +39,5 @@ jobs:
             exit 0
           fi
           git commit -m "Rebuild high-resolution resource atlas"
-          git push
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          git push origin HEAD:"$GITHUB_REF_NAME"
