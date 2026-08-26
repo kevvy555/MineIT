@@ -1,14 +1,14 @@
-import { formatNumber } from "../core/utils.js?v=5.5.5";
-import { ResourceUIMixin } from "./resource-ui.js?v=5.6.2";
-import { ColonyTechUIMixin } from "./colony-tech-ui.js?v=5.5.5";
-import { ContractUIMixin } from "./contract-ui.js?v=5.5.5";
-import { PortfolioUIMixin } from "./portfolio-ui.js?v=5.5.5";
-import { UIEnhancementsMixin } from "./ui-enhancements.js?v=5.5.5";
-import { SurvivalUIMixin } from "./survival-ui.js?v=5.5.5";
-import { IndustryUIMixin } from "./industry-ui.js?v=5.5.5";
-import { V55UIMixin } from "./v55-ui.js?v=5.5.5";
-import { V55ContractLogUIMixin } from "./v55-contract-log-ui.js?v=5.5.5";
-import { LandUIMixin } from "./land-ui.js?v=5.5.5";
+import { formatNumber } from "../core/utils.js";
+import { ResourceUIMixin } from "./resource-ui.js";
+import { ColonyTechUIMixin } from "./colony-tech-ui.js";
+import { ContractUIMixin } from "./contract-ui.js";
+import { PortfolioUIMixin } from "./portfolio-ui.js";
+import { UIEnhancementsMixin } from "./ui-enhancements.js";
+import { SurvivalUIMixin } from "./survival-ui.js";
+import { IndustryUIMixin } from "./industry-ui.js";
+import { V55UIMixin } from "./v55-ui.js";
+import { V55ContractLogUIMixin } from "./v55-contract-log-ui.js";
+import { LandUIMixin } from "./land-ui.js";
 
 export class UIController {
   constructor({state,repo,resources,inventory,collection,colony,portfolio,sites,technology,survey,contracts,world,icons,diagnostics,transport,gameLog,land,development,onHardReset,onNewContract,onSwitchColony,onRemoveColony,onMakeLiability,onRelocateColony,onRecalculate,onCapturePortfolio,onSelectLand,onPlaceDevelopment,onDemolishDevelopment,onContractDecisionResolved,onProcessPendingEvent}){
