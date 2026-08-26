@@ -28,10 +28,10 @@
       "./js/domain/portfolio-service.js?v=5.5.5": "./js/domain/portfolio-service-v5111.js?v=5.11.1",
       "./js/domain/resource-service.js?v=5.5.5": "./js/domain/resource-service-v570.js?v=5.7.0",
       "./js/domain/collection-service.js?v=5.5.5": "./js/domain/collection-service.js?v=5.6.2",
-      "./js/domain/colony-service.js?v=5.5.5": "./js/domain/colony-service-v570.js?v=5.7.0",
+      "./js/domain/colony-service.js?v=5.5.5": "./js/domain/colony-service.js?canonical=1",
       "./js/domain/development-service.js?v=5.5.5": "./js/domain/development-service-v570.js?v=5.7.0",
       "./js/domain/site-service.js?v=5.5.5": "./js/domain/site-service-v570.js?v=5.7.0",
-      "./js/domain/technology-service.js?v=5.5.5": "./js/domain/technology-service-v570.js?v=5.7.0",
+      "./js/domain/technology-service.js?v=5.5.5": "./js/domain/technology-service.js?canonical=1",
       "./js/domain/simulation-engine.js?v=5.5.5": "./js/domain/simulation-engine-v5113.js?v=5.11.3",
       "./js/domain/trade-service.js?v=5.5.5": "./js/domain/trade-service-v511.js?v=5.11.0",
       "./js/ui/contract-ui.js?v=5.5.5": "./js/ui/contract-ui.js?v=5.8.1",
@@ -88,7 +88,7 @@
         <canvas id="world"></canvas>
         <div id="colonyNavStrip" class="colony-nav-strip" aria-label="Colony navigation"></div>
         <div id="cornerHud" class="hud-chip"><strong id="cameraText">COLONY MAP • 8×8</strong><span>Tap to select • drag unsurveyed tiles to multi-survey</span></div>
-        <div id="scanHud" class="hud-chip scan-hud hidden"><strong>SCANNING</strong><span id="scanText"></span><div class="scan-progress"><i id="scanBar"></i></div></div>
+        <div id="scanHud" class="hud-chip scan-hud hidden"><strong>SCANNING</strong><span id="scanText"></span><div class="scan-progress"><i id="scanBar" class="scan-progress"><i></i></div></div>
       </div>
       <div id="overlayRoot" aria-label="Application overlays">
         <div id="toast" class="toast hidden"></div>
