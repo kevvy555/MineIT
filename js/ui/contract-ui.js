@@ -1,12 +1,14 @@
 import { clamp, formatMoney, formatNumber } from "../core/utils.js";
 import { CONFIG } from "../core/config.js";
+import { renderViewTemplate } from "../core/view-template.js";
 
 export class ContractUIMixin {
   diagnosticsPanel(){const text=this.diagnostics.text(this.state).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");this.open("Diagnostics / Error Log",`<div class="diag-log">${text}</div>`);}
   rare(tile){this.state.speed=0;this.syncSpeed();const icon=this.icons.svg(tile.resourceId,this.icons.colorFor(tile),38,tile.type),remaining=this.resources.isRenewable(tile)?"Sustainable":`reserve ${formatNumber(tile.reserve)}`;this.open("Exceptional Discovery",`<article class="card"><div class="resource-title">${icon}<h3>${tile.name} • Q${formatNumber(tile.quality)}</h3></div><p>${this.resources.categoryName(tile.type)} • ${tile.resourceRarity} • ${remaining}</p><div class="effect">Mining requirement: L${tile.requiredMiningLevel||1} • ${tile.requiredMiningTech||"Surface Recovery"}</div><button data-view>VIEW SITE</button></article>`);this.modal.querySelector("[data-view]").onclick=()=>{this.modal.classList.add("hidden");this.tile(tile)};}
-  completionActions(title,score=null){
-    const fee=this.contracts.renewalFee(this.state);
-    this.open(title,`${score?`<article class="card"><h3>${score.rating.toUpperCase()} PERFORMANCE</h3><p>Colony contract profit ${formatMoney(score.profit)}</p></article>`:""}<article class="card"><h3>COLONY REMAINS ACTIVE</h3><p>You can renew the mining charter for another ${CONFIG.RENEWAL_YEARS} years, open another colony contract while this world remains in your portfolio, continue on holdover, or attempt to return the colony.</p><div class="effect warn">The corporation remains paused until this contract decision is resolved.</div></article><div class="grid2" style="margin-top:7px"><button data-renew>RENEW ${CONFIG.RENEWAL_YEARS} YEARS<br><span class="tiny">${formatMoney(fee)}</span></button><button data-new>OPEN NEW COLONY</button><button data-hold>CONTINUE ON HOLDOVER</button><button data-end>END / RETURN COLONY</button></div><button class="action" data-colonies>VIEW ALL COLONIES</button>`);
+  async completionActions(title,score=null){
+    const fee=this.contracts.renewalFee(this.state),scoreCard=score?`<article class="card"><h3>${score.rating.toUpperCase()} PERFORMANCE</h3><p>Colony contract profit ${formatMoney(score.profit)}</p></article>`:"";
+    let body;try{body=await renderViewTemplate("./views/contract-completion.html",{SCORE_CARD:scoreCard,RENEWAL_YEARS:CONFIG.RENEWAL_YEARS,RENEWAL_FEE:formatMoney(fee)});}catch(error){this.diagnostics?.error?.("contract completion template failed",error);this.toast("Unable to open the contract decision.");return;}
+    this.open(title,body);
     this.modal.querySelector("[data-renew]").onclick=()=>{const r=this.contracts.renew(this.state);if(r.ok){this.repo.save(this.state);this.modal.classList.add("hidden");this.syncSpeed();if(this.onContractDecisionResolved)this.onContractDecisionResolved("renewed");this.toast(`Contract renewed for ${r.years} years.`);}else this.toast(r.reason)};
     this.modal.querySelector("[data-new]").onclick=()=>{this.state.status="holdover";this.repo.save(this.state);if(this.onContractDecisionResolved)this.onContractDecisionResolved("new-colony");else this.contractBoard();};
     this.modal.querySelector("[data-hold]").onclick=()=>{this.state.status="holdover";this.repo.save(this.state);this.modal.classList.add("hidden");if(this.onContractDecisionResolved)this.onContractDecisionResolved("holdover");else{this.state.speed=1;this.syncSpeed();}};
@@ -16,10 +18,10 @@ export class ContractUIMixin {
   deadline(kind=null){
     this.state.speed=0;this.syncSpeed();kind||=this.contracts.deadlineState(this.state)||this.state.contract?.pendingDecision;
     if(kind==="complete"){
-      const result=this.contracts.awardCompletion(this.state);this.repo.save(this.state);this.completionActions("Initial Contract Complete",result.score);return;
+      const result=this.contracts.awardCompletion(this.state);this.repo.save(this.state);void this.completionActions("Initial Contract Complete",result.score);return;
     }
     if(kind==="renewal-ended"){
-      this.contracts.enterHoldover(this.state);this.repo.save(this.state);this.completionActions("Renewal Term Complete");return;
+      this.contracts.enterHoldover(this.state);this.repo.save(this.state);void this.completionActions("Renewal Term Complete");return;
     }
     if(kind==="extension"){
       const n=this.state.contract.extUsed+1,fee=this.contracts.extensionFee(this.state);this.state.status="deadline-missed";
