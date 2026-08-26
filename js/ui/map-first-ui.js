@@ -1,18 +1,27 @@
-import { UIController as LegacyUIController } from "./ui-controller-v570.js?v=5.7.0&legacy=1";
-import { formatMoney,formatNumber } from "../core/utils.js?v=5.5.5";
-import { buildingCapacity,syncBuildingTotals } from "../domain/building-model.js?v=5.7.0";
-import { supportsOverdrive } from "../domain/extraction-overdrive.js?v=5.6.2";
+import { UIController as LegacyUIController } from "./technology-presentation-ui.js";
+import { formatMoney,formatNumber } from "../core/utils.js";
+import { buildingCapacity,syncBuildingTotals } from "../domain/building-model.js";
+import { supportsOverdrive } from "../domain/extraction-overdrive.js";
 
 const LOCAL_KINDS=new Set(["housing","power","industry"]);
 const RESOURCE_LABEL={food:"FOOD",build:"BUILD",fuel:"FUEL",ore:"ORE"};
 const cap=(v,min=0,max=1)=>Math.max(min,Math.min(max,Number(v)||0));
 
-/** v5.8 interaction adapter: routine colony play happens from the persistent HUD and tile context bar. */
+/** Routine colony play through the persistent HUD and tile context bar. */
 export class UIController extends LegacyUIController{
   constructor(options){
     super(options);this.selectedTile=null;this.currentAttention=null;
-    document.addEventListener("mineit:tile-selected",e=>this.selectMapTile(e.detail?.x,e.detail?.y));
-    const attention=document.querySelector("#attentionStrip");if(attention)attention.onclick=()=>this.runAttentionAction();
+    this.tileSelectedHandler=e=>this.selectMapTile(e.detail?.x,e.detail?.y);
+    document.addEventListener("mineit:tile-selected",this.tileSelectedHandler);
+    this.attentionElement=document.querySelector("#attentionStrip");
+    this.attentionClickHandler=()=>this.runAttentionAction();
+    this.attentionElement?.addEventListener("click",this.attentionClickHandler);
+  }
+  dispose(){
+    document.removeEventListener("mineit:tile-selected",this.tileSelectedHandler);
+    this.attentionElement?.removeEventListener("click",this.attentionClickHandler);
+    this.tileSelectedHandler=null;this.attentionClickHandler=null;this.attentionElement=null;
+    super.dispose?.();
   }
   render(){super.render();this.renderMapFirstHud();this.renderContext();}
   selectMapTile(x,y){
