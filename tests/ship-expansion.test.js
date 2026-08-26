@@ -20,7 +20,7 @@ assert.equal(state.company.expansion.serviceRadiusLy,CORPORATE_SERVICE_RADIUS_LY
 assert.equal(expansion.isAtActiveColony(state),true,"Cargo Bay must be available from the initial docked ship without any technology gate or selected destination");
 assert.equal(expansion.ship(state).targetSystemId,null,"Preparing/loading the ship must not require a destination to be selected first");
 
-const unknown=state.company.expansion.systems.find(s=>!s.home&&!s.surveyed);assert.ok(unknown);
+const unknown=state.company.expansion.systems.filter(s=>!s.home&&!s.surveyed).sort((a,b)=>expansion.distanceFromHome(state,a.id)-expansion.distanceFromHome(state,b.id))[0];assert.ok(unknown);
 let probeCheck=expansion.canLaunchProbe(state,unknown.id);assert.equal(probeCheck.ok,false);assert.match(probeCheck.reason,new RegExp(`Industry L${PROBE_UNLOCK_INDUSTRY_LEVEL}`));
 state.company.tech.industry=PROBE_UNLOCK_INDUSTRY_LEVEL;probeCheck=expansion.canLaunchProbe(state,unknown.id);assert.equal(probeCheck.ok,true);
 const beforeBuild=inventory.amount(state,"build"),probe=expansion.launchProbe(state,unknown.id);assert.equal(probe.ok,true);assert.ok(inventory.amount(state,"build")<beforeBuild,"Survey probe construction must consume existing colony resources");
