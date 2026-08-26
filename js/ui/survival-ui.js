@@ -1,5 +1,5 @@
-import { formatMoney, formatNumber } from "../core/utils.js?v=5.3.0";
-import { CONFIG } from "../core/config.js?v=5.3.0";
+import { formatMoney, formatNumber } from "../core/utils.js";
+import { CONFIG } from "../core/config.js";
 
 const TECH_LABELS={power:"POWER",food:"FOOD PRODUCTION",mining:"MINING"};
 const CATEGORY_HELP={
