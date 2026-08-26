@@ -1,6 +1,6 @@
-import { TECH_TREES,TECHNOLOGIES } from "../data/technologies-v570.js?v=5.7.0";
-import { clamp } from "../core/utils.js?v=5.5.5";
-import { syncBuildingTotals,MAX_BUILDING_LEVEL } from "./building-model.js?v=5.7.0";
+import { TECH_TREES,TECHNOLOGIES } from "../data/technologies.js";
+import { clamp } from "../core/utils.js";
+import { syncBuildingTotals,MAX_BUILDING_LEVEL } from "./building-model.js";
 
 const DEFAULT_TECH=Object.freeze({housing:1,power:1,food:1,industry:1,mining:1});
 const BUILDING_TECHS=new Set(["housing","power","food","industry"]);
