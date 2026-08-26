@@ -13,22 +13,31 @@ import { LandUIMixin } from "./land-ui.js";
 export class UIController {
   constructor({state,repo,resources,inventory,collection,colony,portfolio,sites,technology,survey,contracts,world,icons,diagnostics,transport,gameLog,land,development,onHardReset,onNewContract,onSwitchColony,onRemoveColony,onMakeLiability,onRelocateColony,onRecalculate,onCapturePortfolio,onSelectLand,onPlaceDevelopment,onDemolishDevelopment,onContractDecisionResolved,onProcessPendingEvent}){
     Object.assign(this,{state,repo,resources,inventory,collection,colony,portfolio,sites,technology,survey,contracts,world,icons,diagnostics,transport,gameLog,land,development,onHardReset,onNewContract,onSwitchColony,onRemoveColony,onMakeLiability,onRelocateColony,onRecalculate,onCapturePortfolio,onSelectLand,onPlaceDevelopment,onDemolishDevelopment,onContractDecisionResolved,onProcessPendingEvent});
-    this.tilePanel=document.querySelector("#tilePanel");this.modal=document.querySelector("#modal");this.toastEl=document.querySelector("#toast");this.errorBadge=document.querySelector("#errorBadge");this.bind();
+    this.tilePanel=document.querySelector("#tilePanel");this.modal=document.querySelector("#modal");this.toastEl=document.querySelector("#toast");this.errorBadge=document.querySelector("#errorBadge");this.boundClickElements=[];this.bind();
   }
+  bindClick(selector,handler){const element=document.querySelector(selector);if(!element)return null;element.onclick=handler;this.boundClickElements.push(element);return element;}
   bind(){
-    document.querySelector("#companyBtn").onclick=()=>this.company();document.querySelector("#collectionBtn").onclick=()=>this.currentCollection();document.querySelector("#colonyBtn").onclick=()=>this.landColonyPanel();document.querySelector("#coloniesBtn").onclick=()=>this.coloniesPanel();document.querySelector("#techBtn").onclick=()=>this.tech();document.querySelector("#goalsBtn").onclick=()=>this.goals();document.querySelector("#menuBtn").onclick=()=>this.menu();
+    this.bindClick("#companyBtn",()=>this.company());this.bindClick("#collectionBtn",()=>this.currentCollection());this.bindClick("#colonyBtn",()=>this.landColonyPanel());this.bindClick("#coloniesBtn",()=>this.coloniesPanel());this.bindClick("#techBtn",()=>this.tech());this.bindClick("#goalsBtn",()=>this.goals());this.bindClick("#menuBtn",()=>this.menu());
     this.bindSpeedInputs();
-    this.errorBadge.onclick=()=>this.diagnosticsPanel();this.diagnostics.subscribe(()=>this.updateErrorBadge());
+    if(this.errorBadge){this.errorBadge.onclick=()=>this.diagnosticsPanel();this.boundClickElements.push(this.errorBadge);}this.diagnosticsUnsubscribe=this.diagnostics.subscribe(()=>this.updateErrorBadge());
   }
   bindSpeedInputs(){
     const controls=document.querySelector(".controls")||document.querySelector(".app-footer");
     if(!controls||this.speedInputBound)return;
-    this.speedInputBound=true;
-    controls.addEventListener("click",event=>{
+    this.speedInputBound=true;this.speedControls=controls;
+    this.speedClickHandler=event=>{
       const button=event.target.closest?.("[data-speed]");
       if(!button||!controls.contains(button))return;
       event.preventDefault();event.stopImmediatePropagation();this.setSpeed(+button.dataset.speed);
-    },true);
+    };
+    controls.addEventListener("click",this.speedClickHandler,true);
+  }
+  dispose(){
+    clearTimeout(this.toastTimer);this.toastTimer=null;
+    if(this.speedControls&&this.speedClickHandler)this.speedControls.removeEventListener("click",this.speedClickHandler,true);
+    this.speedControls=null;this.speedClickHandler=null;this.speedInputBound=false;
+    for(const element of this.boundClickElements||[])element.onclick=null;
+    this.boundClickElements=[];this.diagnosticsUnsubscribe?.();this.diagnosticsUnsubscribe=null;
   }
   setSpeed(next){
     if(this.state.status==="site-selection"){this.toast("Choose a landing site before starting time.");return false;}
