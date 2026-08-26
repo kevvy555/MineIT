@@ -7,23 +7,16 @@ const QUICK_FILTERS=[
 
 /** Canonical single-map toolbar and filtering controls. */
 export class MapControls{
-  constructor({host,state,resources,filters,typeFilters,sizeFilters,qualityFilters,onFilterChange}){
-    Object.assign(this,{host,state,resources,filters,typeFilters,sizeFilters,qualityFilters,onFilterChange});
+  constructor({host,state,resources,filters,typeFilters,sizeFilters,qualityFilters,onFilterChange,onFocusChange}){
+    Object.assign(this,{host,state,resources,filters,typeFilters,sizeFilters,qualityFilters,onFilterChange,onFocusChange});
     this.filtersOpen=false;this.filterCategory=null;this.focusMode=state.colony?.land?.focusMode||"all";
-    this.externalFocusHandler=event=>{
-      const mode=event.detail?.mode||"all";
-      this.focusMode=mode;
-      if(this.state.colony?.land)this.state.colony.land.focusMode=mode;
-      this.sync();
-    };
-    document.addEventListener("mineit:map-focus",this.externalFocusHandler);
     this.build();this.sync();
   }
-  dispose(){document.removeEventListener("mineit:map-focus",this.externalFocusHandler);}
+  dispose(){this.root?.remove();}
   disabledCount(){return[this.filters,this.typeFilters,this.sizeFilters,this.qualityFilters].reduce((n,g)=>n+Object.values(g||{}).filter(v=>v===false).length,0);}
   setFocus(mode="all"){
     this.focusMode=mode;if(this.state.colony?.land)this.state.colony.land.focusMode=mode;
-    document.dispatchEvent(new CustomEvent("mineit:map-focus",{detail:{mode}}));this.sync();this.onFilterChange?.();
+    this.sync();this.onFocusChange?.(mode);this.onFilterChange?.();
   }
   build(){
     this.host.replaceChildren();this.host.classList.add("map-toolbar");
@@ -42,7 +35,7 @@ export class MapControls{
     this.addGroup(panel,"state","mapFilter",STATE_FILTERS,this.filters);
     this.addGroup(panel,"size","mapSize",SIZE_FILTERS,this.sizeFilters);
     this.addGroup(panel,"quality","mapQuality",this.resources.qualityBands(),this.qualityFilters);
-    this.host.append(main,panel);Object.assign(this,{main,views,problems,filter,panel,back,tabs});
+    this.host.append(main,panel);Object.assign(this,{main,views,problems,filter,panel,back,tabs,root:this.host});
   }
   addGroup(panel,key,attribute,items,filters){
     const group=document.createElement("div");group.className="map-filter-group hidden";group.dataset.filterGroup=key;

@@ -10,24 +10,21 @@ const cap=(v,min=0,max=1)=>Math.max(min,Math.min(max,Number(v)||0));
 /** Routine colony play through the persistent HUD and tile context bar. */
 export class UIController extends LegacyUIController{
   constructor(options){
-    super(options);this.selectedTile=null;this.currentAttention=null;
-    this.tileSelectedHandler=e=>this.selectMapTile(e.detail?.x,e.detail?.y);
-    document.addEventListener("mineit:tile-selected",this.tileSelectedHandler);
+    super(options);this.selectedTile=null;this.currentAttention=null;this.onMapFocus=options.onMapFocus;
     this.attentionElement=document.querySelector("#attentionStrip");
     this.attentionClickHandler=()=>this.runAttentionAction();
     this.attentionElement?.addEventListener("click",this.attentionClickHandler);
   }
   dispose(){
-    document.removeEventListener("mineit:tile-selected",this.tileSelectedHandler);
     this.attentionElement?.removeEventListener("click",this.attentionClickHandler);
-    this.tileSelectedHandler=null;this.attentionClickHandler=null;this.attentionElement=null;
+    this.attentionClickHandler=null;this.attentionElement=null;
     super.dispose?.();
   }
   render(){super.render();this.renderMapFirstHud();this.renderContext();}
   selectMapTile(x,y){
     if(!Number.isFinite(x)||!Number.isFinite(y))return;this.selectedTile=this.world.get(this.state,x,y);this.renderContext();
   }
-  focusMap(mode="all"){document.dispatchEvent(new CustomEvent("mineit:map-focus",{detail:{mode}}));}
+  focusMap(mode="all"){this.onMapFocus?.(mode);}
   daysText(days){return days===null||days===undefined?"SURPLUS":days<=0?"EMPTY":`${Math.max(1,Math.ceil(days))}d`;}
   setText(id,text){const el=document.querySelector(`#${id}`);if(el)el.textContent=text;}
   setState(id,state){const el=document.querySelector(`#${id}`);if(!el)return;el.classList.remove("good","warn","bad");if(state)el.classList.add(state);}

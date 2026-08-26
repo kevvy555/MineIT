@@ -6,16 +6,9 @@ const esc=value=>String(value??"").replace(/[&<>\"]/g,ch=>({"&":"&amp;","<":"&lt
 
 /** Full-screen deterministic player-ship navigation, system selection and demolition confirmation. */
 export class UIController extends PlayerShipUIController{
-  constructor(opts){
-    super(opts);this._shipNavActive=false;this.selectedStarSystemId=null;
-    this.playerShipClickedHandler=()=>this.playerShipPanel();
-    document.addEventListener("mineit:player-ship-clicked",this.playerShipClickedHandler);
-  }
+  constructor(opts){super(opts);this._shipNavActive=false;this.selectedStarSystemId=null;}
 
-  dispose(){
-    document.removeEventListener("mineit:player-ship-clicked",this.playerShipClickedHandler);
-    super.dispose?.();
-  }
+  dispose(){super.dispose?.();}
 
   open(title,body){
     this.modal.className="panel modal hidden";

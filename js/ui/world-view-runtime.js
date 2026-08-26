@@ -19,27 +19,22 @@ const SHIP_ART="./assets/art/colony-ship.webp?v=3";
  */
 export class WorldView extends CanvasWorldView{
   constructor(options){
-    const originalTap=options.onTap,state=options.state,world=options.world,land=options.land;
+    const originalTap=options.onTap,state=options.state,world=options.world,land=options.land,onSelect=options.onSelect;let runtime=null;
     const select=(x,y)=>{
       const tile=world.get(state,x,y);
       if(!tile?.revealed&&!land?.isShipTile?.(x,y)){originalTap?.(x,y);return;}
-      document.dispatchEvent(new CustomEvent("mineit:tile-selected",{detail:{x,y}}));
+      onSelect?.(x,y);if(runtime){runtime.selectedKey=`${x},${y}`;runtime.safeDraw();}
     };
-    super({...options,onTap:select,onInspect:select});
+    super({...options,onTap:select,onInspect:select});runtime=this;
+    this.onPlayerShipClick=options.onPlayerShipClick;
     this.selectedKey=null;
     this.focusMode=state.colony?.land?.focusMode||"all";
-    this._tileSelectedHandler=event=>{const{x,y}=event.detail||{};this.selectedKey=`${x},${y}`;this.safeDraw();};
-    this._mapFocusHandler=event=>{this.focusMode=event.detail?.mode||"all";this.safeDraw();};
-    document.addEventListener("mineit:tile-selected",this._tileSelectedHandler);
-    document.addEventListener("mineit:map-focus",this._mapFocusHandler);
     this._shipPointer=null;
     this.bindPlayerShipCapture();
   }
 
   dispose(){
     this.controls?.dispose?.();
-    if(this._tileSelectedHandler)document.removeEventListener("mineit:tile-selected",this._tileSelectedHandler);
-    if(this._mapFocusHandler)document.removeEventListener("mineit:map-focus",this._mapFocusHandler);
     const h=this._shipCaptureHandlers;
     if(h){this.canvas.removeEventListener("pointerdown",h.down,true);this.canvas.removeEventListener("pointermove",h.move,true);this.canvas.removeEventListener("pointerup",h.up,true);this.canvas.removeEventListener("pointercancel",h.cancel,true);}
     this.icons.setOnReady?.(null);
@@ -51,10 +46,12 @@ export class WorldView extends CanvasWorldView{
     this.controls=new MapControls({
       host,state:this.state,resources:this.resources,
       filters:this.filters,typeFilters:this.typeFilters,sizeFilters:this.sizeFilters,qualityFilters:this.qualityFilters,
+      onFocusChange:mode=>{this.focusMode=mode;if(this.state.colony?.land)this.state.colony.land.focusMode=mode;this.safeDraw();},
       onFilterChange:()=>this.safeDraw()
     });
   }
   bindFilters(){}
+  setFocus(mode="all"){this.controls?.setFocus(mode);}
   syncView(){this.controls?.sync();}
   syncFilters(){this.controls?.sync();}
   filterDisabledCount(){return this.controls?.disabledCount()??0;}
@@ -228,7 +225,7 @@ export class WorldView extends CanvasWorldView{
       this._shipPointer={id:event.pointerId,x:event.clientX,y:event.clientY,moved:false};this.canvas.setPointerCapture?.(event.pointerId);stop(event);
     };
     const move=event=>{const pointer=this._shipPointer;if(!pointer||pointer.id!==event.pointerId)return;if(Math.hypot(event.clientX-pointer.x,event.clientY-pointer.y)>8)pointer.moved=true;stop(event);};
-    const up=event=>{const pointer=this._shipPointer;if(!pointer||pointer.id!==event.pointerId)return;this._shipPointer=null;stop(event);if(!pointer.moved)document.dispatchEvent(new CustomEvent("mineit:player-ship-clicked"));};
+    const up=event=>{const pointer=this._shipPointer;if(!pointer||pointer.id!==event.pointerId)return;this._shipPointer=null;stop(event);if(!pointer.moved)this.onPlayerShipClick?.();};
     const cancel=event=>{const pointer=this._shipPointer;if(!pointer||pointer.id!==event.pointerId)return;this._shipPointer=null;stop(event);};
     this._shipCaptureHandlers={down,move,up,cancel};
     this.canvas.addEventListener("pointerdown",down,true);this.canvas.addEventListener("pointermove",move,true);this.canvas.addEventListener("pointerup",up,true);this.canvas.addEventListener("pointercancel",cancel,true);

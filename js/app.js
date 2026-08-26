@@ -78,10 +78,11 @@ class MineITApp {
       onPlaceDevelopment:(tile,kind)=>this.placeDevelopment(tile,kind),
       onDemolishDevelopment:tile=>this.demolishDevelopment(tile),
       onContractDecisionResolved:action=>this.resolveContractDecision(action),
-      onProcessPendingEvent:()=>this.processPendingCorporateEvent()
+      onProcessPendingEvent:()=>this.processPendingCorporateEvent(),
+      onMapFocus:mode=>this.view?.setFocus(mode)
     });
     this.tradeUI=new TradeUI({state:this.state,trade:this.trade,repo:this.repo,ui:this.ui,gameLog:this.gameLog,onDepart:()=>this.onShipDepart()});
-    this.view=new WorldView({state:this.state,world:this.world,survey:this.survey,resources:this.resources,technology:this.technology,icons:this.icons,diagnostics:this.diagnostics,land:this.land,onTap:(x,y)=>this.tap(x,y),onMulti:cells=>this.multi(cells),onInspect:(x,y)=>this.inspect(x,y)});
+    this.view=new WorldView({state:this.state,world:this.world,survey:this.survey,resources:this.resources,technology:this.technology,icons:this.icons,diagnostics:this.diagnostics,land:this.land,onTap:(x,y)=>this.tap(x,y),onMulti:cells=>this.multi(cells),onInspect:(x,y)=>this.inspect(x,y),onSelect:(x,y)=>this.ui.selectMapTile(x,y),onPlayerShipClick:()=>this.ui.playerShipPanel()});
 
     this.accumulator=0;
     this.lastFrame=performance.now();
