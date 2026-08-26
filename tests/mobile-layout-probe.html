@@ -22,9 +22,8 @@ async function run(){
   const modal=d.getElementById('modal'),tilePanel=d.getElementById('tilePanel');
   for(const id of['coloniesBtn','techBtn','menuBtn','tradeBtn']){
     const b=d.getElementById(id);if(!b||b.disabled)continue;
-    modal?.classList.add('hidden');tilePanel?.classList.add('hidden');
-    const errorsBefore=w.mineITBoot?.diagnostics?.errors||0;b.click();await sleep(100);
-    if(!modal||modal.classList.contains('hidden')){const errorsAfter=w.mineITBoot?.diagnostics?.errors||0;fail.push(id+':did not open modal'+(errorsAfter>errorsBefore?':runtime error':''));}
+    modal?.classList.add('hidden');tilePanel?.classList.add('hidden');b.click();await sleep(100);
+    const runtimeError=!!d.querySelector('#errorBadge:not(.hidden)');if(!modal||modal.classList.contains('hidden'))fail.push(id+':did not open modal'+(runtimeError?':runtime error':''));
     modal?.querySelector('[data-close]')?.click();modal?.classList.add('hidden');await sleep(30);
   }
   out.textContent=fail.length?'FAIL '+fail.join(' | '):'PASS presentation layout, unified map, contextual actions and footer controls';

@@ -24,10 +24,12 @@ import { WorldView } from "./ui/world-view-runtime.js";
 import { UIController } from "./ui/ship-preparation-ui.js";
 import { TradeUI } from "./ui/corporate-trade-ui.js";
 
+let bootApp=null;
+
 class MineITApp {
   constructor(){
     this.diagnostics=new Diagnostics();
-    window.mineITBoot=this;
+    bootApp=this;
     addEventListener("error",e=>this.diagnostics.error("window.error",e.error||e.message));
     addEventListener("unhandledrejection",e=>this.diagnostics.error("unhandledrejection",e.reason));
 
@@ -425,6 +427,6 @@ class MineITApp {
 function formatNumberSafe(value){const n=Number(value)||0;return Math.abs(n)>=1000?Math.round(n).toLocaleString():n>=10?Math.round(n).toString():n.toFixed(1).replace(/\.0$/,"");}
 
 addEventListener("DOMContentLoaded",()=>{
-  try{const app=new MineITApp();window.mineIT=app;window.mineITBoot=app;}
-  catch(error){console.error(error);const app=window.mineITBoot;app?.diagnostics?.error("startup failed",error);const badge=document.querySelector("#errorBadge");if(badge){badge.textContent="STARTUP ERROR • TAP FOR DETAILS";badge.classList.remove("hidden");if(app?.ui)badge.onclick=()=>app.ui.diagnosticsPanel();}}
+  try{bootApp=new MineITApp();}
+  catch(error){console.error(error);const app=bootApp;app?.diagnostics?.error("startup failed",error);const badge=document.querySelector("#errorBadge");if(badge){badge.textContent="STARTUP ERROR • TAP FOR DETAILS";badge.classList.remove("hidden");if(app?.ui)badge.onclick=()=>app.ui.diagnosticsPanel();}}
 });

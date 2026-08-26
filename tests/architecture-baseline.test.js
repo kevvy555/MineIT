@@ -18,9 +18,6 @@ for(const [file,text] of source){
 
 const globalAssignments=[];
 for(const [file,text] of source){for(const match of text.matchAll(/\bwindow\.([A-Za-z_$][\w$]*)\s*=/g))globalAssignments.push(`${file}:${match[1]}`);}
-const allowedGlobals=new Set(["js/app.js:mineITBoot","js/app.js:mineIT"]);
-assert.ok(globalAssignments.every(item=>allowedGlobals.has(item)),`Unexpected global application assignment(s): ${globalAssignments.join(", ")}`);
-assert.ok(globalAssignments.length<=3,"Global application-state leakage must not grow during cleanup");
 
 const versionedJs=jsFiles.map(rel).filter(name=>/-v\d+\.js$/.test(name));
 const versionedCss=cssFiles.map(rel).filter(name=>/-v\d+\.css$/.test(name));
@@ -40,7 +37,7 @@ assert.equal(debt.versionedJs,0,"Version-numbered JavaScript files must not retu
 assert.equal(debt.versionedCss,0,"Version-numbered CSS files must not return");
 assert.equal(debt.importMap,false,"Runtime import-map redirects must not return");
 assert.equal(debt.queryImports,0,"Version-query imports must not return");
-assert.ok(debt.globalAssignments<=3,"Global application-state leakage must not grow during cleanup");
+assert.equal(debt.globalAssignments,0,`Global application assignments must not return: ${globalAssignments.join(", ")}`);
 assert.equal(debt.documentAppEvents,0,"Document-level application events must not return");
 assert.ok(debt.largeMarkupTemplates<=217,"Large embedded HTML template debt must not grow beyond the current checkpoint");
 
