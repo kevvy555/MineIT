@@ -10,9 +10,6 @@ assert.match(index,/resource-atlas-256\.webp/);assert.match(index,/js\/app\.js/)
 for(const id of["overlayRoot","contextBar","attentionStrip","colonyNavStrip","world","mapViewHost","tradeBtn","menuBtn"])assert.match(index,new RegExp(`id="${id}"`),`startup shell missing #${id}`);
 assert.doesNotMatch(index,/mapFilterHost/);assert.doesNotMatch(index,/world-view-hotfix/);
 
-// While the UI still uses an import map, all domain redirects must terminate at semantic/canonical files.
-for(const target of["game-state-runtime","portfolio-service","resource-service","collection-service","colony-service","development-service","site-service","technology-service","simulation-engine","trade-service"])assert.match(index,new RegExp(`js/domain/${target}\\.js`),`browser runtime must route ${target} canonically`);
-
 // The application composition root must directly own the canonical services and presentation runtimes.
 for(const module of["game-state-runtime","portfolio-service","resource-service","inventory-service","collection-service","colony-service","trade-service","land-service","development-service","world-service","site-service","technology-service","survey-service","simulation-engine","game-log-service","transport-service"])assert.match(app,new RegExp(`domain/${module}\\.js`));
 for(const module of["world-view-runtime","ship-preparation-ui","corporate-trade-ui"])assert.match(app,new RegExp(`ui/${module}\\.js`));
