@@ -32,6 +32,4 @@ console.log("\nDomain/Core V8 function coverage");
 for(const row of rows)console.log(`${row.pct.toFixed(1).padStart(6)}%  ${String(row.covered).padStart(3)}/${String(row.total).padEnd(3)}  ${row.file}`);
 console.log(`TOTAL ${pct.toFixed(1)}% (${covered}/${total} functions)`);
 fs.mkdirSync(path.join(root,".coverage"),{recursive:true});fs.writeFileSync(path.join(root,".coverage","summary.json"),JSON.stringify({pct,covered,total,files:rows},null,2));
-// Phase 0 initially verifies that meaningful executable coverage is captured. The measured value is
-// converted into a non-regression threshold after the first green run.
-if(pct<20)throw new Error(`Domain/core function coverage is unexpectedly low: ${pct.toFixed(1)}%`);
+if(pct<80)throw new Error(`Domain/core function coverage fell below the CleanUp 80% gate: ${pct.toFixed(1)}%`);
