@@ -1,6 +1,6 @@
-import { CONFIG } from "../core/config.js?v=5.5.5";
-import { clamp } from "../core/utils.js?v=5.5.5";
-import { terrainPath, artImage, drawCover } from "./land-art.js?v=5.5.5";
+import { CONFIG } from "../core/config.js";
+import { clamp } from "../core/utils.js";
+import { terrainPath, artImage, drawCover } from "./land-art.js";
 
 const SIZE_FILTERS=[["limited","LIMITED"],["established","ESTABLISHED"],["small","SMALL"],["modest","MODEST"],["large","LARGE"],["huge","HUGE"],["colossal","COLOSSAL"],["vast","VAST"],["legacy","LEGACY"]];
 const TYPE_FILTERS=[["food","FOOD"],["build","BUILD"],["fuel","FUEL"],["ore","ORE"]];
