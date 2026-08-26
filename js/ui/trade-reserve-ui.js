@@ -1,3 +1,4 @@
+import { renderViewTemplate } from "../core/view-template.js";
 import { UIController as BaseUIController } from "./corporate-events-ui.js";
 import { formatNumber } from "../core/utils.js";
 
@@ -26,10 +27,12 @@ export class UIController extends BaseUIController{
     super.runContextAction(action,kind);
   }
 
-  openTradeReserve(){
+  async openTradeReserve(){
     const tile=this.selectedTile;if(!tile?.resourceId){this.toast("Select a surveyed resource first.");return;}
     const key=this.tradeReserveKey(tile),entry=this.state.inventory?.[key],stock=entry?this.inventory.syncEntry(entry).amount:0,reserve=this.tradeReserve(tile);
-    this.open(`${tile.name} Trade Reserve`,`<article class="card trade-reserve-editor"><h3>COLONY TRADE RESERVE</h3><p class="trade-reserve-note">The corporate ship will never sell below this amount. When exporting, higher-quality stock is sold first so the reserve keeps the lowest-value material for colony use.</p><div class="grid2"><div class="metric"><small>Current stock</small><strong>${formatNumber(stock)}</strong></div><div class="metric"><small>Current reserve</small><strong>${formatNumber(reserve)}</strong></div></div><div class="trade-amount-main"><button data-reserve-step="-1000">−</button><input data-reserve-input type="number" min="0" max="${MAX_RESERVE}" step="1" inputmode="numeric" value="${reserve}"><button data-reserve-step="1000">+</button></div><div class="trade-reserve-actions"><button data-reserve-set="0">NONE</button><button data-reserve-set="1000">1K</button><button data-reserve-set="10000">10K</button><button data-reserve-set="${Math.floor(stock)}">STOCK</button></div><button data-reserve-save class="trade-reserve-save">SAVE RESERVE</button></article>`);
+    let body;
+    try{body=await renderViewTemplate("./views/trade-reserve.html",{STOCK:formatNumber(stock),RESERVE:formatNumber(reserve),MAX_RESERVE,RESERVE_RAW:reserve,STOCK_RAW:Math.floor(stock)});}catch(error){this.diagnostics.error("trade reserve template failed",error);this.toast("Unable to open the trade reserve editor.");return;}
+    this.open(`${tile.name} Trade Reserve`,body);
     const input=this.modal.querySelector("[data-reserve-input]");
     this.modal.querySelectorAll("[data-reserve-step]").forEach(button=>button.onclick=()=>{input.value=clampReserve(Number(input.value)+Number(button.dataset.reserveStep));});
     this.modal.querySelectorAll("[data-reserve-set]").forEach(button=>button.onclick=()=>{input.value=clampReserve(button.dataset.reserveSet);});
