@@ -1,5 +1,5 @@
-import { clamp, formatMoney, formatNumber } from "../core/utils.js?v=5.3.0";
-import { CONFIG } from "../core/config.js?v=5.3.0";
+import { clamp, formatMoney, formatNumber } from "../core/utils.js";
+import { CONFIG } from "../core/config.js";
 
 export class ColonyTechUIMixin {
   supplyDaysLabel(days){if(days===null||days===undefined)return"SURPLUS";if(days<=0)return"EMPTY";return`${Math.max(1,Math.ceil(days))}d`}
