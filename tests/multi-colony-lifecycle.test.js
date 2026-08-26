@@ -7,7 +7,7 @@ import { ResourceService } from "../js/domain/resource-service.js";
 import { InventoryService } from "../js/domain/inventory-service.js";
 import { TradeService } from "../js/domain/trade-service.js";
 import { UIController as BaseUIController,mix } from "../js/ui/ui-controller.js";
-import { ResourceUIMixin } from "../js/ui/resource-ui-v562.js";
+import { ResourceUIMixin } from "../js/ui/resource-ui.js";
 import { PortfolioUIMixin } from "../js/ui/portfolio-ui.js";
 
 // UI mixins must retain inherited helpers while the remaining presentation layers are flattened.
