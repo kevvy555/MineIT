@@ -11,18 +11,13 @@ const cssFiles=walk(path.join(root,"css")).filter(f=>f.endsWith(".css"));
 const source=new Map(jsFiles.map(file=>[rel(file),fs.readFileSync(file,"utf8")]));
 const index=fs.readFileSync(path.join(root,"index.html"),"utf8");
 
-// Hard rules that are already true and must stay true throughout the cleanup.
 for(const [file,text] of source){
   if(file.startsWith("js/domain/"))assert.doesNotMatch(text,/from\s+["'][^"']*(?:\/ui\/|\.\.\/ui\/)/,`${file} must not import presentation code`);
   assert.doesNotMatch(text,/\beval\s*\(|\bnew\s+Function\s*\(/,`${file} must not use dynamic code execution`);
 }
 
-// Phase-0 inventory: the current app leaks only its legacy diagnostic/app handles.
-// This allow-list is removed at the final architecture gate; new globals are forbidden now.
 const globalAssignments=[];
-for(const [file,text] of source){
-  for(const match of text.matchAll(/\bwindow\.([A-Za-z_$][\w$]*)\s*=/g))globalAssignments.push(`${file}:${match[1]}`);
-}
+for(const [file,text] of source){for(const match of text.matchAll(/\bwindow\.([A-Za-z_$][\w$]*)\s*=/g))globalAssignments.push(`${file}:${match[1]}`);}
 const allowedGlobals=new Set(["js/app.js:mineITBoot","js/app.js:mineIT"]);
 assert.ok(globalAssignments.every(item=>allowedGlobals.has(item)),`Unexpected global application assignment(s): ${globalAssignments.join(", ")}`);
 assert.ok(globalAssignments.length<=3,"Global application-state leakage must not grow during cleanup");
@@ -38,12 +33,10 @@ for(const [,text] of source){
 const debt={versionedJs:versionedJs.length,versionedCss:versionedCss.length,queryImports,importMap:/<script\s+type=["']importmap["']/.test(index),globalAssignments:globalAssignments.length,documentAppEvents,largeMarkupTemplates};
 console.log("CleanUp architecture debt baseline",debt);
 
-// These are intentionally generous regression ceilings for Phase 0. They allow debt to shrink
-// without requiring this file to be edited at every consolidation commit, but prevent it growing.
-assert.ok(debt.versionedJs<100,"Versioned JavaScript debt unexpectedly grew");
-assert.ok(debt.versionedCss<30,"Versioned CSS debt unexpectedly grew");
-assert.ok(debt.queryImports<500,"Version-query import debt unexpectedly grew");
-assert.ok(debt.documentAppEvents<50,"Document-level application event debt unexpectedly grew");
-assert.ok(debt.largeMarkupTemplates<150,"Large embedded HTML template debt unexpectedly grew");
+assert.ok(debt.versionedJs<=53,"Versioned JavaScript debt must not grow beyond the recorded Phase-0 baseline");
+assert.ok(debt.versionedCss<=1,"Versioned CSS debt must not grow beyond the recorded Phase-0 baseline");
+assert.ok(debt.queryImports<=211,"Version-query import debt must not grow beyond the recorded Phase-0 baseline");
+assert.ok(debt.documentAppEvents<=9,"Document-level application event debt must not grow beyond the recorded Phase-0 baseline");
+assert.ok(debt.largeMarkupTemplates<=220,"Large embedded HTML template debt must not grow beyond the recorded Phase-0 baseline");
 
 console.log("CleanUp architecture baseline guard passed");
