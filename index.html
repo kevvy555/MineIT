@@ -42,6 +42,7 @@
       "./js/ui/ui-controller-v592.js?v=5.9.2&legacy=1": "./js/ui/building-details-ui.js",
       "./js/ui/ui-controller-v598.js?v=5.9.8&legacy=1": "./js/ui/surveyed-resource-ui.js",
       "./js/ui/ui-controller-v599.js?v=5.9.9&legacy=1": "./js/ui/resource-development-ui.js",
+      "./js/ui/ui-controller-v5100.js?v=5.10.0&legacy=1": "./js/ui/adaptive-building-ui.js",
       "./js/ui/ui-controller-v5111.js?v=5.11.1&legacy=1": "./js/ui/player-ship-ui.js",
       "./js/ui/ui-controller-v5112.js?v=5.11.2&legacy=1": "./js/ui/ship-navigation-ui.js",
       "./js/ui/ui-controller-v5113.js?v=5.11.3": "./js/ui/ship-preparation-ui.js",
@@ -88,36 +89,13 @@
         <div class="resource-hud ore"><small>ORE • <span id="oreDaysHud" class="resource-days">—</span></small><strong id="oreStock">0</strong></div>
       </div>
     </header>
-
     <main id="worldShell">
       <div id="mapViewHost" aria-label="Unified colony map controls"></div>
-      <div id="worldViewport">
-        <canvas id="world"></canvas>
-        <div id="colonyNavStrip" class="colony-nav-strip" aria-label="Colony navigation"></div>
-        <div id="cornerHud" class="hud-chip"><strong id="cameraText">COLONY MAP • 8×8</strong><span>Tap to select • drag unsurveyed tiles to multi-survey</span></div>
-        <div id="scanHud" class="hud-chip scan-hud hidden"><strong>SCANNING</strong><span id="scanText"></span><div class="scan-progress"><i id="scanBar"></i></div></div>
-      </div>
-      <div id="overlayRoot" aria-label="Application overlays">
-        <div id="toast" class="toast hidden"></div>
-        <button id="errorBadge" class="error-badge hidden">ERROR LOG</button>
-        <section id="tilePanel" class="panel tile-panel hidden"></section>
-        <section id="modal" class="panel modal hidden"></section>
-      </div>
+      <div id="worldViewport"><canvas id="world"></canvas><div id="colonyNavStrip" class="colony-nav-strip" aria-label="Colony navigation"></div><div id="cornerHud" class="hud-chip"><strong id="cameraText">COLONY MAP • 8×8</strong><span>Tap to select • drag unsurveyed tiles to multi-survey</span></div><div id="scanHud" class="hud-chip scan-hud hidden"><strong>SCANNING</strong><span id="scanText"></span><div class="scan-progress"><i id="scanBar"></i></div></div></div>
+      <div id="overlayRoot" aria-label="Application overlays"><div id="toast" class="toast hidden"></div><button id="errorBadge" class="error-badge hidden">ERROR LOG</button><section id="tilePanel" class="panel tile-panel hidden"></section><section id="modal" class="panel modal hidden"></section></div>
     </main>
-
-    <section id="contextBar" class="context-bar">
-      <div class="context-head"><div class="context-copy"><strong id="contextTitle">COLONY MAP</strong><small id="contextSub">Tap a surveyed tile to see its actions. Tap an unsurveyed tile to survey it.</small></div></div>
-      <div id="contextActions" class="context-actions"></div>
-      <div id="contextRequirement" class="context-requirement"></div>
-    </section>
-
-    <footer class="app-footer">
-      <div class="primary-controls">
-        <div class="speed-controls"><button data-speed="0">⏸</button><button data-speed="1" class="active">▶</button><button data-speed="2">▶▶</button><button data-speed="4">▶▶▶</button></div>
-        <button id="tradeBtn" disabled>CORP SHIP</button><button id="menuBtn">☰</button>
-      </div>
-      <div class="legacy-actions hidden" aria-hidden="true"><button id="coloniesBtn">COLONIES</button><button id="techBtn">TECH</button><button id="collectionBtn">COLLECT</button><button id="colonyBtn">COLONY</button><button id="goalsBtn">GOALS</button></div>
-    </footer>
+    <section id="contextBar" class="context-bar"><div class="context-head"><div class="context-copy"><strong id="contextTitle">COLONY MAP</strong><small id="contextSub">Tap a surveyed tile to see its actions. Tap an unsurveyed tile to survey it.</small></div></div><div id="contextActions" class="context-actions"></div><div id="contextRequirement" class="context-requirement"></div></section>
+    <footer class="app-footer"><div class="primary-controls"><div class="speed-controls"><button data-speed="0">⏸</button><button data-speed="1" class="active">▶</button><button data-speed="2">▶▶</button><button data-speed="4">▶▶▶</button></div><button id="tradeBtn" disabled>CORP SHIP</button><button id="menuBtn">☰</button></div><div class="legacy-actions hidden" aria-hidden="true"><button id="coloniesBtn">COLONIES</button><button id="techBtn">TECH</button><button id="collectionBtn">COLLECT</button><button id="colonyBtn">COLONY</button><button id="goalsBtn">GOALS</button></div></footer>
   </div>
   <script type="module" src="./js/app.js?v=5.11.3"></script>
 </body>
