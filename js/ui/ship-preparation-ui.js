@@ -1,6 +1,6 @@
 import { UIController as ShipNavigationUIController } from "./ship-navigation-ui.js";
-import { PLAYER_SHIP_CAPACITY } from "../domain/expansion-service.js?v=5.11.0";
-import { formatNumber } from "../core/utils.js?v=5.5.5";
+import { PLAYER_SHIP_CAPACITY } from "../domain/expansion-service.js";
+import { formatNumber } from "../core/utils.js";
 
 const CATEGORIES=["food","build","fuel","ore"];
 const BAND_ORDER={"Very Low":1,"Low":2,"Moderate":3,"High":4,"Very High":5,"Extreme":1,"Hostile":2,"Marginal":3,"Manageable":4,"Favourable":5};
