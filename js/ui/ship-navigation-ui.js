@@ -7,7 +7,7 @@ const esc=value=>String(value??"").replace(/[&<>\"]/g,ch=>({"&":"&amp;","<":"&lt
 
 /** Full-screen deterministic player-ship navigation, system selection and demolition confirmation. */
 export class UIController extends PlayerShipUIController{
-  constructor(opts){super(opts);this._shipNavActive=false;this.selectedStarSystemId=null;this.demolitionRevision=0;}
+  constructor(opts){super(opts);this._shipNavActive=false;this.selectedStarSystemId=null;this.demolitionRevision=0;this.starMapRevision=0;}
 
   dispose(){super.dispose?.();}
 
@@ -95,10 +95,13 @@ export class UIController extends PlayerShipUIController{
     return `<section class="star-system-detail">${content}</section>`;
   }
 
-  starMap(){
-    const ex=this.expansion.ensure(this.state),ship=ex.ship;if(ship.status==="lost"){super.starMap();return;}
+  async starMap(){
+    const revision=++this.starMapRevision,ex=this.expansion.ensure(this.state),ship=ex.ship;if(ship.status==="lost"){super.starMap();return;}
     const selected=this.selectedSystem(),corporate=this.state.trade?.active?`<button class="exp-corporate-trade" data-corporate-trade>CORPORATE TRADE SHIP DOCKED • OPEN TRADE</button>`:"",cargoAvailable=ship.status==="docked"&&this.expansion.isAtActiveColony(this.state);
-    this.open("Corporation Star Map",`<div class="star-map-screen">${this.shipStatusMarkup()}${corporate}<div class="star-system-detail-host" id="starSystemDetail">${this.starSystemDetailMarkup(selected)}</div><div class="exp-map-wrap"><canvas id="starMapCanvas" aria-label="Corporation star map"></canvas><div class="exp-map-help">Drag to pan • pinch / wheel to zoom • tap a star to inspect</div></div><div class="exp-map-footer"><span>○ Corporate service radius ${ex.serviceRadiusLy.toFixed(1)} ly</span><button data-ship-prep ${cargoAvailable?"":"disabled"}>CARGO BAY</button></div></div>`);
+    let body;
+    try{body=await renderViewTemplate("./views/star-map-screen.html",{SHIP_STATUS:this.shipStatusMarkup(),CORPORATE_TRADE:corporate,SYSTEM_DETAIL:this.starSystemDetailMarkup(selected),SERVICE_RADIUS:ex.serviceRadiusLy.toFixed(1),CARGO_DISABLED:cargoAvailable?"":"disabled"});}catch(error){if(revision!==this.starMapRevision)return;this.diagnostics?.error?.("star map template failed",error);this.toast("Unable to open the star map.");return;}
+    if(revision!==this.starMapRevision)return;
+    this.open("Corporation Star Map",body);
     this.modal.classList.add("star-map-modal","full-screen-panel");this.bindStarMapDetailActions(selected);
     this.modal.querySelector("[data-corporate-trade]")?.addEventListener("click",()=>this.corporateTradeUI?.open());
     this.modal.querySelector("[data-ship-prep]")?.addEventListener("click",()=>this.shipPrep());
