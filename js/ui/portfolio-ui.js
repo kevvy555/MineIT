@@ -1,3 +1,4 @@
+import { renderViewTemplate } from "../core/view-template.js";
 import { formatMoney, formatNumber } from "../core/utils.js";
 import { SHIP_INFRASTRUCTURE,builtCapacity } from "../domain/building-model.js";
 
@@ -8,15 +9,23 @@ export class PortfolioUIMixin {
     if(summary.status==="dead")return{label:"DEAD",cls:"bad"};if(summary.emergencyMode)return{label:"EMERGENCY",cls:"warn"};if(summary.survivalSupply<.4)return{label:"COLLAPSE",cls:"bad"};if(summary.survivalSupply<.9)return{label:"STRAINED",cls:"warn"};if(summary.status==="liability")return{label:"LIABILITY",cls:"bad"};if(summary.status==="holdover")return{label:"HOLDOVER",cls:"warn"};if(summary.status==="deadline-missed")return{label:"ACTION REQUIRED",cls:"warn"};if(summary.status==="failed")return{label:"FAILED",cls:"bad"};if(summary.completed)return{label:"RENEWED",cls:"good"};return{label:`CONTRACT Y${summary.year}`,cls:"good"};
   }
   colonyDays(days){return days===null||days===undefined?"∞":days<=0?"0d":`${Math.max(1,Math.ceil(days))}d`;}
-  coloniesPanel(){
+  async coloniesPanel(){
     const entries=this.portfolio.entries(this.state),active=this.state.portfolio.activeColonyId;
-    const cards=entries.map(entry=>{
-      const s=this.portfolio.summary(entry,this.state),st=this.colonyStatus(s),wf=s.workforceRequired?Math.min(100,Math.round(s.workforceAvailable/s.workforceRequired*100)):100,data=entry.id===active?this.state:entry.data;
-      const installed=SHIP_INFRASTRUCTURE.industry+builtCapacity(entry.data,"industry"),effective=Math.max(0,Number(entry.data?.metrics?.industry)||0),rawStaff=Number(entry.data?.metrics?.industryStaffFactor),staff=Math.round(Math.max(0,Math.min(1,Number.isFinite(rawStaff)?rawStaff:1))*100),shipWaiting=!!data?.trade?.active;
-      return `<button class="colony-card ${entry.id===active?"active":""}" data-colony-id="${entry.id}"><div class="colony-card-top"><strong>${s.name}</strong><span class="${st.cls}">${st.label}</span></div><div class="colony-card-env">T${s.tier} • ${s.environment} • support ×${Number(s.supportLoad||1).toFixed(2)}</div><div class="colony-card-grid"><span>POP<strong>${formatNumber(s.pop)}</strong></span><span>IND<strong>${formatNumber(effective)} / ${formatNumber(installed)} • ${staff}%</strong></span><span>WORK<strong>${wf}%</strong></span><span>AGE<strong>Y${s.year} D${s.day}</strong></span></div><div class="colony-card-stock"><span>F ${s.status==="dead"?formatNumber(s.foodStock):this.colonyDays(s.foodDays)}</span><span>FU ${s.status==="dead"?formatNumber(s.fuelStock):this.colonyDays(s.fuelDays)}</span><span>O ${s.status==="dead"?formatNumber(s.oreStock):this.colonyDays(s.oreDays)}</span>${s.pendingTransport?`<span>⇢ +${formatNumber(s.pendingTransport)}</span>`:""}</div>${entry.id===active?`<div class="colony-active-tag">CURRENTLY VIEWING</div>`:""}${shipWaiting?`<div class="colony-active-tag warn" data-ship-waiting>CORPORATE SHIP DOCKED</div>`:""}</button>`;
-    }).join("");
-    const canNew=this.contracts.canOpenAdditional(this.state),living=entries.filter(entry=>entry.data?.status!=="dead").length;
-    this.open(`Colonies — ${entries.length} (${living} active)`,`<article class="card"><p>Corporation date <strong>Y${this.state.year} D${this.state.day}</strong>. All colonies advance together at the same simulation speed.</p></article><div class="colony-grid">${cards}</div><button class="action" data-new-colony ${canNew?"":"disabled"}>OPEN NEW COLONY CONTRACT</button>${canNew?"":`<div class="requirement locked">${this.state.company.gameOver?"Corporation operations have ended because all colonies were lost.":"Complete the first 10-year contract to unlock additional colonies."}</div>`}`);
+    let cards;
+    try{
+      cards=(await Promise.all(entries.map(entry=>{
+        const s=this.portfolio.summary(entry,this.state),st=this.colonyStatus(s),wf=s.workforceRequired?Math.min(100,Math.round(s.workforceAvailable/s.workforceRequired*100)):100,data=entry.id===active?this.state:entry.data;
+        const installed=SHIP_INFRASTRUCTURE.industry+builtCapacity(entry.data,"industry"),effective=Math.max(0,Number(entry.data?.metrics?.industry)||0),rawStaff=Number(entry.data?.metrics?.industryStaffFactor),staff=Math.round(Math.max(0,Math.min(1,Number.isFinite(rawStaff)?rawStaff:1))*100),shipWaiting=!!data?.trade?.active;
+        return renderViewTemplate("./views/colony-card.html",{
+          ACTIVE_CLASS:entry.id===active?"active":"",COLONY_ID:entry.id,NAME:s.name,STATUS_CLASS:st.cls,STATUS_LABEL:st.label,TIER:s.tier,ENVIRONMENT:s.environment,SUPPORT_LOAD:Number(s.supportLoad||1).toFixed(2),POPULATION:formatNumber(s.pop),INDUSTRY_EFFECTIVE:formatNumber(effective),INDUSTRY_INSTALLED:formatNumber(installed),STAFF_PERCENT:staff,WORKFORCE_PERCENT:wf,CONTRACT_YEAR:s.year,CONTRACT_DAY:s.day,
+          FOOD:s.status==="dead"?formatNumber(s.foodStock):this.colonyDays(s.foodDays),FUEL:s.status==="dead"?formatNumber(s.fuelStock):this.colonyDays(s.fuelDays),ORE:s.status==="dead"?formatNumber(s.oreStock):this.colonyDays(s.oreDays),
+          PENDING_TRANSPORT:s.pendingTransport?`<span>⇢ +${formatNumber(s.pendingTransport)}</span>`:"",ACTIVE_TAG:entry.id===active?`<div class="colony-active-tag">CURRENTLY VIEWING</div>`:"",SHIP_TAG:shipWaiting?`<div class="colony-active-tag warn" data-ship-waiting>CORPORATE SHIP DOCKED</div>`:""
+        });
+      }))).join("");
+      const canNew=this.contracts.canOpenAdditional(this.state),living=entries.filter(entry=>entry.data?.status!=="dead").length;
+      const body=await renderViewTemplate("./views/colonies.html",{YEAR:this.state.year,DAY:this.state.day,COLONY_CARDS:cards,NEW_DISABLED:canNew?"":"disabled",NEW_REQUIREMENT:canNew?"":`<div class="requirement locked">${this.state.company.gameOver?"Corporation operations have ended because all colonies were lost.":"Complete the first 10-year contract to unlock additional colonies."}</div>`});
+      this.open(`Colonies — ${entries.length} (${living} active)`,body);
+    }catch(error){this.diagnostics?.error?.("colony portfolio template failed",error);this.toast("Unable to open the colony portfolio.");return;}
     this.modal.querySelectorAll("[data-colony-id]").forEach(button=>button.onclick=()=>{const id=button.dataset.colonyId;if(id===active){this.modal.classList.add("hidden");return;}this.onSwitchColony?.(id);});const newButton=this.modal.querySelector("[data-new-colony]");if(newButton)newButton.onclick=()=>this.contractBoard();
   }
   endContractDialog(){
