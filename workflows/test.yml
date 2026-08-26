@@ -1,0 +1,21 @@
+name: Test
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - develop
+      - CleanUp
+      - 'feature/**'
+      - 'refactor/**'
+      - 'hotfix/**'
+      - 'fix/**'
+
+  pull_request:
+    branches:
+      - develop
+      - main
+      - CleanUp
+      - 'feature/**'
+      - 'fix/**'
