@@ -1,6 +1,6 @@
-import { TradeUI as IndustryTradeUI } from "./industry-trade-ui.js?v=5.5.5";
-import { CONFIG } from "../core/config.js?v=5.5.5";
-import { formatMoney, formatNumber } from "../core/utils.js?v=5.5.5";
+import { TradeUI as IndustryTradeUI } from "./industry-trade-ui.js";
+import { CONFIG } from "../core/config.js";
+import { formatMoney, formatNumber } from "../core/utils.js";
 
 export class TradeUI extends IndustryTradeUI {
   constructor(opts){super(opts);this.onDepart=opts.onDepart;this.gameLog=opts.gameLog;}
