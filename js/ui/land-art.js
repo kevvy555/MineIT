@@ -1,4 +1,7 @@
-const VERSION="5.6.1";
+const TERRAIN_VERSION="5.6.1";
+const DEVELOPMENT_VERSION="5.9.1";
+const DEVELOPMENT_FRAMES=5;
+const MIN_DEVELOPMENT_FRAME_SIZE=128;
 
 export const TERRAIN_ART={
   plain:["plains-01","plains-02","plains-03","plains-04"],
@@ -16,7 +19,7 @@ const terrainFolder={plain:"plains",hill:"hills",mountain:"mountains",lake:"lake
 
 export function terrainPath(terrain,variant=1){
   const folder=terrainFolder[terrain]||"plains",list=TERRAIN_ART[terrain]||TERRAIN_ART.plain,index=(Math.max(1,Number(variant)||1)-1)%list.length;
-  return `./assets/art/terrain/${folder}/${list[index]}.webp?v=${VERSION}`;
+  return `./assets/art/terrain/${folder}/${list[index]}.webp?v=${TERRAIN_VERSION}`;
 }
 
 export function developmentKind(dev){
@@ -26,19 +29,24 @@ export function developmentKind(dev){
 }
 
 export function developmentLevel(dev){
-  return Math.max(1,Math.min(5,Number(dev?.level)||1));
+  return Math.max(1,Math.min(DEVELOPMENT_FRAMES,Number(dev?.level)||1));
 }
 
 // Retained for compatibility with the original individual-file art contract.
 export function developmentPath(dev){
   const kind=developmentKind(dev),level=developmentLevel(dev);
-  return kind?`./assets/art/development/${kind}/${kind}-l${level}.webp?v=${VERSION}`:null;
+  return kind?`./assets/art/development/${kind}/${kind}-l${level}.webp?v=${TERRAIN_VERSION}`:null;
 }
 
-// Runtime uses one five-frame horizontal atlas per development family (L1 -> L5).
+export function developmentOriginalPath(dev){
+  const kind=developmentKind(dev),level=developmentLevel(dev);
+  return kind?`./assets/art/development/${kind}/originals/${kind}-l${level}.png?v=${DEVELOPMENT_VERSION}`:null;
+}
+
+// Runtime uses one high-resolution five-frame horizontal atlas per development family (L1 -> L5).
 export function developmentAtlasPath(dev){
   const kind=developmentKind(dev);
-  return kind?`./assets/art/development/${kind}/${kind}-levels.webp?v=${VERSION}`:null;
+  return kind?`./assets/art/development/${kind}/${kind}-levels-256.webp?v=${DEVELOPMENT_VERSION}`:null;
 }
 
 export function artImage(src,onReady){
@@ -67,9 +75,11 @@ export function drawContain(ctx,img,x,y,w,h,scale=1){
   ctx.drawImage(img,x+(w-dw)/2,y+(h-dh)/2,dw,dh);return true;
 }
 
-export function drawDevelopmentFrame(ctx,img,level,x,y,w,h,scale=.94){
+export function drawDevelopmentFrame(ctx,img,level,x,y,w,h,scale=.96){
   if(!img?.complete||!img.naturalWidth||!img.naturalHeight)return false;
-  const frames=5,frameWidth=img.naturalWidth/frames,frameHeight=img.naturalHeight,index=Math.max(1,Math.min(frames,Number(level)||1))-1;
+  const frameWidth=img.naturalWidth/DEVELOPMENT_FRAMES,frameHeight=img.naturalHeight;
+  if(!Number.isInteger(frameWidth)||frameWidth<MIN_DEVELOPMENT_FRAME_SIZE||frameHeight<MIN_DEVELOPMENT_FRAME_SIZE)return false;
+  const index=Math.max(1,Math.min(DEVELOPMENT_FRAMES,Number(level)||1))-1;
   const ratio=Math.min(w/frameWidth,h/frameHeight)*scale,dw=frameWidth*ratio,dh=frameHeight*ratio;
   ctx.drawImage(img,frameWidth*index,0,frameWidth,frameHeight,x+(w-dw)/2,y+(h-dh)/2,dw,dh);
   return true;
