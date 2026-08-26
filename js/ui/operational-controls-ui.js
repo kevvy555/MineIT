@@ -1,4 +1,4 @@
-import { UIController as BaseUIController } from "./ui-controller-v580.js?v=5.8.0&legacy=1";
+import { UIController as BaseUIController } from "./map-first-ui.js";
 import { operatingMode,riskExposure,supportsOverdrive } from "../domain/extraction-overdrive.js?v=5.6.2";
 import { clamp } from "../core/utils.js?v=5.5.5";
 
@@ -8,11 +8,17 @@ const NEXT_MODE={normal:"pushed",pushed:"hard",hard:"normal"};
 export class UIController extends BaseUIController{
   constructor(options){
     super(options);
-    const attention=document.querySelector("#attentionStrip");
-    if(attention)attention.addEventListener("keydown",event=>{
+    this.attentionElement=document.querySelector("#attentionStrip");
+    this.attentionKeydownHandler=event=>{
       if(event.key!=="Enter"&&event.key!==" ")return;
       event.preventDefault();this.runAttentionAction();
-    });
+    };
+    this.attentionElement?.addEventListener("keydown",this.attentionKeydownHandler);
+  }
+  dispose(){
+    this.attentionElement?.removeEventListener("keydown",this.attentionKeydownHandler);
+    this.attentionElement=null;this.attentionKeydownHandler=null;
+    super.dispose?.();
   }
   renderContext(){
     if(this.selectedTile&&Number.isFinite(this.selectedTile.x)&&Number.isFinite(this.selectedTile.y))this.selectedTile=this.world.get(this.state,this.selectedTile.x,this.selectedTile.y);
