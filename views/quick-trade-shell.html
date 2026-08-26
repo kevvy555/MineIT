@@ -1,0 +1,15 @@
+<div class="trade-quick-shell">
+  <div class="trade-quick-summary">
+    <div class="trade-qmetric"><small>CASH</small><strong>{{CASH}}</strong></div>
+    <div class="trade-qmetric"><small>IMPORT</small><strong>{{IMPORT}}</strong></div>
+    <div class="trade-qmetric"><small>EXPORT</small><strong>{{EXPORT}}</strong></div>
+    <div class="trade-qmetric"><small>PAX</small><strong>{{PAX}}</strong></div>
+  </div>
+  <div class="trade-quick-tabs">
+    <button data-trade-tab="sell" class="{{SELL_ACTIVE}}">SELL</button>
+    <button data-trade-tab="buy" class="{{BUY_ACTIVE}}">BUY</button>
+    <button data-trade-tab="colonists" class="{{COLONISTS_ACTIVE}}" {{COLONISTS_DISABLED}}>COLONISTS</button>
+  </div>
+  <div class="trade-quick-view">{{TRADE_VIEW}}</div>
+  <div class="trade-quick-depart"><button data-depart class="warn">SHIP DEPARTS</button></div>
+</div>
