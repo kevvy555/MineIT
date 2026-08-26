@@ -1,6 +1,6 @@
 import { UIController as BaseUIController } from "./trade-reserve-ui.js";
-import { formatMoney, formatNumber } from "../core/utils.js?v=5.5.5";
-import { developmentKind, developmentLevel, developmentOriginalPath } from "./land-art.js?v=5.9.1";
+import { formatMoney, formatNumber } from "../core/utils.js";
+import { developmentKind, developmentLevel, developmentOriginalPath } from "./land-art.js";
 
 const FAMILY_LABELS={
   housing:"Housing",
