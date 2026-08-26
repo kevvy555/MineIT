@@ -44,6 +44,6 @@ assert.equal(debt.importMap,false,"Runtime import-map redirects must not return"
 assert.equal(debt.queryImports,0,"Version-query imports must not return");
 assert.equal(debt.globalAssignments,0,`Global application assignments must not return: ${globalAssignments.join(", ")}`);
 assert.equal(debt.documentAppEvents,0,"Document-level application events must not return");
-assert.ok(debt.largeHtmlTemplates<=39,"Large embedded HTML template debt must not grow beyond the verified quick-trade view checkpoint");
+assert.ok(debt.largeHtmlTemplates<=38,"Large embedded HTML template debt must not grow beyond the verified demolition-view checkpoint");
 
 console.log("CleanUp architecture baseline guard passed");
