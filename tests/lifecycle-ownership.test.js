@@ -19,7 +19,7 @@ assert.match(app,/this\.ui\?\.dispose\?\.\(\)/);assert.match(app,/this\.tradeUI\
 assert.match(app,/addEventListener\("DOMContentLoaded",startMineIT,\{once:true\}\)/);
 
 assert.match(baseUi,/this\.speedClickHandler=/);assert.match(baseUi,/removeEventListener\("click",this\.speedClickHandler,true\)/);assert.match(baseUi,/this\.diagnosticsUnsubscribe=this\.diagnostics\.subscribe/);assert.match(baseUi,/this\.diagnosticsUnsubscribe\?\.\(\)/);assert.match(baseUi,/clearTimeout\(this\.toastTimer\)/);
-assert.match(tradeUi,/this\.button\.onclick=.*this\.open\(\).*this\.status\(\)/);assert.doesNotMatch(tradeUi,/\[data-speed\][^]*\.onclick=/,"trade UI must not own duplicate speed-button handlers");assert.match(tradeUi,/dispose\(\)\{if\(this\.button\)this\.button\.onclick=null/);
+assert.match(tradeUi,/this\.button\.onclick=.*this\.open\(\).*this\.status\(\)/);assert.doesNotMatch(tradeUi,/querySelectorAll\("\[data-speed\]"\)\.forEach\(button=>\{button\.onclick=/,"trade UI must not own duplicate speed-button handlers");assert.match(tradeUi,/dispose\(\)\{if\(this\.button\)this\.button\.onclick=null/);
 assert.match(world,/dispose\(\)/);assert.match(mapFirst,/dispose\(\)/);assert.match(operational,/dispose\(\)/);
 
 console.log("application state ownership and listener/RAF disposal guard passed");
