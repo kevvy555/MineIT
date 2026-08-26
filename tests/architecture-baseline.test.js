@@ -25,13 +25,16 @@ assert.ok(globalAssignments.length<=3,"Global application-state leakage must not
 const versionedJs=jsFiles.map(rel).filter(name=>/-v\d+\.js$/.test(name));
 const versionedCss=cssFiles.map(rel).filter(name=>/-v\d+\.css$/.test(name));
 let queryImports=0,documentAppEvents=0,largeMarkupTemplates=0;
-for(const [,text] of source){
-  queryImports+=(text.match(/(?:from\s+|import\s*\()["'][^"']+\.js\?v=/g)||[]).length;
+const queryImportsByFile=[];
+for(const [file,text] of source){
+  const queryCount=(text.match(/(?:from\s+|import\s*\()["'][^"']+\.js\?v=/g)||[]).length;
+  queryImports+=queryCount;if(queryCount)queryImportsByFile.push({file,count:queryCount});
   documentAppEvents+=(text.match(/document\.(?:dispatchEvent|addEventListener)\([^\n]*mineit:/g)||[]).length;
   largeMarkupTemplates+=(text.match(/`[^`]{500,}`/gs)||[]).length;
 }
 const debt={versionedJs:versionedJs.length,versionedCss:versionedCss.length,queryImports,importMap:/<script\s+type=["']importmap["']/.test(index),globalAssignments:globalAssignments.length,documentAppEvents,largeMarkupTemplates};
 console.log("CleanUp architecture debt baseline",debt);
+console.log("Query import debt by file",queryImportsByFile);
 
 assert.equal(debt.versionedJs,0,"Version-numbered JavaScript files must not return");
 assert.equal(debt.versionedCss,0,"Version-numbered CSS files must not return");
