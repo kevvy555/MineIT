@@ -1,6 +1,6 @@
 import { UIController as PlayerShipUIController } from "./player-ship-ui.js";
-import { HOME_SYSTEM_ID, PROBE_UNLOCK_INDUSTRY_LEVEL, PROBE_COST } from "../domain/expansion-service.js?v=5.11.0";
-import { formatNumber } from "../core/utils.js?v=5.5.5";
+import { HOME_SYSTEM_ID, PROBE_UNLOCK_INDUSTRY_LEVEL, PROBE_COST } from "../domain/expansion-service.js";
+import { formatNumber } from "../core/utils.js";
 
 const esc=value=>String(value??"").replace(/[&<>\"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;"}[ch]));
 
