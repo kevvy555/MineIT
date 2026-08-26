@@ -31,6 +31,6 @@ assert.equal(trade.sellableStock(state).some(x=>x.key==="fuel:coal"),false);
 
 const contracts=new ContractService(),saved=createGameState(contracts.first());saved.colony.tradeReserves={"ore:iron":12345};normalizeState(saved);assert.equal(saved.colony.tradeReserves["ore:iron"],12345);
 
-const quick=readFileSync(new URL("../js/ui/quick-trade-ui.js",import.meta.url),"utf8"),controller=readFileSync(new URL("../js/ui/ui-controller-v590.js",import.meta.url),"utf8"),css=readFileSync(new URL("../css/trade-quick.css",import.meta.url),"utf8");
+const quick=readFileSync(new URL("../js/ui/quick-trade-ui.js",import.meta.url),"utf8"),controller=readFileSync(new URL("../js/ui/trade-reserve-ui.js",import.meta.url),"utf8"),css=readFileSync(new URL("../css/trade-quick.css",import.meta.url),"utf8");
 assert.match(quick,/SELL COLONY STOCK/);assert.match(quick,/BUY FROM CORPORATION/);assert.match(quick,/COLONIST TRANSFER/);assert.match(quick,/MAX_TRADE=100000/);assert.match(quick,/PAGE_SIZE=4/);assert.match(quick,/data-buy-reserve/);assert.match(controller,/trade-reserve/);assert.match(controller,/tradeReserves/);assert.match(css,/trade-quick-modal \.modal-body\{overflow:hidden\}/);
 console.log("MineIT quick ship trade reserve test passed");
