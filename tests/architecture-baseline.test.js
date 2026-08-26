@@ -1,0 +1,47 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
+const walk=dir=>fs.readdirSync(dir,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?walk(path.join(dir,entry.name)):[path.join(dir,entry.name)]);
+const rel=file=>path.relative(root,file).replaceAll("\\","/");
+const jsFiles=walk(path.join(root,"js")).filter(f=>f.endsWith(".js"));
+const cssFiles=walk(path.join(root,"css")).filter(f=>f.endsWith(".css"));
+const source=new Map(jsFiles.map(file=>[rel(file),fs.readFileSync(file,"utf8")]));
+const index=fs.readFileSync(path.join(root,"index.html"),"utf8");
+
+// Hard rules that are already true and must stay true throughout the cleanup.
+for(const [file,text] of source){
+  if(file.startsWith("js/domain/"))assert.doesNotMatch(text,/from\s+["'][^"']*(?:\/ui\/|\.\.\/ui\/)/,`${file} must not import presentation code`);
+  assert.doesNotMatch(text,/\beval\s*\(|\bnew\s+Function\s*\(/,`${file} must not use dynamic code execution`);
+}
+
+// Global application-state assignment is currently limited to the legacy boot diagnostic hook.
+const globalAssignments=[];
+for(const [file,text] of source){
+  for(const match of text.matchAll(/\bwindow\.([A-Za-z_$][\w$]*)\s*=/g))globalAssignments.push(`${file}:${match[1]}`);
+}
+assert.ok(globalAssignments.every(item=>item==="js/app.js:mineITBoot"),`Unexpected global application assignment(s): ${globalAssignments.join(", ")}`);
+assert.ok(globalAssignments.length<=1,"Global application-state leakage must not grow during cleanup");
+
+const versionedJs=jsFiles.map(rel).filter(name=>/-v\d+\.js$/.test(name));
+const versionedCss=cssFiles.map(rel).filter(name=>/-v\d+\.css$/.test(name));
+let queryImports=0,documentAppEvents=0,largeMarkupTemplates=0;
+for(const [,text] of source){
+  queryImports+=(text.match(/(?:from\s+|import\s*\()["'][^"']+\.js\?v=/g)||[]).length;
+  documentAppEvents+=(text.match(/document\.(?:dispatchEvent|addEventListener)\([^\n]*mineit:/g)||[]).length;
+  largeMarkupTemplates+=(text.match(/`[^`]{500,}`/gs)||[]).length;
+}
+const debt={versionedJs:versionedJs.length,versionedCss:versionedCss.length,queryImports,importMap:/<script\s+type=["']importmap["']/.test(index),globalAssignments:globalAssignments.length,documentAppEvents,largeMarkupTemplates};
+console.log("CleanUp architecture debt baseline",debt);
+
+// These are intentionally generous regression ceilings for Phase 0. They allow debt to shrink
+// without requiring this file to be edited at every consolidation commit, but prevent it growing.
+assert.ok(debt.versionedJs<100,"Versioned JavaScript debt unexpectedly grew");
+assert.ok(debt.versionedCss<30,"Versioned CSS debt unexpectedly grew");
+assert.ok(debt.queryImports<500,"Version-query import debt unexpectedly grew");
+assert.ok(debt.documentAppEvents<50,"Document-level application event debt unexpectedly grew");
+assert.ok(debt.largeMarkupTemplates<150,"Large embedded HTML template debt unexpectedly grew");
+
+console.log("CleanUp architecture baseline guard passed");
