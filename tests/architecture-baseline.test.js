@@ -36,7 +36,7 @@ console.log("CleanUp architecture debt baseline",debt);
 assert.equal(debt.versionedJs,0,"Version-numbered JavaScript files must not return");
 assert.equal(debt.versionedCss,0,"Version-numbered CSS files must not return");
 assert.equal(debt.importMap,false,"Runtime import-map redirects must not return");
-assert.ok(debt.queryImports<=70,"Version-query import debt must not grow beyond the current query-cleanup checkpoint");
+assert.ok(debt.queryImports<=65,"Version-query import debt must not grow beyond the current query-cleanup checkpoint");
 assert.ok(debt.globalAssignments<=3,"Global application-state leakage must not grow during cleanup");
 assert.ok(debt.documentAppEvents<=9,"Document-level application event debt must not grow beyond the current checkpoint");
 assert.ok(debt.largeMarkupTemplates<=217,"Large embedded HTML template debt must not grow beyond the current checkpoint");
