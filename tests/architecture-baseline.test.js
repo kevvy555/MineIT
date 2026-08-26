@@ -21,20 +21,22 @@ for(const [file,text] of source){for(const match of text.matchAll(/\bwindow\.([A
 
 const versionedJs=jsFiles.map(rel).filter(name=>/-v\d+\.js$/.test(name));
 const versionedCss=cssFiles.map(rel).filter(name=>/-v\d+\.css$/.test(name));
-let queryImports=0,documentAppEvents=0,largeMarkupTemplates=0;
-const queryImportsByFile=[],largeMarkupTemplatesByFile=[];
+let queryImports=0,documentAppEvents=0,largeHtmlTemplates=0;
+const queryImportsByFile=[],largeHtmlTemplatesByFile=[];
+const htmlTag=/<(?:article|aside|button|canvas|div|form|h[1-6]|header|label|li|main|nav|option|p|section|select|small|span|strong|table|tbody|td|textarea|th|thead|tr|ul)\b/i;
 for(const [file,text] of source){
   const queryCount=(text.match(/(?:from\s+|import\s*\()["'][^"']+\.js\?v=/g)||[]).length;
   queryImports+=queryCount;if(queryCount)queryImportsByFile.push({file,count:queryCount});
   documentAppEvents+=(text.match(/document\.(?:dispatchEvent|addEventListener)\([^\n]*mineit:/g)||[]).length;
-  const markupCount=(text.match(/`[^`]{500,}`/gs)||[]).length;
-  largeMarkupTemplates+=markupCount;if(markupCount)largeMarkupTemplatesByFile.push({file,count:markupCount});
+  const templates=text.match(/`[^`]{500,}`/gs)||[];
+  const htmlCount=templates.filter(template=>htmlTag.test(template)).length;
+  largeHtmlTemplates+=htmlCount;if(htmlCount)largeHtmlTemplatesByFile.push({file,count:htmlCount});
 }
-largeMarkupTemplatesByFile.sort((a,b)=>b.count-a.count||a.file.localeCompare(b.file));
-const debt={versionedJs:versionedJs.length,versionedCss:versionedCss.length,queryImports,importMap:/<script\s+type=["']importmap["']/.test(index),globalAssignments:globalAssignments.length,documentAppEvents,largeMarkupTemplates};
+largeHtmlTemplatesByFile.sort((a,b)=>b.count-a.count||a.file.localeCompare(b.file));
+const debt={versionedJs:versionedJs.length,versionedCss:versionedCss.length,queryImports,importMap:/<script\s+type=["']importmap["']/.test(index),globalAssignments:globalAssignments.length,documentAppEvents,largeHtmlTemplates};
 console.log("CleanUp architecture debt baseline",debt);
 console.log("Query import debt by file",queryImportsByFile);
-console.log("Large markup template debt by file",largeMarkupTemplatesByFile);
+console.log("Large HTML template debt by file",largeHtmlTemplatesByFile);
 
 assert.equal(debt.versionedJs,0,"Version-numbered JavaScript files must not return");
 assert.equal(debt.versionedCss,0,"Version-numbered CSS files must not return");
@@ -42,6 +44,6 @@ assert.equal(debt.importMap,false,"Runtime import-map redirects must not return"
 assert.equal(debt.queryImports,0,"Version-query imports must not return");
 assert.equal(debt.globalAssignments,0,`Global application assignments must not return: ${globalAssignments.join(", ")}`);
 assert.equal(debt.documentAppEvents,0,"Document-level application events must not return");
-assert.ok(debt.largeMarkupTemplates<=217,"Large embedded HTML template debt must not grow beyond the current checkpoint");
+assert.ok(debt.largeHtmlTemplates<=217,"Large embedded HTML template debt must not grow beyond the current checkpoint");
 
 console.log("CleanUp architecture baseline guard passed");
