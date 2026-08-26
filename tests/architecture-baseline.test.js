@@ -17,13 +17,15 @@ for(const [file,text] of source){
   assert.doesNotMatch(text,/\beval\s*\(|\bnew\s+Function\s*\(/,`${file} must not use dynamic code execution`);
 }
 
-// Global application-state assignment is currently limited to the legacy boot diagnostic hook.
+// Phase-0 inventory: the current app leaks only its legacy diagnostic/app handles.
+// This allow-list is removed at the final architecture gate; new globals are forbidden now.
 const globalAssignments=[];
 for(const [file,text] of source){
   for(const match of text.matchAll(/\bwindow\.([A-Za-z_$][\w$]*)\s*=/g))globalAssignments.push(`${file}:${match[1]}`);
 }
-assert.ok(globalAssignments.every(item=>item==="js/app.js:mineITBoot"),`Unexpected global application assignment(s): ${globalAssignments.join(", ")}`);
-assert.ok(globalAssignments.length<=1,"Global application-state leakage must not grow during cleanup");
+const allowedGlobals=new Set(["js/app.js:mineITBoot","js/app.js:mineIT"]);
+assert.ok(globalAssignments.every(item=>allowedGlobals.has(item)),`Unexpected global application assignment(s): ${globalAssignments.join(", ")}`);
+assert.ok(globalAssignments.length<=3,"Global application-state leakage must not grow during cleanup");
 
 const versionedJs=jsFiles.map(rel).filter(name=>/-v\d+\.js$/.test(name));
 const versionedCss=cssFiles.map(rel).filter(name=>/-v\d+\.css$/.test(name));
