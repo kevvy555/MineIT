@@ -13,8 +13,9 @@ assert.doesNotMatch(index,/mapFilterHost/);assert.doesNotMatch(index,/world-view
 // While the UI still uses an import map, all domain redirects must terminate at semantic/canonical files.
 for(const target of["game-state-runtime","portfolio-service","resource-service","collection-service","colony-service","development-service","site-service","technology-service","simulation-engine","trade-service"])assert.match(index,new RegExp(`js/domain/${target}\\.js`),`browser runtime must route ${target} canonically`);
 
-// The application composition root must still own the required services and lifecycle operations.
-for(const module of["game-state","portfolio-service","resource-service","inventory-service","collection-service","colony-service","trade-service","land-service","development-service","world-service","site-service","technology-service","survey-service","simulation-engine","game-log-service","transport-service"])assert.match(app,new RegExp(`domain/${module}\\.js`));
+// The application composition root must directly own the canonical services and presentation runtimes.
+for(const module of["game-state-runtime","portfolio-service","resource-service","inventory-service","collection-service","colony-service","trade-service","land-service","development-service","world-service","site-service","technology-service","survey-service","simulation-engine","game-log-service","transport-service"])assert.match(app,new RegExp(`domain/${module}\\.js`));
+for(const module of["world-view-runtime","ship-preparation-ui","corporate-trade-ui"])assert.match(app,new RegExp(`ui/${module}\\.js`));
 for(const marker of["advanceGlobalDate","processPendingCorporateEvent","processPendingShipEvent","reconcileCorporateEvents","startup failed","STARTUP ERROR • TAP FOR DETAILS"])assert.match(app,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")));
 
 // Canonical domain modules contain the active gameplay, rather than relying on version inheritance.
