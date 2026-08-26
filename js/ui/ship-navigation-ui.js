@@ -1,12 +1,13 @@
 import { UIController as PlayerShipUIController } from "./player-ship-ui.js";
 import { HOME_SYSTEM_ID, PROBE_UNLOCK_INDUSTRY_LEVEL, PROBE_COST } from "../domain/expansion-service.js";
 import { formatNumber } from "../core/utils.js";
+import { renderViewTemplate } from "../core/view-template.js";
 
 const esc=value=>String(value??"").replace(/[&<>\"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;"}[ch]));
 
 /** Full-screen deterministic player-ship navigation, system selection and demolition confirmation. */
 export class UIController extends PlayerShipUIController{
-  constructor(opts){super(opts);this._shipNavActive=false;this.selectedStarSystemId=null;}
+  constructor(opts){super(opts);this._shipNavActive=false;this.selectedStarSystemId=null;this.demolitionRevision=0;}
 
   dispose(){super.dispose?.();}
 
@@ -123,13 +124,16 @@ export class UIController extends PlayerShipUIController{
     super.renderAdaptiveBuilding(tile);const button=this.tilePanel?.querySelector("[data-adaptive-demolish]");if(button)button.onclick=()=>this.demolitionPanel(tile);
   }
 
-  demolitionPanel(tile){
-    const dev=tile?.development;if(!dev)return;const extract=dev.kind==="extract",label=extract?this.buildingLabel(dev):this.development.label(dev.kind),level=Math.max(1,Number(dev.level??tile.level)||1),investedBuild=Math.max(0,Math.floor(Number(dev.investedBuild)||0)),investedOre=Math.max(0,Math.floor(Number(dev.investedOre)||0)),recoverBuild=Math.floor(investedBuild*.25),recoverOre=Math.floor(investedOre*.25);
+  async demolitionPanel(tile){
+    const revision=++this.demolitionRevision,dev=tile?.development;if(!dev)return;const extract=dev.kind==="extract",label=extract?this.buildingLabel(dev):this.development.label(dev.kind),level=Math.max(1,Number(dev.level??tile.level)||1),investedBuild=Math.max(0,Math.floor(Number(dev.investedBuild)||0)),investedOre=Math.max(0,Math.floor(Number(dev.investedOre)||0)),recoverBuild=Math.floor(investedBuild*.25),recoverOre=Math.floor(investedOre*.25);
     let impact="The tile will be cleared for redevelopment.";
     if(extract)impact=tile.depleted||tile.renewableWiped?"The exhausted extraction site will be removed. The tile can be redeveloped.":"The extraction facility will be removed; the underlying resource remains available for future development.";
     else if(tile.resourceCovered&&tile.resourceId)impact=`The covered ${tile.name} resource will become accessible again.`;
     else if(tile.destroyedResource?.type==="food")impact="The natural Food resource previously destroyed by construction will not return.";
-    this.open("Confirm Demolition",`<div class="demolition-confirm"><div class="demolition-title"><small>YOU ARE ABOUT TO DEMOLISH</small><strong>${esc(label)} L${level}</strong><span>Map tile ${tile.x}, ${tile.y}</span></div><div class="demolition-breakdown"><div><small>INVESTED BUILD</small><strong>${formatNumber(investedBuild)}</strong></div><div class="recovery"><small>BUILD RETURNED</small><strong>+${formatNumber(recoverBuild)}</strong></div><div><small>INVESTED ORE</small><strong>${formatNumber(investedOre)}</strong></div><div class="recovery"><small>ORE RETURNED</small><strong>+${formatNumber(recoverOre)}</strong></div></div><div class="demolition-impact"><small>AFTER DEMOLITION</small><strong>${esc(impact)}</strong><span>Recovery is 25% of the materials invested in this building.</span></div><div class="demolition-actions"><button class="demolition-yes" data-demolish-yes>YES • DEMOLISH</button><button class="demolition-no" data-demolish-no>NO • KEEP BUILDING</button></div></div>`);
+    let body;
+    try{body=await renderViewTemplate("./views/demolition-confirm.html",{BUILDING_LABEL:esc(label),LEVEL:level,X:tile.x,Y:tile.y,INVESTED_BUILD:formatNumber(investedBuild),RECOVER_BUILD:formatNumber(recoverBuild),INVESTED_ORE:formatNumber(investedOre),RECOVER_ORE:formatNumber(recoverOre),IMPACT:esc(impact)});}catch(error){if(revision!==this.demolitionRevision)return;this.diagnostics?.error?.("demolition template failed",error);this.toast("Unable to open demolition confirmation.");return;}
+    if(revision!==this.demolitionRevision)return;
+    this.open("Confirm Demolition",body);
     this.modal.classList.add("demolition-confirm-modal");
     this.modal.querySelector("[data-demolish-no]").onclick=()=>this.modal.classList.add("hidden");
     this.modal.querySelector("[data-demolish-yes]").onclick=()=>this.onDemolishDevelopment?.(tile);
