@@ -12,9 +12,12 @@ export async function loadViewTemplate(path){
   return pending;
 }
 
-export async function renderViewTemplate(path,slots={}){
-  const source=await loadViewTemplate(path);
+export function renderViewSource(source,slots={}){
   return source.replace(/\{\{([A-Z0-9_]+)\}\}/g,(_match,key)=>String(slots[key]??""));
+}
+
+export async function renderViewTemplate(path,slots={}){
+  return renderViewSource(await loadViewTemplate(path),slots);
 }
 
 export function clearViewTemplateCache(){templateCache.clear();}
