@@ -63,19 +63,6 @@ export class UIController extends PlayerShipUIController{
     return this.expansion.probeFor(this.state,system.id)?"PROBE EN ROUTE":"UNKNOWN";
   }
 
-  planetTable(system,arrived){
-    const owned=this.expansion.coloniesInSystem(this.state,system.id),ship=this.expansion.ship(this.state);
-    const rows=system.planets.map(planet=>{
-      const colonies=owned.filter(c=>c.planetId===planet.id),living=colonies.filter(c=>c.status!=="dead"),occupied=colonies.length>0,meets=this.technology.meetsRequirements(this.state,planet.requiredTech),canFound=arrived&&!occupied&&ship.passengers>0&&meets;
-      let actions="—";
-      if(arrived&&living.length)actions=living.map(c=>`<button data-dock-colony="${esc(c.id)}">DOCK ${esc(c.name)}</button>`).join("");
-      else if(arrived)actions=`<button data-found-planet="${esc(planet.id)}" ${canFound?"":"disabled"}>${occupied?"COLONY EXISTS":ship.passengers<=0?"NO COLONISTS":!meets?"TECH LOCKED":"FOUND COLONY"}</button>`;
-      const colonyNames=colonies.length?colonies.map(c=>esc(c.name)).join("<br>"):"—";
-      return `<tr><td><strong>${esc(planet.name)}</strong></td><td>${esc(planet.environment)}</td><td>${esc(planet.indicators.food)}</td><td>${esc(planet.indicators.build)}</td><td>${esc(planet.indicators.fuel)}</td><td>${esc(planet.indicators.ore)}</td><td>${esc(planet.indicators.habitability)}</td><td>${formatNumber(planet.surveyConfidence)}%</td><td>P${planet.requiredTech.power} / F${planet.requiredTech.food} / M${planet.requiredTech.mining}</td><td>${colonyNames}</td><td class="exp-planet-actions">${actions}</td></tr>`;
-    }).join("");
-    return `<div class="exp-planet-table-wrap"><table class="exp-planet-table"><thead><tr><th>PLANET</th><th>ENVIRONMENT</th><th>FOOD</th><th>BUILD</th><th>FUEL</th><th>ORE</th><th>HABITABILITY</th><th>CONF.</th><th>TECH</th><th>COLONY</th><th>ACTION</th></tr></thead><tbody>${rows}</tbody></table></div>`;
-  }
-
   starSystemDetailMarkup(system){
     if(!system)return`<div class="exp-empty">Tap a star system to inspect it.</div>`;
     const ship=this.expansion.ship(this.state),probe=this.expansion.probeFor(this.state,system.id),arrived=ship.status==="arrived"&&ship.systemId===system.id,distance=this.expansion.distanceFromHome(this.state,system.id),stateLabel=this.systemStateLabel(system);
