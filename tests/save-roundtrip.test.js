@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { ContractService } from "../js/domain/contract-service.js";
-import { createGameState, normalizeState } from "../js/domain/game-state-v511.js";
-import { ResourceService } from "../js/domain/resource-service-v570.js";
+import { createGameState, normalizeState } from "../js/domain/game-state-runtime.js";
+import { ResourceService } from "../js/domain/resource-service.js";
 import { InventoryService } from "../js/domain/inventory-service.js";
-import { PortfolioService } from "../js/domain/portfolio-service-v5111.js";
+import { PortfolioService } from "../js/domain/portfolio-service.js";
 import { ExpansionService, HOME_SYSTEM_ID } from "../js/domain/expansion-service.js";
 
 const contracts=new ContractService(),resources=new ResourceService(),inventory=new InventoryService(resources),portfolio=new PortfolioService(),expansion=new ExpansionService(inventory,resources,contracts);
@@ -14,11 +14,9 @@ state.company.cash=987654;
 state.company.tech={housing:3,power:4,food:2,industry:3,mining:5};
 state.company.pendingEvents.push({id:"roundtrip-event",type:"ship",colonyId:firstId,colonyName:state.contract.colonyName,absoluteDay:42});
 
-// Create a second, legacy-style colony so the save contains more than one colony snapshot.
 const second=contracts.make(contracts.archetype({arch:"arid"}),2,0);second.colonyName="Roundtrip Secondary";portfolio.addColony(state,second);assert.equal(state.portfolio.colonies.length,2);
 assert.equal(portfolio.switchTo(state,firstId),true);
 
-// Put mixed-quality stock and a real ship manifest into the save.
 inventory.store(state,"food","fungal","Fungal Shelf",350,120);
 inventory.store(state,"food","fungal","Fungal Shelf",75,6000);
 inventory.store(state,"fuel","biomass","Biomass",500,900);
@@ -63,7 +61,6 @@ assert.equal(expansion.fuelAmount(loaded),expected.ship.fuel);
 assert.equal(expansion.cargoAmount(loaded),expected.ship.cargo);
 for(const [key,band] of Object.entries(expected.foodBands))assert.equal(loaded.inventory["food:fungal"].qualityBands[key]?.amount,band.amount,`quality band ${key} must survive save round-trip`);
 
-// Re-saving a normalized save must remain stable and JSON-safe.
 portfolio.captureActive(loaded,true);const serializedAgain=JSON.stringify(loaded);const loadedAgain=normalizeState(JSON.parse(serializedAgain));portfolio.ensure(loadedAgain);expansion.ensure(loadedAgain);
 assert.equal(loadedAgain.portfolio.colonies.length,2);
 assert.equal(expansion.ship(loadedAgain).passengers,expected.ship.passengers);
