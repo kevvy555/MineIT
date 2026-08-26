@@ -1,0 +1,11 @@
+<article class="card">
+  <h3>{{NAME}}</h3>
+  <p>{{ENVIRONMENT}}<br>{{HAZARD}}<br><strong>{{SUPPORT_SYSTEM}}</strong></p>
+  <div class="tiny">Food <span class="stars">{{FOOD_STARS}}</span></div>
+  <div class="tiny">Build <span class="stars">{{BUILD_STARS}}</span></div>
+  <div class="tiny">Fuel <span class="stars">{{FUEL_STARS}}</span></div>
+  <div class="tiny">Ore <span class="stars">{{ORE_STARS}}</span></div>
+  <div class="effect {{TECH_CLASS}}">Required tech {{TECH_REQUIREMENTS}} • {{TECH_ACCESS}}</div>
+  <div class="effect">Environmental support load ×{{SUPPORT_LOAD}} • Advance {{ADVANCE}}</div>
+  <button data-contract="{{INDEX}}" {{DISABLED}}>{{ACTION_LABEL}}</button>
+</article>
