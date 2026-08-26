@@ -1,5 +1,5 @@
-import { CATEGORY_NAMES } from "../data/resources.js?v=5.5.5";
-import { DEFAULT_QUALITY_BAND } from "./resource-service.js?v=5.5.5";
+import { CATEGORY_NAMES } from "../data/resources.js";
+import { DEFAULT_QUALITY_BAND } from "./resource-service.js";
 
 export class InventoryService {
   constructor(resourceService){this.resources=resourceService;}
