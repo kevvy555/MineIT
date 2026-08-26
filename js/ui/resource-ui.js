@@ -1,5 +1,5 @@
-import { formatMoney, formatNumber } from "../core/utils.js?v=5.0.0";
-import { OPERATING_MODES,operatingMode,riskExposure,accidentDetails,isAccidentShutdown,OVERDRIVE_RISK_PERIOD } from "../domain/extraction-overdrive.js?v=5.6.2";
+import { formatMoney, formatNumber } from "../core/utils.js";
+import { OPERATING_MODES,operatingMode,riskExposure,accidentDetails,isAccidentShutdown,OVERDRIVE_RISK_PERIOD } from "../domain/extraction-overdrive.js";
 
 export class ResourceUIMixin {
   tile(tile){
