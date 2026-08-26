@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 const read=p=>fs.readFileSync(new URL(`../${p}`,import.meta.url),"utf8");
-const controls=read("js/ui/map-controls.js"),view=read("js/ui/world-view-v56.js"),css=read("css/world.css");
+const controls=read("js/ui/map-controls.js"),view=read("js/ui/world-view-runtime.js"),css=read("css/world.css");
 assert.match(controls,/filtersOpen=false/);
 assert.match(controls,/filterCategory=null/);
 assert.match(controls,/mapFilterToggle/);
