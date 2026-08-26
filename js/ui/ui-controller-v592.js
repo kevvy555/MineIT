@@ -1,6 +1,6 @@
 import { UIController as V590UIController } from "./ui-controller-v590.js?v=5.9.0&legacy=1";
 import { formatMoney, formatNumber } from "../core/utils.js?v=5.5.5";
-import { developmentKind, developmentLevel, developmentOriginalPath } from "./land-art-v591.js?v=5.9.1";
+import { developmentKind, developmentLevel, developmentOriginalPath } from "./land-art.js?v=5.9.1";
 
 const FAMILY_LABELS={
   housing:"Housing",
