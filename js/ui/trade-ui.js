@@ -1,5 +1,5 @@
-import { CONFIG } from "../core/config.js?v=5.3.0";
-import { formatMoney, formatNumber } from "../core/utils.js?v=5.3.0";
+import { CONFIG } from "../core/config.js";
+import { formatMoney, formatNumber } from "../core/utils.js";
 export class TradeUI{
   constructor({state,trade,repo,ui}){Object.assign(this,{state,trade,repo,ui});this.button=document.querySelector("#tradeBtn");this.button.onclick=()=>state.trade.active?this.open():this.status();document.querySelectorAll("[data-speed]").forEach(button=>{button.onclick=()=>{if(state.status==="dead"){ui.toast("This colony has been lost. Switch colonies or reset the corporation.");return}if(state.trade.active&&+button.dataset.speed>0){ui.toast("Corporate ship is docked. Depart before resuming time.");return}state.speed=+button.dataset.speed;ui.syncSpeed();this.render()}});}
   price(v){return v<10?`£${v.toFixed(2)}`:formatMoney(v);}
