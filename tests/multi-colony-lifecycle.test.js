@@ -8,13 +8,13 @@ import { InventoryService } from "../js/domain/inventory-service.js";
 import { TradeService } from "../js/domain/trade-service.js";
 import { UIController as BaseUIController,mix } from "../js/ui/ui-controller.js";
 import { ResourceUIMixin } from "../js/ui/resource-ui-v562.js";
-import { PortfolioUIMixin as PortfolioV570 } from "../js/ui/portfolio-ui-v570.js";
+import { PortfolioUIMixin } from "../js/ui/portfolio-ui.js";
 
-// UI mixins are still in the later UI-cleanup phase; inherited helpers must remain intact meanwhile.
+// UI mixins must retain inherited helpers while the remaining presentation layers are flattened.
 assert.equal(typeof BaseUIController.prototype.company,"function","UI controller must retain inherited ResourceUI company()");
 class MixedUI{}
-mix(MixedUI,ResourceUIMixin);mix(MixedUI,PortfolioV570);
-for(const method of["company","colonyStatus","colonyDays","coloniesPanel"])assert.equal(typeof MixedUI.prototype[method],"function",`${method} must survive mixin subclass composition`);
+mix(MixedUI,ResourceUIMixin);mix(MixedUI,PortfolioUIMixin);
+for(const method of["company","colonyStatus","colonyDays","coloniesPanel"])assert.equal(typeof MixedUI.prototype[method],"function",`${method} must survive mixin composition`);
 
 const contracts=new ContractService(),resources=new ResourceService(),inventory=new InventoryService(resources),trade=new TradeService(resources,inventory),events=new CorporateEventService(contracts,trade),portfolio=new PortfolioService();
 const state=createGameState(contracts.first());state.company.cash=1e9;portfolio.ensure(state);events.ensure(state.company);
@@ -39,6 +39,7 @@ assert.equal(state.company.pendingEvents.length,1);assert.equal(state.company.pe
 assert.equal(portfolio.switchTo(state,firstId),true);assert.equal(state.colonyId,firstId);assert.equal(state.trade.active,true);assert.equal(portfolio.switchTo(state,secondId),true);assert.equal(state.colonyId,secondId,"manual portfolio switching must still restore Colony 02 after handling Colony 01");
 
 const legacyEntry=state.portfolio.colonies.find(e=>e.id===firstId);legacyEntry.data.status="deadline-missed";delete legacyEntry.data.contract.pendingDecision;legacyEntry.data.trade.active=false;state.company.pendingEvents=[];state.company.nextEventSequence=1;
-portfolio.simulateInactive(state,(local,entry)=>{if(entry.id===firstId)events.recoverLocal(local,entry.name);});assert.equal(state.company.pendingEvents[0].type,"contract");assert.equal(state.company.pendingEvents[0].kind,"extension");
+portfolio.simulateInactive(state,(local,entry)=>{if(entry.id===firstId)events.recoverLocal(local,entry.name);});
+assert.equal(state.company.pendingEvents[0].type,"contract");assert.equal(state.company.pendingEvents[0].kind,"extension");
 
 console.log("MineIT canonical multi-colony lifecycle regression test passed");
