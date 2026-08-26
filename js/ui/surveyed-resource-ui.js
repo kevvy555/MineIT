@@ -1,5 +1,5 @@
 import { UIController as BaseUIController } from "./building-details-ui.js";
-import { formatNumber } from "../core/utils.js?v=5.5.5";
+import { formatNumber } from "../core/utils.js";
 
 const ATLAS_COLUMNS=8;
 const ATLAS_ROWS=5;
