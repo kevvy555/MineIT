@@ -1,7 +1,7 @@
-import { UIController as LegacyUIController } from "./ui-controller-v564.js?v=5.6.4&legacy=1";
-import { CONFIG } from "../core/config.js?v=5.5.5";
-import { formatMoney,formatNumber } from "../core/utils.js?v=5.5.5";
-import { BUILDING_MODEL,SHIP_INFRASTRUCTURE,buildingCapacity,localBuildings,syncBuildingTotals } from "../domain/building-model.js?v=5.7.0";
+import { UIController as LegacyUIController } from "./survival-presentation-ui.js";
+import { CONFIG } from "../core/config.js";
+import { formatMoney,formatNumber } from "../core/utils.js";
+import { BUILDING_MODEL,SHIP_INFRASTRUCTURE,buildingCapacity,localBuildings,syncBuildingTotals } from "../domain/building-model.js";
 
 const LOCAL_KINDS=["housing","power","industry"];
 const TECH_LABELS={housing:"HOUSING",power:"POWER",food:"FOOD PRODUCTION",industry:"INDUSTRY",mining:"MINING / EXTRACTION"};
