@@ -11,7 +11,7 @@ for(const rule of["Ship arrivals and contract decisions from any colony pause th
 for(const rule of["no-scroll Sell / Buy / Colonists workflow","Set persistent stock reserves from a surveyed resource on the colony map","ship exports protect those reserves automatically"])assert.ok(help590.includes(rule),`missing v5.9 quick-trade rule: ${rule}`);
 for(const rule of["starMapCanvas","BUILD + LAUNCH SURVEY PROBE","SHIP FUEL TANK","Koplin Corporate Home"])assert.ok(expansionUi.includes(rule),`missing ShipExpansion base UI marker: ${rule}`);
 for(const rule of["TECHNOLOGY","STAR MAP","COLONIES","CARGO BAY","COLONY SUMMARY","CORPORATION"])assert.ok(playerShipUi.includes(rule),`missing landed-player-ship action: ${rule}`);
-for(const rule of["starSystemDetailMarkup","exp-planet-table","full-screen-panel","demolitionPanel","ship-panel-back"])assert.ok(shipNavUi.includes(rule),`missing ship navigation workflow marker: ${rule}`);
-for(const rule of["planetSortHeader","availableCargoCategories","SHIP LOAD","TRANSIT FUEL","TRANSIT FOOD","CARGO FOOD"])assert.ok(shipPrepUi.includes(rule),`missing ship preparation marker: ${rule}`);
+for(const rule of["starSystemDetailMarkup","full-screen-panel","demolitionPanel","ship-panel-back"])assert.ok(shipNavUi.includes(rule),`missing ship navigation workflow marker: ${rule}`);
+for(const rule of["exp-planet-table","planetSortHeader","availableCargoCategories","SHIP LOAD","TRANSIT FUEL","TRANSIT FOOD","CARGO FOOD"])assert.ok(shipPrepUi.includes(rule),`missing ship preparation marker: ${rule}`);
 for(const retained of["Quality affects economic value, not the basic collection rate","Surveying costs <strong>time, not cash</strong>","Renewable does <strong>not</strong> mean impossible to destroy"])assert.ok(survivalManual.includes(retained),`missing retained survival-manual rule: ${retained}`);
 console.log("v5.11.3 How to Play / expansion presentation rules test passed");
