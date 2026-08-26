@@ -1,6 +1,7 @@
 import { UIController as ShipNavigationUIController } from "./ship-navigation-ui.js";
 import { PLAYER_SHIP_CAPACITY } from "../domain/expansion-service.js";
 import { formatNumber } from "../core/utils.js";
+import { renderViewTemplate } from "../core/view-template.js";
 
 const CATEGORIES=["food","build","fuel","ore"];
 const BAND_ORDER={"Very Low":1,"Low":2,"Moderate":3,"High":4,"Very High":5,"Extreme":1,"Hostile":2,"Marginal":3,"Manageable":4,"Favourable":5};
@@ -9,7 +10,7 @@ const pct=(value,max)=>max>0?Math.max(0,Math.min(100,(Number(value)||0)/max*100)
 
 /** Sortable planetary survey data and dense, load-focused player-ship preparation. */
 export class UIController extends ShipNavigationUIController{
-  constructor(opts){super(opts);this.planetSort={key:"name",dir:1};}
+  constructor(opts){super(opts);this.planetSort={key:"name",dir:1};this.shipPrepRevision=0;}
 
   planetSortValue(planet,key,system){
     if(key==="name")return planet.name||"";
@@ -74,14 +75,19 @@ export class UIController extends ShipNavigationUIController{
     return `<section class="exp-section compact-section"><div class="exp-section-head"><h3>SHIP FUEL TANK</h3><span>Dedicated tank • counts against ship capacity</span></div><div class="exp-load-list">${rows.length?rows.map(row=>{const e=row.colony||row.tank,c=Math.max(0,Number(row.colony?.amount)||0),t=Math.max(0,Number(row.tank?.amount)||0),available=c+t;return`<div class="exp-load-row compact"><span><strong>${esc(e.name)}</strong><small>${formatNumber(c)} colony • ${formatNumber(t)} tank</small><div class="exp-resource-load"><i style="width:${pct(t,available)}%"></i></div></span><div><button data-load-fuel="${row.key}" data-qty="100">+100</button><button data-load-fuel="${row.key}" data-qty="1000">+1K</button><button data-unload-fuel="${row.key}" ${t<=0?"disabled":""}>UNLOAD</button></div></div>`;}).join(""):`<div class="exp-empty">No Fuel stock at this colony or in the ship tank.</div>`}</div></section>`;
   }
 
-  shipPrep(){
-    const ship=this.expansion.ship(this.state);if(ship.status==="travelling"){this.starMap();return;}if(ship.status==="arrived"){this.openSystem(ship.systemId);return;}if(ship.status==="home"){this.homeworld();return;}
+  async shipPrep(){
+    const revision=++this.shipPrepRevision,ship=this.expansion.ship(this.state);if(ship.status==="travelling"){this.starMap();return;}if(ship.status==="arrived"){this.openSystem(ship.systemId);return;}if(ship.status==="home"){this.homeworld();return;}
     if(!this.expansion.isAtActiveColony(this.state)){const entry=this.state.portfolio?.colonies?.find(e=>e.id===ship.colonyId);this.open("Prepare Player Ship",`<div class="exp-shell">${this.shipStatusMarkup()}<article class="exp-message"><strong>SHIP IS AT ANOTHER COLONY</strong><span>Switch to ${esc(entry?.data?.contract?.colonyName||"the ship colony")} to load or unload resources and people.</span><button data-switch-ship-colony>GO TO SHIP COLONY</button></article><button data-back-map>STAR MAP</button></div>`);this.modal.querySelector("[data-switch-ship-colony]").onclick=()=>{if(this.onSwitchColony?.(ship.colonyId))this.shipPrep();};this.modal.querySelector("[data-back-map]").onclick=()=>this.starMap();return;}
     const target=ship.targetSystemId?this.expansion.system(this.state.company.expansion,ship.targetSystemId):null,profile=target?this.expansion.travelProfile(this.state,target.id):null,canLaunch=this.expansion.canLaunch(this.state),fuel=this.expansion.fuelAmount(this.state),food=this.expansion.cargoCategory(this.state,"food"),categories=this.availableCargoCategories();
     if(categories.length&&!categories.includes(this.expeditionCategory)){this.expeditionCategory=categories[0];this.expeditionPage=0;}
     const pages=this.cargoPages(),page=Math.min(this.expeditionPage,pages-1);this.expeditionPage=page;
     const tabs=categories.length?`<div class="exp-tabs compact-tabs">${categories.map(c=>`<button data-exp-category="${c}" class="${this.expeditionCategory===c?"active":""}">${c.toUpperCase()}</button>`).join("")}</div>`:`<div class="exp-empty">No cargo resources are currently held by this colony or aboard the ship.</div>`;
-    this.open("Prepare Player Ship",`<div class="exp-shell prep compact-prep">${this.shipStatusMarkup()}<section class="exp-route compact-route"><div><small>DESTINATION</small><strong>${target?esc(target.name):"NOT SELECTED"}</strong></div>${profile?`<div><small>DISTANCE</small><strong>${profile.distanceLy.toFixed(1)} ly</strong></div><div><small>JOURNEY</small><strong>${formatNumber(profile.days)} days</strong></div><div><small>TRANSIT FUEL</small><strong class="${fuel>=profile.fuelRequired?"good":"bad"}">${formatNumber(fuel)} / ${formatNumber(profile.fuelRequired)}</strong></div><div><small>TRANSIT FOOD</small><strong class="${food>=profile.foodRequired?"good":"bad"}">${formatNumber(food)} / ${formatNumber(profile.foodRequired)}</strong></div>`:""}</section>${this.manifestOverview(profile)}${this.fuelLoader()}${this.passengerLoader()}<section class="exp-section compact-section"><div class="exp-section-head"><h3>EXPEDITION CARGO</h3><span>Only stocked resources are shown.</span></div>${tabs}${categories.length?`${this.cargoRows()}${this.pager("exp",page,pages)}`:""}</section><div class="exp-prep-actions"><button data-back-map>STAR MAP</button><button class="action" data-launch-player ${canLaunch.ok?"":"disabled"}>${canLaunch.ok?`LAUNCH • ${formatNumber(profile?.days||0)} DAYS`:esc(canLaunch.reason)}</button></div></div>`);
+    const routeDetails=profile?`<div><small>DISTANCE</small><strong>${profile.distanceLy.toFixed(1)} ly</strong></div><div><small>JOURNEY</small><strong>${formatNumber(profile.days)} days</strong></div><div><small>TRANSIT FUEL</small><strong class="${fuel>=profile.fuelRequired?"good":"bad"}">${formatNumber(fuel)} / ${formatNumber(profile.fuelRequired)}</strong></div><div><small>TRANSIT FOOD</small><strong class="${food>=profile.foodRequired?"good":"bad"}">${formatNumber(food)} / ${formatNumber(profile.foodRequired)}</strong></div>`:"";
+    const cargoContent=categories.length?`${this.cargoRows()}${this.pager("exp",page,pages)}`:"";
+    let body;
+    try{body=await renderViewTemplate("./views/player-ship-prep.html",{SHIP_STATUS:this.shipStatusMarkup(),DESTINATION:target?esc(target.name):"NOT SELECTED",ROUTE_DETAILS:routeDetails,MANIFEST_OVERVIEW:this.manifestOverview(profile),FUEL_LOADER:this.fuelLoader(),PASSENGER_LOADER:this.passengerLoader(),CARGO_TABS:tabs,CARGO_CONTENT:cargoContent,LAUNCH_DISABLED:canLaunch.ok?"":"disabled",LAUNCH_LABEL:canLaunch.ok?`LAUNCH • ${formatNumber(profile?.days||0)} DAYS`:esc(canLaunch.reason)});}catch(error){if(revision!==this.shipPrepRevision)return;this.diagnostics?.error?.("ship preparation template failed",error);this.toast("Unable to open player ship preparation.");return;}
+    if(revision!==this.shipPrepRevision)return;
+    this.open("Prepare Player Ship",body);
     this.modal.classList.add("ship-prep-modal","full-screen-panel","compact-ship-prep");this.bindPrep();
   }
 }
