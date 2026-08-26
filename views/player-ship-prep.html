@@ -1,0 +1,19 @@
+<div class="exp-shell prep compact-prep">
+  {{SHIP_STATUS}}
+  <section class="exp-route compact-route">
+    <div><small>DESTINATION</small><strong>{{DESTINATION}}</strong></div>
+    {{ROUTE_DETAILS}}
+  </section>
+  {{MANIFEST_OVERVIEW}}
+  {{FUEL_LOADER}}
+  {{PASSENGER_LOADER}}
+  <section class="exp-section compact-section">
+    <div class="exp-section-head"><h3>EXPEDITION CARGO</h3><span>Only stocked resources are shown.</span></div>
+    {{CARGO_TABS}}
+    {{CARGO_CONTENT}}
+  </section>
+  <div class="exp-prep-actions">
+    <button data-back-map>STAR MAP</button>
+    <button class="action" data-launch-player {{LAUNCH_DISABLED}}>{{LAUNCH_LABEL}}</button>
+  </div>
+</div>
