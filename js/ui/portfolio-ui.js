@@ -28,12 +28,19 @@ export class PortfolioUIMixin {
     }catch(error){this.diagnostics?.error?.("colony portfolio template failed",error);this.toast("Unable to open the colony portfolio.");return;}
     this.modal.querySelectorAll("[data-colony-id]").forEach(button=>button.onclick=()=>{const id=button.dataset.colonyId;if(id===active){this.modal.classList.add("hidden");return;}this.onSwitchColony?.(id);});const newButton=this.modal.querySelector("[data-new-colony]");if(newButton)newButton.onclick=()=>this.contractBoard();
   }
-  endContractDialog(){
-    if(this.state.status==="dead"){this.colonyPanel();return;}if(!this.state.contract.completed&&!this.state.contract.ended){this.open("End Contract",`<article class="card"><h3>CONTRACT STILL ACTIVE</h3><p>The colony can be returned or disposed of after its initial contract has completed.</p></article>`);return;}
-    const health=this.contracts.resourceHealth(this.state),ratio=`${Math.round(health.ratio*100)}%`,remaining=this.state.portfolio.colonies.length>1;
-    if(health.accepted&&!this.state.contract.ended){this.open("Return Colony",`<article class="card"><h3>CORPORATION WILL ACCEPT RETURN</h3><p>Known finite deposits retain ${ratio} of their surveyed reserves${health.renewable?` and ${health.renewable} renewable resource site${health.renewable===1?"":"s"} remain`:""}. The corporation is willing to take the colony back.</p><div class="effect">Population and infrastructure transfer with the colony.</div></article><button class="action" data-return ${remaining?"":"disabled"}>RETURN COLONY TO CORPORATION</button>${remaining?"":`<div class="requirement locked">Open another colony before returning your final colony.</div>`}`);const button=this.modal.querySelector("[data-return]");if(button)button.onclick=()=>this.onRemoveColony?.("corporate-return");return;}
-    const relocation=this.colony.relocationCost(this.state),canRelocate=remaining&&this.state.company.cash>=relocation;
-    this.open("Corporation Refuses Colony",`<article class="card"><h3 class="bad">RETURN REFUSED</h3><p>The known resource base is too depleted for the corporation to accept the colony. Finite reserve health is ${ratio} and no sufficient renewable resource base remains.</p><div class="effect warn">Ending the mining contract makes this a support-only liability colony. Extraction stops, but population still requires Food, Fuel and Power until relocation. There is no generic daily corporate cash charge.</div></article><div class="grid2" style="margin-top:7px"><button data-liability>END CONTRACT<br><span class="tiny">KEEP COLONY RUNNING</span></button><button data-relocate ${canRelocate?"":"disabled"}>RELOCATE POPULATION<br><span class="tiny">${formatMoney(relocation)}</span></button></div>${remaining?"":`<div class="requirement locked">Open another colony before disposing of your final colony.</div>`}${this.state.company.cash<relocation?`<div class="requirement locked">Relocation requires ${formatMoney(relocation)}.</div>`:""}`);
-    this.modal.querySelector("[data-liability]").onclick=()=>{this.onMakeLiability?.();this.colonyPanel();};const relocate=this.modal.querySelector("[data-relocate]");if(relocate)relocate.onclick=()=>this.onRelocateColony?.();
+  async endContractDialog(){
+    if(this.state.status==="dead"){this.colonyPanel();return;}
+    try{
+      if(!this.state.contract.completed&&!this.state.contract.ended){this.open("End Contract",await renderViewTemplate("./views/end-contract-active.html"));return;}
+      const health=this.contracts.resourceHealth(this.state),ratio=`${Math.round(health.ratio*100)}%`,remaining=this.state.portfolio.colonies.length>1;
+      if(health.accepted&&!this.state.contract.ended){
+        const body=await renderViewTemplate("./views/return-colony.html",{RESERVE_RATIO:ratio,RENEWABLE_TEXT:health.renewable?` and ${health.renewable} renewable resource site${health.renewable===1?"":"s"} remain`:"",RETURN_DISABLED:remaining?"":"disabled",RETURN_REQUIREMENT:remaining?"":`<div class="requirement locked">Open another colony before returning your final colony.</div>`});
+        this.open("Return Colony",body);const button=this.modal.querySelector("[data-return]");if(button)button.onclick=()=>this.onRemoveColony?.("corporate-return");return;
+      }
+      const relocation=this.colony.relocationCost(this.state),canRelocate=remaining&&this.state.company.cash>=relocation;
+      const body=await renderViewTemplate("./views/refused-colony.html",{RESERVE_RATIO:ratio,RELOCATE_DISABLED:canRelocate?"":"disabled",RELOCATION_COST:formatMoney(relocation),FINAL_COLONY_REQUIREMENT:remaining?"":`<div class="requirement locked">Open another colony before disposing of your final colony.</div>`,CASH_REQUIREMENT:this.state.company.cash<relocation?`<div class="requirement locked">Relocation requires ${formatMoney(relocation)}.</div>`:""});
+      this.open("Corporation Refuses Colony",body);
+      this.modal.querySelector("[data-liability]").onclick=()=>{this.onMakeLiability?.();this.colonyPanel();};const relocate=this.modal.querySelector("[data-relocate]");if(relocate)relocate.onclick=()=>this.onRelocateColony?.();
+    }catch(error){this.diagnostics?.error?.("contract return template failed",error);this.toast("Unable to open the contract decision.");}
   }
 }
