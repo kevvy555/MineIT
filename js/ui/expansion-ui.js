@@ -1,4 +1,4 @@
-import { UIController as V5100UIController } from "./ui-controller-v5100.js?v=5.10.0&legacy=1";
+import { UIController as V5100UIController } from "./adaptive-building-ui.js";
 import { ExpansionService, HOME_SYSTEM_ID, PROBE_UNLOCK_INDUSTRY_LEVEL, PROBE_COST, PLAYER_SHIP_CAPACITY, PLAYER_SHIP_PASSENGERS } from "../domain/expansion-service.js?v=5.11.0";
 import { formatMoney, formatNumber } from "../core/utils.js?v=5.5.5";
 
