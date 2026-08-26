@@ -1,5 +1,6 @@
 import { TradeUI as BaseTradeUI } from "./v55-trade-ui.js";
 import { formatMoney, formatNumber } from "../core/utils.js";
+import { renderViewTemplate } from "../core/view-template.js";
 
 const PAGE_SIZE=4,MAX_TRADE=100000,BUY_CATEGORIES=["Fuel","Food","Ore","Build"];
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,Math.floor(Number(value)||0)));
@@ -14,6 +15,7 @@ export class TradeUI extends BaseTradeUI{
     this.sellPage=0;
     this.buyPage=0;
     this.buyCategory="Fuel";
+    this.quickRenderRevision=0;
   }
 
   amountControl(kind,value){
@@ -42,10 +44,14 @@ export class TradeUI extends BaseTradeUI{
     this.renderQuick();
   }
 
-  renderQuick(){
+  async renderQuick(){
     if(!this.state.trade.active){this.status();return;}
-    const cash=this.state.company.cash,cargo=this.trade.cargoRemaining(this.state),exports=this.trade.exportRemaining(this.state),pax=this.trade.passengerRemaining(this.state),colonistsBlocked=this.state.contract.ended||this.state.status==="liability";
-    this.ui.open("Corporate Trade Ship — DOCKED",`<div class="trade-quick-shell"><div class="trade-quick-summary"><div class="trade-qmetric"><small>CASH</small><strong>${formatMoney(cash)}</strong></div><div class="trade-qmetric"><small>IMPORT</small><strong>${formatNumber(cargo)}</strong></div><div class="trade-qmetric"><small>EXPORT</small><strong>${formatNumber(exports)}</strong></div><div class="trade-qmetric"><small>PAX</small><strong>${colonistsBlocked?"—":formatNumber(pax)}</strong></div></div><div class="trade-quick-tabs"><button data-trade-tab="sell" class="${this.quickTab==="sell"?"active":""}">SELL</button><button data-trade-tab="buy" class="${this.quickTab==="buy"?"active":""}">BUY</button><button data-trade-tab="colonists" class="${this.quickTab==="colonists"?"active":""}" ${colonistsBlocked?"disabled":""}>COLONISTS</button></div><div class="trade-quick-view">${this.quickTab==="sell"?this.sellView():this.quickTab==="buy"?this.buyView():this.colonistView()}</div><div class="trade-quick-depart"><button data-depart class="warn">SHIP DEPARTS</button></div></div>`);
+    const revision=++this.quickRenderRevision,cash=this.state.company.cash,cargo=this.trade.cargoRemaining(this.state),exports=this.trade.exportRemaining(this.state),pax=this.trade.passengerRemaining(this.state),colonistsBlocked=this.state.contract.ended||this.state.status==="liability",tradeView=this.quickTab==="sell"?this.sellView():this.quickTab==="buy"?this.buyView():this.colonistView();
+    let body;
+    try{body=await renderViewTemplate("./views/quick-trade-shell.html",{CASH:formatMoney(cash),IMPORT:formatNumber(cargo),EXPORT:formatNumber(exports),PAX:colonistsBlocked?"—":formatNumber(pax),SELL_ACTIVE:this.quickTab==="sell"?"active":"",BUY_ACTIVE:this.quickTab==="buy"?"active":"",COLONISTS_ACTIVE:this.quickTab==="colonists"?"active":"",COLONISTS_DISABLED:colonistsBlocked?"disabled":"",TRADE_VIEW:tradeView});}
+    catch(error){if(revision!==this.quickRenderRevision)return;this.ui.diagnostics?.error?.("quick trade template failed",error);this.ui.toast("Unable to open the corporate trade ship.");return;}
+    if(revision!==this.quickRenderRevision||!this.state.trade.active)return;
+    this.ui.open("Corporate Trade Ship — DOCKED",body);
     this.ui.modal.classList.add("trade-quick-modal");
     this.bindQuick();
   }
