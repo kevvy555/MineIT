@@ -1,5 +1,5 @@
-import { TradeUI as BaseTradeUI } from "./v55-trade-ui-v56.js?v=5.6.0";
-import { formatMoney, formatNumber } from "../core/utils.js?v=5.5.5";
+import { TradeUI as BaseTradeUI } from "./v55-trade-ui.js";
+import { formatMoney, formatNumber } from "../core/utils.js";
 
 const PAGE_SIZE=4,MAX_TRADE=100000,BUY_CATEGORIES=["Fuel","Food","Ore","Build"];
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,Math.floor(Number(value)||0)));
