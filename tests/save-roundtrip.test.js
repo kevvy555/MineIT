@@ -1,0 +1,71 @@
+import assert from "node:assert/strict";
+import { ContractService } from "../js/domain/contract-service.js";
+import { createGameState, normalizeState } from "../js/domain/game-state-v511.js";
+import { ResourceService } from "../js/domain/resource-service-v570.js";
+import { InventoryService } from "../js/domain/inventory-service.js";
+import { PortfolioService } from "../js/domain/portfolio-service-v5111.js";
+import { ExpansionService, HOME_SYSTEM_ID } from "../js/domain/expansion-service.js";
+
+const contracts=new ContractService(),resources=new ResourceService(),inventory=new InventoryService(resources),portfolio=new PortfolioService(),expansion=new ExpansionService(inventory,resources,contracts);
+const state=createGameState(contracts.first());portfolio.ensure(state);expansion.ensure(state);
+const firstId=state.colonyId;
+
+state.company.cash=987654;
+state.company.tech={housing:3,power:4,food:2,industry:3,mining:5};
+state.company.pendingEvents.push({id:"roundtrip-event",type:"ship",colonyId:firstId,colonyName:state.contract.colonyName,absoluteDay:42});
+
+// Create a second, legacy-style colony so the save contains more than one colony snapshot.
+const second=contracts.make(contracts.archetype({arch:"arid"}),2,0);second.colonyName="Roundtrip Secondary";portfolio.addColony(state,second);assert.equal(state.portfolio.colonies.length,2);
+assert.equal(portfolio.switchTo(state,firstId),true);
+
+// Put mixed-quality stock and a real ship manifest into the save.
+inventory.store(state,"food","fungal","Fungal Shelf",350,120);
+inventory.store(state,"food","fungal","Fungal Shelf",75,6000);
+inventory.store(state,"fuel","biomass","Biomass",500,900);
+inventory.store(state,"build","fiber","Construction Fibre",250,300);
+const fuelKey=Object.keys(state.inventory).find(k=>state.inventory[k]?.type==="fuel"&&state.inventory[k]?.amount>100);
+const foodKey=Object.keys(state.inventory).find(k=>state.inventory[k]?.type==="food"&&state.inventory[k]?.amount>100);
+const buildKey=Object.keys(state.inventory).find(k=>state.inventory[k]?.type==="build"&&state.inventory[k]?.amount>100);
+assert.equal(expansion.loadFuel(state,fuelKey,140).ok,true);
+assert.equal(expansion.loadCargo(state,foodKey,180).ok,true);
+assert.equal(expansion.loadCargo(state,buildKey,90).ok,true);
+assert.equal(expansion.loadPassengers(state,12).ok,true);
+assert.equal(expansion.setTarget(state,HOME_SYSTEM_ID).ok,true);
+portfolio.captureActive(state,true);
+
+const expected={
+  cash:state.company.cash,
+  tech:{...state.company.tech},
+  colonies:state.portfolio.colonies.map(c=>({id:c.id,name:c.name})),
+  activeId:state.colonyId,
+  pop:state.pop,
+  eventCount:state.company.pendingEvents.length,
+  ship:{status:expansion.ship(state).status,systemId:expansion.ship(state).systemId,targetSystemId:expansion.ship(state).targetSystemId,passengers:expansion.ship(state).passengers,fuel:expansion.fuelAmount(state),cargo:expansion.cargoAmount(state)},
+  foodBands:JSON.parse(JSON.stringify(state.inventory["food:fungal"]?.qualityBands||{}))
+};
+
+const serialized=JSON.stringify(state);
+assert.ok(serialized.length>1000,"realistic save should contain substantial state");
+const loaded=normalizeState(JSON.parse(serialized));portfolio.ensure(loaded);expansion.ensure(loaded);
+
+assert.equal(loaded.version,9);
+assert.equal(loaded.company.cash,expected.cash);
+assert.deepEqual(loaded.company.tech,expected.tech);
+assert.equal(loaded.company.pendingEvents.length,expected.eventCount);
+assert.deepEqual(loaded.portfolio.colonies.map(c=>({id:c.id,name:c.name})),expected.colonies);
+assert.equal(loaded.colonyId,expected.activeId);
+assert.equal(loaded.pop,expected.pop);
+assert.equal(expansion.ship(loaded).status,expected.ship.status);
+assert.equal(expansion.ship(loaded).systemId,expected.ship.systemId);
+assert.equal(expansion.ship(loaded).targetSystemId,expected.ship.targetSystemId);
+assert.equal(expansion.ship(loaded).passengers,expected.ship.passengers);
+assert.equal(expansion.fuelAmount(loaded),expected.ship.fuel);
+assert.equal(expansion.cargoAmount(loaded),expected.ship.cargo);
+for(const [key,band] of Object.entries(expected.foodBands))assert.equal(loaded.inventory["food:fungal"].qualityBands[key]?.amount,band.amount,`quality band ${key} must survive save round-trip`);
+
+// Re-saving a normalized save must remain stable and JSON-safe.
+portfolio.captureActive(loaded,true);const serializedAgain=JSON.stringify(loaded);const loadedAgain=normalizeState(JSON.parse(serializedAgain));portfolio.ensure(loadedAgain);expansion.ensure(loadedAgain);
+assert.equal(loadedAgain.portfolio.colonies.length,2);
+assert.equal(expansion.ship(loadedAgain).passengers,expected.ship.passengers);
+assert.equal(expansion.fuelAmount(loadedAgain),expected.ship.fuel);
+console.log("MineIT realistic multi-colony + player-ship save round-trip passed");
