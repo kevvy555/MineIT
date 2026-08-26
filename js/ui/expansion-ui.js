@@ -62,8 +62,6 @@ export class UIController extends V5100UIController{
   foundPlanet(systemId,planetId){const contract=this.expansion.makePlanetContract(this.state,systemId,planetId);if(!contract){this.toast("Planet data unavailable.");return;}if(!this.technology.meetsRequirements(this.state,contract.requiredTech)){this.toast("Technology requirements not met for this planet.");return;}if(this.expansion.ship(this.state).passengers<=0){this.toast("Load colonists before founding a colony.");return;}try{this.onNewContract?.(contract);}catch(error){this.diagnostics?.error?.("expedition colony creation failed",error);this.toast(error.message||"Colony could not be established.");}}
   cargoPages(){return Math.max(1,Math.ceil(this.cargoEntries().length/PAGE_SIZE));}
 
-  passengerLoader(){const ship=this.expansion.ship(this.state);return `<section class="exp-section"><div class="exp-section-head"><h3>COLONISTS</h3><span>People leave this colony as soon as they board.</span></div><div class="exp-passengers"><div><small>COLONY</small><strong>${formatNumber(this.state.pop)}</strong></div><div><small>ABOARD</small><strong>${formatNumber(ship.passengers)} / ${PLAYER_SHIP_PASSENGERS}</strong></div><button data-load-pax="10">+10</button><button data-load-pax="50">+50</button><button data-load-pax="max">MAX</button><button data-unload-pax ${ship.passengers<=0?"disabled":""}>UNLOAD ALL</button></div></section>`;}
-
   pager(kind,page,pages){return `<div class="exp-pager"><button data-exp-page="-1" ${page<=0?"disabled":""}>‹</button><span>${page+1} / ${pages}</span><button data-exp-page="1" ${page>=pages-1?"disabled":""}>›</button></div>`;}
 
   bindPrep(){

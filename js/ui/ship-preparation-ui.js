@@ -1,5 +1,5 @@
 import { UIController as ShipNavigationUIController } from "./ship-navigation-ui.js";
-import { PLAYER_SHIP_CAPACITY } from "../domain/expansion-service.js";
+import { PLAYER_SHIP_CAPACITY, PLAYER_SHIP_PASSENGERS } from "../domain/expansion-service.js";
 import { formatNumber } from "../core/utils.js";
 import { renderViewTemplate } from "../core/view-template.js";
 
@@ -80,6 +80,11 @@ export class UIController extends ShipNavigationUIController{
     return renderViewTemplate("./views/player-ship-route.html",{DISTANCE:profile.distanceLy.toFixed(1),JOURNEY_DAYS:formatNumber(profile.days),FUEL_CLASS:fuel>=profile.fuelRequired?"good":"bad",FUEL_AMOUNT:formatNumber(fuel),FUEL_REQUIRED:formatNumber(profile.fuelRequired),FOOD_CLASS:food>=profile.foodRequired?"good":"bad",FOOD_AMOUNT:formatNumber(food),FOOD_REQUIRED:formatNumber(profile.foodRequired)});
   }
 
+  passengerLoader(){
+    const ship=this.expansion.ship(this.state);
+    return renderViewTemplate("./views/player-ship-passengers.html",{COLONY_POPULATION:formatNumber(this.state.pop),PASSENGERS:formatNumber(ship.passengers),PASSENGER_CAPACITY:PLAYER_SHIP_PASSENGERS,UNLOAD_DISABLED:ship.passengers<=0?"disabled":""});
+  }
+
   async shipPrep(){
     const revision=++this.shipPrepRevision,ship=this.expansion.ship(this.state);if(ship.status==="travelling"){this.starMap();return;}if(ship.status==="arrived"){this.openSystem(ship.systemId);return;}if(ship.status==="home"){this.homeworld();return;}
     if(!this.expansion.isAtActiveColony(this.state)){const entry=this.state.portfolio?.colonies?.find(e=>e.id===ship.colonyId);this.open("Prepare Player Ship",`<div class="exp-shell">${this.shipStatusMarkup()}<article class="exp-message"><strong>SHIP IS AT ANOTHER COLONY</strong><span>Switch to ${esc(entry?.data?.contract?.colonyName||"the ship colony")} to load or unload resources and people.</span><button data-switch-ship-colony>GO TO SHIP COLONY</button></article><button data-back-map>STAR MAP</button></div>`);this.modal.querySelector("[data-switch-ship-colony]").onclick=()=>{if(this.onSwitchColony?.(ship.colonyId))this.shipPrep();};this.modal.querySelector("[data-back-map]").onclick=()=>this.starMap();return;}
@@ -89,7 +94,7 @@ export class UIController extends ShipNavigationUIController{
     const tabs=categories.length?`<div class="exp-tabs compact-tabs">${categories.map(c=>`<button data-exp-category="${c}" class="${this.expeditionCategory===c?"active":""}">${c.toUpperCase()}</button>`).join("")}</div>`:`<div class="exp-empty">No cargo resources are currently held by this colony or aboard the ship.</div>`;
     const cargoContent=categories.length?`${this.cargoRows()}${this.pager("exp",page,pages)}`:"";
     let body;
-    try{const routeDetails=await this.shipRouteDetails(profile,fuel,food);body=await renderViewTemplate("./views/player-ship-prep.html",{SHIP_STATUS:this.shipStatusMarkup(),DESTINATION:target?esc(target.name):"NOT SELECTED",ROUTE_DETAILS:routeDetails,MANIFEST_OVERVIEW:this.manifestOverview(profile),FUEL_LOADER:this.fuelLoader(),PASSENGER_LOADER:this.passengerLoader(),CARGO_TABS:tabs,CARGO_CONTENT:cargoContent,LAUNCH_DISABLED:canLaunch.ok?"":"disabled",LAUNCH_LABEL:canLaunch.ok?`LAUNCH • ${formatNumber(profile?.days||0)} DAYS`:esc(canLaunch.reason)});}catch(error){if(revision!==this.shipPrepRevision)return;this.diagnostics?.error?.("ship preparation template failed",error);this.toast("Unable to open player ship preparation.");return;}
+    try{const[routeDetails,passengerLoader]=await Promise.all([this.shipRouteDetails(profile,fuel,food),this.passengerLoader()]);body=await renderViewTemplate("./views/player-ship-prep.html",{SHIP_STATUS:this.shipStatusMarkup(),DESTINATION:target?esc(target.name):"NOT SELECTED",ROUTE_DETAILS:routeDetails,MANIFEST_OVERVIEW:this.manifestOverview(profile),FUEL_LOADER:this.fuelLoader(),PASSENGER_LOADER:passengerLoader,CARGO_TABS:tabs,CARGO_CONTENT:cargoContent,LAUNCH_DISABLED:canLaunch.ok?"":"disabled",LAUNCH_LABEL:canLaunch.ok?`LAUNCH • ${formatNumber(profile?.days||0)} DAYS`:esc(canLaunch.reason)});}catch(error){if(revision!==this.shipPrepRevision)return;this.diagnostics?.error?.("ship preparation template failed",error);this.toast("Unable to open player ship preparation.");return;}
     if(revision!==this.shipPrepRevision)return;
     this.open("Prepare Player Ship",body);
     this.modal.classList.add("ship-prep-modal","full-screen-panel","compact-ship-prep");this.bindPrep();
