@@ -33,10 +33,12 @@ for(const [,text] of source){
 const debt={versionedJs:versionedJs.length,versionedCss:versionedCss.length,queryImports,importMap:/<script\s+type=["']importmap["']/.test(index),globalAssignments:globalAssignments.length,documentAppEvents,largeMarkupTemplates};
 console.log("CleanUp architecture debt baseline",debt);
 
-assert.ok(debt.versionedJs<=53,"Versioned JavaScript debt must not grow beyond the recorded Phase-0 baseline");
-assert.ok(debt.versionedCss<=1,"Versioned CSS debt must not grow beyond the recorded Phase-0 baseline");
-assert.ok(debt.queryImports<=211,"Version-query import debt must not grow beyond the recorded Phase-0 baseline");
-assert.ok(debt.documentAppEvents<=9,"Document-level application event debt must not grow beyond the recorded Phase-0 baseline");
-assert.ok(debt.largeMarkupTemplates<=220,"Large embedded HTML template debt must not grow beyond the recorded Phase-0 baseline");
+assert.equal(debt.versionedJs,0,"Version-numbered JavaScript files must not return");
+assert.equal(debt.versionedCss,0,"Version-numbered CSS files must not return");
+assert.equal(debt.importMap,false,"Runtime import-map redirects must not return");
+assert.ok(debt.queryImports<=86,"Version-query import debt must not grow beyond the map-free checkpoint");
+assert.ok(debt.globalAssignments<=3,"Global application-state leakage must not grow during cleanup");
+assert.ok(debt.documentAppEvents<=9,"Document-level application event debt must not grow beyond the current checkpoint");
+assert.ok(debt.largeMarkupTemplates<=217,"Large embedded HTML template debt must not grow beyond the current checkpoint");
 
 console.log("CleanUp architecture baseline guard passed");
