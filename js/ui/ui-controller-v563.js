@@ -1,4 +1,4 @@
-import { UIController as V56UIController } from "./ui-controller-v56.js?v=5.6.2&legacy=1";
+import { UIController as V56UIController } from "./ui-controller.js?v=5.6.2&legacy=1";
 
 const stripLocalCash=root=>{
   if(!root)return;
