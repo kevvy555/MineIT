@@ -1,5 +1,5 @@
 import { UIController as BaseUIController } from "./corporate-events-ui.js";
-import { formatNumber } from "../core/utils.js?v=5.5.5";
+import { formatNumber } from "../core/utils.js";
 
 const MAX_RESERVE=1000000000;
 const clampReserve=value=>Math.max(0,Math.min(MAX_RESERVE,Math.floor(Number(value)||0)));
