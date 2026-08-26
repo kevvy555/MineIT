@@ -1,18 +1,17 @@
 import assert from "node:assert/strict";
 import { ContractService } from "../js/domain/contract-service.js";
-import { createGameState } from "../js/domain/game-state-v511.js";
-import { ResourceService } from "../js/domain/resource-service-v570.js";
+import { createGameState } from "../js/domain/game-state-runtime.js";
+import { ResourceService } from "../js/domain/resource-service.js";
 import { InventoryService } from "../js/domain/inventory-service.js";
-import { TechnologyService } from "../js/domain/technology-service-v570.js";
+import { TechnologyService } from "../js/domain/technology-service.js";
 import { CollectionService } from "../js/domain/collection-service.js";
-import { ColonyService } from "../js/domain/colony-service-v570.js";
-import { TradeService } from "../js/domain/trade-service-v511.js";
-import { SimulationEngine } from "../js/domain/simulation-engine-v5113.js";
-import { DevelopmentService } from "../js/domain/development-service-v570.js";
+import { ColonyService } from "../js/domain/colony-service.js";
+import { TradeService } from "../js/domain/trade-service.js";
+import { SimulationEngine } from "../js/domain/simulation-engine.js";
+import { DevelopmentService } from "../js/domain/development-service.js";
 import { LandService } from "../js/domain/land-service.js";
 
-// This test intentionally composes the same domain implementations selected by the browser import map.
-// It protects behaviour while the versioned implementation chain is flattened.
+// This test composes the same canonical domain implementations selected by the browser import map.
 const contracts=new ContractService(),resources=new ResourceService(),inventory=new InventoryService(resources),technology=new TechnologyService(),collection=new CollectionService(resources,inventory,technology),colony=new ColonyService(inventory,technology),trade=new TradeService(resources,inventory),engine=new SimulationEngine(resources,technology,collection,trade,inventory,colony),land=new LandService(),development=new DevelopmentService(inventory,land);
 const state=createGameState(contracts.first());
 state.company.tech={housing:5,power:5,food:5,industry:5,mining:5};
@@ -38,7 +37,7 @@ assert.equal(placed.ok,true);assert.ok(buildTile.development);assert.ok(inventor
 const investedBuild=buildTile.development.investedBuild,investedOre=buildTile.development.investedOre,afterBuild=inventory.amount(state,"build"),afterOre=inventory.amount(state,"ore"),demolished=development.demolish(state,buildTile);
 assert.equal(demolished.ok,true);assert.equal(demolished.recoverBuild,Math.floor(investedBuild*.25));assert.equal(demolished.recoverOre,Math.floor(investedOre*.25));assert.equal(inventory.amount(state,"build"),afterBuild+demolished.recoverBuild);assert.equal(inventory.amount(state,"ore"),afterOre+demolished.recoverOre);assert.equal(buildTile.development,null);
 
-// Active trade wrapper must enforce the corporate service radius rather than silently using legacy service everywhere.
+// Canonical trade service enforces the corporate service radius.
 state.contract.distanceLy=state.company.expansion.serviceRadiusLy+1;assert.equal(trade.serviceAvailable(state),false);state.contract.distanceLy=1;assert.equal(trade.serviceAvailable(state),true);
 
-console.log("MineIT active browser-domain composition behaviour test passed");
+console.log("MineIT canonical browser-domain composition behaviour test passed");
