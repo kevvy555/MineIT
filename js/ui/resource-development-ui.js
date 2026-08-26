@@ -1,4 +1,4 @@
-import { UIController as BaseUIController } from "./surveyed-resource-ui.js";
+import { UIController as BaseUIController } from "./building-details-ui.js";
 import { formatNumber } from "../core/utils.js";
 
 const ATLAS_COLUMNS=8;
