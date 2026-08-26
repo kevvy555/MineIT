@@ -1,0 +1,62 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>MineIT UI lifecycle soak</title>
+<body><pre id="result">RUNNING</pre><script type="module">
+const result=document.querySelector('#result');
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const html=await fetch('../index.html',{cache:'no-store'}).then(r=>r.text());
+const instrumentation=`<base href="../"><script>
+window.__lifecycleStats={activeResizeObservers:0,resizeObserversCreated:0,globalListeners:0};
+{
+  const NativeResizeObserver=window.ResizeObserver;
+  if(NativeResizeObserver){
+    window.ResizeObserver=class CountingResizeObserver{
+      constructor(callback){this._inner=new NativeResizeObserver(callback);this._active=true;window.__lifecycleStats.resizeObserversCreated++;window.__lifecycleStats.activeResizeObservers++;}
+      observe(...args){return this._inner.observe(...args)}
+      unobserve(...args){return this._inner.unobserve(...args)}
+      disconnect(){if(this._active){this._active=false;window.__lifecycleStats.activeResizeObservers--;}return this._inner.disconnect()}
+    };
+  }
+  const nativeAdd=EventTarget.prototype.addEventListener,nativeRemove=EventTarget.prototype.removeEventListener;
+  const ids=new WeakMap();let next=1;const active=new Set();
+  const listenerKey=(target,type,listener,options)=>{if(!ids.has(target))ids.set(target,next++);if(listener&&typeof listener==='object'&&!ids.has(listener))ids.set(listener,next++);if(typeof listener==='function'&&!ids.has(listener))ids.set(listener,next++);const cap=typeof options==='boolean'?options:!!options?.capture;return ids.get(target)+'|'+type+'|'+ids.get(listener)+'|'+cap;};
+  EventTarget.prototype.addEventListener=function(type,listener,options){if((this===window||this===document)&&listener){const key=listenerKey(this,type,listener,options);if(!active.has(key)){active.add(key);window.__lifecycleStats.globalListeners=active.size;}}return nativeAdd.call(this,type,listener,options);};
+  EventTarget.prototype.removeEventListener=function(type,listener,options){if((this===window||this===document)&&listener){active.delete(listenerKey(this,type,listener,options));window.__lifecycleStats.globalListeners=active.size;}return nativeRemove.call(this,type,listener,options);};
+}
+<\/script>`;
+const srcdoc=html.replace('<head>','<head>'+instrumentation);
+const iframe=document.createElement('iframe');iframe.style.width='390px';iframe.style.height='844px';iframe.srcdoc=srcdoc;document.body.appendChild(iframe);
+await new Promise(resolve=>iframe.addEventListener('load',resolve,{once:true}));
+await sleep(2500);
+const w=iframe.contentWindow,d=w.document;
+const click=el=>{if(!el)throw new Error('Missing expected control');el.click();};
+const close=()=>click(d.querySelector('#modal [data-close]'));
+const waitFor=async(selector,timeout=1500)=>{const until=performance.now()+timeout;while(performance.now()<until){const el=d.querySelector(selector);if(el)return el;await sleep(20);}throw new Error('Timed out waiting for '+selector);};
+try{
+  const landing=d.querySelector('.landing-choice-grid button');if(landing){landing.click();await sleep(300);}
+  const baseline={...w.__lifecycleStats,nodes:d.querySelectorAll('*').length};
+  for(let i=0;i<20;i++){
+    // Player ship -> Star Map -> close. This creates the most observer/listener pressure.
+    d.dispatchEvent(new w.CustomEvent('mineit:player-ship-clicked'));await sleep(25);
+    click(await waitFor('[data-player-ship-action="star-map"]'));await sleep(40);await waitFor('#starMapCanvas');close();await sleep(20);
+    // Player ship -> Cargo Bay -> close.
+    d.dispatchEvent(new w.CustomEvent('mineit:player-ship-clicked'));await sleep(25);
+    click(await waitFor('[data-player-ship-action="cargo"]'));await sleep(30);close();await sleep(20);
+    // Persistent HUD entry points.
+    click(d.querySelector('#companyBtn'));await sleep(15);close();
+    click(d.querySelector('#menuBtn'));await sleep(15);close();
+  }
+  await sleep(100);
+  const final={...w.__lifecycleStats,nodes:d.querySelectorAll('*').length};
+  const observerGrowth=final.activeResizeObservers-baseline.activeResizeObservers;
+  const listenerGrowth=final.globalListeners-baseline.globalListeners;
+  const nodeGrowth=final.nodes-baseline.nodes;
+  const failures=[];
+  if(observerGrowth>1)failures.push('active ResizeObservers grew by '+observerGrowth);
+  if(listenerGrowth>2)failures.push('window/document listeners grew by '+listenerGrowth);
+  if(nodeGrowth>30)failures.push('live DOM nodes grew by '+nodeGrowth);
+  if(d.body.textContent.includes('STARTUP ERROR'))failures.push('startup error visible');
+  if(failures.length)throw new Error(failures.join(' • ')+' | baseline='+JSON.stringify(baseline)+' final='+JSON.stringify(final));
+  result.textContent='PASS UI lifecycle soak • '+JSON.stringify({baseline,final,observerGrowth,listenerGrowth,nodeGrowth});
+}catch(error){result.textContent='FAIL UI lifecycle soak • '+(error?.stack||error);}
+</script></body>
