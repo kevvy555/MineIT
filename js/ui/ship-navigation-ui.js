@@ -45,11 +45,6 @@ export class UIController extends PlayerShipUIController{
     });
   }
 
-  shipPrep(){
-    super.shipPrep();
-    if(this.modal?.querySelector(".exp-shell.prep"))this.modal.classList.add("ship-prep-modal","full-screen-panel");
-  }
-
   selectedSystem(){
     const ex=this.expansion.ensure(this.state),ship=ex.ship;
     let system=this.selectedStarSystemId?this.expansion.system(ex,this.selectedStarSystemId):null;
@@ -82,8 +77,14 @@ export class UIController extends PlayerShipUIController{
     return `<section class="star-system-detail">${content}</section>`;
   }
 
+  async lostShipPanel(revision,ship){
+    let body;
+    try{body=await renderViewTemplate("./views/player-ship-lost.html",{LOST_REASON:esc(ship.lostReason||"The ship has been lost.")});}catch(error){if(revision!==this.starMapRevision)return;this.diagnostics?.error?.("lost ship template failed",error);this.toast("Unable to open the player ship status.");return;}
+    if(revision===this.starMapRevision)this.open("Player Colony Ship",body);
+  }
+
   async starMap(){
-    const revision=++this.starMapRevision,ex=this.expansion.ensure(this.state),ship=ex.ship;if(ship.status==="lost"){super.starMap();return;}
+    const revision=++this.starMapRevision,ex=this.expansion.ensure(this.state),ship=ex.ship;if(ship.status==="lost"){await this.lostShipPanel(revision,ship);return;}
     const selected=this.selectedSystem(),corporate=this.state.trade?.active?`<button class="exp-corporate-trade" data-corporate-trade>CORPORATE TRADE SHIP DOCKED • OPEN TRADE</button>`:"",cargoAvailable=ship.status==="docked"&&this.expansion.isAtActiveColony(this.state);
     let body;
     try{body=await renderViewTemplate("./views/star-map-screen.html",{SHIP_STATUS:this.shipStatusMarkup(),CORPORATE_TRADE:corporate,SYSTEM_DETAIL:this.starSystemDetailMarkup(selected),SERVICE_RADIUS:ex.serviceRadiusLy.toFixed(1),CARGO_DISABLED:cargoAvailable?"":"disabled"});}catch(error){if(revision!==this.starMapRevision)return;this.diagnostics?.error?.("star map template failed",error);this.toast("Unable to open the star map.");return;}
