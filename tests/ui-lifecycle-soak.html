@@ -35,6 +35,8 @@ const waitFor=async(selector,timeout=1500)=>{const until=performance.now()+timeo
 const tapShip=()=>{const c=d.querySelector('#world');if(!c)throw new Error('Missing world canvas');const r=c.getBoundingClientRect(),x=r.left+r.width/16,y=r.top+r.height/16,id=71;for(const type of['pointerdown','pointerup'])c.dispatchEvent(new w.PointerEvent(type,{bubbles:true,cancelable:true,clientX:x,clientY:y,pointerId:id,pointerType:'mouse',button:0,buttons:type==='pointerdown'?1:0}));};
 try{
   const landing=d.querySelector('.landing-choice-grid button');if(landing){landing.click();await sleep(300);}
+  // Prove external view templates load through the real Game -> How to Play flow.
+  click(d.querySelector('#menuBtn'));await sleep(20);click(await waitFor('[data-help]'));await waitFor('#help-index',2500);if(!d.querySelector('#help-resources')||!d.querySelector('#help-save'))throw new Error('Field manual external view is incomplete');close();await sleep(20);
   const baseline={...w.__lifecycleStats,nodes:d.querySelectorAll('*').length};
   for(let i=0;i<20;i++){
     // Player ship -> Star Map -> close. This creates the most observer/listener pressure.
