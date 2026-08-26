@@ -1,4 +1,4 @@
-import { UIController as BaseUIController } from "./ui-controller.js?v=5.6.2&legacy=1";
+import { UIController as BaseUIController } from "./ui-controller.js";
 
 const stripLocalCash=root=>{
   if(!root)return;
