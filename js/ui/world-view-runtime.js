@@ -1,8 +1,8 @@
-import { WorldView as CanvasWorldView } from "./world-view.js?v=5.5.5&legacy=1";
-import { MapControls } from "./map-controls.js?v=5.6.0";
-import { CONFIG } from "../core/config.js?v=5.5.5";
-import { clamp } from "../core/utils.js?v=5.5.5";
-import { developmentAtlasPath,developmentKind,developmentLevel,artImage,drawDevelopmentFrame } from "./land-art.js?v=5.9.1";
+import { WorldView as CanvasWorldView } from "./world-view.js";
+import { MapControls } from "./map-controls.js";
+import { CONFIG } from "../core/config.js";
+import { clamp } from "../core/utils.js";
+import { developmentAtlasPath,developmentKind,developmentLevel,artImage,drawDevelopmentFrame } from "./land-art.js";
 
 const LOCAL_BUILDINGS=new Set(["housing","power","industry"]);
 const TYPE_COLOR={food:"#83e69a",build:"#a7d7e7",fuel:"#ffb27e",ore:"#d3b4ff"};
