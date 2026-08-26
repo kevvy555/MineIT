@@ -1,6 +1,6 @@
 import { UIController as BaseUIController } from "./map-first-ui.js";
-import { operatingMode,riskExposure,supportsOverdrive } from "../domain/extraction-overdrive.js?v=5.6.2";
-import { clamp } from "../core/utils.js?v=5.5.5";
+import { operatingMode,riskExposure,supportsOverdrive } from "../domain/extraction-overdrive.js";
+import { clamp } from "../core/utils.js";
 
 const NEXT_MODE={normal:"pushed",pushed:"hard",hard:"normal"};
 
