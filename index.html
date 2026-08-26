@@ -18,13 +18,13 @@
   <link rel="stylesheet" href="./css/building-details.css?v=5.9.2">
   <link rel="stylesheet" href="./css/resource-details.css?v=5.9.9">
   <link rel="stylesheet" href="./css/adaptive-building-details.css?v=5.10.0">
-  <link rel="stylesheet" href="./css/ship-expansion.css?v=5.11.0">
+  <link rel="stylesheet" href="./css/ship-expansion.css?v=5.11.1">
   <script type="importmap">
   {
     "imports": {
       "./js/core/diagnostics.js?v=5.5.5": "./js/core/diagnostics.js?v=5.8.1",
       "./js/domain/game-state.js?v=5.5.5": "./js/domain/game-state-v511.js?v=5.11.0",
-      "./js/domain/portfolio-service.js?v=5.5.5": "./js/domain/portfolio-service-v511.js?v=5.11.0",
+      "./js/domain/portfolio-service.js?v=5.5.5": "./js/domain/portfolio-service-v5111.js?v=5.11.1",
       "./js/domain/resource-service.js?v=5.5.5": "./js/domain/resource-service-v570.js?v=5.7.0",
       "./js/domain/collection-service.js?v=5.5.5": "./js/domain/collection-service.js?v=5.6.2",
       "./js/domain/colony-service.js?v=5.5.5": "./js/domain/colony-service-v570.js?v=5.7.0",
@@ -39,9 +39,9 @@
       "./js/ui/ui-controller-v56.js?v=5.6.2&legacy=1": "./js/ui/ui-controller-v56.js?v=5.8.1",
       "./js/ui/map-controls.js?v=5.6.0": "./js/ui/map-controls-v581.js?v=5.8.0",
       "./js/ui/resource-icons.js?v=5.5.5": "./js/ui/resource-icons-v597.js?v=5.9.7",
-      "./js/ui/world-view.js?v=5.5.5": "./js/ui/world-view-v594.js?v=5.9.7",
-      "./js/ui/ui-controller.js?v=5.5.5": "./js/ui/ui-controller-v511.js?v=5.11.0",
-      "./js/ui/v55-trade-ui.js?v=5.5.5": "./js/ui/quick-trade-ui-v511.js?v=5.11.0"
+      "./js/ui/world-view.js?v=5.5.5": "./js/ui/world-view-v5111.js?v=5.11.1",
+      "./js/ui/ui-controller.js?v=5.5.5": "./js/ui/ui-controller-v5111.js?v=5.11.1",
+      "./js/ui/v55-trade-ui.js?v=5.5.5": "./js/ui/quick-trade-ui-v5111.js?v=5.11.1"
     }
   }
   </script>
@@ -85,6 +85,7 @@
       <div id="mapViewHost" aria-label="Unified colony map controls"></div>
       <div id="worldViewport">
         <canvas id="world"></canvas>
+        <div id="colonyNavStrip" class="colony-nav-strip" aria-label="Colony navigation"></div>
         <div id="cornerHud" class="hud-chip"><strong id="cameraText">COLONY MAP • 8×8</strong><span>Tap to select • drag unsurveyed tiles to multi-survey</span></div>
         <div id="scanHud" class="hud-chip scan-hud hidden"><strong>SCANNING</strong><span id="scanText"></span><div class="scan-progress"><i id="scanBar"></i></div></div>
       </div>
@@ -105,11 +106,11 @@
     <footer class="app-footer">
       <div class="primary-controls">
         <div class="speed-controls"><button data-speed="0">⏸</button><button data-speed="1" class="active">▶</button><button data-speed="2">▶▶</button><button data-speed="4">▶▶▶</button></div>
-        <button id="coloniesBtn">COLONIES</button><button id="techBtn">TECH</button><button id="tradeBtn">SHIP</button><button id="menuBtn">☰</button>
+        <button id="tradeBtn" disabled>CORP SHIP</button><button id="menuBtn">☰</button>
       </div>
-      <div class="legacy-actions hidden" aria-hidden="true"><button id="collectionBtn">COLLECT</button><button id="colonyBtn">COLONY</button><button id="goalsBtn">GOALS</button></div>
+      <div class="legacy-actions hidden" aria-hidden="true"><button id="coloniesBtn">COLONIES</button><button id="techBtn">TECH</button><button id="collectionBtn">COLLECT</button><button id="colonyBtn">COLONY</button><button id="goalsBtn">GOALS</button></div>
     </footer>
   </div>
-  <script type="module" src="./js/app.js?v=5.11.0"></script>
+  <script type="module" src="./js/app.js?v=5.11.1"></script>
 </body>
 </html>
