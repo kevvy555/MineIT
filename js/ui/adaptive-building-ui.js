@@ -1,7 +1,7 @@
 import { UIController as ResourceDevelopmentUIController } from "./resource-development-ui.js";
-import { formatNumber } from "../core/utils.js?v=5.5.5";
-import { developmentKind,developmentLevel,developmentOriginalPath } from "./land-art.js?v=5.9.1";
-import { OPERATING_MODES,operatingMode,riskExposure,supportsOverdrive,isAccidentShutdown,OVERDRIVE_RISK_PERIOD } from "../domain/extraction-overdrive.js?v=5.6.2";
+import { formatNumber } from "../core/utils.js";
+import { developmentKind,developmentLevel,developmentOriginalPath } from "./land-art.js";
+import { OPERATING_MODES,operatingMode,riskExposure,supportsOverdrive,isAccidentShutdown,OVERDRIVE_RISK_PERIOD } from "../domain/extraction-overdrive.js";
 
 const LOCAL_KINDS=new Set(["housing","power","industry"]);
 const MAX_LEVEL=5;
