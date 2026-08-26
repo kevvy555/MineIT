@@ -1,7 +1,7 @@
-import { CONFIG } from "../core/config.js?v=5.5.5";
-import { clamp } from "../core/utils.js?v=5.5.5";
-import { syncBuildingTotals } from "./building-model.js?v=5.7.0";
-import { supportsOverdrive,workforceMultiplier,isAccidentShutdown } from "./extraction-overdrive.js?v=5.6.2";
+import { CONFIG } from "../core/config.js";
+import { clamp } from "../core/utils.js";
+import { syncBuildingTotals } from "./building-model.js";
+import { supportsOverdrive,workforceMultiplier,isAccidentShutdown } from "./extraction-overdrive.js";
 
 const SITE_POWER=[1,2,4,7,11];
 
