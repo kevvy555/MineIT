@@ -1,0 +1,13 @@
+<div class="trade-quick-amount">
+  <div class="trade-amount-main">
+    <button data-qty-step="{{KIND}}" data-delta="-1000">−</button>
+    <input data-qty-input="{{KIND}}" type="number" min="1" max="{{MAX_TRADE}}" step="1" inputmode="numeric" value="{{VALUE}}">
+    <button data-qty-step="{{KIND}}" data-delta="1000">+</button>
+  </div>
+  <div class="trade-amount-presets">
+    <button data-qty-set="{{KIND}}" data-value="100">100</button>
+    <button data-qty-set="{{KIND}}" data-value="1000">1K</button>
+    <button data-qty-set="{{KIND}}" data-value="10000">10K</button>
+    <button data-qty-set="{{KIND}}" data-value="{{MAX_TRADE}}">MAX</button>
+  </div>
+</div>
