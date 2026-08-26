@@ -1,6 +1,6 @@
 import { UIController as V5100UIController } from "./adaptive-building-ui.js";
-import { ExpansionService, HOME_SYSTEM_ID, PROBE_UNLOCK_INDUSTRY_LEVEL, PROBE_COST, PLAYER_SHIP_CAPACITY, PLAYER_SHIP_PASSENGERS } from "../domain/expansion-service.js?v=5.11.0";
-import { formatMoney, formatNumber } from "../core/utils.js?v=5.5.5";
+import { ExpansionService, HOME_SYSTEM_ID, PROBE_UNLOCK_INDUSTRY_LEVEL, PROBE_COST, PLAYER_SHIP_CAPACITY, PLAYER_SHIP_PASSENGERS } from "../domain/expansion-service.js";
+import { formatMoney, formatNumber } from "../core/utils.js";
 
 const PAGE_SIZE=4;
 const CATEGORIES=["food","build","fuel","ore"];
