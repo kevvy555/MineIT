@@ -22,16 +22,19 @@ for(const [file,text] of source){for(const match of text.matchAll(/\bwindow\.([A
 const versionedJs=jsFiles.map(rel).filter(name=>/-v\d+\.js$/.test(name));
 const versionedCss=cssFiles.map(rel).filter(name=>/-v\d+\.css$/.test(name));
 let queryImports=0,documentAppEvents=0,largeMarkupTemplates=0;
-const queryImportsByFile=[];
+const queryImportsByFile=[],largeMarkupTemplatesByFile=[];
 for(const [file,text] of source){
   const queryCount=(text.match(/(?:from\s+|import\s*\()["'][^"']+\.js\?v=/g)||[]).length;
   queryImports+=queryCount;if(queryCount)queryImportsByFile.push({file,count:queryCount});
   documentAppEvents+=(text.match(/document\.(?:dispatchEvent|addEventListener)\([^\n]*mineit:/g)||[]).length;
-  largeMarkupTemplates+=(text.match(/`[^`]{500,}`/gs)||[]).length;
+  const markupCount=(text.match(/`[^`]{500,}`/gs)||[]).length;
+  largeMarkupTemplates+=markupCount;if(markupCount)largeMarkupTemplatesByFile.push({file,count:markupCount});
 }
+largeMarkupTemplatesByFile.sort((a,b)=>b.count-a.count||a.file.localeCompare(b.file));
 const debt={versionedJs:versionedJs.length,versionedCss:versionedCss.length,queryImports,importMap:/<script\s+type=["']importmap["']/.test(index),globalAssignments:globalAssignments.length,documentAppEvents,largeMarkupTemplates};
 console.log("CleanUp architecture debt baseline",debt);
 console.log("Query import debt by file",queryImportsByFile);
+console.log("Large markup template debt by file",largeMarkupTemplatesByFile);
 
 assert.equal(debt.versionedJs,0,"Version-numbered JavaScript files must not return");
 assert.equal(debt.versionedCss,0,"Version-numbered CSS files must not return");
