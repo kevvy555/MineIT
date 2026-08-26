@@ -1,4 +1,4 @@
-import { UIController as BaseUIController } from "./ui-controller-v511.js?v=5.11.0&legacy=1";
+import { UIController as BaseUIController } from "./expansion-ui.js";
 
 const esc=value=>String(value??"").replace(/[&<>\"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;"}[ch]));
 
