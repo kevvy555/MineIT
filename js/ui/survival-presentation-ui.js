@@ -1,7 +1,7 @@
-import { UIController as V563UIController } from "./ui-controller-v563.js?v=5.6.3&legacy=1";
-import { SurvivalUIMixin } from "./survival-ui.js?v=5.6.4";
-import { CONFIG } from "../core/config.js?v=5.6.4";
-import { formatMoney,formatNumber } from "../core/utils.js?v=5.6.4";
+import { UIController as V563UIController } from "./cash-policy-ui.js";
+import { SurvivalUIMixin } from "./survival-ui.js";
+import { CONFIG } from "../core/config.js";
+import { formatMoney,formatNumber } from "../core/utils.js";
 
 const replaceSection=(root,id,title,body)=>{
   const section=root?.querySelector(`#help-${id}`);
@@ -26,8 +26,6 @@ export class UIController extends V563UIController{
   }
 
   help(){
-    // Load the complete field manual through a cache-busted module, then replace
-    // sections whose rules changed during the colony-land, overdrive and cash updates.
     SurvivalUIMixin.prototype.help.call(this);
     const root=this.modal;
     const intro=root.querySelector("#help-index .card");
