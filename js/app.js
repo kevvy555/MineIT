@@ -1,28 +1,28 @@
-import { CONFIG } from "./core/config.js?v=5.5.5";
-import { Diagnostics } from "./core/diagnostics.js?v=5.5.5";
-import { ContractService } from "./domain/contract-service.js?v=5.5.5";
-import { CorporateEventService } from "./domain/corporate-event-service.js?v=5.8.1";
-import { createGameState, normalizeState } from "./domain/game-state.js?v=5.5.5";
-import { PortfolioService } from "./domain/portfolio-service.js?v=5.5.5";
-import { ResourceService } from "./domain/resource-service.js?v=5.5.5";
-import { InventoryService } from "./domain/inventory-service.js?v=5.5.5";
-import { CollectionService } from "./domain/collection-service.js?v=5.5.5";
-import { ColonyService } from "./domain/colony-service.js?v=5.5.5";
-import { TradeService } from "./domain/trade-service.js?v=5.5.5";
-import { LandService } from "./domain/land-service.js?v=5.5.5";
-import { DevelopmentService } from "./domain/development-service.js?v=5.5.5";
-import { WorldService } from "./domain/world-service.js?v=5.5.5";
-import { SiteService } from "./domain/site-service.js?v=5.5.5";
-import { TechnologyService } from "./domain/technology-service.js?v=5.5.5";
-import { SurveyService } from "./domain/survey-service.js?v=5.5.5";
-import { SimulationEngine } from "./domain/simulation-engine.js?v=5.5.5";
-import { GameLogService } from "./domain/game-log-service.js?v=5.5.5";
-import { TransportService } from "./domain/transport-service.js?v=5.5.5";
-import { SaveRepository } from "./persistence/save-repository.js?v=5.5.5";
-import { ResourceIcons } from "./ui/resource-icons.js?v=5.5.5";
-import { WorldView } from "./ui/world-view.js?v=5.5.5";
-import { UIController } from "./ui/ui-controller.js?v=5.5.5";
-import { TradeUI } from "./ui/v55-trade-ui.js?v=5.5.5";
+import { CONFIG } from "./core/config.js";
+import { Diagnostics } from "./core/diagnostics.js";
+import { ContractService } from "./domain/contract-service.js";
+import { CorporateEventService } from "./domain/corporate-event-service.js";
+import { createGameState, normalizeState } from "./domain/game-state-runtime.js";
+import { PortfolioService } from "./domain/portfolio-service.js";
+import { ResourceService } from "./domain/resource-service.js";
+import { InventoryService } from "./domain/inventory-service.js";
+import { CollectionService } from "./domain/collection-service.js";
+import { ColonyService } from "./domain/colony-service.js";
+import { TradeService } from "./domain/trade-service.js";
+import { LandService } from "./domain/land-service.js";
+import { DevelopmentService } from "./domain/development-service.js";
+import { WorldService } from "./domain/world-service.js";
+import { SiteService } from "./domain/site-service.js";
+import { TechnologyService } from "./domain/technology-service.js";
+import { SurveyService } from "./domain/survey-service.js";
+import { SimulationEngine } from "./domain/simulation-engine.js";
+import { GameLogService } from "./domain/game-log-service.js";
+import { TransportService } from "./domain/transport-service.js";
+import { SaveRepository } from "./persistence/save-repository.js";
+import { ResourceIcons } from "./ui/resource-icons.js";
+import { WorldView } from "./ui/world-view-runtime.js";
+import { UIController } from "./ui/ship-preparation-ui.js";
+import { TradeUI } from "./ui/corporate-trade-ui.js";
 
 class MineITApp {
   constructor(){
@@ -267,8 +267,6 @@ class MineITApp {
     for(const order of arrivals)this.gameLog.event(local,"transport-arrived",`Dedicated transport delivered ${formatNumberSafe(order.amount)} colonists to ${entryName}.`,{quantity:order.amount,cost:order.cost,population:local.pop,orderId:order.id},local.colonyId,entryName);
     this.engine.recalculate(local);
 
-    // Evaluate both conditions before changing contract status so a contract
-    // decision and a ship due on the same corporation day are both queued.
     const deadline=this.contracts.deadlineState(local),shipDue=this.trade.shouldArrive(local);
     if(deadline)this.queueContractDecision(local,deadline,entryName);
     if(shipDue){
@@ -291,8 +289,6 @@ class MineITApp {
     this.events.ensure(company);this.portfolio.captureActive(this.state,true);
     const ids=this.state.portfolio.colonies.map(entry=>entry.id);
     this.events.sanitize(company,ids);
-    // Anything already persisted in the queue is, by definition, already
-    // waiting when this session starts. Docked ships get top recovery priority.
     for(const event of company.pendingEvents)if(event.type==="ship")event.recovered=true;
 
     const recover=(local,name)=>{
