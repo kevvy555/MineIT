@@ -17,20 +17,20 @@ This is the canonical recovery record for the `CleanUp` branch. Refactoring is b
 
 ## Current repository status
 
-Status captured 2026-08-27 after Phase 5 completed and while preparing Phase 6.1.
+Status captured 2026-08-27 after Phase 6.1 completed and while preparing the Phase 6 exit audit.
 
 | Item | Current state |
 |---|---|
 | Repository | `kevvy555/MineIT` |
 | Working branch | `CleanUp` |
 | Pull request | Draft PR #39, `CleanUp` → `develop` |
-| Last fully green checkpoint | `046ed701` — Phase 5 feature-controller ownership exit |
-| Current checkpoint | Phase 6.1 — remove obsolete legacy building-details stylesheet |
+| Last fully green checkpoint | `01208f92` — Phase 6.1 obsolete building-detail CSS removal + stale test alignment |
+| Current checkpoint | Phase 6.2 — canonical stylesheet inventory / Phase 6 exit gate |
 | Package version | `5.11.3` |
 | Active phase | Phase 6 — CSS cleanup |
 | Verified large-template debt | **0** |
 | Branch reconciliation | Deferred to Phase 7 |
-| Merge readiness | Not ready; Phase 6 CSS cleanup and Phase 7 validation remain |
+| Merge readiness | Not ready; Phase 6 exit gate and Phase 7 validation remain |
 
 ## Green checkpoint history
 
@@ -58,9 +58,13 @@ Status captured 2026-08-27 after Phase 5 completed and while preparing Phase 6.1
 - `186c1112` / `5b31dc67` — 5.2 removed shadowed technology compatibility presentation and legacy technology view. Push `33072381015`, PR `33072385057`, Pages `33072380011`; browser green.
 - `821f526c` / `751f9a44` / `2fb655ff` — 5.3 deleted `building-details-ui.js`, retargeted resource-development directly to trade-reserve, removed shadowed V55 `techEffect()`, and aligned stale source-location tests. Push `33073342121`, PR `33073346310`, Pages `33073341375`; browser green.
 - `b70a940c` — 5.4 deleted redundant `survival-presentation-ui.js`; technology presentation now inherits directly from `cash-policy-ui.js`. Push `33078192785`, PR `33078198317`, Pages `33078191789`; browser green.
-- `046ed701` — **5.5 / Phase 5 complete.** Removed unreachable intermediate Help-intro wrappers, retained actual map-first Help controls and final trade-reserve intro ownership, and added `tests/controller-owner-map.test.js` to lock modern parent ownership plus the intentional legacy manual-super chain. Push `33078938572`, PR `33078945708`, Pages `33078937342`; full Node suite and both browser suites green.
+- `046ed701` — **5.5 / Phase 5 complete.** Removed unreachable intermediate Help-intro wrappers and added `tests/controller-owner-map.test.js` to lock modern parent ownership plus the intentional legacy manual-super chain. Push `33078938572`, PR `33078945708`, Pages `33078937342`; full Node suite and both browser suites green.
 
-### Phase 5 final owner decisions
+### Phase 6
+
+- `bda4274a` / `34e43f59` / `01208f92` — **6.1 obsolete building-detail CSS ownership removed.** Deleted `css/building-details.css`, removed its shell `<link>`, added `tests/css-ownership.test.js`, and aligned stale architecture/startup tests that still expected the deleted stylesheet. The first failure was a too-broad substring guard that matched `adaptive-building-details.css`; the second was the stale startup mandatory-CSS list. No production CSS was restored. Final Push `33080968312`, PR `33080971789`, Pages `33080967168`; full Node and browser suites green.
+
+## Phase 5 final owner decisions
 
 Modern semantic controller chain is executable-test locked:
 
@@ -72,43 +76,37 @@ Deleted compatibility bridges stay absent:
 
 Remaining prototype-qualified `.call(this)` dispatches are intentional manual-super boundaries required by the legacy multiple-mixin composition, not independent cleanup debt. `tests/controller-owner-map.test.js` locks the exact required calls and legacy composition order. Do not rewrite the inheritance/mixin model during Phase 6.
 
-## Current Phase 6.1 — obsolete building-detail CSS ownership
+## Phase 6.1 result — obsolete building-detail CSS ownership
 
-### Ownership proof
+Active presentation is now split cleanly:
 
-The old developed-building presenter and compatibility JS bridge are gone. Active presentation is split cleanly:
+- developed local/extraction buildings: `views/adaptive-building.html` + `css/adaptive-building-details.css`;
+- undeveloped surveyed resources: `views/undeveloped-resource.html` + `css/resource-details.css`.
 
-- developed local/extraction buildings: `views/adaptive-building.html` + `css/adaptive-building-details.css`, using `adaptive-building-*` classes;
-- undeveloped surveyed resources: `views/undeveloped-resource.html` + `css/resource-details.css`, using `resource-*` / `resource-detail-*` classes.
+The superseded `building-detail-*`, `building-art-frame`, `building-stat-*`, `building-upgrade-strip` and `.tile-panel.building-detail-panel` stylesheet family is gone. The application shell no longer loads it, and tests require the file/link to stay absent.
 
-`css/building-details.css` contains only the superseded `building-detail-*`, `building-art-frame`, `building-stat-*`, `building-upgrade-strip` and `.tile-panel.building-detail-panel` families. No active view uses those class families. `index.html` still loads the obsolete stylesheet only as historical residue.
+Two active controllers still defensively remove the old `building-detail-panel` class while switching tile-panel modes. Nothing adds that class and no CSS owns it. Audit decision: retain those inert removals rather than rewrite two large, heavily used controllers for zero cascade or gameplay benefit. They are harmless state-reset compatibility, not active CSS ownership.
 
-Two active controllers still defensively remove the old `building-detail-panel` class when changing tile-panel modes. Nothing adds that class anymore. These calls are harmless and are deliberately **not** mixed into Phase 6.1; they are a Phase 6.2 reference-cleanup candidate so stylesheet removal is validated independently.
+## Current Phase 6.2 — canonical stylesheet inventory / exit gate
 
-### Phase 6.1 action
+Goal: prove there is no remaining orphan CSS file or unowned stylesheet before declaring Phase 6 complete.
 
-1. Delete `css/building-details.css`.
-2. Remove its `<link>` from `index.html`.
-3. Update building-art, map-first and presentation-architecture tests so the deleted stylesheet must remain absent and canonical adaptive/resource CSS remains required.
-4. Add `tests/css-ownership.test.js` to lock:
-   - deleted legacy stylesheet absence;
-   - no application-shell reference to it;
-   - adaptive and undeveloped-resource views use their canonical class families;
-   - active views do not depend on legacy `building-detail-*` classes;
-   - canonical adaptive/resource styles retain their key selectors.
-5. Do not change gameplay, JS behavior, active views or canonical CSS in this checkpoint.
+Checkpoint action:
 
-Expected Phase 6.1 paths:
+1. Expand `tests/css-ownership.test.js` with the exact canonical stylesheet list, in the exact `index.html` cascade order.
+2. Enumerate `/css/*.css` on disk and require that set to equal the canonical linked list exactly.
+3. Therefore fail if either:
+   - an unlinked/orphan stylesheet remains on disk; or
+   - `index.html` loads an unexpected stylesheet; or
+   - a canonical stylesheet disappears from the shell.
+4. Retain the existing adaptive/resource ownership assertions and legacy building-detail absence checks.
+5. No production source, CSS, view, state, gameplay, save or asset change belongs in this checkpoint.
+
+Expected Phase 6.2 paths:
 1. `CLEANUP_PLAN.md`
-2. `index.html`
-3. `css/building-details.css` deleted
-4. `package.json`
-5. `tests/building-art.test.js`
-6. `tests/map-first-ux.test.js`
-7. `tests/presentation-architecture.test.js`
-8. `tests/css-ownership.test.js` added
+2. `tests/css-ownership.test.js`
 
-Require full Push/PR/browser/Pages green before Phase 6.2.
+If this checkpoint is fully green, Phase 6 is complete. The first Phase 7 reconciliation checkpoint should update this plan with the Phase 6.2 run IDs and mark Phase 6 complete.
 
 ## Protected unrelated worktree changes
 
@@ -127,7 +125,7 @@ Do not overwrite/revert/reformat:
 - Async views reject stale state/hosts; eager preloads never block startup.
 - No version-suffixed production JS/CSS, import maps or internal version-query imports.
 - Large application HTML template debt must remain zero.
-- Preserve mobile/touch behavior and gameplay semantics.
+- Preserve mobile/touch behaviour and gameplay semantics.
 
 ## Phase tracker
 
@@ -139,21 +137,13 @@ Do not overwrite/revert/reformat:
 | 3 — State/events/lifecycle | Complete | Explicit store/boundaries/disposal; zero app globals/document events. |
 | 4 — HTML views | Complete | Corrected baseline 50 → 0; final Push `33070686760`, PR `33070691704`, Pages `33070686316`. |
 | 5 — Feature controllers | **Complete** | Final `046ed701`; Push `33078938572`, PR `33078945708`, Pages `33078937342`; browser green. |
-| 6 — CSS cleanup | **In progress** | Phase 6.1 removes the obsolete legacy building-details stylesheet with canonical CSS ownership guards. |
+| 6 — CSS cleanup | **In progress — exit gate** | 6.1 green at `01208f92`; 6.2 proves exact linked/on-disk CSS ownership. |
 | 7 — Final validation | Pending | Reconcile branch + mobile/browser/campaign/save/lifecycle/soak sign-off. |
-
-## Phase 6 queue after 6.1
-
-1. Remove harmless stale `building-detail-panel` class-removal references if no other legacy class ownership remains.
-2. Audit every loaded CSS file against active HTML/view/JS class ownership before deleting or merging rules.
-3. Identify duplicate selector families and obsolete modal/panel overrides created by earlier presentation replacements.
-4. Keep CSS checkpoints narrow enough that browser regressions can be attributed to one cascade change.
-5. Do not consolidate unrelated responsive rules merely for line-count reduction.
 
 ## Phase 7 — final validation and merge gate
 
-1. Reconcile the two `develop` commits; effective missing content remains `assets/art/levels/L1.png`–`L10.png`.
-2. Run full Node regression/coverage.
+1. Reconcile `develop`; previously identified missing content is the ten level images `assets/art/levels/L1.png`–`L10.png`.
+2. Re-run full Node regression/coverage after reconciliation.
 3. Run supported mobile/browser viewport matrix.
 4. Exercise full multi-colony/interstellar campaign.
 5. Run representative save/load round trips.
