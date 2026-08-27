@@ -25,7 +25,7 @@ Status captured 2026-08-27 during corrective verification of the first Phase 4D 
 | Working branch | `CleanUp` |
 | Pull request | Draft PR #39, `CleanUp` into `develop` |
 | Last fully green checkpoint | `7153e30e` — Phase 4C corrected detector baseline |
-| Current checkpoint | Phase 4D.1 — external help-manual ownership; corrective test commit after `80bee13b` |
+| Current checkpoint | Phase 4D.1 — external help-manual ownership; second corrective test commit after `80bee13b` / `b0d3123d` |
 | Package version | `5.11.3` |
 | Active phase | Phase 4 — HTML views |
 | Merge readiness | Not ready; Phases 4–7 still have work |
@@ -56,37 +56,28 @@ Verified Phase 4C debt baseline:
 
 ## Current Phase 4D.1 checkpoint — external help manual ownership
 
-Problem found during inspection:
-
-- `views/survival-manual.html` already owned the field-manual shell.
-- `SurvivalUIMixin.help()` rendered it.
-- `IndustryUIMixin.help()` appended additional Industry HTML.
-- `V55UIMixin.help()` finally replaced nine sections with embedded template literals.
-- Therefore the player-visible final text was not owned by the external view, and seven of the 11 `v55-ui.js` debt findings were final help-section strings.
-
 Behaviour-preserving implementation in `80bee13b`:
 
-1. `views/survival-manual.html` contains the exact final text V55 previously displayed for Industry, Controls, Quality, Deposits, Sites, Technology, Trade, Portfolio and Saving/Game Log.
-2. Dynamic values are view placeholders populated by `SurvivalUIMixin.help()`: workforce %, site-output progression, Industry processing bonus, trade interval/export capacity/passenger capacity, dedicated transport days and game-log telemetry interval.
-3. `V55UIMixin.help()` is removed; V55 no longer replaces externally owned sections after rendering.
-4. `IndustryUIMixin.help()` and its now-unused Survival import are removed; Industry no longer appends manual markup after render.
-5. `SurvivalUIMixin.help()` remains the single manual renderer and still owns loading/caching, resource catalogue injection and help-index clicks.
-6. No domain/service state or gameplay calculation changed.
-7. Architecture CI on `80bee13b` confirmed the expected debt result exactly: **43 total**, with `v55-ui.js` reduced from 11 to 4 and every other per-file count matching the expected map.
+1. `views/survival-manual.html` now contains the exact final player-visible V55 wording for Industry, Controls, Quality, Deposits, Sites, Technology, Trade, Portfolio and Saving/Game Log.
+2. Dynamic values are external-view placeholders populated by `SurvivalUIMixin.help()`.
+3. `V55UIMixin.help()` and `IndustryUIMixin.help()` are removed, leaving `SurvivalUIMixin.help()` as the single renderer.
+4. No domain/service state or gameplay calculation changed.
+5. Architecture CI confirmed exactly **43** genuine templates; `v55-ui.js` dropped 11 → 4 and every other per-file count matched.
 
-### `80bee13b` failed gate — stale How-to-Play assertion
+### Corrective test history
 
-The PR Test unit/regression stage reached `tests/how-to-play.test.js` after all earlier architecture/domain/regression tests passed. It failed only because an old assertion still required the underlying phrase `Quality affects economic value, not the basic collection rate` in `views/survival-manual.html`.
+`80bee13b` failed only at `tests/how-to-play.test.js` after all preceding architecture/domain/regression checks passed. The stale assertion required the older base Quality sentence even though V55 had already replaced that section at runtime. `b0d3123d` removed that obsolete assertion and kept the final visible Quality wording assertion.
 
-That phrase belonged to the older base manual and was not the final text players saw: V55 had already replaced the Quality section at runtime with `quality no longer changes extraction speed`. The 4D.1 external view intentionally preserves that final visible V55 wording. Therefore changing production content back to satisfy the stale assertion would alter the behaviour this checkpoint is meant to preserve.
+The next CI run then reached the same test and exposed the analogous stale Deposits assertion: `Renewable does not mean impossible to destroy` belonged to the older base section, while V55 had already replaced the player-visible Deposits section with `Deposit size & sustainable resources`.
 
-Corrective verification in this commit:
+This corrective commit therefore:
 
-1. Remove only that obsolete base-manual phrase assertion.
-2. Keep the existing final-visible assertion for `quality no longer changes extraction speed`.
-3. Keep retained assertions for unaffected Surveying and Renewable sections.
-4. Keep the exact 43-template architecture map unchanged.
-5. Record this failed gate here and require PR Test, Push Test and Pages green before starting 4D.2.
+1. Removes only the obsolete Deposits base-text assertion.
+2. Keeps the final player-visible Deposits wording assertion.
+3. Retains the Surveying base-section assertion because Surveying was never overridden.
+4. Keeps the exact 43-template architecture map unchanged.
+5. Makes no production-code change.
+6. Requires PR Test, Push Test and Pages green before 4D.2 begins.
 
 Verified/expected debt for 4D.1 remains:
 
@@ -140,7 +131,7 @@ Do not overwrite/revert/reformat:
 | 1 — Canonical modules | Complete | Zero versioned production JavaScript. |
 | 2 — Startup/import cleanup | Complete | Zero import maps and internal version-query imports. |
 | 3 — State/events/lifecycle | Complete | Explicit store/boundaries/disposal; zero app globals/document events. |
-| 4 — HTML views | In progress | Accurate baseline 50. 4D.1 production extraction measures 43; corrective remote verification is required before 4D.2. |
+| 4 — HTML views | In progress | Accurate baseline 50. 4D.1 production extraction measures 43; second corrective remote verification is required before 4D.2. |
 | 5 — Feature controllers | Pending formal pass | Inherited/mixin ownership decomposition remains. |
 | 6 — CSS cleanup | Partially complete early | Versioned CSS already zero; ownership/duplicate audit follows Phase 5. |
 | 7 — Final validation | Pending | Branch reconciliation, browser/mobile matrix, campaign/save/load/lifecycle/long-soak sign-off remain. |
@@ -151,7 +142,8 @@ Do not overwrite/revert/reformat:
 - `2b2040ad` — sortable planet table externalized; green.
 - `48c23b5` — lexical template detector introduced; scanner correct but checkpoint failed on obsolete 29-count assumption.
 - `7153e30e` — exact 50-template corrected baseline locked; all remote checks green.
-- `80bee13b` — external help ownership production change; architecture reached expected 43, but checkpoint not green because of one stale How-to-Play phrase assertion.
+- `80bee13b` — external help ownership production change; architecture reached expected 43, but stale Quality assertion blocked the gate.
+- `b0d3123d` — removed stale Quality assertion; second stale Deposits assertion then blocked the gate.
 
 ## Exact next step after 4D.1 is green
 
@@ -161,14 +153,15 @@ The four remaining findings are the operational-workforce card, dedicated-transp
 
 Implementation contract:
 
-1. Inspect existing colony/tile view ownership before editing.
-2. Externalize the three static card families into reusable view fragments/hosts rather than new controller HTML strings.
-3. Preserve current workforce, supported-capacity, transport-blocking, harvest-intensity and ecological-condition values as data supplied by existing services/state.
-4. Keep `requestTransport()` and existing renewable-harvest mutation paths authoritative; UI only renders and dispatches actions.
-5. Prefer one delegated action owner or explicit listener release so panel rerenders cannot accumulate listeners.
-6. Add focused ownership/behaviour tests and update the exact architecture map.
-7. Expected goal: remove `v55-ui.js` from large-template debt entirely, taking total debt from 43 to 39, before moving to `technology-presentation-ui.js`.
-8. Update this plan and require all remote gates green.
+1. Externalize the three semantic card families into external views/fragments.
+2. Preserve current workforce, supported-capacity, transport-blocking, harvest-intensity and ecological-condition values from existing services/state.
+3. Dedicated-transport repeating order rows must use a reusable fragment plus `DocumentFragment`/single host replacement rather than an HTML loop.
+4. Keep `requestTransport()` and renewable-harvest mutation paths authoritative; UI only renders and dispatches actions.
+5. Own transport/harvest action listeners on the inserted card subtree or release them explicitly on rerender.
+6. Add stale async-render protection for external view loading.
+7. Add focused ownership/behaviour tests and update the exact architecture map.
+8. Expected result: `v55-ui.js` debt 4 → 0; total debt 43 → 39.
+9. Update this plan and require all remote gates green.
 
 ## Remaining Phase 4D queue
 
