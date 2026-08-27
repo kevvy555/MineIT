@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 
 const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),"utf8");
-const sell=read("views/quick-trade-sell.html"),buy=read("views/quick-trade-buy.html"),playerShip=read("js/ui/player-ship-ui.js"),starMap=read("views/star-map-screen.html");
+const sell=read("views/quick-trade-sell.html"),buy=read("views/quick-trade-buy.html"),playerShip=read("js/ui/player-ship-ui.js"),starMap=read("views/star-map-screen.html"),planetTable=read("views/planet-table.html");
 
 const sellClose=sell.lastIndexOf("</section>");
 assert.ok(sellClose>0&&sell.indexOf("data-sell-row-template")<sellClose,"Sell row template must live inside the mounted sell-view root");
@@ -17,5 +17,6 @@ assert.ok(selectSource.indexOf("this.playerShipPanel();return;")<selectSource.in
 
 assert.match(starMap,/star-system-detail-host[^>]*>\s*\{\{CORPORATE_TRADE\}\}\s*\{\{SYSTEM_DETAIL\}\}\s*<\/div>/,"Optional corporate trade control must remain inside the Star Map detail row so it cannot shift the canvas out of the full-screen grid");
 assert.ok(starMap.indexOf("{{CORPORATE_TRADE}}")<starMap.indexOf("exp-map-wrap"),"Corporate trade control must render above, not as a sibling after, Star Map detail");
+assert.match(planetTable,/<template data-planet-colony-template>\s*<[^>]+>\s*<[^>]+data-planet-colony-name/,"Planet colony-name marker must be a descendant of the cloned template root because renderPlanetColonies queries inside that root");
 
 console.log("post-refactor ship/trade/star-map regression ownership contract passed");
