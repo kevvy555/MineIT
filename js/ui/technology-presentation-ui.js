@@ -1,4 +1,4 @@
-import { UIController as LegacyUIController } from "./survival-presentation-ui.js";
+import { UIController as LegacyUIController } from "./cash-policy-ui.js";
 import { formatMoney,formatNumber } from "../core/utils.js";
 import { loadViewTemplate } from "../core/view-template.js";
 import { BUILDING_MODEL,SHIP_INFRASTRUCTURE,buildingCapacity,localBuildings,syncBuildingTotals } from "../domain/building-model.js";

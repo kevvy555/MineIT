@@ -3,6 +3,8 @@ import fs from "node:fs";
 const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),"utf8");
 
 const ui=read("js/ui/technology-presentation-ui.js"),buildChoice=read("views/build-choice.html"),localBuilding=read("views/local-building-panel.html"),localInfrastructure=read("views/local-infrastructure-card.html"),technology=read("views/corporate-technology.html"),manual=read("views/survival-manual.html");
+assert.match(ui,/from "\.\/cash-policy-ui\.js"/);
+assert.doesNotMatch(ui,/survival-presentation-ui/);
 for(const path of["./views/build-choice.html","./views/local-building-panel.html","./views/local-infrastructure-card.html","./views/corporate-technology.html"])assert.ok(ui.includes(path),`missing technology presentation view path: ${path}`);
 for(const marker of["data-build-choice-option-template","data-build-choice-requirement-template","data-build-choice-options"])assert.ok(buildChoice.includes(marker),`missing construction-choice view marker: ${marker}`);
 for(const marker of["data-local-upgrade-block","data-local-upgrade","data-demolish"])assert.ok(localBuilding.includes(marker),`missing local-building view marker: ${marker}`);
