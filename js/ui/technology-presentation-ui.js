@@ -66,19 +66,21 @@ export class UIController extends LegacyUIController{
   }
   upgradeLocalBuilding(tile){const r=this.development.upgrade(this.state,tile);if(!r.ok){this.toast(r.reason);return;}this.onRecalculate?.();this.repo.save(this.state);this.toast(`${this.development.label(tile.development.kind)} upgraded to L${tile.development.level}.`);this.localBuildingPanel(tile);}
 
-  landTile(tile){
-    if(LOCAL_KINDS.includes(tile?.development?.kind)){this.localBuildingPanel(tile);return;}
-    super.landTile(tile);
-    if(!tile?.revealed||!tile.resourceId||tile.developed||tile.development)return;
-    const existing=this.modal.querySelector("[data-cover]");if(!existing)return;const grid=existing.parentElement,power=this.development.canPlace(this.state,tile,"power"),button=document.createElement("button");button.dataset.cover="power";button.textContent="POWER";button.disabled=!power.ok;grid.appendChild(button);if(!power.ok){const note=document.createElement("div");note.className="requirement locked";note.textContent=`Power: ${power.reason}`;grid.closest("article")?.insertAdjacentElement("afterend",note);}button.onclick=()=>{if(confirm(tile.type==="food"?`Build Power Plant over ${tile.name}? This Food resource will be destroyed.`:`Cover ${tile.name} with a Power Plant?`))this.onPlaceDevelopment?.(tile,"power");};
+  async landTile(tile){
+    if(LOCAL_KINDS.includes(tile?.development?.kind))return this.localBuildingPanel(tile);
+    const rendered=await super.landTile(tile);
+    if(!rendered||!tile?.revealed||!tile.resourceId||tile.developed||tile.development)return rendered;
+    const existing=this.modal.querySelector("[data-cover]");if(!existing)return rendered;const grid=existing.parentElement,power=this.development.canPlace(this.state,tile,"power"),button=document.createElement("button");button.dataset.cover="power";button.textContent="POWER";button.disabled=!power.ok;grid.appendChild(button);if(!power.ok){const note=document.createElement("div");note.className="requirement locked";note.textContent=`Power: ${power.reason}`;grid.closest("article")?.insertAdjacentElement("afterend",note);}button.onclick=()=>{if(confirm(tile.type==="food"?`Build Power Plant over ${tile.name}? This Food resource will be destroyed.`:`Cover ${tile.name} with a Power Plant?`))this.onPlaceDevelopment?.(tile,"power");};
+    return true;
   }
 
-  landColonyPanel(){
-    super.landColonyPanel();if(this.state.status==="dead"||this.state.status==="site-selection")return;const totals=syncBuildingTotals(this.state),m=this.state.metrics;
+  async landColonyPanel(){
+    const rendered=await super.landColonyPanel();if(!rendered||this.state.status==="dead"||this.state.status==="site-selection")return rendered;const totals=syncBuildingTotals(this.state),m=this.state.metrics;
     const industry=findMetric(this.modal,"Industry");if(industry){industry.querySelector("small").textContent="Industry effective / installed";industry.querySelector("strong").textContent=`${formatNumber(m.industry||0)} / ${formatNumber(totals.industry)}`;}
     const grid=this.modal.querySelector(".grid2"),powerPlants=localBuildings(this.state,"power").length;if(grid)this.appendMetric(grid,"Power plants",powerPlants);
     const body=this.modal.querySelector(".modal-body");if(body)this.renderLocalInfrastructureCard(body,totals,m);
     for(const node of this.modal.querySelectorAll("p,.effect"))node.textContent=node.textContent.replace(/Housing or Industry/g,"Housing, Power or Industry");
+    return true;
   }
   appendMetric(host,label,value){const metric=document.createElement("div"),small=document.createElement("small"),strong=document.createElement("strong");metric.className="metric";small.textContent=label;strong.textContent=String(value);metric.append(small,strong);host.appendChild(metric);return metric;}
   async renderLocalInfrastructureCard(body,totals,m){

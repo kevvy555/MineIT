@@ -1,0 +1,86 @@
+<article class="card">
+  <h3 data-land-location></h3>
+  <p><span data-land-environment></span><br>Housing, Industry and extraction are developed directly on surveyed map tiles.</p>
+  <div class="effect" data-land-date></div>
+</article>
+
+<div class="grid2" data-land-summary-grid>
+  <div class="metric"><small>Population / Housing</small><strong data-land-pop-housing></strong></div>
+  <div class="metric"><small>Industry</small><strong data-land-industry></strong></div>
+  <div class="metric"><small>Housing tiles</small><strong data-land-housing-tiles></strong></div>
+  <div class="metric"><small>Industry tiles</small><strong data-land-industry-tiles></strong></div>
+  <div class="metric"><small>Extraction sites</small><strong data-land-extraction-sites></strong></div>
+  <div class="metric"><small>Relocations</small><strong data-land-relocations></strong></div>
+</div>
+
+<div class="need-grid">
+  <div class="metric need"><small>Food</small><strong data-land-food></strong></div>
+  <div class="metric need"><small>Fuel</small><strong data-land-fuel></strong></div>
+  <div class="metric need"><small>Ore</small><strong data-land-ore></strong></div>
+  <div class="metric need"><small>Power</small><strong data-land-power></strong></div>
+</div>
+
+<article class="card" style="margin-top:7px">
+  <h3>OPERATIONAL WORKFORCE <span class="bad" data-workforce-shortfall>— SHORTFALL</span></h3>
+  <div class="grid2">
+    <div class="metric"><small>Available workforce</small><strong data-workforce-available></strong></div>
+    <div class="metric"><small>Required by sites</small><strong data-workforce-required></strong></div>
+    <div class="metric"><small>Free for expansion</small><strong data-workforce-free></strong></div>
+    <div class="metric"><small>Commercial staffing</small><strong data-workforce-commercial></strong></div>
+  </div>
+  <p>Food and Fuel receive worker priority. Build and Ore are automatically throttled if workers become scarce.</p>
+</article>
+
+<article class="card" style="margin-top:7px">
+  <h3>INDUSTRIAL CAPACITY</h3>
+  <div class="grid2">
+    <div class="metric"><small>Site load / capacity</small><strong data-industry-load></strong></div>
+    <div class="metric"><small>Commercial extraction</small><strong data-industry-commercial></strong></div>
+    <div class="metric"><small>Export processing</small><strong data-processing-bonus></strong></div>
+    <div class="metric"><small>Survival supply</small><strong data-survival-supply></strong></div>
+  </div>
+</article>
+
+<article class="card" style="margin-top:7px">
+  <h3>DEDICATED COLONY TRANSPORT</h3>
+  <p>Request supported population without waiting for the regular trade ship. Transport takes <span data-transport-days></span> days.</p>
+  <div class="grid2">
+    <div class="metric"><small>Supported places available</small><strong data-supported-places></strong></div>
+    <div class="metric"><small>Pending colonists</small><strong data-pending-colonists></strong></div>
+  </div>
+  <div class="help-data-table" data-pending-transports></div>
+  <p data-no-pending-transports>No dedicated colony transports are currently inbound.</p>
+  <template data-pending-transport-template>
+    <div class="help-data-row"><strong data-pending-amount></strong><span data-pending-eta></span><span data-pending-cost></span></div>
+  </template>
+  <div class="requirement locked" data-transport-blocked>This colony cannot receive new colonists.</div>
+  <div data-transport-controls>
+    <div class="trade-buy-buttons" style="margin-top:6px">
+      <button data-land-transport="100">+100</button>
+      <button data-land-transport="500">+500</button>
+      <button data-land-transport="1000">+1,000</button>
+      <button data-land-transport="max">MAX</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:4px;margin-top:5px">
+      <input data-land-transport-custom type="number" min="1" step="1" inputmode="numeric" placeholder="Custom colonists" style="min-width:0;background:#0b1116;color:var(--text);border:1px solid var(--line);border-radius:7px;padding:5px">
+      <button data-land-transport-request>REQUEST</button>
+    </div>
+  </div>
+</article>
+
+<article class="card" style="margin-top:7px">
+  <h3 data-emergency-title></h3>
+  <p data-emergency-copy></p>
+  <button data-emergency></button>
+</article>
+
+<div class="effect">Tap surveyed clear land to place Housing or Industry. Tap a development to upgrade it. Hold a tile for 2 seconds for details, harvest controls or demolition.</div>
+
+<div class="colony-management">
+  <button data-renew>RENEW <span data-renew-years></span> YEARS<br><span class="tiny" data-renew-fee></span></button>
+  <button data-end>END / RETURN CONTRACT</button>
+  <button data-new>OPEN NEW COLONY</button>
+  <button data-relocate>RELOCATE POPULATION<br><span class="tiny" data-relocate-cost></span></button>
+  <button data-all-colonies>VIEW ALL COLONIES</button>
+</div>
+<button class="bad action" data-reselect>ABANDON LAND &amp; CHOOSE ANOTHER SITE</button>

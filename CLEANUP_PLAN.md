@@ -5,107 +5,41 @@ This document is the canonical progress record for the `CleanUp` branch. It must
 ## Checkpoint procedure
 
 1. Verify branch/PR/divergence before editing and preserve unrelated user asset work.
-2. Make one cohesive ownership change, with focused regression/architecture coverage.
-3. Prefer fewer, larger-but-related checkpoints when the ownership boundary is clear. Do not weaken the exact architecture guard or full remote Test/browser/Pages gates.
-4. Connector-authored work uses GitHub Push Test + PR Test + browser interaction/coverage + Pages as the executable authority because the local runtime cannot resolve `github.com`.
-5. Update this plan at each successful green checkpoint and in the same functional checkpoint when practical. Transient stale-test correction commits do not require a separate plan-only commit; their cause/evidence is recorded in the next green checkpoint.
+2. Make one cohesive ownership change with focused regression/architecture coverage.
+3. Prefer fewer, larger-but-related checkpoints when an ownership boundary is clear. Do not weaken the exact architecture guard or full remote Test/browser/Pages gates.
+4. Connector-authored work uses GitHub Push Test + PR Test + browser interaction/coverage + Pages as executable authority because the local runtime cannot resolve `github.com`.
+5. Update this plan at each successful green checkpoint and in the same functional checkpoint when practical. Transient stale-test corrections do not require a separate plan-only commit; their cause/evidence is recorded in the next green checkpoint.
 6. Do not advance a new checkpoint onto `CleanUp` until the prior checkpoint is green.
+7. For asynchronous external views, reject delayed writes when the modal body/visibility/active-colony snapshot has changed.
 
 ## Current repository status
 
-Status captured 2026-08-27 while preparing Phase 4D.3.
+Status captured 2026-08-27 while preparing Phase 4D.4.
 
 | Item | Current state |
 |---|---|
 | Repository | `kevvy555/MineIT` |
 | Working branch | `CleanUp` |
 | Pull request | Draft PR #39, `CleanUp` into `develop` |
-| Last fully green checkpoint | `3d03bc53` — Phase 4D.2 V55 operation-card extraction + stale-test alignment |
-| Current checkpoint | Phase 4D.3 — externalize all nine `technology-presentation-ui.js` large templates |
+| Last fully green checkpoint | `1c12a122` — Phase 4D.3 technology presentation extraction |
+| Current checkpoint | Phase 4D.4 — remove/externalize all six `land-ui.js` large-template findings |
 | Package version | `5.11.3` |
 | Active phase | Phase 4 — HTML views |
-| Branch relationship | 329 commits ahead / 2 behind `develop` before 4D.3 |
+| Branch relationship | Diverged from `develop`; branch reconciliation remains Phase 7 |
 | Merge readiness | Not ready; Phases 4–7 still have work |
 
 ## Green checkpoint history
 
 - `a217a509` — active ship cargo/fuel rows externalized; green.
 - `2b2040ad` — sortable planet table externalized; green.
-- `48c23b5` — lexical template detector introduced; scanner correct, but old expected count was wrong.
-- `7153e30e` — corrected lexical-scanner baseline locked at 50 genuine templates; green.
-- `227101c8` — Phase 4D.1 external help-manual ownership; 50 → 43; green.
-- `7bccaca7` — Phase 4D.2 production extraction removed the final four V55 large templates and produced the expected 39-template architecture map. Its first Push Test stopped on a stale `global-expansion.test.js` assertion that still expected `DEDICATED COLONY TRANSPORT` / `RENEWABLE HARVEST` literals inside `v55-ui.js`; focused operation-card ownership and the 39-template guard had already passed.
-- `3d03bc53` — aligned that legacy regression assertion with the external views. Full Push Test `33047421531`, PR Test `33047425532`, browser interaction/coverage and Pages `33047420869` all passed. Phase 4D.2 is complete.
+- `48c23b5` — lexical template detector introduced; scanner was correct but the old expected debt count was wrong.
+- `7153e30e` — corrected lexical-scanner baseline locked at 50 genuine large HTML templates; green.
+- `227101c8` — Phase 4D.1 external help-manual ownership; debt 50 → 43; green.
+- `7bccaca7` — Phase 4D.2 production extraction removed the final four V55 large templates. Its first Push Test exposed only a stale `global-expansion.test.js` source-location assertion.
+- `3d03bc53` — stale V55 assertion aligned with external view ownership. Push Test `33047421531`, PR Test `33047425532`, browser interaction/coverage and Pages `33047420869` all passed. Debt 43 → 39.
+- `1c12a122` — Phase 4D.3 externalized all nine `technology-presentation-ui.js` large templates into `views/build-choice.html`, `views/local-building-panel.html`, `views/local-infrastructure-card.html` and `views/corporate-technology.html`; moved the three v5.7 manual sections into `views/survival-manual.html`; added bounded template cloning and ownership coverage. Push Test `33048664562`, PR Test `33048667800`, browser interactions and Pages `33048664150` all passed with no corrective commit. Debt 39 → 30.
 
-## Phase 4D.2 — complete and green
-
-Phase 4D.2 externalized:
-
-- operational workforce card → `views/operational-workforce.html`;
-- dedicated colony transport card and repeated pending-order rows → `views/dedicated-colony-transport.html`;
-- renewable harvest card → `views/renewable-harvest.html`.
-
-Important architecture outcomes:
-
-- pending transport rows are cloned from an external `<template>` into a `DocumentFragment` and replaced in one bounded host operation;
-- card listeners are owned by their inserted subtrees rather than `document`/`window`;
-- delayed external-view loads check current/connected hosts before insertion;
-- V55 no longer directly assigns `tile.harvestIntensity`; `ResourceService.adjustHarvestIntensity()` owns that clamp/assignment path;
-- `v55-ui.js` is absent from the corrected large-template debt map.
-
-Verified debt after 4D.2:
-
-| File | Findings |
-|---|---:|
-| `js/ui/technology-presentation-ui.js` | 9 |
-| `js/ui/land-ui.js` | 6 |
-| `js/ui/colony-tech-ui.js` | 5 |
-| `js/ui/resource-ui.js` | 4 |
-| `js/ui/ui-enhancements.js` | 4 |
-| `js/ui/adaptive-building-ui.js` | 2 |
-| `js/ui/quick-trade-ui.js` | 2 |
-| `js/ui/survival-ui.js` | 2 |
-| `js/ui/building-details-ui.js` | 1 |
-| `js/ui/contract-ui.js` | 1 |
-| `js/ui/industry-ui.js` | 1 |
-| `js/ui/map-first-ui.js` | 1 |
-| `js/ui/resource-development-ui.js` | 1 |
-| **Total** | **39** |
-
-## Current Phase 4D.3 — technology presentation ownership
-
-The corrected scanner shows exactly nine large templates in `js/ui/technology-presentation-ui.js`:
-
-1. build-choice screen shell/options/locked requirements;
-2. local-building detail panel;
-3. local-infrastructure colony card;
-4. technology-path wrapper;
-5. technology roadmap card;
-6. technology screen shell;
-7. Industry/Power/local-capacity manual section;
-8. Buildings/extraction/overdrive manual section;
-9. Corporation-technology manual section.
-
-### 4D.3 implementation contract
-
-1. Add semantic external views:
-   - `views/build-choice.html`;
-   - `views/local-building-panel.html`;
-   - `views/local-infrastructure-card.html`;
-   - `views/corporate-technology.html`.
-2. Populate repeated construction options, locked-requirement rows, technology paths and technology cards by cloning external `<template>` elements into `DocumentFragment`s, followed by bounded `replaceChildren()` calls.
-3. Preserve all existing DevelopmentService / TechnologyService / building-model calculations and action paths. UI continues to render/dispatch only.
-4. Preserve build-over-resource confirmation behavior, local building upgrade/demolish behavior, future-tech toggle, purchase access/cost disabling, ownership/current/next/future states and technology effects.
-5. Local-infrastructure insertion must verify that the modal body is still connected/current after asynchronous view loading before it writes.
-6. Replace small company metric `innerHTML` construction with explicit DOM nodes while touching the same ownership area.
-7. Move the three v5.7 help sections into `views/survival-manual.html` and remove `technology-presentation-ui.js` post-render help replacement entirely. Later map-first/corporate/trade help layers were inspected: they replace the intro and/or controls only, not these Industry/Sites/Technology sections, so this preserves final player-visible content.
-8. `tests/technology-view-ownership.test.js` must lock external path ownership, template-cloning/bounded DOM markers, no `innerHTML` rebuilding of extracted screens, and no technology help override.
-9. Update `tests/how-to-play.test.js` so retained v5.7 rules are asserted in `views/survival-manual.html`, not the old controller source.
-10. Update exact architecture debt from 39 to **30** and require `technology-presentation-ui.js` to be absent from the measured map.
-11. Add the focused test to `npm test`.
-12. Require Push Test, PR Test, browser interaction/coverage and Pages green before advancing.
-
-Expected debt after 4D.3:
+## Verified debt after Phase 4D.3
 
 | File | Findings |
 |---|---:|
@@ -122,6 +56,71 @@ Expected debt after 4D.3:
 | `js/ui/map-first-ui.js` | 1 |
 | `js/ui/resource-development-ui.js` | 1 |
 | **Total** | **30** |
+
+## Current Phase 4D.4 — land presentation ownership
+
+The corrected scanner reports exactly six large templates in `js/ui/land-ui.js`. Inspection shows they are not six equally active screens:
+
+1. landing-site selection shell;
+2. legacy base `buildChoice()` implementation;
+3. legacy base Housing/Industry developed-building detail branch;
+4. surveyed undeveloped-resource detail/build-over-resource panel;
+5. main colony-land panel;
+6. nested large transport-control branch inside the colony-land panel.
+
+The active `technology-presentation-ui.js` layer already owns `buildChoice()` and intercepts Housing/Power/Industry developed buildings before calling the base `landTile()`. Therefore findings 2 and 3 are shadowed duplicate presentation and should be deleted rather than externalized.
+
+### 4D.4 implementation contract
+
+1. Remove the shadowed `LandUIMixin.buildChoice()` implementation. Active construction choice continues through `technology-presentation-ui.js` and `views/build-choice.html`.
+2. Remove the base Housing/Industry detail branch from `LandUIMixin.landTile()`. The active technology layer already intercepts local infrastructure and routes it to `localBuildingPanel()`.
+3. Externalize active landing-site selection to `views/landing-site-selection.html`.
+   - Candidate rows come from an external `<template>`.
+   - Terrain preview cells are created as DOM nodes into `DocumentFragment`s.
+   - Candidate host replacement is bounded with `replaceChildren()`.
+   - Preserve current-site marker, abandon copy, no-close initial selection, abandon cancel behavior and `onSelectLand`.
+4. Externalize surveyed undeveloped-resource details to `views/land-resource-details.html`.
+   - Preserve terrain/category/mining/deposit/workforce facts.
+   - Preserve development readiness/cost copy.
+   - Preserve Housing/Industry cover actions and Food destruction confirmations.
+   - The active technology layer still appends the Power cover action after the base view has rendered.
+5. Externalize the full colony-land screen to `views/colony-land-panel.html`.
+   - Static cards/management markup lives in the view.
+   - Pending transports use an external row `<template>` cloned into a `DocumentFragment`.
+   - Preserve workforce/industry/survival metrics, supported/pending colonists, transport quantities/custom request, Emergency Mode, renewal/end/new-colony/relocation/all-colonies actions and site-reselection action.
+   - Keep `CONFIG.DEDICATED_TRANSPORT_DAYS`, renewal years/fees and relocation cost dynamic.
+6. Make `LandUIMixin.landSelection()`, resource-detail rendering and `landColonyPanel()` asynchronous through `loadViewTemplate()`.
+7. Add modal-lifecycle protection:
+   - capture current modal body identity, hidden/visible state and active colony id before awaiting a view;
+   - if any changes before load completion, silently discard the delayed result;
+   - if an abandon-site load is discarded/fails, restore the previous simulation speed.
+8. Update `technology-presentation-ui.js` so `landTile()` and `landColonyPanel()` await their base land render before augmenting resource actions/metrics. No other technology presentation behavior changes.
+9. Add `tests/land-view-ownership.test.js`:
+   - assert all three external paths/semantic markers;
+   - assert template cloning, fragments, bounded replacement and lifecycle snapshot markers;
+   - assert `largeHtmlTemplates(landUi).length === 0`;
+   - assert shadowed base build-choice and Housing/Industry detail code stays removed;
+   - assert technology overrides await the asynchronous base methods.
+10. Add the focused test to `npm test`.
+11. Change the exact architecture map from 30 to **24** and require `js/ui/land-ui.js` to remain absent from large-template debt.
+12. Require Push Test, PR Test, browser interaction/coverage and Pages green before Phase 4D.5.
+
+### Expected debt after 4D.4
+
+| File | Findings |
+|---|---:|
+| `js/ui/colony-tech-ui.js` | 5 |
+| `js/ui/resource-ui.js` | 4 |
+| `js/ui/ui-enhancements.js` | 4 |
+| `js/ui/adaptive-building-ui.js` | 2 |
+| `js/ui/quick-trade-ui.js` | 2 |
+| `js/ui/survival-ui.js` | 2 |
+| `js/ui/building-details-ui.js` | 1 |
+| `js/ui/contract-ui.js` | 1 |
+| `js/ui/industry-ui.js` | 1 |
+| `js/ui/map-first-ui.js` | 1 |
+| `js/ui/resource-development-ui.js` | 1 |
+| **Total** | **24** |
 
 ## Protected unrelated worktree changes
 
@@ -141,6 +140,7 @@ Connector-authored checkpoints write only explicit repository paths and do not t
 - Every listener/observer/timer/RAF has a clear owner/disposal lifetime.
 - Repeated UI uses external templates, cloned fragments and bounded host replacement; no `innerHTML` row loops.
 - Static application markup belongs in `/views`.
+- Async views must not write into stale/disconnected/replaced presentation hosts.
 - No version-suffixed production JS/CSS, import-map routing or internal version-query imports.
 - The exact corrected lexical-scanner debt map changes only in a reviewed extraction checkpoint.
 - Keep refactored functions small/single-purpose and preserve mobile interaction behavior.
@@ -153,23 +153,30 @@ Connector-authored checkpoints write only explicit repository paths and do not t
 | 1 — Canonical modules | Complete | Zero versioned production JavaScript. |
 | 2 — Startup/import cleanup | Complete | Zero import maps and internal version-query imports. |
 | 3 — State/events/lifecycle | Complete | Explicit store/boundaries/disposal; zero app globals/document events. |
-| 4 — HTML views | In progress | Corrected baseline 50; 4D.1 green 43; 4D.2 green 39; 4D.3 targets 30. |
+| 4 — HTML views | In progress | Corrected baseline 50; 4D.1 green 43; 4D.2 green 39; 4D.3 green 30; 4D.4 targets 24. |
 | 5 — Feature controllers | Pending formal pass | Inherited/mixin ownership decomposition remains. |
 | 6 — CSS cleanup | Partially complete early | Versioned CSS zero; ownership/duplicate audit follows Phase 5. |
 | 7 — Final validation | Pending | Branch reconciliation, mobile/browser matrix, campaign/save/load/lifecycle/soak sign-off. |
 
-## Next queue after Phase 4D.3 is green
+## Next queue after Phase 4D.4 is green
 
-To keep the faster-but-safe cadence, prefer cohesive ownership batches rather than one template per commit, but do not combine unrelated controllers merely to reduce CI count.
+Continue the faster-but-safe cadence: one cohesive owner at a time, larger batches only where markup/lifecycle ownership is demonstrably shared.
 
-1. `land-ui.js` — 6 findings. This is the next high-impact owner and should be one coherent land-presentation checkpoint if its six templates share the same panel/view boundary.
-2. `colony-tech-ui.js` — 5.
-3. `resource-ui.js` — 4.
-4. `ui-enhancements.js` — 4.
-5. Consider one combined small-family checkpoint only after inspection proves common ownership/lifecycle behavior: `adaptive-building-ui.js` 2, `quick-trade-ui.js` 2, `survival-ui.js` 2.
-6. Single-finding families: `building-details-ui.js`, `contract-ui.js`, `industry-ui.js`, `map-first-ui.js`, `resource-development-ui.js`.
+1. `colony-tech-ui.js` — 5 findings.
+2. `resource-ui.js` — 4.
+3. `ui-enhancements.js` — 4.
+4. Inspect whether the small two-finding families can share a safe ownership checkpoint; do not combine merely to reduce CI count:
+   - `adaptive-building-ui.js` — 2;
+   - `quick-trade-ui.js` — 2;
+   - `survival-ui.js` — 2.
+5. Single-finding families:
+   - `building-details-ui.js`;
+   - `contract-ui.js`;
+   - `industry-ui.js`;
+   - `map-first-ui.js`;
+   - `resource-development-ui.js`.
 
-Phase 4 exits only when genuine large-template debt reaches zero, static markup has clear external ownership, and full Node/browser CI remains green.
+Phase 4 exits only when genuine large-template debt reaches zero, static markup has clear external ownership and full Node/browser CI remains green.
 
 ## Phase 5 — feature controllers
 
@@ -181,7 +188,7 @@ Map styles to canonical owners, remove duplicate/obsolete/unreachable rules, ver
 
 ## Phase 7 — final validation and merge gate
 
-1. Reconcile the two `develop` commits; effective missing content is still the ten level images `assets/art/levels/L1.png`–`L10.png`.
+1. Reconcile the two `develop` commits; effective missing content remains the ten level images `assets/art/levels/L1.png`–`L10.png`.
 2. Run full Node regression/coverage suite.
 3. Run supported mobile/browser viewport matrix.
 4. Exercise full multi-colony/interstellar campaign flow.
