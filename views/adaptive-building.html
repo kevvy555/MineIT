@@ -1,0 +1,54 @@
+<div class="adaptive-building-shell" data-adaptive-building-shell>
+  <section class="adaptive-building-hero">
+    <div class="adaptive-building-art" role="img" data-adaptive-art>
+      <span class="adaptive-building-art-fallback" data-adaptive-art-fallback></span>
+      <img data-adaptive-art-image decoding="async">
+    </div>
+    <div class="adaptive-building-copy">
+      <div class="adaptive-building-kicker" data-adaptive-kicker></div>
+      <div class="adaptive-building-name"><strong data-adaptive-name></strong><span data-adaptive-status></span></div>
+      <div class="adaptive-building-badges" data-adaptive-badges></div>
+    </div>
+  </section>
+
+  <div class="adaptive-building-alert" data-adaptive-alert hidden><strong data-adaptive-alert-title></strong><span data-adaptive-alert-text></span></div>
+
+  <section class="adaptive-building-section">
+    <div class="adaptive-building-section-title"><span>OVERVIEW</span><i></i></div>
+    <div class="adaptive-building-grid">{{OVERVIEW}}</div>
+  </section>
+
+  <div class="adaptive-building-mode" data-adaptive-mode hidden>
+    <div class="adaptive-building-mode-head"><div><small>OPERATING MODE</small><strong>Choose mode directly</strong></div><span data-adaptive-mode-risk></span></div>
+    <div class="adaptive-building-mode-buttons" data-adaptive-mode-buttons></div>
+  </div>
+
+  <div class="adaptive-building-harvest" data-adaptive-harvest hidden>
+    <div><small>HARVEST INTENSITY</small><strong data-adaptive-harvest-value></strong></div>
+    <div><button data-harvest-delta="-25">−25%</button><button data-harvest-delta="25">+25%</button></div>
+  </div>
+
+  <section class="adaptive-building-section" data-adaptive-operations-section>
+    <div class="adaptive-building-section-title"><span>OPERATIONS</span><i></i></div>
+    <div class="adaptive-building-grid">{{OPERATIONS}}</div>
+  </section>
+
+  <section class="adaptive-building-section">
+    <div class="adaptive-building-section-title"><span>UPGRADE TO NEXT LEVEL</span><i></i></div>
+    {{UPGRADE}}
+  </section>
+
+  <section class="adaptive-building-section">
+    <div class="adaptive-building-section-title"><span>REQUIREMENTS</span><i></i></div>
+    {{REQUIREMENTS}}
+  </section>
+
+  <div class="adaptive-building-actions">
+    <button class="action" data-adaptive-upgrade {{UPGRADE_DISABLED}}>{{UPGRADE_LABEL}}</button>
+    <button class="bad" data-adaptive-demolish>DEMOLISH</button>
+    <button data-adaptive-close>CLOSE</button>
+  </div>
+
+  <template data-adaptive-badge-template><span data-adaptive-badge></span></template>
+  <template data-adaptive-mode-template><button data-adaptive-mode-option><span data-adaptive-mode-label></span><small data-adaptive-mode-details></small></button></template>
+</div>
