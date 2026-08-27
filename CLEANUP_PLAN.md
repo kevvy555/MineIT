@@ -1,89 +1,147 @@
-# MineIT Cleanup Plan and Live Handoff
+# MineIT Cleanup Plan and Final Handoff
 
-This is the canonical recovery record for the `CleanUp` branch. Refactoring is behaviour-preserving unless a gameplay change is separately approved. Keep this file detailed enough that work can resume after a lost chat without relying on conversation history.
+This is the canonical recovery record for the `CleanUp` branch. The cleanup/refactor is behaviour-preserving unless a gameplay change was separately approved. Do not rely on chat history to determine merge readiness; use this file and GitHub status.
 
-## Checkpoint procedure
+## Final repository status
 
-1. Verify `CleanUp` head before moving the ref.
-2. Preserve unrelated user asset work; connector commits touch only explicit paths.
-3. Make one cohesive ownership change and update focused tests/architecture guards with it.
-4. Prefer deleting proven-shadowed compatibility code over preserving dead wrappers.
-5. Static markup belongs in `/views`; repeated controls use templates/fragments and bounded replacement.
-6. Domain services own rules and authoritative state mutation; UI renders and dispatches.
-7. Async view loading must reject stale state/hosts and must never block startup/`DOMContentLoaded`.
-8. Do not weaken a guard to make CI pass. Read the exact failure first and align only genuinely stale source-location assertions.
-9. Require Push Test, PR Test, browser interaction/coverage and Pages green at every cohesive production checkpoint.
-10. For speed, assemble immutable candidate blobs/tree/commit and compare before moving the branch. Fold handoff updates into cohesive checkpoints rather than creating plan-only CI runs.
+Status captured 2026-08-27 after Phase 7 technical validation completed.
 
-## Current repository status
-
-Status captured 2026-08-27 after Phase 7.1 reconciliation completed and while preparing the final validation soak.
-
-| Item | Current state |
+| Item | Final state |
 |---|---|
 | Repository | `kevvy555/MineIT` |
 | Working branch | `CleanUp` |
 | Pull request | Draft PR #39, `CleanUp` → `develop` |
-| Last fully green checkpoint | `213a859e` — Phase 7.1 `develop` reconciliation |
-| Current checkpoint | Phase 7.2 — final validation / accelerated long-simulation soak |
+| Last fully green technical checkpoint | `e633bf1f` — final 25-year simulation validation |
 | Package version | `5.11.3` |
-| Active phase | Phase 7 — final validation |
-| Verified large-template debt | **0** |
-| Verified CSS orphan debt | **0** |
-| Reconciliation | Complete; `develop` is an ancestor of `CleanUp` |
-| PR mergeability | GitHub reports PR #39 mergeable; PR intentionally remains draft |
-| Merge readiness | Pending final validation checkpoint and explicit user approval |
+| Cleanup phases | **0–7 complete** |
+| Large embedded HTML-template debt | **0** |
+| Versioned production JS/CSS debt | **0** |
+| Internal query-import debt | **0** |
+| Import-map debt | **0** |
+| Application globals/document app-event debt | **0** |
+| CSS orphan debt | **0** |
+| Branch reconciliation | **Complete** — `develop` is an ancestor of `CleanUp` |
+| Current compare to `develop` | **359 ahead / 0 behind** at `e633bf1f` |
+| PR mergeability | **mergeable: true** |
+| PR state | Open and draft; intentionally not merged |
+| Technical merge readiness | **READY** |
+| Remaining action | Obtain explicit user approval, then mark PR ready and merge PR #39 into `develop` |
 
-## Green checkpoint history
+## Final validation evidence
 
-### Phases 0–4
+### Phase 7.1 — `develop` reconciliation
 
-- `a217a509` — ship cargo/fuel rows externalized; green.
-- `2b2040ad` — sortable planet table externalized; green.
-- `48c23b5` / `7153e30e` — corrected lexical template scanner; genuine baseline locked at 50.
-- `227101c8` — Help/manual ownership; 50 → 43.
-- `3d03bc53` — V55 operation cards; 43 → 39. Push `33047421531`, PR `33047425532`, Pages `33047420869`.
-- `1c12a122` — technology presentation; 39 → 30. Push `33048664562`, PR `33048667800`, Pages `33048664150`.
-- `9b8201fe` — land presentation; 30 → 24. Push `33050871178`, PR `33050873588`, Pages `33050870040`.
-- `01051465` — colony-tech cleanup; 24 → 19. Push `33051923546`, PR `33051926517`, Pages `33051922844`.
-- `c27fc9d1` — resource presentation; 19 → 15. Push `33053336531`, PR `33053339742`, Pages `33053335423`; browser green.
-- `4623e3cc` — UI-enhancement ownership; 15 → 11. Push `33054163574`, PR `33054167037`, Pages `33054162621`; browser green.
-- `ef1fcdc5` — Quick Trade extraction; 11 → 9. Push `33054929802`, PR `33054933882`, Pages `33054929350`; browser green.
-- `334e6f17` — survival terminal/help ownership; 9 → 7. Push `33067085875`, PR `33067089205`, Pages `33067085509`; browser green.
-- `270f9578` — adaptive-building presentation; 7 → 5. Push `33067797422`, PR `33067803240`, Pages `33067796744`; browser green.
-- `92701fd3` / `a93dc7dd` — Contract Failed and Industry Capacity; 5 → 3. Push `33069061527`, PR `33069065078`, Pages `33069060704`; browser green.
-- `cb882c74` — **Phase 4 complete, 3 → 0**. Push `33070686760`, PR `33070691704`, Pages `33070686316`; Node/domain/browser green.
+Checkpoint: `213a859ec1c4fb66c17e471b2c1c9c90f1e322a3`
 
-### Phase 5 — Complete
+- two-parent merge with first parent Phase-6 head `2df89fde5b2d759f21d2d1453bd9a78a1d69a145` and second parent `develop` `01d56b2cc679a7293143a7e4fbef54c7f0ee2a20`;
+- first-parent content delta was only `CLEANUP_PLAN.md` plus exact `assets/art/levels/L1.png`–`L10.png`;
+- ten level images reused their existing Git blobs byte-for-byte; no re-encoding;
+- `develop` compare returned `behind_by = 0`;
+- Push Test `33082056002` — success;
+- PR Test `33082062486` — success;
+- Pages `33082054938` — success;
+- full Node and browser suites green.
 
-- `1733d862` — renewable harvest mutation boundary. Push `33071271807`, PR `33071276551`, Pages `33071270778`.
-- `186c1112` / `5b31dc67` — removed shadowed technology presentation. Push `33072381015`, PR `33072385057`, Pages `33072380011`.
-- `821f526c` / `751f9a44` / `2fb655ff` — removed building-details JS bridge and V55 technology debt. Push `33073342121`, PR `33073346310`, Pages `33073341375`.
-- `b70a940c` — deleted redundant survival presentation adapter. Push `33078192785`, PR `33078198317`, Pages `33078191789`.
-- `046ed701` — **Phase 5 complete.** Locked final controller owner map and intentional manual-super boundaries. Push `33078938572`, PR `33078945708`, Pages `33078937342`; Node/browser green.
+### Phase 7.2 — final validation
 
-### Phase 6 — Complete
+Checkpoint: `e633bf1f04c6336ab9037573a436b61faf64af4a`
 
-- `bda4274a` / `34e43f59` / `01208f92` — removed obsolete `css/building-details.css`, removed its shell link, added CSS ownership guard and aligned stale tests. Final Push `33080968312`, PR `33080971789`, Pages `33080967168`; Node/browser green.
-- `2df89fde` — **Phase 6 complete.** Exact 12-file linked stylesheet list equals complete on-disk `/css/*.css` set, proving zero orphan CSS files and stable cascade ownership. Push `33081571679`, PR `33081577146`, Pages `33081569786`; full Node and browser suites green.
+Final runs:
+- Push Test `33087964519` — **success**;
+- PR Test `33087970503` — **success**;
+- Pages `33087964360` — **success**.
 
-### Phase 7
+The normal workflow at this checkpoint proves all of the following:
 
-- `213a859e` — **7.1 reconciliation complete.** Two-parent merge with first parent `2df89fde` and second parent `develop` `01d56b2c`; first-parent content delta is only `CLEANUP_PLAN.md` plus exact `assets/art/levels/L1.png`–`L10.png`. `develop` compare reports `behind_by = 0`. Push `33082056002`, PR `33082062486`, Pages `33082054938`; full Node/browser green. PR #39 reports `mergeable: true` and remains draft.
+1. **Full Node regression/domain suite and V8 coverage** passed.
+2. **Architecture guards** passed with:
+   - versioned JS = 0;
+   - versioned CSS = 0;
+   - query imports = 0;
+   - import map = false;
+   - global assignments = 0;
+   - document application events = 0;
+   - large HTML templates = 0.
+3. **CSS ownership guard** passed with exactly 12 linked stylesheets and zero orphan CSS files.
+4. **Realistic multi-colony + player-ship save round trip** passed.
+5. **ShipExpansion campaign/domain path** passed, including:
+   - probe gating/launch/arrival;
+   - physical passenger/resource loading;
+   - interstellar ship travel;
+   - post-arrival planet selection;
+   - expedition colony founding from the ship manifest;
+   - corporate service radius;
+   - sole player ship loss causing campaign failure.
+6. **Accelerated long-simulation soak** passed:
+   - **9,000 daily ticks / 25 game years**;
+   - no colony death or state transition away from `playing`;
+   - final population **180**;
+   - finite cash/metrics throughout annual checks;
+   - food/fuel/ore/build inventories remained non-negative;
+   - sole player ship remained docked/stable;
+   - no game-over state.
+7. **Domain/Core function coverage** reported **83.5% (450/539 functions)**.
+8. **Browser startup probe** passed with positive map-canvas size and no visible startup error.
+9. **Mobile/browser presentation matrix** passed at:
+   - 360×640;
+   - 375×667;
+   - 390×844;
+   - 412×915;
+   - 915×412 landscape.
+10. **Multi-colony browser lifecycle** passed:
+    - first contract completion and five-year renewal;
+    - same-day contract/ship event ordering;
+    - second-colony creation;
+    - background/orphan ship recovery;
+    - colony switching in both directions;
+    - Corporation panel flow.
+11. **Repeated UI lifecycle soak** passed over 20 cycles of Star Map, Cargo Bay, Corporation and Menu navigation, with bounds on:
+    - active ResizeObservers;
+    - window/document listener growth;
+    - live DOM node growth.
+12. **Pages deployment** passed.
+13. Final `develop` → `CleanUp` comparison at `e633bf1f` is **359 ahead / 0 behind**.
+14. PR #39 at `e633bf1f` reports **mergeable: true**, remains **open** and **draft**.
 
-## Final controller and presentation ownership
+## Phase completion summary
+
+| Phase | State | Exit evidence |
+|---|---|---|
+| 0 — Test baseline | Complete | Regression/architecture/save/lifecycle/coverage gates established. |
+| 1 — Canonical modules | Complete | Zero versioned production JS. |
+| 2 — Startup/import cleanup | Complete | Zero import maps/internal version-query imports. |
+| 3 — State/events/lifecycle | Complete | Explicit store/boundaries/disposal; zero app globals/document events. |
+| 4 — HTML views | Complete | Corrected inline-template baseline **50 → 0**; final `cb882c74`, Push `33070686760`, PR `33070691704`, Pages `33070686316`. |
+| 5 — Feature controllers | Complete | Final `046ed701`, Push `33078938572`, PR `33078945708`, Pages `33078937342`. |
+| 6 — CSS cleanup | Complete | Final `2df89fde`; zero orphan CSS; Push `33081571679`, PR `33081577146`, Pages `33081569786`. |
+| 7 — Final validation | **Complete** | Final technical head `e633bf1f`; Push `33087964519`, PR `33087970503`, Pages `33087964360`; 25-year soak + browser matrix green. |
+
+## Important architecture decisions to preserve
+
+### Controller ownership
 
 Modern semantic controller chain is test-locked:
 
 `ship-preparation` → `ship-navigation` → `player-ship` → `expansion` → `adaptive-building` → `resource-development` → `trade-reserve` → `corporate-events` → `operational-controls` → `map-first` → `technology-presentation` → `cash-policy` → legacy composed `ui-controller`.
 
-Deleted compatibility bridges stay absent:
+Deleted compatibility bridges must stay absent:
 - `js/ui/building-details-ui.js`
 - `js/ui/survival-presentation-ui.js`
 
-Remaining prototype-qualified `.call(this)` dispatches are intentional manual-super boundaries required by the legacy multiple-mixin composition and are locked by `tests/controller-owner-map.test.js`.
+Remaining prototype-qualified `.call(this)` dispatches are intentional manual-super boundaries required by the legacy multiple-mixin composition. `tests/controller-owner-map.test.js` locks them. Do not rewrite the inheritance/mixin system casually.
 
-CSS ownership is test-locked. `index.html` loads exactly these 12 files, in cascade order, and `/css` contains no other stylesheet:
+### Presentation ownership
+
+- static application markup belongs in `/views`;
+- repeated rows/controls use templates/fragments and bounded replacement;
+- large embedded application HTML template debt must remain zero;
+- async views must reject stale state/hosts and must not delay `DOMContentLoaded` registration;
+- production UI should render/dispatch, not own gameplay rules.
+
+### CSS ownership
+
+`index.html` loads exactly these 12 CSS files, in cascade order, and `/css` contains no other stylesheet:
+
 1. `app.css`
 2. `world.css`
 3. `panels.css`
@@ -97,104 +155,38 @@ CSS ownership is test-locked. `index.html` loads exactly these 12 files, in casc
 11. `adaptive-building-details.css`
 12. `ship-expansion.css`
 
-The two inert `classList.remove("building-detail-panel")` resets remain intentionally untouched. Nothing adds or styles that class; Phase 6 explicitly judged rewriting two large active controllers for a no-op token to add more risk than value.
+`css/building-details.css` is intentionally deleted. Two inert `classList.remove("building-detail-panel")` calls remain in active controllers; nothing adds or styles that class. Phase 6 explicitly chose not to rewrite large stable controllers merely to remove those harmless no-op tokens.
 
-## Phase 7.1 — Complete: `develop` reconciliation
+### State/domain/lifecycle rules
 
-Verified before/after facts:
-- pre-merge `develop`: `01d56b2cc679a7293143a7e4fbef54c7f0ee2a20`;
-- pre-merge Phase-6 `CleanUp`: `2df89fde5b2d759f21d2d1453bd9a78a1d69a145`;
-- reconciliation merge: `213a859ec1c4fb66c17e471b2c1c9c90f1e322a3`;
-- the two missing `develop` commits contained only ten level PNGs;
-- first-parent compare shows exactly those ten PNGs plus this handoff file;
-- `develop` → reconciliation compare reports `behind_by = 0`, so `develop` is an ancestor;
-- PR #39 is mergeable and has no reconciliation conflict.
+- `GameStore` owns mutable root state.
+- Domain services own gameplay rules and authoritative mutation.
+- Domain modules never import UI code or render application HTML.
+- No application state on `window`.
+- No document-level application event bus.
+- Every listener/observer/timer/RAF needs a clear owner/disposal lifetime.
+- No version-suffixed production JS/CSS, import maps or internal version-query imports.
+- Preserve mobile/touch behaviour and gameplay semantics.
 
-The ten binary level assets were copied byte-for-byte using their existing Git blob SHAs; no re-encoding or source conflict resolution occurred.
+## Protected unrelated work
 
-## Current Phase 7.2 — final validation checkpoint
-
-### Validation already covered by the normal workflow
-
-The existing Test workflow is already a broad final-validation matrix:
-
-1. **Full Node regression + coverage** — `npm test` plus `tests/coverage-report.js`.
-2. **Architecture** — versioned module/CSS/query/import-map/global/document-event/template debt guards.
-3. **Save/load** — `tests/save-roundtrip.test.js` covers realistic multi-colony + player-ship round trip.
-4. **Interstellar campaign/domain path** — `tests/ship-expansion.test.js` executes probe launch/arrival, ship loading, interstellar travel, post-arrival planet selection, expedition colony founding, corporate-service radius and sole-ship-loss campaign failure.
-5. **Multi-colony browser path** — `tests/multi-colony-lifecycle-probe.html` executes first-contract completion/renewal, same-day corporate ship queue, second-colony creation, recovered background ship handling and bidirectional colony switching.
-6. **Mobile/browser viewport matrix** — `360×640`, `375×667`, `390×844`, `412×915`, and `915×412` using the presentation interaction probe.
-7. **UI lifecycle soak** — 20 cycles of Player Ship → Star Map, Cargo Bay, Corporation and Menu. The probe instruments and bounds active ResizeObservers, window/document listeners and live DOM node growth.
-8. **Startup/runtime diagnostics** — browser startup probe rejects collapsed map canvas and visible `STARTUP ERROR`; lifecycle probes reject diagnostics/runtime errors.
-9. **Pages deployment** — required green alongside Push/PR Test.
-
-### Remaining gap and current action
-
-The only uncovered plan item is an accelerated multi-year simulation soak. Add `tests/long-simulation-soak.test.js` and include it in `npm test`.
-
-Soak contract:
-- start from the canonical state/services;
-- heavily provision food/fuel/ore/build and corporate cash so the test exercises stability rather than intentional scarcity death;
-- run **9,000 daily simulation ticks / 25 game years**;
-- update canonical year/day each tick;
-- require no colony death and status remains `playing`;
-- annually require key metrics/cash to remain finite and resource inventories non-negative;
-- require population remains alive/stable and the sole player ship remains docked/stable;
-- no production or gameplay change is part of this checkpoint.
-
-Expected Phase 7.2 paths:
-1. `CLEANUP_PLAN.md`
-2. `package.json`
-3. `tests/long-simulation-soak.test.js` added
-
-After the checkpoint is pushed, require:
-- Push Test green, including the new 25-year soak and existing Node coverage;
-- PR Test green;
-- all five viewport probes green;
-- multi-colony lifecycle browser probe green;
-- UI lifecycle soak green;
-- Pages green;
-- PR #39 still mergeable and `CleanUp` still not behind `develop`.
-
-If all of those pass, Phase 7 validation is technically complete. Update this handoff with the final run IDs and mark the repository **ready for explicit user merge approval**. Do not merge automatically.
-
-## Protected unrelated worktree changes
-
-Do not overwrite/revert/reformat:
+Do not overwrite, revert, reformat or replace these unrelated user asset changes:
 - `assets/art/development/algae-facility/originals/algae-facility-l4.png`
 - `assets/art/resources/food-resources/Originals/synthetic-nutrient.png`
 
-## Architecture rules
+## Merge procedure — requires explicit user approval
 
-- `GameStore` owns mutable root state.
-- Domain services own rules and authoritative mutation.
-- Domain modules never import UI code or render application HTML.
-- No application state on `window`; no document-level app event bus.
-- Every listener/observer/timer/RAF has a clear owner/disposal lifetime.
-- Static markup belongs in `/views`; repeated presentation uses templates/fragments/bounded replacement.
-- Async views reject stale state/hosts; eager preloads never block startup.
-- No version-suffixed production JS/CSS, import maps or internal version-query imports.
-- Large application HTML template debt must remain zero.
-- CSS orphan debt must remain zero.
-- Preserve mobile/touch behaviour and gameplay semantics.
+The cleanup is technically validated and ready to merge, but **do not merge automatically**.
 
-## Phase tracker
+After the user explicitly approves merging PR #39:
 
-| Phase | State | Exit evidence |
-|---|---|---|
-| 0 — Test baseline | Complete | Regression/architecture/save/lifecycle/coverage gates established. |
-| 1 — Canonical modules | Complete | Zero versioned production JS. |
-| 2 — Startup/import cleanup | Complete | Zero import maps/internal version-query imports. |
-| 3 — State/events/lifecycle | Complete | Explicit store/boundaries/disposal; zero app globals/document events. |
-| 4 — HTML views | Complete | Corrected baseline 50 → 0; final Push `33070686760`, PR `33070691704`, Pages `33070686316`. |
-| 5 — Feature controllers | Complete | Final `046ed701`; Push `33078938572`, PR `33078945708`, Pages `33078937342`. |
-| 6 — CSS cleanup | Complete | Final `2df89fde`; zero orphan CSS; Push `33081571679`, PR `33081577146`, Pages `33081569786`. |
-| 7 — Final validation | **In progress** | 7.1 green at `213a859e`; 7.2 adds the final 25-year simulation soak and reruns the complete validation matrix. |
+1. Re-read `CleanUp`, `develop`, and PR #39 immediately before mutation.
+2. Require PR head to still be the validated final handoff head (or a later documentation-only fully green head).
+3. Require `develop` to remain an ancestor / comparison `behind_by = 0`.
+4. Require PR #39 to remain mergeable and checks green.
+5. Mark PR #39 ready for review if GitHub requires draft removal before merge.
+6. Merge PR #39 into `develop` using the repository’s normal merge strategy; do not force-push or bypass failed checks.
+7. Verify the resulting `develop` head and its post-merge workflow/Pages state.
+8. Only after that consider the `CleanUp` work complete/archivable.
 
-## Final merge gate
-
-Do not merge draft PR #39 automatically. After Phase 7.2 is fully green:
-1. record final Push/PR/Pages run IDs and long-soak result here;
-2. re-check `develop` ancestry and PR mergeability;
-3. mark Phase 7 complete / merge readiness approved technically;
-4. report the evidence to the user and obtain explicit approval before merging PR #39 into `develop`.
+No further cleanup/refactor changes should be added to `CleanUp` before the merge unless a newly discovered validation failure requires a targeted fix.
