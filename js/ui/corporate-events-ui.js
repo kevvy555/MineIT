@@ -15,7 +15,4 @@ export class UIController extends BaseUIController{
     if(a.action==="event"){this.onProcessPendingEvent?.();return;}
     super.runAttentionAction();
   }
-  help(){
-    super.help();const intro=this.modal.querySelector("#help-index .card .effect");if(intro)intro.textContent="Rules current through v5.8.1. Ship arrivals and contract decisions from any colony pause the shared corporation clock, switch you to the affected colony, and remain visible until resolved.";
-  }
 }

@@ -69,7 +69,4 @@ export class UIController extends BaseUIController{
     const setDaysState=(id,days)=>{const el=document.querySelector(`#${id}`);if(!el)return;el.classList.remove("warn");if(days!==null&&days!==undefined&&days<=30)el.classList.add("warn");};
     setDaysState("foodDaysHud",this.state.metrics?.foodDays);setDaysState("fuelDaysHud",this.state.metrics?.fuelDays);setDaysState("oreDaysHud",this.state.metrics?.oreDays);
   }
-  help(){
-    super.help();const intro=this.modal.querySelector("#help-index .card .effect");if(intro)intro.textContent="Rules current through v5.8.0. The map-first interface keeps routine colony actions on the main screen, including renewable harvest controls and direct Normal/Pushed/Hard extraction changes.";
-  }
 }
