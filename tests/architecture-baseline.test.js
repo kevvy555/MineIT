@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { largeHtmlTemplates } from "./template-literal-scanner.js";
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
 const walk=dir=>fs.readdirSync(dir,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?walk(path.join(dir,entry.name)):[path.join(dir,entry.name)]);
@@ -21,19 +22,17 @@ for(const [file,text] of source){for(const match of text.matchAll(/\bwindow\.([A
 
 const versionedJs=jsFiles.map(rel).filter(name=>/-v\d+\.js$/.test(name));
 const versionedCss=cssFiles.map(rel).filter(name=>/-v\d+\.css$/.test(name));
-let queryImports=0,documentAppEvents=0,largeHtmlTemplates=0;
+let queryImports=0,documentAppEvents=0,largeHtmlTemplateCount=0;
 const queryImportsByFile=[],largeHtmlTemplatesByFile=[];
-const htmlTag=/<(?:article|aside|button|canvas|div|form|h[1-6]|header|label|li|main|nav|option|p|section|select|small|span|strong|table|tbody|td|textarea|th|thead|tr|ul)\b/i;
 for(const [file,text] of source){
   const queryCount=(text.match(/(?:from\s+|import\s*\()["'][^"']+\.js\?v=/g)||[]).length;
   queryImports+=queryCount;if(queryCount)queryImportsByFile.push({file,count:queryCount});
   documentAppEvents+=(text.match(/document\.(?:dispatchEvent|addEventListener)\([^\n]*mineit:/g)||[]).length;
-  const templates=text.match(/`[^`]{500,}`/gs)||[];
-  const htmlCount=templates.filter(template=>htmlTag.test(template)).length;
-  largeHtmlTemplates+=htmlCount;if(htmlCount)largeHtmlTemplatesByFile.push({file,count:htmlCount});
+  const htmlCount=largeHtmlTemplates(text).length;
+  largeHtmlTemplateCount+=htmlCount;if(htmlCount)largeHtmlTemplatesByFile.push({file,count:htmlCount});
 }
 largeHtmlTemplatesByFile.sort((a,b)=>b.count-a.count||a.file.localeCompare(b.file));
-const debt={versionedJs:versionedJs.length,versionedCss:versionedCss.length,queryImports,importMap:/<script\s+type=["']importmap["']/.test(index),globalAssignments:globalAssignments.length,documentAppEvents,largeHtmlTemplates};
+const debt={versionedJs:versionedJs.length,versionedCss:versionedCss.length,queryImports,importMap:/<script\s+type=["']importmap["']/.test(index),globalAssignments:globalAssignments.length,documentAppEvents,largeHtmlTemplates:largeHtmlTemplateCount};
 console.log("CleanUp architecture debt baseline",debt);
 console.log("Query import debt by file",queryImportsByFile);
 console.log("Large HTML template debt by file",largeHtmlTemplatesByFile);
@@ -44,6 +43,7 @@ assert.equal(debt.importMap,false,"Runtime import-map redirects must not return"
 assert.equal(debt.queryImports,0,"Version-query imports must not return");
 assert.equal(debt.globalAssignments,0,`Global application assignments must not return: ${globalAssignments.join(", ")}`);
 assert.equal(debt.documentAppEvents,0,"Document-level application events must not return");
-assert.ok(debt.largeHtmlTemplates<=30,"Large embedded HTML template debt must not grow beyond the verified sortable planet-table checkpoint");
+assert.ok(!largeHtmlTemplatesByFile.some(entry=>entry.file==="js/domain/expansion-service.js"),"Domain template literals must not be misclassified as HTML view debt");
+assert.ok(debt.largeHtmlTemplates<=29,"Large embedded HTML template debt must not grow beyond the verified detector-correction checkpoint");
 
 console.log("CleanUp architecture baseline guard passed");

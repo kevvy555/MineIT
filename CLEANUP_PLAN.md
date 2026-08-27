@@ -15,38 +15,33 @@ For each checkpoint:
 3. Make one bounded, behaviour-preserving change.
 4. Run the most relevant targeted tests.
 5. Run the full offline suite with `npm --offline test` when a local worktree is available.
-6. Update this plan with:
-   - the phase and subtask completed;
-   - test and architecture evidence;
-   - current measurements;
-   - known risks and protected files;
-   - the exact next logical step.
+6. Update this plan with the completed subtask, test/architecture evidence, measurements, risks, protected files, and exact next action.
 7. Commit and push code, tests, and this plan together.
 8. Verify the new GitHub Actions runs. PR checks are the authoritative remote result.
 
-If a checkpoint is not green, record the failure and do not advance the phase marker. When operating through the GitHub connector without a local checkout, do not claim a local test run; use syntax/static checks before commit and the PR/Push Test workflows as the executable checkpoint gate.
+If a checkpoint is not green, record the failure and do not advance the phase marker. When operating through the GitHub connector without a local checkout, do not claim a local full-suite run; use focused syntax/static checks and the PR/Push Test workflows as the executable checkpoint gate.
 
 ## Current repository status
 
-Status captured on 2026-08-27 while preparing the Phase 4B sortable planet-table checkpoint. Phase 4A head `a217a509` has green PR Test, Push Test, and Pages runs. Phase 4B must receive the same three green remote results before Phase 4C begins.
+Status captured on 2026-08-27 while preparing Phase 4C. Phase 4B head `2b2040ad` is fully green: PR Test, Push Test, browser interaction tests, coverage, and Pages all succeeded. Phase 4C corrects only the architecture detector and must receive the same green remote results before Phase 4D begins.
 
 | Item | Current state |
 |---|---|
 | Repository | `kevvy555/MineIT` |
 | Working branch | `CleanUp` |
 | Pull request | Draft PR #39, `CleanUp` into `develop` |
-| Last green implementation checkpoint | `a217a509` — Phase 4A, externalize active ship cargo/fuel rows |
-| Current implementation checkpoint | Phase 4B — externalize sortable planet table; commit containing this handoff |
+| Last green implementation checkpoint | `2b2040ad` — Phase 4B, extract sortable planet table view |
+| Current implementation checkpoint | Phase 4C — correct large-template detector false positive; commit containing this handoff |
 | Package version | `5.11.3` |
 | Active phase | Phase 4 — HTML views |
-| Local regression suite | Phase 4A green. Phase 4B is being committed from a connector-only environment; touched JavaScript receives syntax checks and GitHub PR/Push Test are the executable gate. |
-| Remote checks | Phase 4A green: PR Test, Push Test, and Pages. Verify all three on the Phase 4B commit before 4C. |
+| Local/full regression suite | Phase 4B green in CI. Phase 4C is connector-authored; focused scanner fixtures/syntax were executed separately, with full repo verification delegated to PR/Push Test. |
+| Remote checks | Phase 4B PR Test, Push Test, browser tests, coverage, and Pages all green. Verify all three Phase 4C workflow runs before 4D. |
 | Domain/core coverage gate | 80% minimum function coverage in CI |
 | Merge readiness | Not ready; Phases 4–7 still have work |
 
 ### Branch relationship with `develop`
 
-Immediately before the Phase 4B commit, `CleanUp` is 321 commits ahead of and 2 commits behind `develop`. The two later `develop` commits are `15abe0d` (`Added levels`) and merge commit `01d56b2`. The effective content missing from `CleanUp` remains limited to ten level images:
+Immediately before the Phase 4C commit, `CleanUp` is 322 commits ahead of and 2 commits behind `develop`. The two later `develop` commits are `15abe0d` (`Added levels`) and merge commit `01d56b2`. The effective content missing from `CleanUp` remains limited to ten level images:
 
 - `assets/art/levels/L1.png` through `assets/art/levels/L10.png`
 
@@ -59,7 +54,7 @@ These files were already modified outside the cleanup checkpoint and must not be
 - `assets/art/development/algae-facility/originals/algae-facility-l4.png`
 - `assets/art/resources/food-resources/Originals/synthetic-nutrient.png`
 
-The current GitHub-connector checkpoint writes only explicit repository paths and does not touch those local worktree files. Recheck this list at the start of every checkpoint because the user may add more worktree changes.
+GitHub-connector checkpoints write only explicit repository paths and do not touch those local worktree files. Recheck this list at the start of every checkpoint because the user may add more worktree changes.
 
 ## Non-negotiable order
 
@@ -101,16 +96,16 @@ Some later-phase mechanical cleanup was safely completed early, but the active p
 | 1 — Canonical modules | Complete | No versioned production JavaScript remains. |
 | 2 — Startup/import cleanup | Complete | No import map or internal version-query imports remain. |
 | 3 — State and events | Complete | `GameStore`, direct callbacks/event boundaries, disposal ownership, and zero application globals/document events are enforced. |
-| 4 — HTML views | In progress | Phase 4A is green. Phase 4B externalizes the final measured `ship-preparation-ui.js` table debt into the 24th view; remote verification is required before 4C. |
+| 4 — HTML views | In progress | Phase 4B is fully green with 24 external views and 30 detector findings. Phase 4C removes the known detector false positive; remote verification is required before starting 4D. |
 | 5 — Feature controllers | Pending formal pass | Several semantic UI modules already exist, but the inherited/mixin controller chain still needs ownership-driven decomposition. |
 | 6 — CSS cleanup | Partially complete early | Versioned production CSS is already zero. Final ownership and duplicate-rule audit follows Phase 5. |
 | 7 — Final validation | Pending | Supported mobile matrix, full campaign flow, compatibility, lifecycle, long soak, and controlled `develop` reconciliation remain. |
 
 ## Current architecture measurements
 
-Phase 4A verified measurements are the last fully green figures. Phase 4B is expected to change only the two rows marked below; the architecture workflow must confirm them before 4C.
+Phase 4B is the last fully green measurement. Phase 4C changes only detector accuracy and its ceiling; production files and external-view count do not change.
 
-| Guard / metric | Phase 4A verified | Phase 4B expected |
+| Guard / metric | Phase 4B verified | Phase 4C expected |
 |---|---:|---:|
 | Versioned production JavaScript files | 0 | 0 |
 | Versioned production CSS files | 0 | 0 |
@@ -118,24 +113,23 @@ Phase 4A verified measurements are the last fully green figures. Phase 4B is exp
 | Import maps | 0 | 0 |
 | Application global assignments | 0 | 0 |
 | Application `document` events | 0 | 0 |
-| External files in `/views` | 23 | 24 |
-| Large HTML-template findings | 31 | 30 |
+| External files in `/views` | 24 | 24 |
+| Large HTML-template findings | 30 | 29 |
 
-After Phase 4B, the expected real per-file findings are:
+Expected real per-file findings after Phase 4C:
 
 | File | Findings | Notes |
 |---|---:|---|
-| `js/ui/v55-ui.js` | 10 | Colony/help and general controller presentation debt |
+| `js/ui/v55-ui.js` | 10 | Colony/help and general controller presentation debt; first Phase 4D target |
 | `js/ui/technology-presentation-ui.js` | 5 | Technology presentation panels |
 | `js/ui/colony-tech-ui.js` | 4 | Colony technology panels |
 | `js/ui/land-ui.js` | 4 | Land presentation and repeating rows |
 | `js/ui/resource-development-ui.js` | 2 | Resource development presentation |
 | `js/ui/resource-ui.js` | 2 | Resource summary presentation |
-| `js/domain/expansion-service.js` | 1 | Known false positive: crude matching spans unrelated template literals beginning near a probe ID; domain code is not rendering HTML |
 | `js/ui/industry-ui.js` | 1 | Industry presentation |
 | `js/ui/ui-enhancements.js` | 1 | Enhanced technology toolbar |
 
-`js/ui/ship-preparation-ui.js` should be absent from the debt list after this checkpoint. Do not weaken the ceiling to make it pass. Correct the known detector false positive separately in 4C.
+`js/domain/expansion-service.js` must be absent from the debt list after Phase 4C. Production domain code is not changed to achieve this; only the detector is corrected.
 
 ## Completed phase evidence
 
@@ -170,7 +164,7 @@ After Phase 4B, the expected real per-file findings are:
 
 ### Phase 4 — HTML views completed so far
 
-The Phase 4B checkpoint raises the external view inventory from 23 to 24 files. Recent extraction work includes:
+The external view inventory is 24 files. Recent extraction work includes:
 
 - demolition presentation view and debt checkpoint;
 - corporation star-map screen view;
@@ -186,6 +180,7 @@ Recent green checkpoint sequence, newest verified first:
 
 | Commit | Checkpoint |
 |---|---|
+| `2b2040ad` | Extract sortable planet table view |
 | `a217a509` | Extract active ship cargo/fuel row views and delegate preparation actions |
 | `d211dd0` | Extract player ship passenger view |
 | `4583fe0` | Remove shadowed expansion presentation paths |
@@ -198,61 +193,60 @@ Recent green checkpoint sequence, newest verified first:
 | `daf6ffc` | Extract corporation star map screen view |
 | `02ae27c` | Lock demolition view debt checkpoint |
 
-Phase 4A evidence: focused architecture, How to Play, map-first, and ShipExpansion tests passed; `npm --offline test` passed; the large-template ceiling dropped from 32 to 31; PR Test, Push Test, and Pages are green on `a217a509`.
+Phase 4B evidence: the architecture ceiling dropped from 31 to 30; `ship-preparation-ui.js` no longer contributes measured large-template debt; PR Test and Push Test both passed unit/regression/domain coverage and browser startup/presentation interaction steps; Pages succeeded on `2b2040ad`.
 
 ## Exact Phase 4 execution queue
 
 ### 4A — complete and green: active ship cargo/fuel rows
 
-Completed implementation:
-
-1. `views/player-ship-prep.html` owns the fuel section, stable fuel/cargo hosts, reusable load-row fragment, reusable empty-state fragment, buttons, labels, and progress-bar structure.
-2. `ship-preparation-ui.js` obtains cargo/fuel data from existing state and `ExpansionService`, clones external fragments, assigns values with DOM APIs, builds a `DocumentFragment`, and calls `replaceChildren` once per list.
-3. One delegated click handler on the stable modal owns category, paging, cargo, fuel, passenger, back, and launch actions. `open()` and `dispose()` explicitly remove the handler.
+1. `views/player-ship-prep.html` owns fuel/cargo stable hosts, row fragments, empty states, actions, labels, and progress-bar structure.
+2. `ship-preparation-ui.js` clones external fragments and renders each list through a `DocumentFragment` plus one `replaceChildren` call.
+3. One delegated click handler owns preparation actions and has explicit release paths.
 4. Existing `ExpansionService` mutation methods remain the only cargo, fuel, passenger, and launch write paths.
-5. Route/passenger templates still load in parallel and `shipPrepRevision` rejects stale asynchronous renders.
-6. Ownership/regression tests require external hosts/fragments, DOM population, delegated listener ownership, and absence of embedded cargo/fuel row markup.
-7. Local focused/full tests and all remote checks are green.
-8. The measured ceiling fell from 32 to 31. The remaining `ship-preparation-ui.js` finding was the sortable planet table assigned to 4B.
+5. Async route/passenger rendering retains `shipPrepRevision` stale-render protection.
+6. Focused/full tests and all remote checks are green; measured debt fell from 32 to 31.
 
-### 4B — implementation complete; remote verification required: sortable planet table
+### 4B — complete and green: sortable planet table
+
+1. `views/planet-table.html` owns `.exp-planet-table-wrap`, table/header/body shell, and reusable sort-header, row, colony-name, dock-action, and found-action fragments.
+2. Presentation sorting helpers preserve exact `▲`, `▼`, and `↕` indicators.
+3. Headers/rows/actions are populated with safe DOM APIs, `DocumentFragment`, and `replaceChildren`; no `innerHTML` row loop exists.
+4. Existing technology checks, passenger state, colony occupancy, and living-colony data remain inputs from existing services/state.
+5. Exact labels `COLONY EXISTS`, `NO COLONISTS`, `TECH LOCKED`, and `FOUND COLONY` are preserved.
+6. Dock/found actions retain the canonical star-map detail path; sort clicks use one explicitly released delegated listener.
+7. `starMapRevision` protects the new async external-table fetch boundary.
+8. Existing `.exp-planet-table-wrap` CSS retains horizontal mobile scrolling.
+9. `tests/planet-table-view.test.js` locks ownership, sort indicators, docking/founding gates, DOM-fragment rendering, listener disposal, stale renders, and mobile host structure.
+10. Architecture debt fell from 31 to 30 and all PR Test, Push Test, browser, coverage, and Pages checks are green on `2b2040ad`.
+
+### 4C — implementation complete; remote verification required: correct template detector false positive
 
 Checkpoint implementation:
 
-1. `views/planet-table.html` owns `.exp-planet-table-wrap`, the table/header/body shell, and reusable sort-header, row, colony-name, dock-action, and found-action fragments.
-2. `planetSortValue()` and `sortedPlanets()` remain presentation-only sorting helpers. `planetSortIndicator()` preserves `▲`, `▼`, and `↕` exactly.
-3. The controller clones external fragments, assigns safe text/datasets/classes, builds `DocumentFragment`s, and uses one `replaceChildren` call per header/body/action/colony host. No `innerHTML` row loop was introduced.
-4. Existing technology checks, ship passenger state, colony occupancy, and living-colony data remain inputs from the existing services/state. The view preserves `COLONY EXISTS`, `NO COLONISTS`, `TECH LOCKED`, and `FOUND COLONY` exactly.
-5. Dock and found buttons retain the existing canonical action path in `bindStarMapDetailActions()`; only sort clicks use a stable delegated listener.
-6. `planetClickHandler` is explicitly removed by `open()`, `dispose()`, and rebinding so sort rerenders cannot accumulate listeners.
-7. `starSystemDetailMarkup()` now awaits the external planet-table shell, and `starMap()` checks `starMapRevision` after that asynchronous step before loading the screen template. Existing stale-render protection therefore covers the new fetch boundary.
-8. Mobile horizontal scrolling remains owned by `.exp-planet-table-wrap` and existing `ship-expansion.css`; no layout CSS changes are required.
-9. `tests/planet-table-view.test.js` locks external fragment ownership, sorting/indicator markers, living-colony docking, founding labels/gates, DOM-fragment rendering, delegated listener disposal, stale-render guards, and the mobile table host class.
-10. The architecture ceiling is lowered from 31 to 30. CI must verify that `ship-preparation-ui.js` disappears from the per-file debt list.
-11. Touched JavaScript was syntax-checked before commit. This checkpoint is being created through the GitHub connector without a local checkout, so the PR/Push Test workflows are the executable full-suite gate rather than a falsely claimed local run.
-12. Do not begin 4C until PR Test, Push Test, and Pages for this checkpoint are all green.
+1. Added `tests/template-literal-scanner.js`, a small lexical scanner that walks real JavaScript template literals instead of using the previous backtick-to-backtick regex.
+2. The scanner respects escaped characters, nested `${...}` expressions, nested template literals, quoted strings, and line/block comments while locating template boundaries.
+3. Added `tests/template-detector.test.js` with four focused regression fixtures:
+   - two unrelated short templates separated by more than 500 characters and apparent HTML do not become one false match;
+   - a genuine large HTML-bearing template is still detected;
+   - nested interpolation templates remain parseable;
+   - an escaped backtick does not terminate a template early.
+4. `tests/architecture-baseline.test.js` now consumes the scanner, explicitly asserts that `js/domain/expansion-service.js` is absent from HTML view debt, and lowers the ceiling from 30 to 29.
+5. Production code is untouched. The change corrects the measurement rather than modifying domain code to satisfy a detector.
+6. `package.json` runs the detector regression fixture before the architecture baseline.
+7. The focused scanner fixture and syntax check passed in an isolated local execution before commit. Full repository behaviour, coverage, and browser verification remain the PR/Push Test gate for this connector-authored checkpoint.
+8. Do not begin Phase 4D until PR Test, Push Test, and Pages for the Phase 4C commit are all green.
 
-### 4C — next after 4B is green: correct the template detector false positive
+### 4D — next after 4C is green: remaining view extraction
 
-Refine the large-template architecture detector so it counts actual HTML-bearing UI templates without matching unrelated domain template literals across statement boundaries. Keep or strengthen all real UI detections. Add a regression fixture proving:
+Continue one bounded controller/view family per green checkpoint in this order:
 
-- the `expansion-service.js` false positive is excluded;
-- known UI template debt is still detected;
-- the architecture ceiling cannot increase silently.
-
-Expected result if only the known false positive is removed: total measured findings drop from 30 to 29 without changing production domain code.
-
-### 4D — remaining view extraction order
-
-Continue one bounded controller/view family per green checkpoint:
-
-1. `v55-ui.js` colony/help presentation.
+1. `v55-ui.js` colony/help and general presentation debt.
 2. Technology panels in `technology-presentation-ui.js` and `colony-tech-ui.js`.
 3. `land-ui.js` presentation and repeating rows.
 4. `resource-development-ui.js` and `resource-ui.js`.
 5. `industry-ui.js` and the enhanced technology toolbar in `ui-enhancements.js`.
 
-For every item, externalize static markup, use cloned fragments for repeated rows, preserve revision/lifecycle guards, add ownership and behaviour tests, lower the measured ceiling only after verification, and update this plan in the same green commit.
+For every item, externalize static markup, use cloned fragments for repeated rows, preserve revision/lifecycle guards, add ownership and behaviour tests, lower the measured ceiling only after verification, and update this plan in the same commit.
 
 Phase 4 exit condition: static application views are externally owned, remaining controller strings are small/dynamic and explicitly justified, all real large-template findings are removed, lifecycle behaviour is stable, and the full suite/CI are green.
 
