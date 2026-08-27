@@ -8,7 +8,7 @@ export const RESOURCE_VIEW_PATHS={
   overdrive:"./views/resource-overdrive-card.html",
   company:"./views/corporation-summary.html"
 };
-await preloadViewTemplates(Object.values(RESOURCE_VIEW_PATHS));
+preloadViewTemplates(Object.values(RESOURCE_VIEW_PATHS));
 
 export class ResourceUIMixin {
   setResourceText(root,selector,value){const node=root?.querySelector(selector);if(node)node.textContent=String(value??"");return node;}

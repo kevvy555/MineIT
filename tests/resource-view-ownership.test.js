@@ -10,6 +10,7 @@ for(const marker of["data-resource-site-grid","data-mining-requirement","data-de
 for(const marker of["data-overdrive-card","data-overdrive-shutdown","data-site-mode-template","data-overdrive-effect"])assert.ok(overdrive.includes(marker),`missing overdrive marker: ${marker}`);
 for(const marker of["data-corporation-summary","data-company-cash","data-company-operating-cost","data-colonies"])assert.ok(company.includes(marker),`missing corporation-summary marker: ${marker}`);
 for(const marker of["preloadViewTemplates(Object.values(RESOURCE_VIEW_PATHS))","getLoadedViewTemplate","createContextualFragment","replaceChildren","cloneNode(true)"])assert.ok(ui.includes(marker),`missing synchronous external resource-view ownership marker: ${marker}`);
+assert.doesNotMatch(ui,/await\s+preloadViewTemplates\(/,"resource view preload must not delay module evaluation or DOMContentLoaded registration");
 assert.match(viewTemplate,/getLoadedViewTemplate/);assert.match(viewTemplate,/Promise\.allSettled/);assert.match(viewTemplate,/templateCache\.delete/);
 assert.equal(largeHtmlTemplates(ui).length,0,"resource-ui must not retain large embedded HTML templates");
 assert.doesNotMatch(ui,/\n\s{2}currentCollection\(\)/,"shadowed base collection renderer must stay removed");assert.match(activeCollection,/\n\s{2}currentCollection\(\)/,"active V55 collection owner must remain available");
