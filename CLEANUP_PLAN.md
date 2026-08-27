@@ -28,24 +28,24 @@ If a checkpoint is not green, record the failure and do not advance the phase ma
 
 ## Current repository status
 
-Status captured on 2026-08-27 after the `d211dd0` implementation checkpoint.
+Status captured on 2026-08-27 after completing Phase 4A locally. The checkpoint commit containing this handoff must have green PR Test, Push Test, and Pages runs before Phase 4B begins.
 
 | Item | Current state |
 |---|---|
 | Repository | `kevvy555/MineIT` |
 | Working branch | `CleanUp` |
 | Pull request | Draft PR #39, `CleanUp` into `develop` |
-| Last completed implementation checkpoint | `d211dd0` — Extract player ship passenger view |
+| Last completed implementation checkpoint | Phase 4A — externalize active ship cargo/fuel rows; commit containing this handoff |
 | Package version | `5.11.3` |
 | Active phase | Phase 4 — HTML views |
 | Local regression suite | Green: `npm --offline test` |
-| Remote checks at implementation checkpoint | Green: PR Test, Push Test, and Pages |
+| Remote checks | Previous head `9fbc277` green; verify all three runs on the Phase 4A commit before starting 4B |
 | Domain/core coverage gate | 80% minimum function coverage in CI |
 | Merge readiness | Not ready; Phases 4–7 still have work |
 
 ### Branch relationship with `develop`
 
-At implementation checkpoint `d211dd0`, `CleanUp` is 319 commits ahead of and 2 commits behind `origin/develop`. The two later `develop` commits are `15abe0d` (`Added levels`) and merge commit `01d56b2`. The effective content missing from `CleanUp` is limited to ten level images:
+Before the Phase 4A commit, `CleanUp` is 320 commits ahead of and 2 commits behind `origin/develop`. The two later `develop` commits are `15abe0d` (`Added levels`) and merge commit `01d56b2`. The effective content missing from `CleanUp` is limited to ten level images:
 
 - `assets/art/levels/L1.png` through `assets/art/levels/L10.png`
 
@@ -100,14 +100,14 @@ Some later-phase mechanical cleanup was safely completed early, but the active p
 | 1 — Canonical modules | Complete | No versioned production JavaScript remains. |
 | 2 — Startup/import cleanup | Complete | No import map or internal version-query imports remain. |
 | 3 — State and events | Complete | `GameStore`, direct callbacks/event boundaries, disposal ownership, and zero application globals/document events are enforced. |
-| 4 — HTML views | In progress | 23 external view files exist; measured large-template debt is 32 findings, including one known detector false positive. |
+| 4 — HTML views | In progress | 23 external view files exist; measured large-template debt is 31 findings, including one known detector false positive. Phase 4A is complete; 4B is next. |
 | 5 — Feature controllers | Pending formal pass | Several semantic UI modules already exist, but the inherited/mixin controller chain still needs ownership-driven decomposition. |
 | 6 — CSS cleanup | Partially complete early | Versioned production CSS is already zero. Final ownership and duplicate-rule audit follows Phase 5. |
 | 7 — Final validation | Pending | Local tests are green at checkpoints; supported mobile matrix, full campaign flow, compatibility, lifecycle, and long soak sign-off remain. |
 
 ## Current architecture measurements
 
-Measurements captured after `d211dd0` and the passing full test suite.
+Measurements captured after Phase 4A and the passing full test suite.
 
 | Guard / metric | Count |
 |---|---:|
@@ -118,7 +118,7 @@ Measurements captured after `d211dd0` and the passing full test suite.
 | Application global assignments | 0 |
 | Application `document` events | 0 |
 | External files in `/views` | 23 |
-| Large HTML-template findings | 32 |
+| Large HTML-template findings | 31 |
 
 The Phase 4 template detector is intentionally a ceiling guard. Its current per-file findings are:
 
@@ -130,12 +130,12 @@ The Phase 4 template detector is intentionally a ceiling guard. Its current per-
 | `js/ui/land-ui.js` | 4 | Land presentation and repeating rows |
 | `js/ui/resource-development-ui.js` | 2 | Resource development presentation |
 | `js/ui/resource-ui.js` | 2 | Resource summary presentation |
-| `js/ui/ship-preparation-ui.js` | 2 | Active ship cargo/fuel rows; next extraction target |
+| `js/ui/ship-preparation-ui.js` | 1 | Remaining sortable planet table; Phase 4B target |
 | `js/domain/expansion-service.js` | 1 | Known false positive: crude matching spans unrelated template literals beginning near a probe ID; domain code is not rendering HTML |
 | `js/ui/industry-ui.js` | 1 | Industry presentation |
 | `js/ui/ui-enhancements.js` | 1 | Enhanced technology toolbar |
 
-Do not weaken the ceiling to make it pass. Correct the false-positive detector separately after the next two real view extractions.
+Do not weaken the ceiling to make it pass. Correct the false-positive detector separately in 4C, after the 4B planet-table extraction.
 
 ## Completed phase evidence
 
@@ -178,12 +178,14 @@ The external view inventory currently contains 23 files. Recent extraction work 
 - canonical active-planet table checkpoint and removal of shadowed/overridden navigation rendering;
 - player ship route view;
 - removal of shadowed expansion presentation paths;
-- player ship passenger view.
+- player ship passenger view;
+- active ship cargo/fuel rows, empty states, and action structure in `views/player-ship-prep.html`.
 
 Recent green checkpoint sequence, newest first:
 
 | Commit | Checkpoint |
 |---|---|
+| This plan's commit | Extract active ship cargo/fuel row views and delegate preparation actions |
 | `d211dd0` | Extract player ship passenger view |
 | `4583fe0` | Remove shadowed expansion presentation paths |
 | `167c7aa` | Extract player ship route view |
@@ -195,41 +197,41 @@ Recent green checkpoint sequence, newest first:
 | `daf6ffc` | Extract corporation star map screen view |
 | `02ae27c` | Lock demolition view debt checkpoint |
 
-At `d211dd0`, the full offline suite and the GitHub PR Test, Push Test, and Pages workflows passed.
+Phase 4A local evidence: the focused architecture, How to Play, map-first, and ShipExpansion tests passed; `npm --offline test` passed; the large-template ceiling dropped from 32 to 31. Verify the PR Test, Push Test, and Pages workflows on the checkpoint commit before beginning 4B.
 
 ## Exact Phase 4 execution queue
 
-### 4A — next: active ship cargo/fuel rows
+### 4A — complete: active ship cargo/fuel rows
 
-Target: the two real template-debt findings in `js/ui/ship-preparation-ui.js`.
+Completed implementation:
+
+1. `views/player-ship-prep.html` now owns the fuel section, stable fuel/cargo hosts, reusable load-row fragment, reusable empty-state fragment, buttons, labels, and progress-bar structure.
+2. `ship-preparation-ui.js` obtains cargo/fuel data from the existing state and `ExpansionService`, clones the external fragments, assigns values with DOM APIs, builds a `DocumentFragment`, and calls `replaceChildren` once per list.
+3. One delegated click handler on the stable modal owns category, paging, cargo, fuel, passenger, back, and launch actions. `open()` and `dispose()` explicitly remove the handler, so rerenders cannot accumulate listeners.
+4. Existing `ExpansionService` mutation methods remain the only cargo, fuel, passenger, and launch write paths.
+5. Route/passenger templates still load in parallel and `shipPrepRevision` still rejects stale asynchronous renders.
+6. Ownership/regression tests require the external hosts/fragments, DOM population path, delegated listener ownership, and absence of embedded cargo/fuel row markup.
+7. Focused tests and the full offline suite pass.
+8. The measured ceiling fell by one, from 32 to 31. The old estimate of two was incorrect: the other `ship-preparation-ui.js` finding is the sortable planet table assigned to 4B.
+
+### 4B — next: sortable planet table extraction
+
+Target: the final measured template finding in `js/ui/ship-preparation-ui.js`, currently owned by `planetSortHeader()` and `planetTable()`.
 
 Implementation contract:
 
-1. Inspect the current ship-preparation controller, `views/player-ship-prep.html`, ownership tests, and `shipPrepRevision` guards before editing.
-2. Keep `ExpansionService` and existing selectors as the source of truth for ship, cargo, fuel, capacity, and validation rules.
-3. Add stable cargo/fuel hosts and reusable row/empty-state fragments to `views/player-ship-prep.html`.
-4. Clone templates or build a `DocumentFragment`, populate safe fields with DOM APIs, and call `replaceChildren` once per host. Do not introduce an `innerHTML` row loop.
-5. Use event delegation from a stable owner or explicitly dispose any direct row listeners.
-6. Preserve route and passenger parallel loading, empty states, disabled reasons, capacity displays, and stale-render protection through `shipPrepRevision`.
-7. Add or update ownership and behaviour tests for the external fragments, populated rows, empty states, actions, and stale-render behaviour.
-8. Run targeted ship-preparation/view tests, then `npm --offline test`.
-9. Re-measure architecture debt. Expected real debt reduction: 2 findings.
-10. Update this plan in the same commit, push, and verify the PR checks.
-
-Checkpoint exit: behaviour is unchanged, ship cargo/fuel presentation is externally owned, the full suite is green, the debt ceiling is lowered by the verified amount, and this section points to 4B.
-
-### 4B — sortable planet table extraction
-
-After 4A, extract the remaining active sortable planet table presentation into external templates/fragments. Preserve:
-
-- current sorting rules and visual sort indicators;
-- technology and dock/found action availability;
-- exact disabled reasons;
-- `starMapRevision` stale-render protection;
-- mobile table scrolling and layout;
-- the already-established canonical active-table ownership path.
-
-Add behaviour tests for sorting, indicators, action states/reasons, stale renders, and the mobile host structure. Re-measure debt, run the full suite, update this plan, push, and verify CI.
+1. Inspect `ship-navigation-ui.js` system-detail rendering and `bindStarMapDetailActions()` before editing so there remains one canonical table path.
+2. Add an external planet-table shell with stable header/body hosts plus reusable sort-header, row, colony-name, dock-action, and found-action fragments. Reuse an existing view only if ownership remains unambiguous.
+3. Keep `planetSortValue()` and `sortedPlanets()` as presentation sorting helpers; do not move technology, colonist, colony-occupancy, or founding rules out of their domain services.
+4. Populate headers and rows with cloned fragments, `textContent`, attributes, and classes. Build each section in a `DocumentFragment` and use one `replaceChildren` per host; do not use an `innerHTML` row loop.
+5. Preserve ascending/descending state and the exact `▲`, `▼`, and `↕` indicators.
+6. Preserve living-colony dock actions, occupied-planet handling, passenger/technology founding gates, and the exact labels `COLONY EXISTS`, `NO COLONISTS`, `TECH LOCKED`, and `FOUND COLONY`.
+7. Retain `starMapRevision` stale-render protection and the current full-screen/mobile `.exp-planet-table-wrap` scrolling structure.
+8. Use one delegated detail-action listener or an explicitly released owner; ensure sort rerenders do not accumulate listeners.
+9. Update ownership and behaviour tests for sorting, indicators, dock/found actions, disabled reasons, external fragments, stale renders, and mobile host classes.
+10. Run focused architecture/map/ShipExpansion tests, then `npm --offline test`.
+11. Re-measure debt. Expected verified result: total findings 30 and `ship-preparation-ui.js` absent from the per-file debt list.
+12. Update this plan in the same commit, push, and verify all GitHub checks before beginning 4C.
 
 ### 4C — correct the template detector false positive
 

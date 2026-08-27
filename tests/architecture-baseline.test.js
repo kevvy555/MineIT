@@ -44,6 +44,6 @@ assert.equal(debt.importMap,false,"Runtime import-map redirects must not return"
 assert.equal(debt.queryImports,0,"Version-query imports must not return");
 assert.equal(debt.globalAssignments,0,`Global application assignments must not return: ${globalAssignments.join(", ")}`);
 assert.equal(debt.documentAppEvents,0,"Document-level application events must not return");
-assert.ok(debt.largeHtmlTemplates<=32,"Large embedded HTML template debt must not grow beyond the verified player-ship passenger view checkpoint");
+assert.ok(debt.largeHtmlTemplates<=31,"Large embedded HTML template debt must not grow beyond the verified ship cargo/fuel row checkpoint");
 
 console.log("CleanUp architecture baseline guard passed");

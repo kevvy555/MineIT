@@ -10,7 +10,17 @@ const pct=(value,max)=>max>0?Math.max(0,Math.min(100,(Number(value)||0)/max*100)
 
 /** Sortable planetary survey data and dense, load-focused player-ship preparation. */
 export class UIController extends ShipNavigationUIController{
-  constructor(opts){super(opts);this.planetSort={key:"name",dir:1};this.shipPrepRevision=0;}
+  constructor(opts){super(opts);this.planetSort={key:"name",dir:1};this.shipPrepRevision=0;this.prepClickHandler=null;}
+
+  open(title,body){this.releasePrepActions();super.open(title,body);}
+
+  dispose(){this.releasePrepActions();super.dispose?.();}
+
+  releasePrepActions(){
+    if(!this.prepClickHandler)return;
+    this.modal?.removeEventListener("click",this.prepClickHandler);
+    this.prepClickHandler=null;
+  }
 
   planetSortValue(planet,key,system){
     if(key==="name")return planet.name||"";
@@ -65,14 +75,97 @@ export class UIController extends ShipNavigationUIController{
     return `<section class="exp-load-overview"><div class="exp-section-head"><h3>SHIP LOAD</h3><span>Transit reserves are shown separately from usable cargo.</span></div>${this.loadBar("TOTAL CAPACITY",used,PLAYER_SHIP_CAPACITY,`${formatNumber(Math.max(0,PLAYER_SHIP_CAPACITY-used))} free`)}${this.loadBar("SHIP FUEL TANK",shipFuel,PLAYER_SHIP_CAPACITY,"All fuel physically in the dedicated tank")}${profile?this.loadBar("TRANSIT FUEL",transitFuel,transitFuelNeed,transitFuel>=transitFuelNeed?"Journey fuel covered":"More tank fuel required",transitFuel>=transitFuelNeed?"ready":"blocked"):this.loadBar("TRANSIT FUEL",0,0,"Select a destination to calculate requirement")}${profile?this.loadBar("TRANSIT FOOD",transitFood,transitFoodNeed,transitFood>=transitFoodNeed?"Journey food covered":"More food cargo required",transitFood>=transitFoodNeed?"ready":"blocked"):this.loadBar("TRANSIT FOOD",0,0,"Select a destination to calculate requirement")}${this.loadBar("CARGO FOOD",cargoFood,PLAYER_SHIP_CAPACITY,"Food remaining after the transit reserve")}</section>`;
   }
 
-  cargoRows(){
-    const rows=this.cargoEntries().slice(this.expeditionPage*4,(this.expeditionPage+1)*4);if(!rows.length)return`<div class="exp-empty">No ${this.expeditionCategory.toUpperCase()} stock at this colony or aboard.</div>`;
-    return `<div class="exp-load-list">${rows.map(row=>{const e=row.colony||row.aboard,colony=Math.max(0,Number(row.colony?.amount)||0),aboard=Math.max(0,Number(row.aboard?.amount)||0),available=colony+aboard;return`<div class="exp-load-row compact"><span><strong>${esc(e.name)}</strong><small>${formatNumber(colony)} colony • ${formatNumber(aboard)} aboard</small><div class="exp-resource-load"><i style="width:${pct(aboard,available)}%"></i></div></span><div><button data-load-cargo="${row.key}" data-qty="100">+100</button><button data-load-cargo="${row.key}" data-qty="1000">+1K</button><button data-load-cargo="${row.key}" data-qty="max">MAX</button><button data-unload-cargo="${row.key}" ${aboard<=0?"disabled":""}>UNLOAD</button></div></div>`;}).join("")}</div>`;
+  visibleCargoEntries(){
+    const start=this.expeditionPage*4;
+    return this.cargoEntries().slice(start,start+4);
   }
 
-  fuelLoader(){
-    const ship=this.expansion.ship(this.state),keys=new Set([...Object.keys(this.state.inventory||{}).filter(k=>this.state.inventory[k]?.type==="fuel"),...Object.keys(ship.fuelLots||{})]),rows=[...keys].map(key=>({key,colony:this.state.inventory?.[key],tank:ship.fuelLots?.[key]})).filter(row=>(Number(row.colony?.amount)||0)>0||(Number(row.tank?.amount)||0)>0).sort((a,b)=>String(a.colony?.name||a.tank?.name).localeCompare(String(b.colony?.name||b.tank?.name)));
-    return `<section class="exp-section compact-section"><div class="exp-section-head"><h3>SHIP FUEL TANK</h3><span>Dedicated tank • counts against ship capacity</span></div><div class="exp-load-list">${rows.length?rows.map(row=>{const e=row.colony||row.tank,c=Math.max(0,Number(row.colony?.amount)||0),t=Math.max(0,Number(row.tank?.amount)||0),available=c+t;return`<div class="exp-load-row compact"><span><strong>${esc(e.name)}</strong><small>${formatNumber(c)} colony • ${formatNumber(t)} tank</small><div class="exp-resource-load"><i style="width:${pct(t,available)}%"></i></div></span><div><button data-load-fuel="${row.key}" data-qty="100">+100</button><button data-load-fuel="${row.key}" data-qty="1000">+1K</button><button data-unload-fuel="${row.key}" ${t<=0?"disabled":""}>UNLOAD</button></div></div>`;}).join(""):`<div class="exp-empty">No Fuel stock at this colony or in the ship tank.</div>`}</div></section>`;
+  fuelEntries(){
+    const ship=this.expansion.ship(this.state),inventory=this.state.inventory||{};
+    const keys=new Set([...Object.keys(inventory).filter(key=>inventory[key]?.type==="fuel"),...Object.keys(ship.fuelLots||{})]);
+    return [...keys].map(key=>({key,colony:inventory[key],tank:ship.fuelLots?.[key]}))
+      .filter(row=>(Number(row.colony?.amount)||0)>0||(Number(row.tank?.amount)||0)>0)
+      .sort((a,b)=>String(a.colony?.name||a.tank?.name).localeCompare(String(b.colony?.name||b.tank?.name)));
+  }
+
+  createLoadRow({key,name,stored,loaded,loadedLabel,kind,allowMax}){
+    const template=this.modal.querySelector("[data-ship-load-row-template]");
+    const row=template.content.firstElementChild.cloneNode(true),loadKey=kind==="fuel"?"loadFuel":"loadCargo",unloadKey=kind==="fuel"?"unloadFuel":"unloadCargo";
+    row.querySelector("[data-ship-load-name]").textContent=name;
+    row.querySelector("[data-ship-load-detail]").textContent=`${formatNumber(stored)} colony • ${formatNumber(loaded)} ${loadedLabel}`;
+    row.querySelector("[data-ship-load-progress]").style.width=`${pct(loaded,stored+loaded)}%`;
+    row.querySelectorAll("[data-ship-load-quantity]").forEach(button=>{if(button.dataset.shipLoadQuantity==="max"&&!allowMax){button.remove();return;}button.dataset[loadKey]=key;});
+    const unload=row.querySelector("[data-ship-unload]");unload.dataset[unloadKey]=key;unload.disabled=loaded<=0;
+    return row;
+  }
+
+  createEmptyRow(message){
+    const template=this.modal.querySelector("[data-ship-empty-template]");
+    const row=template.content.firstElementChild.cloneNode(true);
+    row.querySelector("[data-ship-empty-message]").textContent=message;
+    return row;
+  }
+
+  renderLoadRows(host,rows,createRow,emptyMessage){
+    if(!host)return;
+    const fragment=document.createDocumentFragment();
+    if(rows.length)for(const row of rows)fragment.append(createRow(row));
+    else fragment.append(this.createEmptyRow(emptyMessage));
+    host.replaceChildren(fragment);
+  }
+
+  renderCargoRows(){
+    const rows=this.visibleCargoEntries(),host=this.modal.querySelector("[data-ship-cargo-rows]");
+    this.renderLoadRows(host,rows,row=>{const entry=row.colony||row.aboard,stored=Math.max(0,Number(row.colony?.amount)||0),loaded=Math.max(0,Number(row.aboard?.amount)||0);return this.createLoadRow({key:row.key,name:entry.name,stored,loaded,loadedLabel:"aboard",kind:"cargo",allowMax:true});},`No ${this.expeditionCategory.toUpperCase()} stock at this colony or aboard.`);
+  }
+
+  renderFuelRows(){
+    const rows=this.fuelEntries(),host=this.modal.querySelector("[data-ship-fuel-rows]");
+    this.renderLoadRows(host,rows,row=>{const entry=row.colony||row.tank,stored=Math.max(0,Number(row.colony?.amount)||0),loaded=Math.max(0,Number(row.tank?.amount)||0);return this.createLoadRow({key:row.key,name:entry.name,stored,loaded,loadedLabel:"tank",kind:"fuel",allowMax:false});},"No Fuel stock at this colony or in the ship tank.");
+  }
+
+  renderManifestRows(hasCargo){
+    this.renderFuelRows();
+    if(hasCargo)this.renderCargoRows();
+  }
+
+  manifestQuantity(button,available){return button.dataset.qty==="max"?available:Number(button.dataset.qty);}
+
+  handleManifestAction(button){
+    if("loadCargo" in button.dataset){const entry=this.state.inventory?.[button.dataset.loadCargo];this.afterManifestChange(this.expansion.loadCargo(this.state,button.dataset.loadCargo,this.manifestQuantity(button,entry?.amount||0)));return true;}
+    if("unloadCargo" in button.dataset){this.afterManifestChange(this.expansion.unloadCargo(this.state,button.dataset.unloadCargo));return true;}
+    if("loadFuel" in button.dataset){const entry=this.state.inventory?.[button.dataset.loadFuel];this.afterManifestChange(this.expansion.loadFuel(this.state,button.dataset.loadFuel,this.manifestQuantity(button,entry?.amount||0)));return true;}
+    if("unloadFuel" in button.dataset){this.afterManifestChange(this.expansion.unloadFuel(this.state,button.dataset.unloadFuel));return true;}
+    return false;
+  }
+
+  handlePassengerAction(button){
+    if("loadPax" in button.dataset){const amount=button.dataset.loadPax==="max"?Math.min(this.state.pop,this.expansion.passengerRemaining(this.state)):Number(button.dataset.loadPax);this.afterManifestChange(this.expansion.loadPassengers(this.state,amount));return true;}
+    if(button.hasAttribute("data-unload-pax")){this.afterManifestChange(this.expansion.unloadPassengers(this.state));return true;}
+    return false;
+  }
+
+  launchPreparedShip(){
+    const result=this.expansion.launch(this.state);
+    if(!result.ok){this.toast(result.reason);this.shipPrep();return;}
+    this.onCapturePortfolio?.();this.repo.save(this.state);
+    const ship=this.expansion.ship(this.state),profile=result.profile;
+    this.gameLog?.event?.(this.state,"player-ship-launched",`Player colony ship launched for ${profile.target.name}.`,{targetSystemId:profile.target.id,distanceLy:profile.distanceLy,journeyDays:profile.days,passengers:ship.passengers});
+    this.modal.classList.add("hidden");this.toast(`Ship launched • arrival in ${formatNumber(profile.days)} days.`);
+  }
+
+  handlePrepAction(button){
+    if("expCategory" in button.dataset){this.expeditionCategory=button.dataset.expCategory;this.expeditionPage=0;this.shipPrep();return;}
+    if("expPage" in button.dataset){this.expeditionPage=Math.max(0,this.expeditionPage+Number(button.dataset.expPage));this.shipPrep();return;}
+    if(this.handleManifestAction(button)||this.handlePassengerAction(button))return;
+    if(button.hasAttribute("data-back-map")){this.starMap();return;}
+    if(button.hasAttribute("data-launch-player"))this.launchPreparedShip();
+  }
+
+  bindPrep(){
+    this.releasePrepActions();
+    this.prepClickHandler=event=>{const button=event.target.closest?.("button");if(!button||button.disabled||!this.modal.contains(button))return;this.handlePrepAction(button);};
+    this.modal.addEventListener("click",this.prepClickHandler);
   }
 
   shipRouteDetails(profile,fuel,food){
@@ -92,11 +185,11 @@ export class UIController extends ShipNavigationUIController{
     if(categories.length&&!categories.includes(this.expeditionCategory)){this.expeditionCategory=categories[0];this.expeditionPage=0;}
     const pages=this.cargoPages(),page=Math.min(this.expeditionPage,pages-1);this.expeditionPage=page;
     const tabs=categories.length?`<div class="exp-tabs compact-tabs">${categories.map(c=>`<button data-exp-category="${c}" class="${this.expeditionCategory===c?"active":""}">${c.toUpperCase()}</button>`).join("")}</div>`:`<div class="exp-empty">No cargo resources are currently held by this colony or aboard the ship.</div>`;
-    const cargoContent=categories.length?`${this.cargoRows()}${this.pager("exp",page,pages)}`:"";
+    const cargoPager=categories.length?this.pager("exp",page,pages):"";
     let body;
-    try{const[routeDetails,passengerLoader]=await Promise.all([this.shipRouteDetails(profile,fuel,food),this.passengerLoader()]);body=await renderViewTemplate("./views/player-ship-prep.html",{SHIP_STATUS:this.shipStatusMarkup(),DESTINATION:target?esc(target.name):"NOT SELECTED",ROUTE_DETAILS:routeDetails,MANIFEST_OVERVIEW:this.manifestOverview(profile),FUEL_LOADER:this.fuelLoader(),PASSENGER_LOADER:passengerLoader,CARGO_TABS:tabs,CARGO_CONTENT:cargoContent,LAUNCH_DISABLED:canLaunch.ok?"":"disabled",LAUNCH_LABEL:canLaunch.ok?`LAUNCH • ${formatNumber(profile?.days||0)} DAYS`:esc(canLaunch.reason)});}catch(error){if(revision!==this.shipPrepRevision)return;this.diagnostics?.error?.("ship preparation template failed",error);this.toast("Unable to open player ship preparation.");return;}
+    try{const[routeDetails,passengerLoader]=await Promise.all([this.shipRouteDetails(profile,fuel,food),this.passengerLoader()]);body=await renderViewTemplate("./views/player-ship-prep.html",{SHIP_STATUS:this.shipStatusMarkup(),DESTINATION:target?esc(target.name):"NOT SELECTED",ROUTE_DETAILS:routeDetails,MANIFEST_OVERVIEW:this.manifestOverview(profile),PASSENGER_LOADER:passengerLoader,CARGO_TABS:tabs,CARGO_PAGER:cargoPager,LAUNCH_DISABLED:canLaunch.ok?"":"disabled",LAUNCH_LABEL:canLaunch.ok?`LAUNCH • ${formatNumber(profile?.days||0)} DAYS`:esc(canLaunch.reason)});}catch(error){if(revision!==this.shipPrepRevision)return;this.diagnostics?.error?.("ship preparation template failed",error);this.toast("Unable to open player ship preparation.");return;}
     if(revision!==this.shipPrepRevision)return;
     this.open("Prepare Player Ship",body);
-    this.modal.classList.add("ship-prep-modal","full-screen-panel","compact-ship-prep");this.bindPrep();
+    this.modal.classList.add("ship-prep-modal","full-screen-panel","compact-ship-prep");this.renderManifestRows(categories.length>0);this.bindPrep();
   }
 }

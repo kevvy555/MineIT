@@ -5,15 +5,39 @@
     {{ROUTE_DETAILS}}
   </section>
   {{MANIFEST_OVERVIEW}}
-  {{FUEL_LOADER}}
+  <section class="exp-section compact-section">
+    <div class="exp-section-head"><h3>SHIP FUEL TANK</h3><span>Dedicated tank • counts against ship capacity</span></div>
+    <div class="exp-load-list" data-ship-fuel-rows></div>
+  </section>
   {{PASSENGER_LOADER}}
   <section class="exp-section compact-section">
     <div class="exp-section-head"><h3>EXPEDITION CARGO</h3><span>Only stocked resources are shown.</span></div>
     {{CARGO_TABS}}
-    {{CARGO_CONTENT}}
+    <div class="exp-load-list" data-ship-cargo-rows></div>
+    {{CARGO_PAGER}}
   </section>
   <div class="exp-prep-actions">
     <button data-back-map>STAR MAP</button>
     <button class="action" data-launch-player {{LAUNCH_DISABLED}}>{{LAUNCH_LABEL}}</button>
   </div>
 </div>
+
+<template data-ship-load-row-template>
+  <div class="exp-load-row compact">
+    <span>
+      <strong data-ship-load-name></strong>
+      <small data-ship-load-detail></small>
+      <div class="exp-resource-load"><i data-ship-load-progress></i></div>
+    </span>
+    <div>
+      <button data-ship-load-quantity="100" data-qty="100">+100</button>
+      <button data-ship-load-quantity="1000" data-qty="1000">+1K</button>
+      <button data-ship-load-quantity="max" data-qty="max">MAX</button>
+      <button data-ship-unload>UNLOAD</button>
+    </div>
+  </div>
+</template>
+
+<template data-ship-empty-template>
+  <div class="exp-empty" data-ship-empty-message></div>
+</template>
