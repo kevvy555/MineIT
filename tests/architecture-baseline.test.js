@@ -11,6 +11,22 @@ const jsFiles=walk(path.join(root,"js")).filter(f=>f.endsWith(".js"));
 const cssFiles=walk(path.join(root,"css")).filter(f=>f.endsWith(".css"));
 const source=new Map(jsFiles.map(file=>[rel(file),fs.readFileSync(file,"utf8")]));
 const index=fs.readFileSync(path.join(root,"index.html"),"utf8");
+const verifiedHtmlDebt={
+  "js/ui/v55-ui.js":11,
+  "js/ui/technology-presentation-ui.js":9,
+  "js/ui/land-ui.js":6,
+  "js/ui/colony-tech-ui.js":5,
+  "js/ui/resource-ui.js":4,
+  "js/ui/ui-enhancements.js":4,
+  "js/ui/adaptive-building-ui.js":2,
+  "js/ui/quick-trade-ui.js":2,
+  "js/ui/survival-ui.js":2,
+  "js/ui/building-details-ui.js":1,
+  "js/ui/contract-ui.js":1,
+  "js/ui/industry-ui.js":1,
+  "js/ui/map-first-ui.js":1,
+  "js/ui/resource-development-ui.js":1
+};
 
 for(const [file,text] of source){
   if(file.startsWith("js/domain/"))assert.doesNotMatch(text,/from\s+["'][^"']*(?:\/ui\/|\.\.\/ui\/)/,`${file} must not import presentation code`);
@@ -32,6 +48,7 @@ for(const [file,text] of source){
   largeHtmlTemplateCount+=htmlCount;if(htmlCount)largeHtmlTemplatesByFile.push({file,count:htmlCount});
 }
 largeHtmlTemplatesByFile.sort((a,b)=>b.count-a.count||a.file.localeCompare(b.file));
+const actualHtmlDebt=Object.fromEntries(largeHtmlTemplatesByFile.map(({file,count})=>[file,count]));
 const debt={versionedJs:versionedJs.length,versionedCss:versionedCss.length,queryImports,importMap:/<script\s+type=["']importmap["']/.test(index),globalAssignments:globalAssignments.length,documentAppEvents,largeHtmlTemplates:largeHtmlTemplateCount};
 console.log("CleanUp architecture debt baseline",debt);
 console.log("Query import debt by file",queryImportsByFile);
@@ -44,6 +61,7 @@ assert.equal(debt.queryImports,0,"Version-query imports must not return");
 assert.equal(debt.globalAssignments,0,`Global application assignments must not return: ${globalAssignments.join(", ")}`);
 assert.equal(debt.documentAppEvents,0,"Document-level application events must not return");
 assert.ok(!largeHtmlTemplatesByFile.some(entry=>entry.file==="js/domain/expansion-service.js"),"Domain template literals must not be misclassified as HTML view debt");
-assert.ok(debt.largeHtmlTemplates<=29,"Large embedded HTML template debt must not grow beyond the verified detector-correction checkpoint");
+assert.equal(debt.largeHtmlTemplates,50,"Verified Phase 4C HTML template debt must change only in a reviewed extraction checkpoint");
+assert.deepEqual(actualHtmlDebt,verifiedHtmlDebt,"Per-file HTML debt map changed; update the verified map only with reviewed extraction evidence");
 
 console.log("CleanUp architecture baseline guard passed");
