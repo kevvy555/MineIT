@@ -17,8 +17,8 @@ export class UIController extends BaseUIController{
   }
 
   selectMapTile(x,y){
+    if(this.land?.isShipTile?.(x,y)&&this.playerShipHere()){this.playerShipPanel();return;}
     super.selectMapTile(x,y);
-    if(this.land?.isShipTile?.(x,y)&&this.playerShipHere())queueMicrotask(()=>this.playerShipPanel());
   }
 
   contextParts(tile){

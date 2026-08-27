@@ -33,6 +33,7 @@ const click=el=>{if(!el)throw new Error('Missing expected control');el.click();}
 const close=()=>click(d.querySelector('#modal [data-close]'));
 const waitFor=async(selector,timeout=1500)=>{const until=performance.now()+timeout;while(performance.now()<until){const el=d.querySelector(selector);if(el)return el;await sleep(20);}throw new Error('Timed out waiting for '+selector);};
 const tapShip=()=>{const c=d.querySelector('#world');if(!c)throw new Error('Missing world canvas');const r=c.getBoundingClientRect(),x=r.left+r.width/16,y=r.top+r.height/16,id=71;for(const type of['pointerdown','pointerup'])c.dispatchEvent(new w.PointerEvent(type,{bubbles:true,cancelable:true,clientX:x,clientY:y,pointerId:id,pointerType:'mouse',button:0,buttons:type==='pointerdown'?1:0}));};
+const assertPaintedStarMap=async canvas=>{await sleep(80);const rect=canvas.getBoundingClientRect();if(rect.width<80||rect.height<80||canvas.width<=1||canvas.height<=1)throw new Error('Star Map canvas has no usable drawing area');const ctx=canvas.getContext('2d'),pixels=ctx.getImageData(0,0,canvas.width,canvas.height).data;let bright=0;for(let i=0;i<pixels.length;i+=16){if(Math.max(pixels[i],pixels[i+1],pixels[i+2])>80)bright++;}if(bright<20)throw new Error('Star Map canvas exists but contains no visible star/system rendering');};
 try{
   const landing=d.querySelector('.landing-choice-grid button');if(landing){landing.click();await sleep(300);}
   // Prove external view templates load through the real Game -> How to Play flow.
@@ -41,7 +42,8 @@ try{
   for(let i=0;i<20;i++){
     // Player ship -> Star Map -> close. This creates the most observer/listener pressure.
     tapShip();await sleep(25);
-    click(await waitFor('[data-player-ship-action="star-map"]'));await sleep(40);await waitFor('#starMapCanvas');close();await sleep(20);
+    const starAction=await waitFor('[data-player-ship-action="star-map"]');const title=d.querySelector('#modal .panel-title strong')?.textContent?.trim();if(title!=='Player Colony Ship')throw new Error('Landed ship tap opened '+(title||'an unknown panel')+' instead of Player Colony Ship');
+    click(starAction);const starCanvas=await waitFor('#starMapCanvas',2500);if(i===0)await assertPaintedStarMap(starCanvas);close();await sleep(20);
     // Player ship -> Cargo Bay -> close.
     tapShip();await sleep(25);
     click(await waitFor('[data-player-ship-action="cargo"]'));await sleep(30);close();await sleep(20);
