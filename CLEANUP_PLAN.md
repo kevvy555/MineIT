@@ -17,20 +17,20 @@ This is the canonical recovery record for the `CleanUp` branch. Refactoring is b
 
 ## Current repository status
 
-Status captured 2026-08-27 after Phase 5.4 completed and while preparing the Phase 5 exit checkpoint.
+Status captured 2026-08-27 after Phase 5 completed and while preparing Phase 6.1.
 
 | Item | Current state |
 |---|---|
 | Repository | `kevvy555/MineIT` |
 | Working branch | `CleanUp` |
 | Pull request | Draft PR #39, `CleanUp` → `develop` |
-| Last fully green checkpoint | `b70a940c` — Phase 5.4 redundant Survival presentation adapter removal |
-| Current checkpoint | Phase 5.5 — final controller-owner map + dead intermediate Help overrides |
+| Last fully green checkpoint | `046ed701` — Phase 5 feature-controller ownership exit |
+| Current checkpoint | Phase 6.1 — remove obsolete legacy building-details stylesheet |
 | Package version | `5.11.3` |
-| Active phase | Phase 5 — feature controllers |
+| Active phase | Phase 6 — CSS cleanup |
 | Verified large-template debt | **0** |
 | Branch reconciliation | Deferred to Phase 7 |
-| Merge readiness | Not ready; Phases 6–7 remain after Phase 5.5 is green |
+| Merge readiness | Not ready; Phase 6 CSS cleanup and Phase 7 validation remain |
 
 ## Green checkpoint history
 
@@ -51,82 +51,64 @@ Status captured 2026-08-27 after Phase 5.4 completed and while preparing the Pha
 - `270f9578` — adaptive-building shell + operating mode externalized; 7 → 5. Push `33067797422`, PR `33067803240`, Pages `33067796744`; browser green.
 - `92701fd3` / `a93dc7dd` — Contract Failed and Industry Capacity externalized + assertion alignment; 5 → 3. Push `33069061527`, PR `33069065078`, Pages `33069060704`; browser green.
 - `cb882c74` — **Phase 4 complete, 3 → 0**. Final map-first Help controls and undeveloped-resource detail moved to external views and old developed-building presentation deleted. Push `33070686760`, PR `33070691704`, Pages `33070686316`; Node/domain/browser green.
-- `adf94a92` — Phase-4 completion handoff only. Push `33070932722`, PR `33070936650`, Pages `33070931886`.
 
-### Phase 5
+### Phase 5 — Complete
 
-- `1733d862` — **5.1 mutation boundary.** `operational-controls-ui.js::adjustHarvest()` now dispatches through `ResourceService.adjustHarvestIntensity()` instead of assigning `tile.harvestIntensity` directly. Added focused boundary guard. Push `33071271807`, PR `33071276551`, Pages `33071270778`; browser green.
-- `186c1112` / `5b31dc67` — **5.2 technology ownership.** Removed shadowed UI-enhancement/V55 technology renderer/state, deleted `views/legacy-technology.html`, and locked `technology-presentation-ui.js` as player-facing owner. Test-only stale visibility alignment at `5b31dc67`. Push `33072381015`, PR `33072385057`, Pages `33072380011`; browser green.
-- `821f526c` / `751f9a44` / `2fb655ff` — **5.3 shadowed bridges.** Deleted `building-details-ui.js`, retargeted `resource-development-ui.js` directly to `trade-reserve-ui.js`, and removed shadowed V55 `techEffect()`. Two stale chain tests were aligned without production changes. Final Push `33073342121`, PR `33073346310`, Pages `33073341375`; Node/regression/domain coverage and both browser suites green.
-- `b70a940c` — **5.4 redundant Survival adapter.** Deleted `survival-presentation-ui.js` and retargeted `technology-presentation-ui.js` directly to `cash-policy-ui.js`. The composed legacy controller already owns `SurvivalUIMixin.help()` and the canonical menu already binds `this.help()`, so the adapter had no unique behavior. Push `33078192785`, PR `33078198317`, Pages `33078191789`; Node and both browser suites green with no corrective commit.
+- `1733d862` — 5.1 renewable-harvest UI mutation routed through `ResourceService.adjustHarvestIntensity`. Push `33071271807`, PR `33071276551`, Pages `33071270778`; browser green.
+- `186c1112` / `5b31dc67` — 5.2 removed shadowed technology compatibility presentation and legacy technology view. Push `33072381015`, PR `33072385057`, Pages `33072380011`; browser green.
+- `821f526c` / `751f9a44` / `2fb655ff` — 5.3 deleted `building-details-ui.js`, retargeted resource-development directly to trade-reserve, removed shadowed V55 `techEffect()`, and aligned stale source-location tests. Push `33073342121`, PR `33073346310`, Pages `33073341375`; browser green.
+- `b70a940c` — 5.4 deleted redundant `survival-presentation-ui.js`; technology presentation now inherits directly from `cash-policy-ui.js`. Push `33078192785`, PR `33078198317`, Pages `33078191789`; browser green.
+- `046ed701` — **5.5 / Phase 5 complete.** Removed unreachable intermediate Help-intro wrappers, retained actual map-first Help controls and final trade-reserve intro ownership, and added `tests/controller-owner-map.test.js` to lock modern parent ownership plus the intentional legacy manual-super chain. Push `33078938572`, PR `33078945708`, Pages `33078937342`; full Node suite and both browser suites green.
 
-## Phase 4 completion evidence
+### Phase 5 final owner decisions
 
-Phase 4 began with **50 genuine large application HTML templates in JavaScript** after the corrected lexical scanner and ended at **0**. `tests/architecture-baseline.test.js` requires an empty verified debt map and rejects new large application templates under `js/`.
+Modern semantic controller chain is executable-test locked:
 
-Final Phase-4 ownership remains:
-- static application markup in `/views`;
-- repeated UI rows/cards cloned through templates/fragments and bounded replacement;
-- nonblocking view preload with stale host/tile/modal rejection;
-- developed building details owned by `adaptive-building-ui.js`;
-- undeveloped resources owned by `resource-development-ui.js` + `views/undeveloped-resource.html`;
-- corporate technology owned by `technology-presentation-ui.js` + `views/corporate-technology.html`.
+`ship-preparation` → `ship-navigation` → `player-ship` → `expansion` → `adaptive-building` → `resource-development` → `trade-reserve` → `corporate-events` → `operational-controls` → `map-first` → `technology-presentation` → `cash-policy` → legacy composed `ui-controller`.
 
-## Current Phase 5.5 — controller-owner exit contract
+Deleted compatibility bridges stay absent:
+- `js/ui/building-details-ui.js`
+- `js/ui/survival-presentation-ui.js`
 
-### Dead Help overrides
+Remaining prototype-qualified `.call(this)` dispatches are intentional manual-super boundaries required by the legacy multiple-mixin composition, not independent cleanup debt. `tests/controller-owner-map.test.js` locks the exact required calls and legacy composition order. Do not rewrite the inheritance/mixin model during Phase 6.
 
-`operational-controls-ui.js::help()` and `corporate-events-ui.js::help()` each called `super.help()` and replaced only the same Help intro text. The higher active `trade-reserve-ui.js::help()` always runs afterwards and replaces that intro again, so the two intermediate intro rewrites are unreachable in the active application.
+## Current Phase 6.1 — obsolete building-detail CSS ownership
 
-The substantive rules are already owned by the external field manual:
-- global corporation time and cross-colony ship pausing;
-- renewable harvest range and degradation/recovery;
-- NORMAL/PUSHED/HARD extraction overdrive and risk;
-- trade/transport rules.
+### Ownership proof
 
-Checkpoint action:
-- remove `operational-controls-ui.js::help()`;
-- remove `corporate-events-ui.js::help()`;
-- retain `map-first-ui.js::help()` because it mounts real map-first Help controls rather than only replacing intro text;
-- retain `trade-reserve-ui.js::help()` as the final active intro owner;
-- move Help assertions to the external manual/final active owner.
+The old developed-building presenter and compatibility JS bridge are gone. Active presentation is split cleanly:
 
-### Intentional legacy manual-super chain
+- developed local/extraction buildings: `views/adaptive-building.html` + `css/adaptive-building-details.css`, using `adaptive-building-*` classes;
+- undeveloped surveyed resources: `views/undeveloped-resource.html` + `css/resource-details.css`, using `resource-*` / `resource-detail-*` classes.
 
-The remaining prototype-qualified `.call(this)` dispatches are not independently removable wrappers. They emulate required `super` behavior inside the legacy multiple-mixin composition:
+`css/building-details.css` contains only the superseded `building-detail-*`, `building-art-frame`, `building-stat-*`, `building-upgrade-strip` and `.tile-panel.building-detail-panel` families. No active view uses those class families. `index.html` still loads the obsolete stylesheet only as historical residue.
 
-- `IndustryUIMixin`: `colonyPanel → ColonyTech`, `currentCollection → UIEnhancements`, `tile → Resource`.
-- `V55UIMixin`: `render → Contract`, `colonyPanel/currentCollection/tile → Industry`, `menu → UIEnhancements`.
-- `V55ContractLogUIMixin`: `colonyPanel → V55`, `completionActions/deadline → Contract`.
+Two active controllers still defensively remove the old `building-detail-panel` class when changing tile-panel modes. Nothing adds that class anymore. These calls are harmless and are deliberately **not** mixed into Phase 6.1; they are a Phase 6.2 reference-cleanup candidate so stylesheet removal is validated independently.
 
-Deleting any one of these without replacing the whole composition model would skip a required presentation layer. Replacing the entire mixin stack with a new inheritance architecture is a materially higher-risk rewrite and is not justified for this behavior-preserving cleanup.
+### Phase 6.1 action
 
-`tests/controller-owner-map.test.js` is added in this checkpoint to:
-- lock the modern semantic controller parent chain;
-- require deleted bridges to remain absent;
-- lock the legacy mixin composition order;
-- lock the exact intentional prototype-qualified manual-super calls;
-- require intermediate intro-only Help overrides to stay absent.
+1. Delete `css/building-details.css`.
+2. Remove its `<link>` from `index.html`.
+3. Update building-art, map-first and presentation-architecture tests so the deleted stylesheet must remain absent and canonical adaptive/resource CSS remains required.
+4. Add `tests/css-ownership.test.js` to lock:
+   - deleted legacy stylesheet absence;
+   - no application-shell reference to it;
+   - adaptive and undeveloped-resource views use their canonical class families;
+   - active views do not depend on legacy `building-detail-*` classes;
+   - canonical adaptive/resource styles retain their key selectors.
+5. Do not change gameplay, JS behavior, active views or canonical CSS in this checkpoint.
 
-### Phase 5 exit condition
-
-If Phase 5.5 is green across Push, PR, browser and Pages:
-- direct mutable renewable-harvest UI ownership is corrected;
-- shadowed technology and compatibility renderers are removed;
-- redundant presentation adapters are removed;
-- unreachable Help wrappers are removed;
-- remaining legacy prototype dispatches are explicitly classified and guarded as necessary compatibility boundaries;
-- active controller ownership is documented by executable tests.
-
-At that point **Phase 5 is Complete** and the next work is Phase 6 CSS cleanup. Do not perform an inheritance rewrite as part of Phase 6.
-
-Expected Phase 5.5 paths:
+Expected Phase 6.1 paths:
 1. `CLEANUP_PLAN.md`
-2. `js/ui/operational-controls-ui.js`
-3. `js/ui/corporate-events-ui.js`
-4. `tests/how-to-play.test.js`
-5. `tests/controller-owner-map.test.js` added
-6. `package.json`
+2. `index.html`
+3. `css/building-details.css` deleted
+4. `package.json`
+5. `tests/building-art.test.js`
+6. `tests/map-first-ux.test.js`
+7. `tests/presentation-architecture.test.js`
+8. `tests/css-ownership.test.js` added
+
+Require full Push/PR/browser/Pages green before Phase 6.2.
 
 ## Protected unrelated worktree changes
 
@@ -155,14 +137,18 @@ Do not overwrite/revert/reformat:
 | 1 — Canonical modules | Complete | Zero versioned production JS. |
 | 2 — Startup/import cleanup | Complete | Zero import maps/internal version-query imports. |
 | 3 — State/events/lifecycle | Complete | Explicit store/boundaries/disposal; zero app globals/document events. |
-| 4 — HTML views | **Complete** | Corrected baseline 50 → **0**; final Push `33070686760`, PR `33070691704`, Pages `33070686316`, browser green. |
-| 5 — Feature controllers | **In progress — exit checkpoint** | 5.1–5.4 green; 5.5 locks final owner map and removes unreachable Help wrappers. |
-| 6 — CSS cleanup | Pending | Audit canonical ownership, duplicates and obsolete/unreachable rules; first target includes legacy `building-details.css`. |
+| 4 — HTML views | Complete | Corrected baseline 50 → 0; final Push `33070686760`, PR `33070691704`, Pages `33070686316`. |
+| 5 — Feature controllers | **Complete** | Final `046ed701`; Push `33078938572`, PR `33078945708`, Pages `33078937342`; browser green. |
+| 6 — CSS cleanup | **In progress** | Phase 6.1 removes the obsolete legacy building-details stylesheet with canonical CSS ownership guards. |
 | 7 — Final validation | Pending | Reconcile branch + mobile/browser/campaign/save/lifecycle/soak sign-off. |
 
-## Phase 6 — CSS completion
+## Phase 6 queue after 6.1
 
-Map styles to canonical owners, remove duplicate/obsolete/unreachable rules, verify cascade and supported mobile breakpoints, and keep versioned CSS at zero. Start with CSS made obsolete by deleted JS presentation layers (especially `building-details.css`), but validate selectors against active markup before deletion.
+1. Remove harmless stale `building-detail-panel` class-removal references if no other legacy class ownership remains.
+2. Audit every loaded CSS file against active HTML/view/JS class ownership before deleting or merging rules.
+3. Identify duplicate selector families and obsolete modal/panel overrides created by earlier presentation replacements.
+4. Keep CSS checkpoints narrow enough that browser regressions can be attributed to one cascade change.
+5. Do not consolidate unrelated responsive rules merely for line-count reduction.
 
 ## Phase 7 — final validation and merge gate
 
