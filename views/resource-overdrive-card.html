@@ -1,0 +1,24 @@
+<article class="card site-overdrive" data-overdrive-card>
+  <div data-overdrive-shutdown hidden>
+    <h3 class="bad" data-overdrive-accident-name></h3>
+    <div class="grid2">
+      <div class="metric"><small>Facility status</small><strong class="bad">SHUT DOWN</strong></div>
+      <div class="metric"><small>Reopens in</small><strong data-overdrive-reopens></strong></div>
+    </div>
+    <div class="requirement locked" data-overdrive-shutdown-copy></div>
+  </div>
+  <div data-overdrive-active hidden>
+    <h3>OPERATING LOAD</h3>
+    <div class="grid3">
+      <div class="metric"><small>Mode</small><strong data-overdrive-mode></strong></div>
+      <div class="metric"><small>Workers</small><strong data-overdrive-workers></strong></div>
+      <div class="metric"><small>Risk exposure</small><strong data-overdrive-risk></strong></div>
+    </div>
+    <div class="grid3 site-mode-buttons" data-site-mode-buttons></div>
+    <template data-site-mode-template>
+      <button data-site-mode><span data-site-mode-label></span><br><span class="tiny" data-site-mode-details></span></button>
+    </template>
+    <div class="effect" data-overdrive-effect></div>
+    <div class="effect" data-last-accident hidden></div>
+  </div>
+</article>
