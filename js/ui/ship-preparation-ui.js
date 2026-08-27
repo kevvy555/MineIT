@@ -5,21 +5,28 @@ import { renderViewTemplate } from "../core/view-template.js";
 
 const CATEGORIES=["food","build","fuel","ore"];
 const BAND_ORDER={"Very Low":1,"Low":2,"Moderate":3,"High":4,"Very High":5,"Extreme":1,"Hostile":2,"Marginal":3,"Manageable":4,"Favourable":5};
+const PLANET_COLUMNS=[["name","PLANET"],["environment","ENVIRONMENT"],["food","FOOD"],["build","BUILD"],["fuel","FUEL"],["ore","ORE"],["habitability","HABITABILITY"],["confidence","CONF."],["tech","TECH"],["colony","COLONY"]];
 const esc=value=>String(value??"").replace(/[&<>\"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;"}[ch]));
 const pct=(value,max)=>max>0?Math.max(0,Math.min(100,(Number(value)||0)/max*100)):0;
 
 /** Sortable planetary survey data and dense, load-focused player-ship preparation. */
 export class UIController extends ShipNavigationUIController{
-  constructor(opts){super(opts);this.planetSort={key:"name",dir:1};this.shipPrepRevision=0;this.prepClickHandler=null;}
+  constructor(opts){super(opts);this.planetSort={key:"name",dir:1};this.shipPrepRevision=0;this.prepClickHandler=null;this.planetClickHandler=null;}
 
-  open(title,body){this.releasePrepActions();super.open(title,body);}
+  open(title,body){this.releasePrepActions();this.releasePlanetActions();super.open(title,body);}
 
-  dispose(){this.releasePrepActions();super.dispose?.();}
+  dispose(){this.releasePrepActions();this.releasePlanetActions();super.dispose?.();}
 
   releasePrepActions(){
     if(!this.prepClickHandler)return;
     this.modal?.removeEventListener("click",this.prepClickHandler);
     this.prepClickHandler=null;
+  }
+
+  releasePlanetActions(){
+    if(!this.planetClickHandler)return;
+    this.modal?.removeEventListener("click",this.planetClickHandler);
+    this.planetClickHandler=null;
   }
 
   planetSortValue(planet,key,system){
@@ -37,23 +44,119 @@ export class UIController extends ShipNavigationUIController{
     return [...(system.planets||[])].sort((a,b)=>{const av=this.planetSortValue(a,sort.key,system),bv=this.planetSortValue(b,sort.key,system);if(typeof av==="number"&&typeof bv==="number")return(av-bv)*dir;return String(av).localeCompare(String(bv),undefined,{numeric:true,sensitivity:"base"})*dir;});
   }
 
-  planetSortHeader(key,label){const active=this.planetSort?.key===key,arrow=active?(this.planetSort.dir<0?"▼":"▲"):"↕";return`<th><button class="exp-planet-sort${active?" active":""}" data-planet-sort="${key}">${label}<span>${arrow}</span></button></th>`;}
+  planetSortIndicator(key){
+    if(this.planetSort?.key!==key)return"↕";
+    return this.planetSort.dir<0?"▼":"▲";
+  }
 
-  planetTable(system,arrived){
-    const owned=this.expansion.coloniesInSystem(this.state,system.id),ship=this.expansion.ship(this.state),rows=this.sortedPlanets(system).map(planet=>{
-      const colonies=owned.filter(c=>c.planetId===planet.id),living=colonies.filter(c=>c.status!=="dead"),occupied=colonies.length>0,meets=this.technology.meetsRequirements(this.state,planet.requiredTech),canFound=arrived&&!occupied&&ship.passengers>0&&meets;
-      let actions="—";
-      if(arrived&&living.length)actions=living.map(c=>`<button data-dock-colony="${esc(c.id)}">DOCK ${esc(c.name)}</button>`).join("");
-      else if(arrived)actions=`<button data-found-planet="${esc(planet.id)}" ${canFound?"":"disabled"}>${occupied?"COLONY EXISTS":ship.passengers<=0?"NO COLONISTS":!meets?"TECH LOCKED":"FOUND COLONY"}</button>`;
-      const colonyNames=colonies.length?colonies.map(c=>esc(c.name)).join("<br>"):"—",i=planet.indicators||{},t=planet.requiredTech||{};
-      return `<tr><td><strong>${esc(planet.name)}</strong></td><td>${esc(planet.environment)}</td><td>${esc(i.food)}</td><td>${esc(i.build)}</td><td>${esc(i.fuel)}</td><td>${esc(i.ore)}</td><td>${esc(i.habitability)}</td><td>${formatNumber(planet.surveyConfidence)}%</td><td>P${t.power||0} / F${t.food||0} / M${t.mining||0}</td><td>${colonyNames}</td><td class="exp-planet-actions">${actions}</td></tr>`;
-    }).join("");
-    return `<div class="exp-planet-table-wrap"><table class="exp-planet-table"><thead><tr>${this.planetSortHeader("name","PLANET")}${this.planetSortHeader("environment","ENVIRONMENT")}${this.planetSortHeader("food","FOOD")}${this.planetSortHeader("build","BUILD")}${this.planetSortHeader("fuel","FUEL")}${this.planetSortHeader("ore","ORE")}${this.planetSortHeader("habitability","HABITABILITY")}${this.planetSortHeader("confidence","CONF.")}${this.planetSortHeader("tech","TECH")}${this.planetSortHeader("colony","COLONY")}<th>ACTION</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  planetTemplate(selector){
+    const template=this.modal.querySelector(selector);
+    if(!template)throw new Error(`Missing planet table template ${selector}`);
+    return template.content.firstElementChild.cloneNode(true);
+  }
+
+  planetSortHeader([key,label]){
+    const cell=this.planetTemplate("[data-planet-sort-template]"),button=cell.querySelector("[data-planet-sort]");
+    button.dataset.planetSort=key;
+    button.classList.toggle("active",this.planetSort?.key===key);
+    button.prepend(document.createTextNode(label));
+    button.querySelector("[data-planet-sort-arrow]").textContent=this.planetSortIndicator(key);
+    return cell;
+  }
+
+  renderPlanetHeaders(){
+    const host=this.modal.querySelector("[data-planet-table-head]"),fragment=document.createDocumentFragment();
+    for(const column of PLANET_COLUMNS)fragment.append(this.planetSortHeader(column));
+    fragment.append(this.planetTemplate("[data-planet-action-header-template]"));
+    host.replaceChildren(fragment);
+  }
+
+  planetFoundState(occupied,passengers,meets){
+    if(occupied)return{enabled:false,label:"COLONY EXISTS"};
+    if(passengers<=0)return{enabled:false,label:"NO COLONISTS"};
+    if(!meets)return{enabled:false,label:"TECH LOCKED"};
+    return{enabled:true,label:"FOUND COLONY"};
+  }
+
+  setPlanetCell(row,selector,value){
+    const cell=row.querySelector(selector);
+    if(cell)cell.textContent=value;
+  }
+
+  renderPlanetColonies(host,colonies){
+    if(!colonies.length){host.textContent="—";return;}
+    const fragment=document.createDocumentFragment();
+    colonies.forEach((colony,index)=>{const name=this.planetTemplate("[data-planet-colony-template]");name.querySelector("[data-planet-colony-name]").textContent=colony.name;fragment.append(name);if(index<colonies.length-1)fragment.append(document.createElement("br"));});
+    host.replaceChildren(fragment);
+  }
+
+  createDockAction(colony){
+    const button=this.planetTemplate("[data-planet-dock-template]");
+    button.dataset.dockColony=colony.id;
+    button.textContent=`DOCK ${colony.name}`;
+    return button;
+  }
+
+  createFoundAction(planet,occupied,passengers,meets){
+    const button=this.planetTemplate("[data-planet-found-template]"),state=this.planetFoundState(occupied,passengers,meets);
+    button.dataset.foundPlanet=planet.id;
+    button.disabled=!state.enabled;
+    button.textContent=state.label;
+    return button;
+  }
+
+  renderPlanetActions(host,{arrived,living,planet,occupied,passengers,meets}){
+    const fragment=document.createDocumentFragment();
+    if(!arrived)fragment.append(document.createTextNode("—"));
+    else if(living.length)for(const colony of living)fragment.append(this.createDockAction(colony));
+    else fragment.append(this.createFoundAction(planet,occupied,passengers,meets));
+    host.replaceChildren(fragment);
+  }
+
+  createPlanetRow(planet,system,arrived,owned,ship){
+    const row=this.planetTemplate("[data-planet-row-template]"),colonies=owned.filter(c=>c.planetId===planet.id),living=colonies.filter(c=>c.status!=="dead"),meets=this.technology.meetsRequirements(this.state,planet.requiredTech),i=planet.indicators||{},t=planet.requiredTech||{};
+    this.setPlanetCell(row,"[data-planet-name]",planet.name);
+    this.setPlanetCell(row,"[data-planet-environment]",planet.environment);
+    for(const key of["food","build","fuel","ore","habitability"])this.setPlanetCell(row,`[data-planet-${key}]`,i[key]||"");
+    this.setPlanetCell(row,"[data-planet-confidence]",`${formatNumber(planet.surveyConfidence)}%`);
+    this.setPlanetCell(row,"[data-planet-tech]",`P${t.power||0} / F${t.food||0} / M${t.mining||0}`);
+    this.renderPlanetColonies(row.querySelector("[data-planet-colonies]"),colonies);
+    this.renderPlanetActions(row.querySelector("[data-planet-actions]"),{arrived,living,planet,occupied:colonies.length>0,passengers:ship.passengers,meets});
+    return row;
+  }
+
+  renderPlanetRows(system,arrived){
+    const host=this.modal.querySelector("[data-planet-table-body]"),owned=this.expansion.coloniesInSystem(this.state,system.id),ship=this.expansion.ship(this.state),fragment=document.createDocumentFragment();
+    for(const planet of this.sortedPlanets(system))fragment.append(this.createPlanetRow(planet,system,arrived,owned,ship));
+    host.replaceChildren(fragment);
+  }
+
+  renderPlanetTable(system){
+    const host=this.modal?.querySelector(".exp-planet-table-wrap[data-planet-table]");
+    if(!host||!system)return false;
+    const ship=this.expansion.ship(this.state),arrived=ship.status==="arrived"&&ship.systemId===system.id;
+    this.renderPlanetHeaders();this.renderPlanetRows(system,arrived);
+    return true;
+  }
+
+  planetTable(){return renderViewTemplate("./views/planet-table.html");}
+
+  changePlanetSort(key){
+    if(this.planetSort?.key===key)this.planetSort.dir*=-1;
+    else this.planetSort={key,dir:1};
+    this.starMap();
+  }
+
+  bindPlanetActions(){
+    this.releasePlanetActions();
+    this.planetClickHandler=event=>{const button=event.target.closest?.("button[data-planet-sort]");if(!button||!this.modal.contains(button))return;this.changePlanetSort(button.dataset.planetSort);};
+    this.modal.addEventListener("click",this.planetClickHandler);
   }
 
   bindStarMapDetailActions(system){
+    const rendered=this.renderPlanetTable(system);
     super.bindStarMapDetailActions(system);
-    this.modal?.querySelectorAll("[data-planet-sort]").forEach(button=>button.onclick=()=>{const key=button.dataset.planetSort;if(this.planetSort?.key===key)this.planetSort.dir*=-1;else this.planetSort={key,dir:1};this.starMap();});
+    if(rendered)this.bindPlanetActions();
   }
 
   availableCargoCategories(){

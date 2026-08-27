@@ -58,7 +58,7 @@ export class UIController extends PlayerShipUIController{
     return this.expansion.probeFor(this.state,system.id)?"PROBE EN ROUTE":"UNKNOWN";
   }
 
-  starSystemDetailMarkup(system){
+  async starSystemDetailMarkup(system){
     if(!system)return`<div class="exp-empty">Tap a star system to inspect it.</div>`;
     const ship=this.expansion.ship(this.state),probe=this.expansion.probeFor(this.state,system.id),arrived=ship.status==="arrived"&&ship.systemId===system.id,distance=this.expansion.distanceFromHome(this.state,system.id),stateLabel=this.systemStateLabel(system);
     let content=`<div class="star-system-detail-head"><div><small>SELECTED SYSTEM</small><h3>${esc(system.name)}</h3></div><strong>${esc(stateLabel)}</strong></div><div class="exp-system-summary"><div><small>STAR</small><strong>${esc(system.starType)}</strong></div><div><small>PLANETS</small><strong>${formatNumber(system.planetCount)}</strong></div><div><small>HOME DISTANCE</small><strong>${Number(distance).toFixed(1)} ly</strong></div><div><small>STATUS</small><strong>${esc(stateLabel)}</strong></div></div>`;
@@ -68,7 +68,8 @@ export class UIController extends PlayerShipUIController{
     }else if(system.home){
       content+=`<div class="exp-message compact"><strong>KOPLIN CORPORATE LOGISTICS HUB</strong><span>Return exports here, buy corporate supplies and prepare frontier resupply runs.</span></div>`;
     }else{
-      content+=`<div class="star-system-planets"><div class="exp-section-head"><h3>PLANETS</h3><span>Broad survey data only — exact deposits require local surveying.</span></div>${this.planetTable(system,arrived)}</div>`;
+      const planetTable=await this.planetTable(system,arrived);
+      content+=`<div class="star-system-planets"><div class="exp-section-head"><h3>PLANETS</h3><span>Broad survey data only — exact deposits require local surveying.</span></div>${planetTable}</div>`;
     }
     const canTarget=["docked","home"].includes(ship.status)&&ship.systemId!==system.id&&(system.home||system.surveyed);
     if(canTarget)content+=`<button class="action exp-destination" data-set-destination>SET ${esc(system.name.toUpperCase())} AS DESTINATION</button>`;
@@ -87,7 +88,7 @@ export class UIController extends PlayerShipUIController{
     const revision=++this.starMapRevision,ex=this.expansion.ensure(this.state),ship=ex.ship;if(ship.status==="lost"){await this.lostShipPanel(revision,ship);return;}
     const selected=this.selectedSystem(),corporate=this.state.trade?.active?`<button class="exp-corporate-trade" data-corporate-trade>CORPORATE TRADE SHIP DOCKED • OPEN TRADE</button>`:"",cargoAvailable=ship.status==="docked"&&this.expansion.isAtActiveColony(this.state);
     let body;
-    try{body=await renderViewTemplate("./views/star-map-screen.html",{SHIP_STATUS:this.shipStatusMarkup(),CORPORATE_TRADE:corporate,SYSTEM_DETAIL:this.starSystemDetailMarkup(selected),SERVICE_RADIUS:ex.serviceRadiusLy.toFixed(1),CARGO_DISABLED:cargoAvailable?"":"disabled"});}catch(error){if(revision!==this.starMapRevision)return;this.diagnostics?.error?.("star map template failed",error);this.toast("Unable to open the star map.");return;}
+    try{const systemDetail=await this.starSystemDetailMarkup(selected);if(revision!==this.starMapRevision)return;body=await renderViewTemplate("./views/star-map-screen.html",{SHIP_STATUS:this.shipStatusMarkup(),CORPORATE_TRADE:corporate,SYSTEM_DETAIL:systemDetail,SERVICE_RADIUS:ex.serviceRadiusLy.toFixed(1),CARGO_DISABLED:cargoAvailable?"":"disabled"});}catch(error){if(revision!==this.starMapRevision)return;this.diagnostics?.error?.("star map template failed",error);this.toast("Unable to open the star map.");return;}
     if(revision!==this.starMapRevision)return;
     this.open("Corporation Star Map",body);
     this.modal.classList.add("star-map-modal","full-screen-panel");this.bindStarMapDetailActions(selected);

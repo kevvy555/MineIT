@@ -1,0 +1,28 @@
+<div class="exp-planet-table-wrap" data-planet-table>
+  <table class="exp-planet-table">
+    <thead><tr data-planet-table-head></tr></thead>
+    <tbody data-planet-table-body></tbody>
+  </table>
+  <template data-planet-sort-template>
+    <th><button class="exp-planet-sort" data-planet-sort><span data-planet-sort-arrow></span></button></th>
+  </template>
+  <template data-planet-action-header-template><th>ACTION</th></template>
+  <template data-planet-row-template>
+    <tr>
+      <td><strong data-planet-name></strong></td>
+      <td data-planet-environment></td>
+      <td data-planet-food></td>
+      <td data-planet-build></td>
+      <td data-planet-fuel></td>
+      <td data-planet-ore></td>
+      <td data-planet-habitability></td>
+      <td data-planet-confidence></td>
+      <td data-planet-tech></td>
+      <td data-planet-colonies></td>
+      <td class="exp-planet-actions" data-planet-actions></td>
+    </tr>
+  </template>
+  <template data-planet-colony-template><span data-planet-colony-name></span></template>
+  <template data-planet-dock-template><button data-dock-colony></button></template>
+  <template data-planet-found-template><button data-found-planet></button></template>
+</div>
