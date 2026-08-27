@@ -1,0 +1,31 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>MineIT player ship click-through probe</title>
+<body><pre id="result">RUNNING</pre><script type="module">
+const result=document.querySelector('#result');
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const html=await fetch('../index.html',{cache:'no-store'}).then(r=>r.text());
+const instrumentation=`<base href="../"><script>window.__probeErrors=[];window.addEventListener('error',e=>window.__probeErrors.push(String(e.error||e.message)));window.addEventListener('unhandledrejection',e=>window.__probeErrors.push(String(e.reason)));<\/script>`;
+const iframe=document.createElement('iframe');iframe.style.width='390px';iframe.style.height='844px';iframe.srcdoc=html.replace('<head>','<head>'+instrumentation);document.body.appendChild(iframe);
+await new Promise(resolve=>iframe.addEventListener('load',resolve,{once:true}));
+await sleep(2500);
+const w=iframe.contentWindow,d=w.document;
+try{
+  const landing=d.querySelector('.landing-choice-grid button');if(landing){landing.click();await sleep(300);}
+  const canvas=d.querySelector('#world');if(!canvas)throw new Error('Missing world canvas');
+  const r=canvas.getBoundingClientRect(),x=r.left+r.width/16,y=r.top+r.height/16,id=912;
+  canvas.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,clientX:x,clientY:y,pointerId:id,pointerType:'touch',button:0,buttons:1}));
+  canvas.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,cancelable:true,clientX:x,clientY:y,pointerId:id,pointerType:'touch',button:0,buttons:0}));
+  const star=d.querySelector('[data-player-ship-action="star-map"]');if(!star)throw new Error('Player Colony Ship panel did not open after ship pointer-up');
+  star.dispatchEvent(new w.MouseEvent('click',{bubbles:true,cancelable:true,clientX:x,clientY:y,detail:1}));
+  await sleep(50);
+  const title=d.querySelector('#modal .panel-title strong')?.textContent?.trim();
+  if(title!=='Player Colony Ship')throw new Error('Opening tap clicked through into '+(title||'another panel'));
+  if(d.querySelector('#starMapCanvas'))throw new Error('Opening tap click-through opened Star Map');
+  star.click();
+  await sleep(100);
+  if(!d.querySelector('#starMapCanvas'))throw new Error('A deliberate second STAR MAP click did not open Star Map');
+  if(w.__probeErrors.length)throw new Error('Runtime errors: '+w.__probeErrors.join(' | '));
+  result.textContent='PASS player ship opening gesture cannot click through to Star Map';
+}catch(error){result.textContent='FAIL player ship click-through probe • '+(error?.stack||error);}
+</script></body>
