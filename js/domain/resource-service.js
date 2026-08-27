@@ -43,6 +43,13 @@ export class ResourceService {
   renewableRateFactor(tileOrLabel){const label=typeof tileOrLabel==="string"?tileOrLabel:tileOrLabel?.abundanceLabel;return RENEWABLE_RATE[this.normalizeSize(label)]??1;}
   terrainYieldFactor(tile){return Math.max(.1,Number(tile?.terrainYieldFactor)||1);}
   ensureRenewable(tile){if(!this.isRenewable(tile))return tile;const rank=this.renewableRank(tile.abundanceLabel||"Established");if(!Number.isFinite(tile.renewableOriginalRank))tile.renewableOriginalRank=rank;if(!Number.isFinite(tile.renewableHealth))tile.renewableHealth=tile.renewableOriginalRank+1;if(!Number.isFinite(tile.harvestIntensity))tile.harvestIntensity=1;tile.harvestIntensity=clamp(tile.harvestIntensity,.25,2);tile.abundanceLabel=this.renewableLabel(Math.min(tile.renewableOriginalRank,Math.max(0,Math.ceil(tile.renewableHealth)-1)));tile.abundance=this.renewableRateFactor(tile);return tile;}
+  adjustHarvestIntensity(tile,deltaPercent){
+    if(!this.isRenewable(tile)||tile?.renewableWiped)return{ok:false,reason:"Renewable harvesting is unavailable."};
+    this.ensureRenewable(tile);
+    const before=Math.round(tile.harvestIntensity*100),after=clamp(before+(Number(deltaPercent)||0),25,200);
+    tile.harvestIntensity=after/100;
+    return{ok:true,before,after,sustainableRate:this.sustainableRate(tile)};
+  }
   sustainableRate(tile){this.ensureRenewable(tile);return this.baseSiteOutput(tile.level||1)*this.renewableRateFactor(tile)*this.terrainYieldFactor(tile);}
   sitePotentialRate(tile){if(!tile?.resourceId||tile.resourceCovered)return 0;const base=this.isRenewable(tile)?this.sustainableRate(tile)*clamp(Number(tile.harvestIntensity)||1,.25,2):this.baseSiteOutput(tile.level||1)*this.finiteRateFactor(tile)*this.terrainYieldFactor(tile);return this.isRenewable(tile)?base:base*outputMultiplier(tile);}
   baselineRate(tile){return this.sitePotentialRate(tile);}

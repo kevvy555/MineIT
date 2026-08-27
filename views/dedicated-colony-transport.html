@@ -1,0 +1,26 @@
+<article class="card" style="margin-top:7px" data-dedicated-transport-card>
+  <h3>DEDICATED COLONY TRANSPORT</h3>
+  <p>Request any supported population increase without waiting for the regular trade ship. Transport takes <span data-transport-days></span> days and the cost is paid when ordered.</p>
+  <div class="grid2">
+    <div class="metric"><small>Supported places available</small><strong data-transport-supported></strong></div>
+    <div class="metric"><small>Pending colonists</small><strong data-transport-pending></strong></div>
+  </div>
+  <div class="help-data-table" data-transport-orders></div>
+  <p data-transport-empty>No dedicated colony transports are currently inbound.</p>
+  <div class="requirement locked" data-transport-blocked>This colony cannot receive new colonists.</div>
+  <div data-transport-controls>
+    <div class="trade-buy-buttons" style="margin-top:6px">
+      <button data-transport="100">+100</button>
+      <button data-transport="500">+500</button>
+      <button data-transport="1000">+1,000</button>
+      <button data-transport="max">MAX</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:4px;margin-top:5px">
+      <input data-transport-custom type="number" min="1" step="1" inputmode="numeric" placeholder="Custom colonists" style="min-width:0;background:#0b1116;color:var(--text);border:1px solid var(--line);border-radius:7px;padding:5px">
+      <button data-transport-request>REQUEST</button>
+    </div>
+  </div>
+  <template data-transport-order-template>
+    <div class="help-data-row"><strong data-order-amount></strong><span data-order-eta></span><span data-order-cost></span></div>
+  </template>
+</article>
