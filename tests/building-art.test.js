@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 
 const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),"utf8");
-const art=read("js/ui/land-art.js"),world=read("js/ui/world-view-runtime.js"),buildingUi=read("js/ui/building-details-ui.js"),adaptiveUi=read("js/ui/adaptive-building-ui.js"),adaptiveView=read("views/adaptive-building.html"),detailsCss=read("css/building-details.css"),pkg=JSON.parse(read("package.json"));
+const art=read("js/ui/land-art.js"),world=read("js/ui/world-view-runtime.js"),resourceDevelopment=read("js/ui/resource-development-ui.js"),adaptiveUi=read("js/ui/adaptive-building-ui.js"),adaptiveView=read("views/adaptive-building.html"),detailsCss=read("css/building-details.css"),pkg=JSON.parse(read("package.json"));
 assert.equal(pkg.version,"5.11.3");
 const families=["housing","industry","quarry","mine","deep-mine","rig","farm","ranch","bio-harvester","algae-facility"];
 for(const family of families)assert.ok(art.includes(family),`missing development family ${family}`);
@@ -10,8 +10,8 @@ assert.match(art,/bio:"bio-harvester"/);assert.match(art,/algae:"algae-facility"
 assert.match(art,/function developmentOriginalPath\(dev\)/);assert.match(art,/originals\/\$\{kind\}-l\$\{level\}\.png/);assert.match(art,/function developmentAtlasPath\(dev\)/);assert.match(art,/\$\{kind\}-levels-256\.webp/);assert.match(art,/MIN_DEVELOPMENT_FRAME_SIZE=128/);assert.match(art,/function drawDevelopmentFrame\(/);assert.match(art,/frameWidth\*index,0,frameWidth,frameHeight/);
 assert.match(world,/developmentAtlasPath/);assert.match(world,/drawBuildingFallback/);assert.match(world,/dev\.kind==="power"/);assert.match(world,/drawDevelopment\(c,tile,px,py\)/);assert.match(world,/artImage\(src,this\.assetReady\)/);assert.match(world,/drawDevelopmentFrame/);assert.match(world,/drawSurveyState\(/);assert.match(world,/this\.drawTerrain\(c,tile,px,py\)/,"terrain must remain the visual base for unscanned and surveyed tiles");assert.match(world,/drawResourceOverlay\(/);assert.match(world,/drawResourceBadge\(/);assert.match(world,/drawLevelBadge\(/);assert.match(world,/assets\/art\/Level\/L\$\{/);assert.match(world,/drawQuality\(/);assert.match(world,/drawRemainingBar\(/);assert.match(world,/fillText\("\?"/);assert.match(world,/`Q\$\{Math\.round\(tile\.quality\)\}`/);assert.doesNotMatch(world,/DEVELOPMENT_LABELS/);assert.doesNotMatch(world,/const badge=`\$\{label\} L/);
 
-assert.match(buildingUi,/from "\.\/trade-reserve-ui\.js"/);
-for(const method of["buildingHero","openColonyBuilding","compactExtractionPanel","tile","landTile"])assert.doesNotMatch(buildingUi,new RegExp(`\\n\\s{2}${method}\\(`),`shadowed legacy building renderer must stay removed: ${method}`);
+assert.equal(fs.existsSync(new URL("../js/ui/building-details-ui.js",import.meta.url)),false,"shadowed building-details compatibility bridge must stay deleted");
+assert.match(resourceDevelopment,/from "\.\/trade-reserve-ui\.js"/);
 assert.match(adaptiveUi,/developmentOriginalPath/);assert.match(adaptiveUi,/renderAdaptiveBuilding\(tile\)/);assert.match(adaptiveUi,/isAdaptiveBuilding\(tile\)/);assert.match(adaptiveView,/data-adaptive-art-image/);assert.match(adaptiveView,/data-adaptive-upgrade/);assert.match(adaptiveView,/data-adaptive-demolish/);
 assert.match(detailsCss,/\.building-art-frame img/);assert.match(detailsCss,/object-fit:contain/);assert.match(detailsCss,/\.building-detail-actions/);
 

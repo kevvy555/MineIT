@@ -9,7 +9,6 @@ const failedView=read("views/contract-failed.html");
 const capacityView=read("views/industry-capacity-card.html");
 const mapFirst=read("js/ui/map-first-ui.js");
 const mapHelpView=read("views/map-first-help-controls.html");
-const building=read("js/ui/building-details-ui.js");
 const resource=read("js/ui/resource-development-ui.js");
 const resourceView=read("views/undeveloped-resource.html");
 const adaptive=read("js/ui/adaptive-building-ui.js");
@@ -41,8 +40,8 @@ assert.match(mapFirst,/section\.isConnected/);
 assert.match(mapFirst,/createContextualFragment\(source\)/);
 for(const marker of["There is one colony map","Tap selects","persistent action bar","main HUD always shows Housing, Power, effective/installed Industry, free workforce, resource stocks and supply days"])assert.ok(mapHelpView.includes(marker),`missing external map-first help marker ${marker}`);
 
-assert.match(building,/from "\.\/trade-reserve-ui\.js"/);
-for(const method of["buildingHero","openColonyBuilding","compactExtractionPanel","tile","landTile"])assert.doesNotMatch(building,new RegExp(`\\n\\s{2}${method}\\(`),`shadowed building-details method must stay removed: ${method}`);
+assert.equal(fs.existsSync(new URL("../js/ui/building-details-ui.js",import.meta.url)),false,"shadowed building-details compatibility bridge must stay deleted");
+assert.match(resource,/from "\.\/trade-reserve-ui\.js"/,"resource-development must inherit directly from the canonical trade-reserve controller after bridge removal");
 assert.match(adaptive,/isAdaptiveBuilding\(tile\)/);
 assert.match(adaptive,/renderAdaptiveBuilding\(tile\)/);
 assert.match(adaptive,/developmentOriginalPath/);
@@ -58,5 +57,5 @@ assert.doesNotMatch(resource,/panel\.innerHTML\s*=/);
 assert.match(resource,/populateResourceRequirements/);
 for(const marker of["data-undeveloped-resource-view","data-resource-requirement-template","data-resource-requirements","DEVELOP SITE","WHEN DEVELOPED"])assert.ok(resourceView.includes(marker),`missing undeveloped-resource view marker ${marker}`);
 
-for(const [name,source] of Object.entries({contract,industry,mapFirst,building,resource}))assert.equal(largeHtmlTemplates(source).length,0,`${name} must not regain a large inline application template`);
+for(const [name,source] of Object.entries({contract,industry,mapFirst,resource}))assert.equal(largeHtmlTemplates(source).length,0,`${name} must not regain a large inline application template`);
 console.log("final Phase-4 external view ownership test passed");

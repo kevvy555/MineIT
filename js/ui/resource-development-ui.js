@@ -1,4 +1,4 @@
-import { UIController as BaseUIController } from "./building-details-ui.js";
+import { UIController as BaseUIController } from "./trade-reserve-ui.js";
 import { formatNumber } from "../core/utils.js";
 import { getLoadedViewTemplate,loadViewTemplate,preloadViewTemplates } from "../core/view-template.js";
 
