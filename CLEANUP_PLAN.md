@@ -2,16 +2,16 @@
 
 This is the canonical recovery record for the `CleanUp` branch. The cleanup/refactor is behaviour-preserving unless a gameplay change was separately approved. Do not rely on chat history to determine merge readiness; use this file and GitHub status.
 
-## Final repository status
+## Current repository status
 
-Status captured 2026-08-27 after Phase 7 technical validation completed.
+Status captured 2026-08-27 after user-reported post-refactor regressions were fixed and automated validation passed.
 
-| Item | Final state |
+| Item | Current state |
 |---|---|
 | Repository | `kevvy555/MineIT` |
 | Working branch | `CleanUp` |
 | Pull request | Draft PR #39, `CleanUp` → `develop` |
-| Last fully green technical checkpoint | `e633bf1f` — final 25-year simulation validation |
+| Last fully green production checkpoint | `3c089e87` — post-refactor ship/trade/star-map regression fixes |
 | Package version | `5.11.3` |
 | Cleanup phases | **0–7 complete** |
 | Large embedded HTML-template debt | **0** |
@@ -21,13 +21,58 @@ Status captured 2026-08-27 after Phase 7 technical validation completed.
 | Application globals/document app-event debt | **0** |
 | CSS orphan debt | **0** |
 | Branch reconciliation | **Complete** — `develop` is an ancestor of `CleanUp` |
-| Current compare to `develop` | **359 ahead / 0 behind** at `e633bf1f` |
-| PR mergeability | **mergeable: true** |
+| Current compare to `develop` | **361 ahead / 0 behind** at `3c089e87` |
 | PR state | Open and draft; intentionally not merged |
-| Technical merge readiness | **READY** |
-| Remaining action | Obtain explicit user approval, then mark PR ready and merge PR #39 into `develop` |
+| Automated regression status | **GREEN** |
+| Merge readiness | **BLOCKED ON USER HANDS-ON RECHECK** |
+| Remaining action | User rechecks the three reported flows on deployed `CleanUp`; only then consider explicit merge approval |
 
-## Final validation evidence
+## Post-refactor regression correction
+
+Checkpoint: `3c089e87bbfb990cf659a8aca22ad44cde07aa4b`
+
+The user found three issues after the cleanup had otherwise passed the broad regression matrix:
+
+1. **Corporate Trade Ship Sell/Buy lists were empty.**
+   - Root cause: after Quick Trade HTML was externalized, `data-sell-row-template`, `data-buy-category-template`, and `data-buy-row-template` were siblings outside the mounted Sell/Buy section roots.
+   - The controller clones templates through the mounted section root, so all three lookups returned `null` and no stock/category rows were created.
+   - Fix: move the reusable `<template>` nodes inside their owning external view roots. No trade/domain rules changed.
+
+2. **Tapping the landed player ship could route through the generic map-selection path instead of opening the Player Colony Ship panel directly.**
+   - Root cause: `player-ship-ui.js::selectMapTile()` called `super.selectMapTile()` first and queued the ship panel afterwards.
+   - Fix: landed-player-ship interception now occurs before generic selection and returns immediately after `playerShipPanel()`.
+   - No player-ship/domain state changed.
+
+3. **Star Map could appear as a black/empty screen, particularly while the corporate trade ship was docked.**
+   - Root cause: `star-map-screen.html` uses a four-row full-screen CSS grid, but `{{CORPORATE_TRADE}}` was an optional fifth direct grid child. When present it displaced the map canvas into an implicit row that could be clipped by the full-screen modal's `overflow:hidden` layout.
+   - Fix: the optional corporate-trade control now lives inside the existing Star Map detail row, so the screen always has the same four direct grid rows and the map keeps the flexible canvas row.
+   - No galaxy/navigation rules changed.
+
+New/strengthened regression coverage:
+- `tests/post-refactor-regressions.test.js` locks Quick Trade template placement, direct landed-ship interception, and Star Map grid ownership.
+- `tests/ui-lifecycle-soak.html` now verifies that a landed ship tap opens a modal titled **Player Colony Ship** before entering Star Map.
+- The browser lifecycle soak now checks that `#starMapCanvas` has a usable drawing area and contains visible painted star/system pixels rather than merely checking that the canvas element exists.
+
+Validation for `3c089e87`:
+- Push Test `33093417010` — **success**;
+- PR Test `33093421033` — **success**;
+- Pages `33093415710` — **success**;
+- full Node/regression/domain suite green;
+- strengthened browser startup/presentation/lifecycle matrix green;
+- painted Star Map assertion green;
+- exact Player Colony Ship tap assertion green.
+
+### Required hands-on recheck before merge
+
+Do not merge PR #39 until the user confirms all three deployed flows:
+
+1. Let the Corporate Trade Ship arrive; open it and confirm **Sell** shows real colony stock and **Buy** shows resource categories/items.
+2. Tap the landed player ship on the colony map and confirm the **Player Colony Ship** six-action panel opens first.
+3. Open **Star Map** (ideally while the Corporate Trade Ship is also docked) and confirm visible star systems/map graphics are drawn and interactive.
+
+If any one of these still fails, keep PR #39 draft and make a targeted correction from `3c089e87` or its later documentation-only descendant.
+
+## Phase 7 technical validation before the regression report
 
 ### Phase 7.1 — `develop` reconciliation
 
@@ -39,69 +84,31 @@ Checkpoint: `213a859ec1c4fb66c17e471b2c1c9c90f1e322a3`
 - `develop` compare returned `behind_by = 0`;
 - Push Test `33082056002` — success;
 - PR Test `33082062486` — success;
-- Pages `33082054938` — success;
-- full Node and browser suites green.
+- Pages `33082054938` — success.
 
-### Phase 7.2 — final validation
+### Phase 7.2 — final broad validation
 
 Checkpoint: `e633bf1f04c6336ab9037573a436b61faf64af4a`
 
-Final runs:
-- Push Test `33087964519` — **success**;
-- PR Test `33087970503` — **success**;
-- Pages `33087964360` — **success**.
+Runs:
+- Push Test `33087964519` — success;
+- PR Test `33087970503` — success;
+- Pages `33087964360` — success.
 
-The normal workflow at this checkpoint proves all of the following:
+This checkpoint proved:
+- full Node regression/domain suite and V8 coverage;
+- architecture guards at zero for versioned JS/CSS, query imports, import map, application globals/document events, and large HTML templates;
+- CSS ownership: exactly 12 linked stylesheets and zero orphan CSS;
+- realistic multi-colony + player-ship save/load round trip;
+- ShipExpansion probe, travel, planet selection, expedition-colony founding, service-radius, and sole-ship-loss paths;
+- **9,000 daily ticks / 25 game years** long-simulation soak;
+- Domain/Core V8 function coverage **83.5% (450/539 functions)**;
+- browser startup diagnostics;
+- mobile/browser presentation matrix at 360×640, 375×667, 390×844, 412×915 and 915×412;
+- first-contract renewal + second-colony lifecycle browser flow;
+- repeated UI open/close lifecycle soak with observer/listener/live-DOM growth bounds.
 
-1. **Full Node regression/domain suite and V8 coverage** passed.
-2. **Architecture guards** passed with:
-   - versioned JS = 0;
-   - versioned CSS = 0;
-   - query imports = 0;
-   - import map = false;
-   - global assignments = 0;
-   - document application events = 0;
-   - large HTML templates = 0.
-3. **CSS ownership guard** passed with exactly 12 linked stylesheets and zero orphan CSS files.
-4. **Realistic multi-colony + player-ship save round trip** passed.
-5. **ShipExpansion campaign/domain path** passed, including:
-   - probe gating/launch/arrival;
-   - physical passenger/resource loading;
-   - interstellar ship travel;
-   - post-arrival planet selection;
-   - expedition colony founding from the ship manifest;
-   - corporate service radius;
-   - sole player ship loss causing campaign failure.
-6. **Accelerated long-simulation soak** passed:
-   - **9,000 daily ticks / 25 game years**;
-   - no colony death or state transition away from `playing`;
-   - final population **180**;
-   - finite cash/metrics throughout annual checks;
-   - food/fuel/ore/build inventories remained non-negative;
-   - sole player ship remained docked/stable;
-   - no game-over state.
-7. **Domain/Core function coverage** reported **83.5% (450/539 functions)**.
-8. **Browser startup probe** passed with positive map-canvas size and no visible startup error.
-9. **Mobile/browser presentation matrix** passed at:
-   - 360×640;
-   - 375×667;
-   - 390×844;
-   - 412×915;
-   - 915×412 landscape.
-10. **Multi-colony browser lifecycle** passed:
-    - first contract completion and five-year renewal;
-    - same-day contract/ship event ordering;
-    - second-colony creation;
-    - background/orphan ship recovery;
-    - colony switching in both directions;
-    - Corporation panel flow.
-11. **Repeated UI lifecycle soak** passed over 20 cycles of Star Map, Cargo Bay, Corporation and Menu navigation, with bounds on:
-    - active ResizeObservers;
-    - window/document listener growth;
-    - live DOM node growth.
-12. **Pages deployment** passed.
-13. Final `develop` → `CleanUp` comparison at `e633bf1f` is **359 ahead / 0 behind**.
-14. PR #39 at `e633bf1f` reports **mergeable: true**, remains **open** and **draft**.
+The user-reported regressions demonstrated that DOM-presence/lifecycle coverage alone was insufficient for some extracted presentation behavior, which is why the targeted checks above were added at `3c089e87`.
 
 ## Phase completion summary
 
@@ -114,7 +121,8 @@ The normal workflow at this checkpoint proves all of the following:
 | 4 — HTML views | Complete | Corrected inline-template baseline **50 → 0**; final `cb882c74`, Push `33070686760`, PR `33070691704`, Pages `33070686316`. |
 | 5 — Feature controllers | Complete | Final `046ed701`, Push `33078938572`, PR `33078945708`, Pages `33078937342`. |
 | 6 — CSS cleanup | Complete | Final `2df89fde`; zero orphan CSS; Push `33081571679`, PR `33081577146`, Pages `33081569786`. |
-| 7 — Final validation | **Complete** | Final technical head `e633bf1f`; Push `33087964519`, PR `33087970503`, Pages `33087964360`; 25-year soak + browser matrix green. |
+| 7 — Final validation/reconciliation | Complete | `e633bf1f`; Push `33087964519`, PR `33087970503`, Pages `33087964360`; 25-year soak + browser matrix green. |
+| Post-refactor regression correction | Automated green; hands-on pending | `3c089e87`; Push `33093417010`, PR `33093421033`, Pages `33093415710`. |
 
 ## Important architecture decisions to preserve
 
@@ -134,9 +142,11 @@ Remaining prototype-qualified `.call(this)` dispatches are intentional manual-su
 
 - static application markup belongs in `/views`;
 - repeated rows/controls use templates/fragments and bounded replacement;
+- reusable templates must live inside the DOM/root from which the owning renderer queries them, or the renderer must explicitly query the full fragment;
 - large embedded application HTML template debt must remain zero;
 - async views must reject stale state/hosts and must not delay `DOMContentLoaded` registration;
-- production UI should render/dispatch, not own gameplay rules.
+- production UI should render/dispatch, not own gameplay rules;
+- optional content in fixed CSS-grid screens must not change direct-child row ownership unexpectedly.
 
 ### CSS ownership
 
@@ -155,7 +165,7 @@ Remaining prototype-qualified `.call(this)` dispatches are intentional manual-su
 11. `adaptive-building-details.css`
 12. `ship-expansion.css`
 
-`css/building-details.css` is intentionally deleted. Two inert `classList.remove("building-detail-panel")` calls remain in active controllers; nothing adds or styles that class. Phase 6 explicitly chose not to rewrite large stable controllers merely to remove those harmless no-op tokens.
+`css/building-details.css` is intentionally deleted. Two inert `classList.remove("building-detail-panel")` calls may remain in active controllers; nothing adds or styles that class.
 
 ### State/domain/lifecycle rules
 
@@ -174,19 +184,19 @@ Do not overwrite, revert, reformat or replace these unrelated user asset changes
 - `assets/art/development/algae-facility/originals/algae-facility-l4.png`
 - `assets/art/resources/food-resources/Originals/synthetic-nutrient.png`
 
-## Merge procedure — requires explicit user approval
+## Merge procedure — requires explicit user approval after hands-on recheck
 
-The cleanup is technically validated and ready to merge, but **do not merge automatically**.
+Do **not** merge automatically.
 
-After the user explicitly approves merging PR #39:
+After the user confirms the three post-refactor regression flows are correct and explicitly approves merging PR #39:
 
 1. Re-read `CleanUp`, `develop`, and PR #39 immediately before mutation.
-2. Require PR head to still be the validated final handoff head (or a later documentation-only fully green head).
+2. Require PR head to still be the hands-on-approved fully green head or a later documentation-only fully green head.
 3. Require `develop` to remain an ancestor / comparison `behind_by = 0`.
 4. Require PR #39 to remain mergeable and checks green.
 5. Mark PR #39 ready for review if GitHub requires draft removal before merge.
-6. Merge PR #39 into `develop` using the repository’s normal merge strategy; do not force-push or bypass failed checks.
+6. Merge PR #39 into `develop` using the repository's normal merge strategy; do not force-push or bypass failed checks.
 7. Verify the resulting `develop` head and its post-merge workflow/Pages state.
 8. Only after that consider the `CleanUp` work complete/archivable.
 
-No further cleanup/refactor changes should be added to `CleanUp` before the merge unless a newly discovered validation failure requires a targeted fix.
+No additional cleanup/refactor work should be added now. Only targeted fixes for newly discovered validation failures should modify `CleanUp` before the merge.
