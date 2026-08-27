@@ -1,8 +1,9 @@
 import { TradeUI as BaseTradeUI } from "./v55-trade-ui.js";
 import { formatMoney, formatNumber } from "../core/utils.js";
-import { renderViewTemplate } from "../core/view-template.js";
+import { loadViewTemplate,renderViewTemplate } from "../core/view-template.js";
 
 const PAGE_SIZE=4,MAX_TRADE=100000,BUY_CATEGORIES=["Fuel","Food","Ore","Build"];
+const QUICK_VIEWS={sell:"./views/quick-trade-sell.html",buy:"./views/quick-trade-buy.html"};
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,Math.floor(Number(value)||0)));
 
 export class TradeUI extends BaseTradeUI{
@@ -19,10 +20,14 @@ export class TradeUI extends BaseTradeUI{
   }
 
   amountControl(kind,value){return renderViewTemplate("./views/quick-trade-amount.html",{KIND:kind,MAX_TRADE,VALUE:value});}
-
-  pager(kind,page,pages){
-    if(pages<=1)return `<div class="trade-pager single"><span>1 / 1</span></div>`;
-    return `<div class="trade-pager"><button data-page="${kind}" data-dir="-1" ${page<=0?"disabled":""}>‹</button><span>${page+1} / ${pages}</span><button data-page="${kind}" data-dir="1" ${page>=pages-1?"disabled":""}>›</button></div>`;
+  viewFragment(source){return document.createRange().createContextualFragment(source);}
+  cloneTradeTemplate(root,selector){return root?.querySelector(selector)?.content.cloneNode(true)||null;}
+  setTradeText(root,selector,value){const node=root?.querySelector(selector);if(node)node.textContent=String(value??"");return node;}
+  mountTradeAmount(root,source){root.querySelector("[data-trade-amount-host]")?.replaceChildren(this.viewFragment(source));}
+  configurePager(root,page,pages){
+    const pager=root.querySelector("[data-trade-pager]"),buttons=pager?.querySelectorAll("[data-page]")||[];if(!pager)return;
+    pager.classList.toggle("single",pages<=1);this.setTradeText(pager,"[data-page-label]",`${page+1} / ${pages}`);
+    for(const button of buttons){button.hidden=pages<=1;button.disabled=Number(button.dataset.dir)<0?page<=0:page>=pages-1;}
   }
 
   stockAmount(key){
@@ -42,28 +47,39 @@ export class TradeUI extends BaseTradeUI{
     this.renderQuick();
   }
 
+  async selectedTradeView(){if(this.quickTab==="sell")return this.sellView();if(this.quickTab==="buy")return this.buyView();return this.viewFragment(await this.colonistView());}
   async renderQuick(){
     if(!this.state.trade.active){this.status();return;}
     const revision=++this.quickRenderRevision,cash=this.state.company.cash,cargo=this.trade.cargoRemaining(this.state),exports=this.trade.exportRemaining(this.state),pax=this.trade.passengerRemaining(this.state),colonistsBlocked=this.state.contract.ended||this.state.status==="liability";
     let tradeView,body;
     try{
-      tradeView=this.quickTab==="sell"?await this.sellView():this.quickTab==="buy"?await this.buyView():await this.colonistView();
-      body=await renderViewTemplate("./views/quick-trade-shell.html",{CASH:formatMoney(cash),IMPORT:formatNumber(cargo),EXPORT:formatNumber(exports),PAX:colonistsBlocked?"—":formatNumber(pax),SELL_ACTIVE:this.quickTab==="sell"?"active":"",BUY_ACTIVE:this.quickTab==="buy"?"active":"",COLONISTS_ACTIVE:this.quickTab==="colonists"?"active":"",COLONISTS_DISABLED:colonistsBlocked?"disabled":"",TRADE_VIEW:tradeView});
+      [tradeView,body]=await Promise.all([this.selectedTradeView(),renderViewTemplate("./views/quick-trade-shell.html",{CASH:formatMoney(cash),IMPORT:formatNumber(cargo),EXPORT:formatNumber(exports),PAX:colonistsBlocked?"—":formatNumber(pax),SELL_ACTIVE:this.quickTab==="sell"?"active":"",BUY_ACTIVE:this.quickTab==="buy"?"active":"",COLONISTS_ACTIVE:this.quickTab==="colonists"?"active":"",COLONISTS_DISABLED:colonistsBlocked?"disabled":""})]);
     }catch(error){if(revision!==this.quickRenderRevision)return;this.ui.diagnostics?.error?.("quick trade template failed",error);this.ui.toast("Unable to open the corporate trade ship.");return;}
     if(revision!==this.quickRenderRevision||!this.state.trade.active)return;
-    this.ui.open("Corporate Trade Ship — DOCKED",body);
+    this.ui.open("Corporate Trade Ship — DOCKED",body);this.ui.modal.querySelector("[data-trade-view-host]")?.replaceChildren(tradeView);
     this.ui.modal.classList.add("trade-quick-modal");
     this.bindQuick();
   }
 
   async sellView(){
-    const all=this.trade.sellableStock(this.state),pages=Math.max(1,Math.ceil(all.length/PAGE_SIZE));this.sellPage=clamp(this.sellPage,0,pages-1);const rows=all.slice(this.sellPage*PAGE_SIZE,(this.sellPage+1)*PAGE_SIZE),allQuote=this.trade.sellAllQuote(this.state),amount=await this.amountControl("sell",this.sellAmount);
-    return `<section class="trade-view-panel"><div class="trade-view-head"><div><strong>SELL COLONY STOCK</strong><small>Highest quality is sold first. Colony reserves are protected.</small></div><b>${formatMoney(allQuote.revenue)}</b></div>${amount}<div class="trade-quick-list">${rows.length?rows.map(entry=>{const q=this.trade.quoteSell(this.state,entry.key,this.sellAmount),reserve=this.trade.tradeReserve(this.state,entry.key);return`<div class="trade-quick-row"><div class="trade-row-copy"><strong>${entry.name}</strong><small>${formatNumber(entry.amount)} stock${reserve>0?` • <span class="reserve">${formatNumber(reserve)} reserve</span>`:""} • ${formatNumber(entry.sellableAmount)} sellable</small></div><button data-sell-key="${entry.key}" ${q.qty<=0?"disabled":""}>${q.qty>0?`SELL ${formatNumber(q.qty)}<span>${formatMoney(q.revenue)}</span>`:"SELL"}</button></div>`}).join(""):`<div class="trade-empty">No stock is available above your colony reserves.</div>`}</div><div class="trade-view-footer"><button data-sell-all class="trade-primary" ${allQuote.qty<=0?"disabled":""}>SELL ALL${allQuote.qty>0?` — ${formatMoney(allQuote.revenue)}`:""}</button>${this.pager("sell",this.sellPage,pages)}</div></section>`;
+    const all=this.trade.sellableStock(this.state),pages=Math.max(1,Math.ceil(all.length/PAGE_SIZE));this.sellPage=clamp(this.sellPage,0,pages-1);const rows=all.slice(this.sellPage*PAGE_SIZE,(this.sellPage+1)*PAGE_SIZE),allQuote=this.trade.sellAllQuote(this.state),[source,amount]=await Promise.all([loadViewTemplate(QUICK_VIEWS.sell),this.amountControl("sell",this.sellAmount)]),fragment=this.viewFragment(source),root=fragment.querySelector("[data-trade-sell-view]");
+    this.setTradeText(root,"[data-sell-total]",formatMoney(allQuote.revenue));this.mountTradeAmount(root,amount);root.querySelector("[data-sell-empty]").hidden=rows.length>0;this.populateSellRows(root,rows);
+    const sellAll=root.querySelector("[data-sell-all]");sellAll.disabled=allQuote.qty<=0;sellAll.textContent=`SELL ALL${allQuote.qty>0?` — ${formatMoney(allQuote.revenue)}`:""}`;this.configurePager(root,this.sellPage,pages);return fragment;
+  }
+  populateSellRows(root,rows){
+    const host=root.querySelector("[data-sell-rows]"),rendered=document.createDocumentFragment();
+    for(const entry of rows){const q=this.trade.quoteSell(this.state,entry.key,this.sellAmount),reserve=this.trade.tradeReserve(this.state,entry.key),fragment=this.cloneTradeTemplate(root,"[data-sell-row-template]");if(!fragment)continue;const button=fragment.querySelector("[data-sell-key]"),reserveNode=fragment.querySelector("[data-sell-reserve]");this.setTradeText(fragment,"[data-sell-name]",entry.name);this.setTradeText(fragment,"[data-sell-stock]",`${formatNumber(entry.amount)} stock`);reserveNode.hidden=reserve<=0;if(reserve>0)reserveNode.textContent=` • ${formatNumber(reserve)} reserve`;this.setTradeText(fragment,"[data-sell-available]",` • ${formatNumber(entry.sellableAmount)} sellable`);button.dataset.sellKey=entry.key;button.disabled=q.qty<=0;this.setTradeText(button,"[data-sell-label]",q.qty>0?`SELL ${formatNumber(q.qty)}`:"SELL");const revenue=button.querySelector("[data-sell-revenue]");revenue.hidden=q.qty<=0;if(q.qty>0)revenue.textContent=formatMoney(q.revenue);rendered.append(fragment);}host.replaceChildren(rendered);
   }
 
   async buyView(){
-    const category=this.buyCategory,catalog=this.trade.catalog().filter(item=>item.category===category).map(item=>{const stock=this.stockAmount(item.key),reserve=this.trade.tradeReserve(this.state,item.key),shortfall=Math.max(0,reserve-stock);return{...item,stock,reserve,shortfall};}).sort((a,b)=>(b.shortfall>0)-(a.shortfall>0)||b.shortfall-a.shortfall||a.name.localeCompare(b.name)),pages=Math.max(1,Math.ceil(catalog.length/PAGE_SIZE));this.buyPage=clamp(this.buyPage,0,pages-1);const rows=catalog.slice(this.buyPage*PAGE_SIZE,(this.buyPage+1)*PAGE_SIZE),reserveTarget=catalog.find(x=>x.shortfall>0),amount=await this.amountControl("buy",this.buyAmount);
-    return `<section class="trade-view-panel buy-view"><div class="trade-view-head"><div><strong>BUY FROM CORPORATION</strong><small>Choose an amount once, then tap resources to buy.</small></div><b>${formatNumber(this.trade.cargoRemaining(this.state))} cargo</b></div>${amount}<div class="trade-buy-categories">${BUY_CATEGORIES.map(c=>`<button data-buy-category="${c}" class="${c===category?"active":""}">${c.toUpperCase()}</button>`).join("")}</div><div class="trade-quick-list buy-list">${rows.map(item=>{const q=this.buyQuote(item);return`<div class="trade-quick-row"><div class="trade-row-copy"><strong>${item.name}</strong><small>${formatNumber(item.stock)} stock${item.reserve>0?` • <span class="reserve">${formatNumber(item.reserve)} reserve${item.shortfall>0?` • SHORT ${formatNumber(item.shortfall)}`:""}</span>`:""} • ${this.price(q.price)}/u</small></div><button data-buy-key="${item.key}" ${q.qty<=0?"disabled":""}>${q.qty>0?`BUY ${formatNumber(q.qty)}<span>${formatMoney(q.cost)}</span>`:"BUY"}</button></div>`}).join("")}</div><div class="trade-view-footer"><button data-buy-reserve="${reserveTarget?.key||""}" class="trade-secondary" ${!reserveTarget?"disabled":""}>${reserveTarget?`BUY ${reserveTarget.name.toUpperCase()} TO RESERVE`:"NO RESERVE SHORTAGE"}</button>${this.pager("buy",this.buyPage,pages)}</div></section>`;
+    const category=this.buyCategory,catalog=this.trade.catalog().filter(item=>item.category===category).map(item=>{const stock=this.stockAmount(item.key),reserve=this.trade.tradeReserve(this.state,item.key),shortfall=Math.max(0,reserve-stock);return{...item,stock,reserve,shortfall};}).sort((a,b)=>(b.shortfall>0)-(a.shortfall>0)||b.shortfall-a.shortfall||a.name.localeCompare(b.name)),pages=Math.max(1,Math.ceil(catalog.length/PAGE_SIZE));this.buyPage=clamp(this.buyPage,0,pages-1);const rows=catalog.slice(this.buyPage*PAGE_SIZE,(this.buyPage+1)*PAGE_SIZE),reserveTarget=catalog.find(x=>x.shortfall>0),[source,amount]=await Promise.all([loadViewTemplate(QUICK_VIEWS.buy),this.amountControl("buy",this.buyAmount)]),fragment=this.viewFragment(source),root=fragment.querySelector("[data-trade-buy-view]");
+    this.setTradeText(root,"[data-buy-cargo]",`${formatNumber(this.trade.cargoRemaining(this.state))} cargo`);this.mountTradeAmount(root,amount);this.populateBuyCategories(root,category);this.populateBuyRows(root,rows);const reserveBuy=root.querySelector("[data-buy-reserve]");reserveBuy.dataset.buyReserve=reserveTarget?.key||"";reserveBuy.disabled=!reserveTarget;reserveBuy.textContent=reserveTarget?`BUY ${reserveTarget.name.toUpperCase()} TO RESERVE`:"NO RESERVE SHORTAGE";this.configurePager(root,this.buyPage,pages);return fragment;
+  }
+  populateBuyCategories(root,category){
+    const host=root.querySelector("[data-buy-categories]"),rendered=document.createDocumentFragment();for(const name of BUY_CATEGORIES){const fragment=this.cloneTradeTemplate(root,"[data-buy-category-template]");if(!fragment)continue;const button=fragment.querySelector("[data-buy-category]");button.dataset.buyCategory=name;button.classList.toggle("active",name===category);button.textContent=name.toUpperCase();rendered.append(fragment);}host.replaceChildren(rendered);
+  }
+  populateBuyRows(root,rows){
+    const host=root.querySelector("[data-buy-rows]"),rendered=document.createDocumentFragment();for(const item of rows){const q=this.buyQuote(item),fragment=this.cloneTradeTemplate(root,"[data-buy-row-template]");if(!fragment)continue;const button=fragment.querySelector("[data-buy-key]"),reserve=fragment.querySelector("[data-buy-reserve-copy]");this.setTradeText(fragment,"[data-buy-name]",item.name);this.setTradeText(fragment,"[data-buy-stock]",`${formatNumber(item.stock)} stock`);reserve.hidden=item.reserve<=0;if(item.reserve>0)reserve.textContent=` • ${formatNumber(item.reserve)} reserve${item.shortfall>0?` • SHORT ${formatNumber(item.shortfall)}`:""}`;this.setTradeText(fragment,"[data-buy-price]",` • ${this.price(q.price)}/u`);button.dataset.buyKey=item.key;button.disabled=q.qty<=0;this.setTradeText(button,"[data-buy-label]",q.qty>0?`BUY ${formatNumber(q.qty)}`:"BUY");const cost=button.querySelector("[data-buy-cost]");cost.hidden=q.qty<=0;if(q.qty>0)cost.textContent=formatMoney(q.cost);rendered.append(fragment);}host.replaceChildren(rendered);
   }
 
   async colonistView(){
