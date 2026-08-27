@@ -1,49 +1,95 @@
 import { UIController as LegacyUIController } from "./survival-presentation-ui.js";
-import { CONFIG } from "../core/config.js";
 import { formatMoney,formatNumber } from "../core/utils.js";
+import { loadViewTemplate } from "../core/view-template.js";
 import { BUILDING_MODEL,SHIP_INFRASTRUCTURE,buildingCapacity,localBuildings,syncBuildingTotals } from "../domain/building-model.js";
 
 const LOCAL_KINDS=["housing","power","industry"];
 const TECH_LABELS={housing:"HOUSING",power:"POWER",food:"FOOD PRODUCTION",industry:"INDUSTRY",mining:"MINING / EXTRACTION"};
+const VIEW_PATHS={
+  buildChoice:"./views/build-choice.html",
+  localBuilding:"./views/local-building-panel.html",
+  localInfrastructure:"./views/local-infrastructure-card.html",
+  technology:"./views/corporate-technology.html"
+};
 const findMetric=(root,label)=>[...root.querySelectorAll(".metric")].find(m=>m.querySelector("small")?.textContent.trim()===label)||null;
-const replaceSection=(root,id,title,body)=>{const section=root?.querySelector(`#help-${id}`),header=section?.querySelector(".help-section-title");if(!section||!header)return;header.querySelector("h3").textContent=title;while(section.lastChild&&section.lastChild!==header)section.removeChild(section.lastChild);section.insertAdjacentHTML("beforeend",body);};
 
 export class UIController extends LegacyUIController{
   localCost(req){return`${formatNumber(req?.build||0)} Build${(req?.ore||0)>0?` + ${formatNumber(req.ore)} Ore`:""}`;}
   capacityText(kind,value){return kind==="housing"?`${formatNumber(value)} housing`:kind==="power"?`${formatNumber(value)} power`:`${formatNumber(value)} Industry`;}
-  buildChoice(tile){
+  setPresentationText(root,selector,value){const node=root?.querySelector(selector);if(node)node.textContent=String(value??"");}
+  cloneViewTemplate(root,selector){return root?.querySelector(selector)?.content.cloneNode(true)||null;}
+  async loadPresentationView(path,label){try{return await loadViewTemplate(path);}catch(error){this.diagnostics?.error?.(`${label} view failed`,error);this.toast(`Unable to open ${label}.`);return null;}}
+
+  async buildChoice(tile){
     if(!tile?.revealed){this.toast("Survey this tile before construction.");return;}
+    const source=await this.loadPresentationView(VIEW_PATHS.buildChoice,"construction choices");if(!source||!tile?.revealed)return;
     const covered=!!tile.resourceId,checks=Object.fromEntries(LOCAL_KINDS.map(kind=>[kind,this.development.canPlace(this.state,tile,kind)]));
-    this.open(`Develop ${this.land.terrainLabel(tile.terrain)} Tile`,`<article class="card"><h3>${covered?`${tile.name} • Q${formatNumber(tile.quality)}`:"CLEAR SURVEYED LAND"}</h3><p>${covered?(tile.type==="food"?"Building here permanently destroys this natural Food resource.":"Local infrastructure can be built here, but the known resource becomes inaccessible until the building is demolished."):"Choose an individual building. Multiple buildings stack; higher-level buildings provide more capacity per tile."}</p></article><div class="grid3">${LOCAL_KINDS.map(kind=>{const r=checks[kind],def=BUILDING_MODEL[kind];return`<button data-place="${kind}" ${r.ok?"":"disabled"}>${def.label.toUpperCase()} L1<br><span class="tiny">${r.ok?`${this.localCost(r)} • +${formatNumber(r.capacity)} ${def.unit}`:r.reason}</span></button>`;}).join("")}</div>${LOCAL_KINDS.filter(k=>!checks[k].ok).map(k=>`<div class="requirement locked">${BUILDING_MODEL[k].label}: ${checks[k].reason}</div>`).join("")}`);
-    this.modal.querySelectorAll("[data-place]").forEach(button=>button.onclick=()=>{const kind=button.dataset.place;if(covered&&!confirm(tile.type==="food"?`Build ${this.development.label(kind)} over ${tile.name}? This Food resource will be permanently destroyed.`:`Build ${this.development.label(kind)} over ${tile.name}? The resource remains underground but cannot be exploited until the building is demolished.`))return;this.onPlaceDevelopment?.(tile,kind);});
+    this.open(`Develop ${this.land.terrainLabel(tile.terrain)} Tile`,source);
+    const body=this.modal.querySelector(".modal-body");if(!body)return;
+    this.setPresentationText(body,"[data-build-choice-title]",covered?`${tile.name} • Q${formatNumber(tile.quality)}`:"CLEAR SURVEYED LAND");
+    this.setPresentationText(body,"[data-build-choice-copy]",covered?(tile.type==="food"?"Building here permanently destroys this natural Food resource.":"Local infrastructure can be built here, but the known resource becomes inaccessible until the building is demolished."):"Choose an individual building. Multiple buildings stack; higher-level buildings provide more capacity per tile.");
+    this.populateBuildChoices(body,checks);
+    body.querySelectorAll("[data-place]").forEach(button=>button.onclick=()=>this.confirmBuildChoice(tile,button.dataset.place,covered));
   }
+  populateBuildChoices(body,checks){
+    const options=body.querySelector("[data-build-choice-options]"),requirements=body.querySelector("[data-build-choice-requirements]"),optionRows=document.createDocumentFragment(),requirementRows=document.createDocumentFragment();
+    for(const kind of LOCAL_KINDS){
+      const result=checks[kind],definition=BUILDING_MODEL[kind],option=this.cloneViewTemplate(body,"[data-build-choice-option-template]");if(!option)continue;
+      const button=option.querySelector("[data-place]");button.dataset.place=kind;button.disabled=!result.ok;this.setPresentationText(option,"[data-build-choice-label]",`${definition.label.toUpperCase()} L1`);this.setPresentationText(option,"[data-build-choice-detail]",result.ok?`${this.localCost(result)} • +${formatNumber(result.capacity)} ${definition.unit}`:result.reason);optionRows.append(option);
+      if(!result.ok){const requirement=this.cloneViewTemplate(body,"[data-build-choice-requirement-template]");if(requirement){this.setPresentationText(requirement,"[data-build-choice-requirement-label]",definition.label);this.setPresentationText(requirement,"[data-build-choice-requirement-reason]",result.reason);requirementRows.append(requirement);}}
+    }
+    options?.replaceChildren(optionRows);requirements?.replaceChildren(requirementRows);
+  }
+  confirmBuildChoice(tile,kind,covered){
+    if(covered&&!confirm(tile.type==="food"?`Build ${this.development.label(kind)} over ${tile.name}? This Food resource will be permanently destroyed.`:`Build ${this.development.label(kind)} over ${tile.name}? The resource remains underground but cannot be exploited until the building is demolished.`))return;
+    this.onPlaceDevelopment?.(tile,kind);
+  }
+
   tile(tile){
     super.tile(tile);if(!tile?.revealed||!tile.resourceId)return;
     if(!tile.developed){const req=this.sites.developRequirements(this.state,tile),button=this.tilePanel.querySelector("[data-develop]");if(button)button.textContent=`DEVELOP • ${formatNumber(req.build||0)} BUILD`;return;}
     const req=this.sites.upgradeRequirements(this.state,tile),button=this.tilePanel.querySelector("[data-upgrade]");if(button&&!req.max)button.textContent=`UPGRADE TO L${tile.level+1} • ${this.localCost(req)}`;
     if(!req.max){const note=document.createElement("div");note.className=`effect ${req.ok?"good":"warn"}`;note.textContent=`Local upgrade requirements: ${formatNumber(req.industryRequired||0)} Industry • ${formatNumber(req.powerRequired||0)} Power • ${formatNumber(req.workforce||0)} additional workers${tile.type==="food"?` • Food Tech L${req.techRequired||tile.level+1}`:` • ${tile.requiredMiningTech||`Mining L${tile.requiredMiningLevel||1}`} unlock retained`}.`;this.tilePanel.appendChild(note);}
   }
-  localBuildingPanel(tile){
-    const dev=tile.development,kind=dev.kind,level=Math.max(1,Number(dev.level)||1),current=buildingCapacity(kind,level),next=this.development.canUpgrade(this.state,tile),tech=this.development.techLevel(this.state,kind),terrain=this.land.terrainLabel(tile.terrain),covered=tile.resourceId?`${tile.name} • Q${formatNumber(tile.quality)} (covered)`:"No known surface resource",nextCapacity=level<5?buildingCapacity(kind,level+1):current;
-    this.open(`${this.development.label(kind)} L${level}`,`<div class="grid2"><div class="metric"><small>Terrain</small><strong>${terrain}</strong></div><div class="metric"><small>Building contribution</small><strong>${this.capacityText(kind,current)}</strong></div><div class="metric"><small>${TECH_LABELS[kind]} Tech</small><strong>L${tech}</strong></div><div class="metric"><small>Surface geology</small><strong>${covered}</strong></div></div>${level<5?`<div class="effect ${next.ok?"good":"warn"}">${next.ok?`L${level+1} provides ${this.capacityText(kind,nextCapacity)} (+${formatNumber(nextCapacity-current)}). Upgrade cost: ${this.localCost(next)}.`:next.reason}</div><button class="action" data-local-upgrade ${next.ok?"":"disabled"}>UPGRADE TO L${level+1}${next.ok?` • ${this.localCost(next)}`:""}</button>`:`<div class="effect good">Maximum building level reached.</div>`}<button class="bad action" data-demolish>DEMOLISH • recover 25% of invested materials</button>`);
-    const upgrade=this.modal.querySelector("[data-local-upgrade]");if(upgrade)upgrade.onclick=()=>{const r=this.development.upgrade(this.state,tile);if(!r.ok){this.toast(r.reason);return;}this.onRecalculate?.();this.repo.save(this.state);this.toast(`${this.development.label(kind)} upgraded to L${tile.development.level}.`);this.localBuildingPanel(tile);};
-    this.modal.querySelector("[data-demolish]").onclick=()=>{if(confirm(`Demolish ${this.development.label(kind)} L${level}?`))this.onDemolishDevelopment?.(tile);};
+
+  async localBuildingPanel(tile){
+    const dev=tile?.development;if(!dev)return;
+    const kind=dev.kind,level=Math.max(1,Number(dev.level)||1),source=await this.loadPresentationView(VIEW_PATHS.localBuilding,"building details");if(!source||tile.development?.kind!==kind)return;
+    const current=buildingCapacity(kind,level),next=this.development.canUpgrade(this.state,tile),tech=this.development.techLevel(this.state,kind),terrain=this.land.terrainLabel(tile.terrain),covered=tile.resourceId?`${tile.name} • Q${formatNumber(tile.quality)} (covered)`:"No known surface resource",nextCapacity=level<5?buildingCapacity(kind,level+1):current;
+    this.open(`${this.development.label(kind)} L${level}`,source);const body=this.modal.querySelector(".modal-body");if(!body)return;
+    this.setPresentationText(body,"[data-local-terrain]",terrain);this.setPresentationText(body,"[data-local-contribution]",this.capacityText(kind,current));this.setPresentationText(body,"[data-local-tech-label]",`${TECH_LABELS[kind]} Tech`);this.setPresentationText(body,"[data-local-tech-level]",`L${tech}`);this.setPresentationText(body,"[data-local-geology]",covered);
+    const upgradeBlock=body.querySelector("[data-local-upgrade-block]"),maxBlock=body.querySelector("[data-local-max-block]"),upgrade=body.querySelector("[data-local-upgrade]");
+    if(level<5){maxBlock.hidden=true;upgradeBlock.hidden=false;upgradeBlock.classList.toggle("good",next.ok);upgradeBlock.classList.toggle("warn",!next.ok);this.setPresentationText(upgradeBlock,"[data-local-upgrade-copy]",next.ok?`L${level+1} provides ${this.capacityText(kind,nextCapacity)} (+${formatNumber(nextCapacity-current)}). Upgrade cost: ${this.localCost(next)}.`:next.reason);upgrade.disabled=!next.ok;this.setPresentationText(upgrade,"[data-local-upgrade-label]",`UPGRADE TO L${level+1}${next.ok?` • ${this.localCost(next)}`:""}`);}
+    else{upgradeBlock.hidden=true;maxBlock.hidden=false;}
+    if(upgrade)upgrade.onclick=()=>this.upgradeLocalBuilding(tile);
+    body.querySelector("[data-demolish]").onclick=()=>{if(confirm(`Demolish ${this.development.label(kind)} L${level}?`))this.onDemolishDevelopment?.(tile);};
   }
+  upgradeLocalBuilding(tile){const r=this.development.upgrade(this.state,tile);if(!r.ok){this.toast(r.reason);return;}this.onRecalculate?.();this.repo.save(this.state);this.toast(`${this.development.label(tile.development.kind)} upgraded to L${tile.development.level}.`);this.localBuildingPanel(tile);}
+
   landTile(tile){
     if(LOCAL_KINDS.includes(tile?.development?.kind)){this.localBuildingPanel(tile);return;}
     super.landTile(tile);
     if(!tile?.revealed||!tile.resourceId||tile.developed||tile.development)return;
     const existing=this.modal.querySelector("[data-cover]");if(!existing)return;const grid=existing.parentElement,power=this.development.canPlace(this.state,tile,"power"),button=document.createElement("button");button.dataset.cover="power";button.textContent="POWER";button.disabled=!power.ok;grid.appendChild(button);if(!power.ok){const note=document.createElement("div");note.className="requirement locked";note.textContent=`Power: ${power.reason}`;grid.closest("article")?.insertAdjacentElement("afterend",note);}button.onclick=()=>{if(confirm(tile.type==="food"?`Build Power Plant over ${tile.name}? This Food resource will be destroyed.`:`Cover ${tile.name} with a Power Plant?`))this.onPlaceDevelopment?.(tile,"power");};
   }
+
   landColonyPanel(){
     super.landColonyPanel();if(this.state.status==="dead"||this.state.status==="site-selection")return;const totals=syncBuildingTotals(this.state),m=this.state.metrics;
     const industry=findMetric(this.modal,"Industry");if(industry){industry.querySelector("small").textContent="Industry effective / installed";industry.querySelector("strong").textContent=`${formatNumber(m.industry||0)} / ${formatNumber(totals.industry)}`;}
-    const grid=this.modal.querySelector(".grid2"),powerPlants=localBuildings(this.state,"power").length;if(grid){const metric=document.createElement("div");metric.className="metric";metric.innerHTML=`<small>Power plants</small><strong>${powerPlants}</strong>`;grid.appendChild(metric);}
-    const management=this.modal.querySelector(".colony-management"),card=document.createElement("article");card.className="card";card.style.marginTop="7px";card.innerHTML=`<h3>LOCAL INFRASTRUCTURE</h3><div class="grid3"><div class="metric"><small>Housing</small><strong>${formatNumber(this.state.pop)} / ${formatNumber(totals.housing)}</strong></div><div class="metric"><small>Power</small><strong>${formatNumber(m.powerDemand||0)} / ${formatNumber(totals.power)}</strong></div><div class="metric"><small>Industry</small><strong>${formatNumber(m.industry||0)} / ${formatNumber(totals.industry)}</strong></div></div><p>Ship base: ${SHIP_INFRASTRUCTURE.housing} accommodation • ${SHIP_INFRASTRUCTURE.power} power • ${SHIP_INFRASTRUCTURE.industry} Industry. Every map building adds its own capacity and multiple buildings stack.</p>`;if(management)management.insertAdjacentElement("beforebegin",card);else this.modal.querySelector(".modal-body")?.appendChild(card);
+    const grid=this.modal.querySelector(".grid2"),powerPlants=localBuildings(this.state,"power").length;if(grid)this.appendMetric(grid,"Power plants",powerPlants);
+    const body=this.modal.querySelector(".modal-body");if(body)this.renderLocalInfrastructureCard(body,totals,m);
     for(const node of this.modal.querySelectorAll("p,.effect"))node.textContent=node.textContent.replace(/Housing or Industry/g,"Housing, Power or Industry");
   }
+  appendMetric(host,label,value){const metric=document.createElement("div"),small=document.createElement("small"),strong=document.createElement("strong");metric.className="metric";small.textContent=label;strong.textContent=String(value);metric.append(small,strong);host.appendChild(metric);return metric;}
+  async renderLocalInfrastructureCard(body,totals,m){
+    const source=await this.loadPresentationView(VIEW_PATHS.localInfrastructure,"local infrastructure");if(!source||!body.isConnected||body!==this.modal.querySelector(".modal-body"))return;
+    const fragment=document.createRange().createContextualFragment(source),card=fragment.querySelector("[data-local-infrastructure-card]");if(!card)return;
+    this.setPresentationText(card,"[data-local-housing]",`${formatNumber(this.state.pop)} / ${formatNumber(totals.housing)}`);this.setPresentationText(card,"[data-local-power]",`${formatNumber(m.powerDemand||0)} / ${formatNumber(totals.power)}`);this.setPresentationText(card,"[data-local-industry]",`${formatNumber(m.industry||0)} / ${formatNumber(totals.industry)}`);this.setPresentationText(card,"[data-ship-housing]",SHIP_INFRASTRUCTURE.housing);this.setPresentationText(card,"[data-ship-power]",SHIP_INFRASTRUCTURE.power);this.setPresentationText(card,"[data-ship-industry]",SHIP_INFRASTRUCTURE.industry);
+    const management=body.querySelector(".colony-management");if(management)management.before(fragment);else body.appendChild(fragment);
+  }
   colonyPanel(){if(this.state.status==="dead")return super.colonyPanel();return this.landColonyPanel();}
-  company(){super.company();const body=this.modal.querySelector(".grid2");if(!body)return;for(const [label,cat] of [["Housing technology","housing"],["Industry technology","industry"]]){const metric=document.createElement("div");metric.className="metric";metric.innerHTML=`<small>${label}</small><strong>L${this.technology.level(this.state,cat)}</strong>`;body.appendChild(metric);}}
+
+  company(){super.company();const body=this.modal.querySelector(".grid2");if(!body)return;for(const [label,cat] of [["Housing technology","housing"],["Industry technology","industry"]])this.appendMetric(body,label,`L${this.technology.level(this.state,cat)}`);}
   techEffect(category,tech){
     if(category==="housing")return`Allows Housing buildings up to L${tech.level} • L${tech.level} provides ${formatNumber(buildingCapacity("housing",tech.level))} housing per building`;
     if(category==="power")return`Allows Power buildings up to L${tech.level} • L${tech.level} generates ${formatNumber(buildingCapacity("power",tech.level))} • fuel intensity ${tech.fuelIntensity.toFixed(3)}×`;
@@ -51,15 +97,32 @@ export class UIController extends LegacyUIController{
     if(category==="industry")return`Allows Industry buildings up to L${tech.level} • L${tech.level} provides ${formatNumber(buildingCapacity("industry",tech.level))} Industry • Ore use ×${tech.oreEfficiency.toFixed(2)}`;
     const unlocks=this.resources.catalog().filter(r=>r.miningLevel===tech.level&&!r.manufactured).map(r=>r.name);return`${unlocks.length?`Unlocks: ${unlocks.join(", ")}`:"Extraction-method licence"} • mining workforce ×${tech.workforceEfficiency.toFixed(2)}`;
   }
-  tech(){
-    this.onRecalculate?.();if(this.showFutureTech===undefined)this.showFutureTech=true;const access=this.technology.canAccessStore(this.state),cats=["housing","power","food","industry","mining"];
-    const paths=cats.map(cat=>{const tree=this.technology.tree(cat),level=this.technology.level(this.state,cat),items=tree.filter(t=>this.showFutureTech||t.level<=level);return`<section class="tech-path"><div class="tech-path-header"><strong>${TECH_LABELS[cat]}</strong><span>L${level}/${tree.length}</span></div><div class="tech-roadmap">${items.map(t=>{const owned=t.level<level,current=t.level===level,next=t.level===level+1,future=t.level>level+1,stateClass=owned?"owned":current?"current":next?"next":"future",stateLabel=owned?"OWNED":current?"CURRENT":next?"NEXT":"LOCKED";return`<article class="tech-roadmap-card ${stateClass}"><div class="tech-roadmap-level">L${t.level}</div><div class="tech-roadmap-copy"><div class="tech-roadmap-title"><strong>${t.name}</strong><span>${stateLabel}</span></div><p>${t.description}</p><div class="effect">${this.techEffect(cat,t)}</div>${future?`<div class="requirement">Requires ${TECH_LABELS[cat]} L${t.level-1}</div>`:""}</div><div class="tech-roadmap-action">${next?`<button data-tech-cat="${cat}" ${!access||this.state.company.cash<t.cost?"disabled":""}>${formatMoney(t.cost)}</button>`:current?`<span>ACTIVE</span>`:owned?`<span>✓</span>`:`<span>🔒</span>`}</div></article>`;}).join("")}</div></section>`;}).join("");
-    this.open("Corporate Technology",`<div class="tech-toolbar"><article class="card"><h3>${access?"CORPORATE SYSTEMS ONLINE":"CORPORATE SYSTEMS UNAVAILABLE"}</h3><p>${this.technology.accessText(this.state)}</p><div class="effect">Housing, Power, Food and Industry technology set the maximum level of each individual building. Mining technology is the deliberate exception: it unlocks extraction methods/resources, while each mine site's L1–L5 development controls local efficiency.</div></article><button data-tech-toggle>${this.showFutureTech?"HIDE FUTURE TECH":"SHOW FUTURE TECH"}</button></div><div class="tech-tree">${paths}</div>`);this.modal.querySelector("[data-tech-toggle]").onclick=()=>{this.showFutureTech=!this.showFutureTech;this.tech()};this.modal.querySelectorAll("[data-tech-cat]").forEach(b=>b.onclick=()=>{const r=this.technology.buy(this.state,b.dataset.techCat);if(r.ok){this.onRecalculate?.();this.repo.save(this.state);this.toast(`${r.tech.name} licensed permanently.`);this.tech()}else this.toast(r.reason)});
+
+  async tech(){
+    this.onRecalculate?.();if(this.showFutureTech===undefined)this.showFutureTech=true;const source=await this.loadPresentationView(VIEW_PATHS.technology,"corporate technology");if(!source)return;
+    const access=this.technology.canAccessStore(this.state),cats=["housing","power","food","industry","mining"];
+    this.open("Corporate Technology",source);const body=this.modal.querySelector(".modal-body");if(!body)return;
+    this.setPresentationText(body,"[data-tech-access-title]",access?"CORPORATE SYSTEMS ONLINE":"CORPORATE SYSTEMS UNAVAILABLE");this.setPresentationText(body,"[data-tech-access-text]",this.technology.accessText(this.state));this.setPresentationText(body,"[data-tech-toggle]",this.showFutureTech?"HIDE FUTURE TECH":"SHOW FUTURE TECH");
+    this.populateTechnologyPaths(body,cats,access);body.addEventListener("click",event=>this.handleTechnologyClick(event));
   }
-  help(){
-    super.help();const intro=this.modal.querySelector("#help-index .card .effect");if(intro)intro.textContent="Rules current through v5.7.0. Housing, Power and Industry are stackable local buildings; technology controls individual building sophistication, not arbitrary colony-wide level caps.";
-    replaceSection(this.modal,"industry","4. Industry, Power & local capacity",`<p>Housing, Power and Industry are individual L1–L5 map buildings. Multiple buildings stack. The colony total is the sum of the landed ship's starter infrastructure plus every building's current contribution.</p><p>Housing provides population space. Power Plants provide generation. Industry buildings provide installed Industry capacity. Effective Industry can be lower than installed Industry when population, Power or Ore are insufficient.</p><p>Higher building levels are deliberately denser, so upgrading saves land even though advanced levels require more Build/Ore and higher corporation technology.</p>`);
-    replaceSection(this.modal,"tech","14. Corporation technology",`<p>There are five corporation technology families: <strong>Housing, Power, Food Production, Industry and Mining/Extraction</strong>.</p><p>Housing, Power, Food and Industry Tech L1–L5 directly set the maximum level of that building/facility family. You may build any number of unlocked buildings; technology limits sophistication, not quantity.</p><p><strong>Mining is the exception.</strong> Mining L1–L10 unlocks extraction methods and harder resource types. Once a deposit is unlocked, its Quarry/Mine/Deep Mine/Rig can be developed independently from L1–L5 for greater output. Mine upgrades depend on local Industry, Power, workforce and materials rather than buying an unrelated higher Mining level.</p>`);
-    replaceSection(this.modal,"sites","11. Buildings, extraction levels & overdrive",`<p>Local construction uses physical colony resources, not corporation cash. Housing, Power and Industry buildings consume Build and increasingly Ore at advanced levels. Their L1–L5 upgrades require the matching corporation technology level.</p><p>Food facilities also use L1–L5 development and require matching Food Production technology. Quarry/Mine/Deep Mine/Rig levels represent development of that specific deposit rather than a technology tier.</p><p>Industrial extraction retains NORMAL/PUSHED/HARD overdrive. PUSHED uses 125% staff for 115% output; HARD uses 150% staff for 130% output. Every 30 accumulated risk-days triggers a 25% accident check, and an accident closes the facility for three full game days.</p>`);
+  populateTechnologyPaths(body,cats,access){
+    const host=body.querySelector("[data-tech-tree]"),paths=document.createDocumentFragment();
+    for(const cat of cats){
+      const tree=this.technology.tree(cat),level=this.technology.level(this.state,cat),items=tree.filter(t=>this.showFutureTech||t.level<=level),path=this.cloneViewTemplate(body,"[data-tech-path-template]");if(!path)continue;
+      const section=path.querySelector("[data-tech-path]");this.setPresentationText(section,"[data-tech-path-label]",TECH_LABELS[cat]);this.setPresentationText(section,"[data-tech-path-level]",`L${level}/${tree.length}`);const roadmap=section.querySelector("[data-tech-roadmap]"),cards=document.createDocumentFragment();
+      for(const tech of items){const card=this.buildTechnologyCard(body,cat,tech,level,access);if(card)cards.append(card);}roadmap.replaceChildren(cards);paths.append(path);
+    }
+    host?.replaceChildren(paths);
+  }
+  buildTechnologyCard(body,category,tech,level,access){
+    const fragment=this.cloneViewTemplate(body,"[data-tech-card-template]");if(!fragment)return null;const card=fragment.querySelector("[data-tech-card]"),owned=tech.level<level,current=tech.level===level,next=tech.level===level+1,future=tech.level>level+1,stateClass=owned?"owned":current?"current":next?"next":"future",stateLabel=owned?"OWNED":current?"CURRENT":next?"NEXT":"LOCKED";
+    card.classList.add(stateClass);this.setPresentationText(card,"[data-tech-card-level]",`L${tech.level}`);this.setPresentationText(card,"[data-tech-card-name]",tech.name);this.setPresentationText(card,"[data-tech-card-state]",stateLabel);this.setPresentationText(card,"[data-tech-card-description]",tech.description);this.setPresentationText(card,"[data-tech-card-effect]",this.techEffect(category,tech));
+    const requirement=card.querySelector("[data-tech-card-requirement]");requirement.hidden=!future;if(future)requirement.textContent=`Requires ${TECH_LABELS[category]} L${tech.level-1}`;
+    const action=card.querySelector("[data-tech-card-action]");action.replaceChildren(this.technologyAction(category,tech,{owned,current,next,access}));return fragment;
+  }
+  technologyAction(category,tech,{owned,current,next,access}){const node=document.createElement(next?"button":"span");if(next){node.dataset.techCat=category;node.disabled=!access||this.state.company.cash<tech.cost;node.textContent=formatMoney(tech.cost);}else node.textContent=current?"ACTIVE":owned?"✓":"🔒";return node;}
+  handleTechnologyClick(event){
+    const toggle=event.target.closest?.("[data-tech-toggle]");if(toggle){this.showFutureTech=!this.showFutureTech;this.tech();return;}
+    const button=event.target.closest?.("[data-tech-cat]");if(!button||!this.modal.contains(button))return;const result=this.technology.buy(this.state,button.dataset.techCat);if(result.ok){this.onRecalculate?.();this.repo.save(this.state);this.toast(`${result.tech.name} licensed permanently.`);this.tech();}else this.toast(result.reason);
   }
 }
