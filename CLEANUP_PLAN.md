@@ -16,21 +16,21 @@ This is the canonical recovery record for the `CleanUp` branch. Refactoring is b
 
 ## Current repository status
 
-Status captured 2026-08-27 while preparing Phase 4D.11.
+Status captured 2026-08-27 while preparing the final Phase-4 checkpoint.
 
 | Item | Current state |
 |---|---|
 | Repository | `kevvy555/MineIT` |
 | Working branch | `CleanUp` |
 | Pull request | Draft PR #39, `CleanUp` → `develop` |
-| Last fully green checkpoint | `270f9578` — adaptive-building presentation ownership |
-| Current checkpoint | Phase 4D.11 — Contract Failed + Industry Capacity views |
+| Last fully green checkpoint | `a93dc7dd` — Phase 4D.11 Contract Failed + Industry Capacity ownership, including stale assertion alignment |
+| Current checkpoint | Phase 4D.12 — final HTML ownership, exact debt 3 → 0 |
 | Package version | `5.11.3` |
 | Active phase | Phase 4 — HTML view ownership |
-| Verified large-template debt | 5 |
-| Expected after current checkpoint | 3 |
+| Verified large-template debt | 3 |
+| Expected after current checkpoint | 0 |
 | Branch reconciliation | Deferred to Phase 7 |
-| Merge readiness | Not ready; Phases 4–7 remain |
+| Merge readiness | Not ready; Phases 5–7 remain after Phase 4 closes |
 
 ## Green checkpoint history
 
@@ -47,46 +47,9 @@ Status captured 2026-08-27 while preparing Phase 4D.11.
 - `ef1fcdc5` — Quick Trade Sell/Buy extraction + stale assertion alignment; 11 → 9. Push `33054929802`, PR `33054933882`, Pages `33054929350`; browser green.
 - `334e6f17` — survival terminal/help ownership; 9 → 7. Push `33067085875`, PR `33067089205`, Pages `33067085509`; browser green.
 - `270f9578` — adaptive-building shell + operating mode externalized; Harvest +/- routed through existing `ResourceService.adjustHarvestIntensity`; 7 → 5. Push `33067797422`, PR `33067803240`, Pages `33067796744`; browser green.
+- `92701fd3` / `a93dc7dd` — Contract Failed and Industry Capacity externalized, then Industry presentation assertions aligned with the new owner; 5 → 3. Push `33069061527`, PR `33069065078`, Pages `33069060704`; browser green.
 
-## Verified debt after Phase 4D.10
-
-| File | Findings |
-|---|---:|
-| `js/ui/building-details-ui.js` | 1 |
-| `js/ui/contract-ui.js` | 1 |
-| `js/ui/industry-ui.js` | 1 |
-| `js/ui/map-first-ui.js` | 1 |
-| `js/ui/resource-development-ui.js` | 1 |
-| **Total** | **5** |
-
-## Current Phase 4D.11 — Contract and Industry presentation ownership
-
-### Contract Failed
-
-- Add `views/contract-failed.html`.
-- Keep the `deadline("failed")` state transition synchronous: set `contract.ended`, set `status="liability"` and save exactly once at the original command boundary.
-- Preload the external view without awaiting startup.
-- `renderContractFailed()` only renders/binds; a delayed load may retry only while status is still `liability` and the contract remains ended.
-- Existing acknowledge / all-colonies actions and corporation pause semantics remain unchanged.
-
-### Industry Capacity
-
-- Add `views/industry-capacity-card.html`.
-- Preserve `IndustryUIMixin.prototype.colonyPanel` as an active owner because V55 explicitly calls it.
-- Preload the card without awaiting startup.
-- If the view is still loading, mount only into the captured connected modal body / `.need-grid`; never rerun the whole colony panel.
-- Populate status, load/capacity, headroom, Build/Ore factor, export processing and guidance through DOM text/class APIs.
-- Preserve insertion immediately before `.need-grid`.
-- Update `industry-purpose.test.js` so presentation copy is asserted in the external view rather than the controller.
-
-### Gate
-
-- Add focused `tests/final-presentation-view-ownership.test.js`.
-- Exact large-template debt changes 5 → **3**.
-- `contract-ui.js` and `industry-ui.js` must remain absent from the measured debt map.
-- Require Push/PR/browser/Pages green before the final three are touched.
-
-## Expected debt after Phase 4D.11
+## Verified debt after Phase 4D.11
 
 | File | Findings |
 |---|---:|
@@ -95,15 +58,51 @@ Status captured 2026-08-27 while preparing Phase 4D.11.
 | `js/ui/resource-development-ui.js` | 1 |
 | **Total** | **3** |
 
-## Final Phase-4 checkpoint after 4D.11
+## Current Phase 4D.12 — final HTML ownership
 
-Target all remaining debt in one reviewed checkpoint, **3 → 0**:
+### 1. `building-details-ui.js` — delete shadowed developed-building renderer
 
-1. `map-first-ui.js` — move final v5.8 Help/control copy into `views/survival-manual.html` and remove the runtime `help()` replacement; align `how-to-play.test.js`.
-2. `building-details-ui.js` — prove which developed-building paths are shadowed by `adaptive-building-ui.js`; delete proven dead markup/methods rather than externalizing compatibility UI.
-3. `resource-development-ui.js` — externalize the active undeveloped-resource detail panel while preserving synchronous cached tile-panel behaviour and stale-tile protection.
+Active-chain evidence:
 
-Phase 4 exits only when the scanner reports zero genuine large application templates and all full gates are green.
+- `adaptive-building-ui.js` extends `resource-development-ui.js`, which extends `building-details-ui.js`.
+- The adaptive controller intercepts every developed `housing`, `power`, `industry` and `extract` tile in both `tile()` and `landTile()` before the old building-details renderer can run.
+- No active controller needs the old `buildingHero`, `openColonyBuilding`, `compactExtractionPanel`, `tile` or `landTile` implementations.
+- Keep only the small `open()` bridge that removes obsolete `building-detail-modal` styling before generic modal use.
+- Do not externalize dead compatibility markup.
+- Align artwork/regression tests so developed-building presentation is asserted against `adaptive-building-ui.js` + `views/adaptive-building.html`.
+
+### 2. `map-first-ui.js` — externalize map-controls Help copy
+
+- Add `views/map-first-help-controls.html`.
+- Preserve the existing v5.8.0 intro assignment synchronously; later operational/corporate-event/trade-reserve adapters continue to overwrite that intro exactly as before.
+- The map-first controls paragraphs move to the external fragment.
+- Eagerly preload the fragment without top-level `await`.
+- `help()` remains synchronous for the base manual and intro; `mountMapFirstHelp()` reads the cache synchronously when available and retries asynchronously otherwise.
+- A delayed fragment may mount only while the captured `#help-controls` section remains connected and is still the current modal section.
+- Remove the large inline Help template.
+- `selectMapTile()` clears any pending undeveloped-resource ownership so a slow detail-view fetch cannot overwrite a later tile selection.
+
+### 3. `resource-development-ui.js` — externalize active undeveloped-resource panel
+
+- Add `views/undeveloped-resource.html`.
+- Preserve synchronous public `tile()` behaviour for the downstream adaptive/map-first controller chain.
+- Preload without top-level `await`.
+- `undevelopedViewSource()` reads the resolved cache synchronously and retries only while `activeUndevelopedTile === tile`.
+- The external view owns hero/facts/requirements/when-developed/actions markup.
+- Requirement rows use a cloned external `<template>` + `DocumentFragment` + one `replaceChildren()`.
+- Populate labels, metrics, art style, readiness and button state through DOM APIs.
+- Replace the tile panel with one bounded `panel.replaceChildren(fragment)`; `panel.innerHTML =` must not return.
+- Preserve develop-domain call, extraction sync, recalculation, logging, save, toast, context refresh and final dispatch into the adaptive developed-building panel.
+- Closing, successful development, or selection of a different map tile clears stale undeveloped-view ownership.
+
+### Gate
+
+- Extend `tests/final-presentation-view-ownership.test.js` to lock all final ownership decisions.
+- Align `tests/how-to-play.test.js`, `tests/map-first-ux.test.js`, and `tests/building-art.test.js` with the canonical owners.
+- Exact architecture debt changes 3 → **0**.
+- The architecture test must use an empty verified debt map and reject any reintroduced large application HTML template anywhere under `js/`.
+- Require Push Test, PR Test, browser startup/presentation interactions and Pages green.
+- After those gates pass, immediately update this handoff with the final run IDs and mark Phase 4 Complete before entering Phase 5.
 
 ## Protected unrelated worktree changes
 
@@ -133,14 +132,22 @@ Do not overwrite/revert/reformat:
 | 1 — Canonical modules | Complete | Zero versioned production JS. |
 | 2 — Startup/import cleanup | Complete | Zero import maps/internal version-query imports. |
 | 3 — State/events/lifecycle | Complete | Explicit store/boundaries/disposal; zero app globals/document events. |
-| 4 — HTML views | In progress | Baseline 50; green progression 43 → 39 → 30 → 24 → 19 → 15 → 11 → 9 → 7 → 5; current target 3, then 0. |
+| 4 — HTML views | In progress | Baseline 50; green progression 43 → 39 → 30 → 24 → 19 → 15 → 11 → 9 → 7 → 5 → 3; current target 0. |
 | 5 — Feature controllers | Pending formal pass | Decompose inherited/mixin ownership and remove shadowed wrappers. |
 | 6 — CSS cleanup | Pending final pass | Audit canonical ownership, duplicates and obsolete rules. |
 | 7 — Final validation | Pending | Reconcile branch + mobile/browser/campaign/save/lifecycle/soak sign-off. |
 
 ## Phase 5 — feature controllers
 
-Inventory the surviving inherited/mixin chain, map each public method to one feature owner, remove shadowed compatibility renderers/wrappers, and decompose orchestration by ship/star-map/cargo/buildings/technology/trade/colony/corporation while preserving domain/store boundaries.
+After Phase 4 is green at zero template debt:
+
+1. Inventory the surviving inherited/mixin chain from `ui-controller.js` through the final ship-preparation controller.
+2. Map each public method to one canonical feature owner.
+3. Remove shadowed compatibility renderers/wrappers, including legacy V55/UI-enhancement technology compatibility paths.
+4. Replace direct prototype-qualified calls where they bypass the intended active owner unless they are an explicit, documented compatibility boundary.
+5. Split orchestration by ship/star-map/cargo/buildings/technology/trade/colony/corporation while preserving domain/store boundaries.
+6. Audit remaining direct UI state mutation; route authoritative changes through existing domain commands when available.
+7. Keep the full regression/browser/Pages gates at every cohesive checkpoint.
 
 ## Phase 6 — CSS completion
 

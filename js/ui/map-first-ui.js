@@ -1,11 +1,14 @@
 import { UIController as LegacyUIController } from "./technology-presentation-ui.js";
-import { formatMoney,formatNumber } from "../core/utils.js";
+import { formatNumber } from "../core/utils.js";
+import { getLoadedViewTemplate,loadViewTemplate,preloadViewTemplates } from "../core/view-template.js";
 import { buildingCapacity,syncBuildingTotals } from "../domain/building-model.js";
 import { supportsOverdrive } from "../domain/extraction-overdrive.js";
 
 const LOCAL_KINDS=new Set(["housing","power","industry"]);
 const RESOURCE_LABEL={food:"FOOD",build:"BUILD",fuel:"FUEL",ore:"ORE"};
+const MAP_FIRST_HELP_VIEW="./views/map-first-help-controls.html";
 const cap=(v,min=0,max=1)=>Math.max(min,Math.min(max,Number(v)||0));
+preloadViewTemplates([MAP_FIRST_HELP_VIEW]);
 
 /** Routine colony play through the persistent HUD and tile context bar. */
 export class UIController extends LegacyUIController{
@@ -22,7 +25,7 @@ export class UIController extends LegacyUIController{
   }
   render(){super.render();this.renderMapFirstHud();this.renderContext();}
   selectMapTile(x,y){
-    if(!Number.isFinite(x)||!Number.isFinite(y))return;this.selectedTile=this.world.get(this.state,x,y);this.renderContext();
+    if(!Number.isFinite(x)||!Number.isFinite(y))return;this.activeUndevelopedTile=null;this.selectedTile=this.world.get(this.state,x,y);this.renderContext();
   }
   focusMap(mode="all"){this.onMapFocus?.(mode);}
   daysText(days){return days===null||days===undefined?"SURPLUS":days<=0?"EMPTY":`${Math.max(1,Math.ceil(days))}d`;}
@@ -98,7 +101,21 @@ export class UIController extends LegacyUIController{
     }
   }
   help(){
-    super.help();const intro=this.modal.querySelector("#help-index .card .effect");if(intro)intro.textContent="Rules current through v5.8.0. MineIT now uses one unified colony map, an always-visible operational HUD and contextual tile actions so the challenge is solving colony problems rather than finding controls.";
-    const section=this.modal.querySelector("#help-controls");if(section){const head=section.querySelector(".help-section-title");while(section.lastChild&&section.lastChild!==head)section.removeChild(section.lastChild);section.insertAdjacentHTML("beforeend",`<p><strong>There is one colony map.</strong> Terrain, discovered resources and constructed buildings are shown together. Use PROBLEMS or FILTERS to dim unrelated tiles instead of switching between map modes.</p><p><strong>Tap selects.</strong> A surveyed tile opens the persistent action bar at the bottom of the map. Build, develop and upgrade actions are normally one additional tap away. Unsurveyed tiles remain the deliberate exception: tap once to survey, or drag across several unsurveyed tiles to queue them.</p><p>The main HUD always shows Housing, Power, effective/installed Industry, free workforce, resource stocks and supply days. The attention strip surfaces the colony's highest-priority problem and can highlight the map locations relevant to solving it.</p>`);}
+    super.help();
+    const intro=this.modal.querySelector("#help-index .card .effect");if(intro)intro.textContent="Rules current through v5.8.0. MineIT now uses one unified colony map, an always-visible operational HUD and contextual tile actions so the challenge is solving colony problems rather than finding controls.";
+    const section=this.modal.querySelector("#help-controls");if(section)this.mountMapFirstHelp(section);
+  }
+  mountMapFirstHelp(section){
+    const source=getLoadedViewTemplate(MAP_FIRST_HELP_VIEW);if(source){this.replaceMapFirstHelp(section,source);return;}
+    const revision=(this.mapFirstHelpRevision||0)+1;this.mapFirstHelpRevision=revision;
+    loadViewTemplate(MAP_FIRST_HELP_VIEW).then(loaded=>{
+      if(revision!==this.mapFirstHelpRevision||!section.isConnected||section!==this.modal.querySelector("#help-controls"))return;
+      this.replaceMapFirstHelp(section,loaded);
+    }).catch(error=>{if(revision===this.mapFirstHelpRevision&&section.isConnected)this.diagnostics?.error?.("map-first help view failed",error);});
+  }
+  replaceMapFirstHelp(section,source){
+    const head=section.querySelector(".help-section-title");if(!head)return;
+    while(section.lastChild&&section.lastChild!==head)section.removeChild(section.lastChild);
+    section.append(document.createRange().createContextualFragment(source));
   }
 }
