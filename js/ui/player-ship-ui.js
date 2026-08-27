@@ -4,34 +4,6 @@ const esc=value=>String(value??"").replace(/[&<>\"]/g,ch=>({"&":"&amp;","<":"&lt
 
 /** Consolidates landed player-ship actions and fast colony navigation. */
 export class UIController extends BaseUIController{
-  constructor(opts){
-    super(opts);
-    this.playerShipLastPointerUp=null;
-    this.playerShipOpeningPointer=null;
-    this.playerShipPointerTracker=event=>{this.playerShipLastPointerUp={x:event.clientX,y:event.clientY,time:performance.now()};};
-    this.playerShipClickGuard=event=>{
-      const opening=this.playerShipOpeningPointer;if(!opening)return;
-      const button=event.target.closest?.("[data-player-ship-action]");if(!button||!this.modal?.contains(button))return;
-      const age=performance.now()-opening.time,near=Math.hypot(event.clientX-opening.x,event.clientY-opening.y)<=24;
-      this.playerShipOpeningPointer=null;
-      if(age>=0&&age<=500&&near){event.preventDefault();event.stopImmediatePropagation();}
-    };
-    addEventListener("pointerup",this.playerShipPointerTracker,true);
-    this.modal?.addEventListener("click",this.playerShipClickGuard,true);
-  }
-
-  dispose(){
-    removeEventListener("pointerup",this.playerShipPointerTracker,true);
-    this.modal?.removeEventListener("click",this.playerShipClickGuard,true);
-    super.dispose?.();
-  }
-
-  open(title,body){
-    super.open(title,body);
-    const pointer=this.playerShipLastPointerUp,age=pointer?performance.now()-pointer.time:Infinity;
-    this.playerShipOpeningPointer=title==="Player Colony Ship"&&age>=0&&age<=1000?{...pointer}:null;
-  }
-
   playerShipHere(){
     const ship=this.expansion?.ship?.(this.state);return !!ship&&ship.status==="docked"&&ship.colonyId===this.state.colonyId;
   }

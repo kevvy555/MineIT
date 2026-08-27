@@ -56,7 +56,42 @@ export class WorldView {
   resize(){const r=this.shell.getBoundingClientRect(),header=document.querySelector(".app-header")?.getBoundingClientRect().height||0,footer=document.querySelector(".app-footer")?.getBoundingClientRect().height||0,viewport=window.visualViewport?.height||window.innerHeight||0,width=Math.max(1,r.width||window.innerWidth||320),fallbackHeight=Math.max(120,viewport-header-footer),height=r.height>=2?r.height:fallbackHeight,dpr=Math.min(2,Math.max(1,devicePixelRatio||1));this.canvas.width=Math.max(1,Math.round(width*dpr));this.canvas.height=Math.max(1,Math.round(height*dpr));this.canvas.style.width=`${width}px`;this.canvas.style.height=`${height}px`;this.ctx.setTransform(dpr,0,0,dpr,0,0);this.width=width;this.height=height;this.cell=Math.max(1,Math.min(this.width,this.height)/CONFIG.GRID_SIZE);this.safeDraw();}
   safeDraw(){if(this.drawQueued)return;this.drawQueued=true;const schedule=typeof requestAnimationFrame==="function"?requestAnimationFrame:fn=>setTimeout(fn,0);schedule(()=>{this.drawQueued=false;try{this.drawCount++;this.draw();}catch(e){this.diagnostics.error("world render failed",e);}}); }
   coords(e){const r=this.canvas.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top,ox=(this.width-this.cell*CONFIG.GRID_SIZE)/2,oy=(this.height-this.cell*CONFIG.GRID_SIZE)/2,gx=clamp(Math.floor((px-ox)/this.cell),0,CONFIG.GRID_SIZE-1),gy=clamp(Math.floor((py-oy)/this.cell),0,CONFIG.GRID_SIZE-1);if(this.land)return{x:this.land.start+gx,y:this.land.start+gy};return{x:(this.state.camera?.x||0)+gx,y:(this.state.camera?.y||0)+gy};}
-  bindInput(){let p=null,selecting=false,last=null,longTimer=null,longFired=false;this.canvas.addEventListener("pointerdown",e=>{if(this.state.status==="site-selection")return;p={id:e.pointerId,x:e.clientX,y:e.clientY};last=this.coords(e);longFired=false;this.canvas.setPointerCapture(e.pointerId);longTimer=setTimeout(()=>{if(!p||selecting)return;longFired=true;this.onInspect?.(last.x,last.y);},2000);});this.canvas.addEventListener("pointermove",e=>{if(!p||p.id!==e.pointerId)return;const moved=Math.hypot(e.clientX-p.x,e.clientY-p.y)>7;if(!moved&&!selecting)return;clearTimeout(longTimer);const cell=this.coords(e);if(!selecting&&this.survey.surveyable(this.state,last.x,last.y)){selecting=true;this.selection.clear();this.addSelection(last);}if(selecting){this.selectLine(last,cell);last=cell;this.safeDraw();}});this.canvas.addEventListener("pointerup",e=>{if(!p||p.id!==e.pointerId)return;clearTimeout(longTimer);if(selecting){const a=[...this.selection.values()];this.selection.clear();selecting=false;this.onMulti?.(a);}else if(!longFired&&Math.hypot(e.clientX-p.x,e.clientY-p.y)<=7){const cell=this.coords(e),tile=this.world.get(this.state,cell.x,cell.y);if(this.isTileVisible(tile,cell.x,cell.y))this.onTap?.(cell.x,cell.y);}p=null;this.safeDraw();});this.canvas.addEventListener("pointercancel",()=>{clearTimeout(longTimer);p=null;selecting=false;this.selection.clear();this.safeDraw();});}
+  bindInput(){
+    let pointer=null,selecting=false,last=null,longTimer=null,longFired=false,suppressClick=false;
+    this.canvas.addEventListener("pointerdown",event=>{
+      if(this.state.status==="site-selection")return;
+      pointer={id:event.pointerId,x:event.clientX,y:event.clientY,moved:false};
+      last=this.coords(event);longFired=false;suppressClick=false;
+      this.canvas.setPointerCapture?.(event.pointerId);
+      longTimer=setTimeout(()=>{if(!pointer||selecting)return;longFired=true;suppressClick=true;this.onInspect?.(last.x,last.y);},2000);
+    });
+    this.canvas.addEventListener("pointermove",event=>{
+      if(!pointer||pointer.id!==event.pointerId)return;
+      const moved=Math.hypot(event.clientX-pointer.x,event.clientY-pointer.y)>7;
+      if(moved)pointer.moved=true;
+      if(!moved&&!selecting)return;
+      clearTimeout(longTimer);
+      const cell=this.coords(event);
+      if(!selecting&&this.survey.surveyable(this.state,last.x,last.y)){selecting=true;suppressClick=true;this.selection.clear();this.addSelection(last);}
+      if(selecting){this.selectLine(last,cell);last=cell;this.safeDraw();}
+    });
+    this.canvas.addEventListener("pointerup",event=>{
+      if(!pointer||pointer.id!==event.pointerId)return;
+      clearTimeout(longTimer);
+      if(selecting){const cells=[...this.selection.values()];this.selection.clear();selecting=false;suppressClick=true;this.onMulti?.(cells);}
+      else if(longFired||pointer.moved||Math.hypot(event.clientX-pointer.x,event.clientY-pointer.y)>7)suppressClick=true;
+      pointer=null;this.safeDraw();
+    });
+    this.canvas.addEventListener("pointercancel",()=>{
+      clearTimeout(longTimer);pointer=null;selecting=false;suppressClick=false;this.selection.clear();this.safeDraw();
+    });
+    this.canvas.addEventListener("click",event=>{
+      if(this.state.status==="site-selection")return;
+      if(suppressClick){suppressClick=false;return;}
+      const cell=this.coords(event),tile=this.world.get(this.state,cell.x,cell.y);
+      if(this.isTileVisible(tile,cell.x,cell.y))this.onTap?.(cell.x,cell.y);
+    });
+  }
   addSelection(c){if(this.survey.surveyable(this.state,c.x,c.y))this.selection.set(`${c.x},${c.y}`,c);}
   selectLine(a,b){let x0=a.x,y0=a.y,x1=b.x,y1=b.y,dx=Math.abs(x1-x0),sx=x0<x1?1:-1,dy=-Math.abs(y1-y0),sy=y0<y1?1:-1,err=dx+dy;for(;;){this.addSelection({x:x0,y:y0});if(x0===x1&&y0===y1)break;const e2=2*err;if(e2>=dy){err+=dy;x0+=sx;}if(e2<=dx){err+=dx;y0+=sy;}}}
   colors(type){return{food:["#15321f","#83e69a","#6bd986"],build:["#172a31","#a7d7e7","#8ec5d9"],fuel:["#352017","#ffb27e","#ff9f5f"],ore:["#291b35","#d3b4ff","#c7a0ff"]}[type]||["#252515","#ffc76b","#f0b65d"];}

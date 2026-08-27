@@ -14,8 +14,8 @@ const SHIP_ART="./assets/art/colony-ship.webp?v=3";
  *
  * The low-level canvas renderer remains in world-view.js. This semantic runtime
  * owns the current unified-map behaviour that was previously spread across six
- * numbered inheritance layers: toolbar ownership, selection/focus state,
- * high-resolution building/resource art and the landed player-ship interaction.
+ * numbered inheritance layers: toolbar ownership, selection/focus state and
+ * high-resolution building/resource art.
  */
 export class WorldView extends CanvasWorldView{
   constructor(options){
@@ -26,17 +26,12 @@ export class WorldView extends CanvasWorldView{
       onSelect?.(x,y);if(runtime){runtime.selectedKey=`${x},${y}`;runtime.safeDraw();}
     };
     super({...options,onTap:select,onInspect:select});runtime=this;
-    this.onPlayerShipClick=options.onPlayerShipClick;
     this.selectedKey=null;
     this.focusMode=state.colony?.land?.focusMode||"all";
-    this._shipPointer=null;
-    this.bindPlayerShipCapture();
   }
 
   dispose(){
     this.controls?.dispose?.();
-    const h=this._shipCaptureHandlers;
-    if(h){this.canvas.removeEventListener("pointerdown",h.down,true);this.canvas.removeEventListener("pointermove",h.move,true);this.canvas.removeEventListener("pointerup",h.up,true);this.canvas.removeEventListener("pointercancel",h.cancel,true);}
     this.icons.setOnReady?.(null);
   }
 
@@ -217,17 +212,4 @@ export class WorldView extends CanvasWorldView{
   }
 
   draw(){super.draw();const label=document.querySelector("#cameraText");if(label)label.textContent="COLONY MAP • 8×8";}
-
-  bindPlayerShipCapture(){
-    const stop=event=>{event.preventDefault();event.stopImmediatePropagation();};
-    const down=event=>{
-      if(this.state.status==="site-selection")return;const cell=this.coords(event);if(!this.isShipTile(cell.x,cell.y))return;
-      this._shipPointer={id:event.pointerId,x:event.clientX,y:event.clientY,moved:false};this.canvas.setPointerCapture?.(event.pointerId);stop(event);
-    };
-    const move=event=>{const pointer=this._shipPointer;if(!pointer||pointer.id!==event.pointerId)return;if(Math.hypot(event.clientX-pointer.x,event.clientY-pointer.y)>8)pointer.moved=true;stop(event);};
-    const up=event=>{const pointer=this._shipPointer;if(!pointer||pointer.id!==event.pointerId)return;this._shipPointer=null;stop(event);if(!pointer.moved)this.onPlayerShipClick?.();};
-    const cancel=event=>{const pointer=this._shipPointer;if(!pointer||pointer.id!==event.pointerId)return;this._shipPointer=null;stop(event);};
-    this._shipCaptureHandlers={down,move,up,cancel};
-    this.canvas.addEventListener("pointerdown",down,true);this.canvas.addEventListener("pointermove",move,true);this.canvas.addEventListener("pointerup",up,true);this.canvas.addEventListener("pointercancel",cancel,true);
-  }
 }
