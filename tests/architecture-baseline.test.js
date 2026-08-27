@@ -12,12 +12,12 @@ const cssFiles=walk(path.join(root,"css")).filter(f=>f.endsWith(".css"));
 const source=new Map(jsFiles.map(file=>[rel(file),fs.readFileSync(file,"utf8")]));
 const index=fs.readFileSync(path.join(root,"index.html"),"utf8");
 const verifiedHtmlDebt={
-  "js/ui/v55-ui.js":11,
   "js/ui/technology-presentation-ui.js":9,
   "js/ui/land-ui.js":6,
   "js/ui/colony-tech-ui.js":5,
   "js/ui/resource-ui.js":4,
   "js/ui/ui-enhancements.js":4,
+  "js/ui/v55-ui.js":4,
   "js/ui/adaptive-building-ui.js":2,
   "js/ui/quick-trade-ui.js":2,
   "js/ui/survival-ui.js":2,
@@ -61,7 +61,7 @@ assert.equal(debt.queryImports,0,"Version-query imports must not return");
 assert.equal(debt.globalAssignments,0,`Global application assignments must not return: ${globalAssignments.join(", ")}`);
 assert.equal(debt.documentAppEvents,0,"Document-level application events must not return");
 assert.ok(!largeHtmlTemplatesByFile.some(entry=>entry.file==="js/domain/expansion-service.js"),"Domain template literals must not be misclassified as HTML view debt");
-assert.equal(debt.largeHtmlTemplates,50,"Verified Phase 4C HTML template debt must change only in a reviewed extraction checkpoint");
+assert.equal(debt.largeHtmlTemplates,43,"Verified Phase 4D help-view HTML debt must change only in a reviewed extraction checkpoint");
 assert.deepEqual(actualHtmlDebt,verifiedHtmlDebt,"Per-file HTML debt map changed; update the verified map only with reviewed extraction evidence");
 
 console.log("CleanUp architecture baseline guard passed");

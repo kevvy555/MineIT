@@ -2,7 +2,6 @@ import { formatMoney, formatNumber } from "../core/utils.js";
 import { CONFIG } from "../core/config.js";
 import { loadViewTemplate,renderViewSource } from "../core/view-template.js";
 
-const TECH_LABELS={power:"POWER",food:"FOOD PRODUCTION",mining:"MINING"};
 let survivalManualSource="",survivalManualLoading=null;
 
 export class SurvivalUIMixin {
@@ -21,18 +20,19 @@ export class SurvivalUIMixin {
     }
     const catalog=this.resources.catalog();
     const resources=["Food","Build","Fuel","Ore"].map(category=>{const items=catalog.filter(r=>r.category===category);return`<div class="help-resource-category"><h4 class="${category.toLowerCase()}">${category}</h4><div class="help-resource-table">${items.map(r=>`<div class="help-resource-row"><strong>${r.name}</strong><span>${r.rarity}</span><span>${r.manufactured?"Manufactured":r.renewable?"Renewable":"Finite"}</span><span>M${r.miningLevel||1}</span><span>${this.resources.baseSellPrice(r.type,r.id)<10?`£${this.resources.baseSellPrice(r.type,r.id).toFixed(2)}`:formatMoney(this.resources.baseSellPrice(r.type,r.id))}/u</span><small>${r.unlock||"Surface Recovery"}</small></div>`).join("")}</div></div>`;}).join("");
-    const qualityRows=this.resources.qualityBands().map(b=>`<div class="help-data-row"><strong class="${b.className}">${b.label}</strong><span>Q${formatNumber(b.min)}–${formatNumber(b.max)}</span><span>×${b.multiplier.toFixed(2)} sale value</span></div>`).join("");
-    const techRows=["power","food","mining"].map(cat=>`<div class="help-tech-block"><h4>${TECH_LABELS[cat]}</h4>${this.technology.tree(cat).map(t=>`<div class="help-tech-row"><strong>L${t.level} ${t.name}</strong><span>${t.level===1?"Starting technology":formatMoney(t.cost)}</span><small>${t.description}</small></div>`).join("")}</div>`).join("");
     const body=renderViewSource(survivalManualSource,{
       DEDICATED_TRANSPORT_DAYS:CONFIG.DEDICATED_TRANSPORT_DAYS,
       DEDICATED_TRANSPORT_BASE_COST:formatMoney(CONFIG.DEDICATED_TRANSPORT_BASE_COST),
       RESOURCES:resources,
-      QUALITY_ROWS:qualityRows,
-      SITE_OUTPUT_LEVELS:CONFIG.SITE_OUTPUT_LEVELS.slice(0,5).join(", "),
-      TECH_ROWS:techRows,
+      WORKFORCE_SHARE_PCT:Math.round(CONFIG.WORKFORCE_SHARE*100),
+      SITE_OUTPUT_PROGRESS:CONFIG.SITE_OUTPUT_LEVELS.slice(0,6).map((value,index)=>`L${index+1} ${value}/d`).join(" • "),
+      INDUSTRY_PROCESSING_MAX_BONUS_PCT:Math.round(CONFIG.INDUSTRY_PROCESSING_MAX_BONUS*100),
       TRADE_INTERVAL_DAYS:CONFIG.TRADE_INTERVAL_DAYS,
+      TRADE_BASE_EXPORT_CARGO:formatNumber(CONFIG.TRADE_BASE_EXPORT_CARGO),
+      TRADE_PASSENGER_CAPACITY:CONFIG.TRADE_PASSENGER_CAPACITY,
       MAX_EXTENSIONS:CONFIG.MAX_EXTENSIONS,
-      RENEWAL_YEARS:CONFIG.RENEWAL_YEARS
+      RENEWAL_YEARS:CONFIG.RENEWAL_YEARS,
+      LOG_TELEMETRY_INTERVAL_DAYS:CONFIG.LOG_TELEMETRY_INTERVAL_DAYS
     });
     this.open("How to Play",body);this.modal.querySelectorAll("[data-help-target]").forEach(button=>button.onclick=()=>{const target=this.modal.querySelector(`#${button.dataset.helpTarget}`);target?.scrollIntoView({behavior:"smooth",block:"start"});});return true;
   }
