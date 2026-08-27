@@ -1,6 +1,9 @@
 import { clamp, formatMoney, formatNumber } from "../core/utils.js";
 import { CONFIG } from "../core/config.js";
-import { renderViewTemplate } from "../core/view-template.js";
+import { getLoadedViewTemplate, loadViewTemplate, preloadViewTemplates, renderViewTemplate } from "../core/view-template.js";
+
+const CONTRACT_FAILED_VIEW="./views/contract-failed.html";
+preloadViewTemplates([CONTRACT_FAILED_VIEW]);
 
 export class ContractUIMixin {
   diagnosticsPanel(){const text=this.diagnostics.text(this.state).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");this.open("Diagnostics / Error Log",`<div class="diag-log">${text}</div>`);}
@@ -14,6 +17,19 @@ export class ContractUIMixin {
     this.modal.querySelector("[data-hold]").onclick=()=>{this.state.status="holdover";this.repo.save(this.state);this.modal.classList.add("hidden");if(this.onContractDecisionResolved)this.onContractDecisionResolved("holdover");else{this.state.speed=1;this.syncSpeed();}};
     this.modal.querySelector("[data-end]").onclick=()=>this.endContractDialog();
     this.modal.querySelector("[data-colonies]").onclick=()=>this.coloniesPanel();
+  }
+  contractFailedViewSource(){
+    const source=getLoadedViewTemplate(CONTRACT_FAILED_VIEW);if(source)return source;
+    const revision=(this.contractFailedViewRevision||0)+1;this.contractFailedViewRevision=revision;
+    loadViewTemplate(CONTRACT_FAILED_VIEW).then(()=>{if(this.contractFailedViewRevision===revision&&this.state.status==="liability"&&this.state.contract?.ended)this.renderContractFailed();}).catch(error=>{if(this.contractFailedViewRevision!==revision)return;this.diagnostics?.error?.("contract failed view failed",error);this.toast("Unable to open the contract decision.");});
+    this.toast("Loading contract decision...");return null;
+  }
+  renderContractFailed(){
+    const source=this.contractFailedViewSource();if(!source)return false;
+    this.open("Charter Terminated",source);
+    this.modal.querySelector("[data-ack]").onclick=()=>{this.modal.classList.add("hidden");if(this.onContractDecisionResolved)this.onContractDecisionResolved("failed");else{this.state.speed=1;this.syncSpeed();}};
+    this.modal.querySelector("[data-colonies]").onclick=()=>this.coloniesPanel();
+    return true;
   }
   deadline(kind=null){
     this.state.speed=0;this.syncSpeed();kind||=this.contracts.deadlineState(this.state)||this.state.contract?.pendingDecision;
@@ -30,10 +46,7 @@ export class ContractUIMixin {
       this.modal.querySelector("[data-colonies]").onclick=()=>this.coloniesPanel();return;
     }
     if(kind==="failed"){
-      this.state.contract.ended=true;this.state.status="liability";this.repo.save(this.state);
-      this.open("Charter Terminated",`<article class="card"><h3 class="bad">CONTRACT FAILED</h3><p>The permitted deadline extensions are exhausted. Mining rights have ended, but the colony and its population remain your responsibility.</p><div class="effect warn">Extraction stops. Food, Fuel and Power support requirements continue until the population is relocated. The corporation remains paused until this event is acknowledged.</div></article><div class="grid2"><button data-ack>ACKNOWLEDGE</button><button data-colonies>ALL COLONIES</button></div>`);
-      this.modal.querySelector("[data-ack]").onclick=()=>{this.modal.classList.add("hidden");if(this.onContractDecisionResolved)this.onContractDecisionResolved("failed");else{this.state.speed=1;this.syncSpeed();}};
-      this.modal.querySelector("[data-colonies]").onclick=()=>this.coloniesPanel();
+      this.state.contract.ended=true;this.state.status="liability";this.repo.save(this.state);this.renderContractFailed();
     }
   }
   async contractBoard(){
