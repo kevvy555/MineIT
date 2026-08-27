@@ -17,7 +17,7 @@ Every completed checkpoint must update this plan in the same commit as code/test
 
 ## Current repository status
 
-Status captured 2026-08-27 during the first Phase 4D extraction checkpoint.
+Status captured 2026-08-27 during corrective verification of the first Phase 4D extraction checkpoint.
 
 | Item | Current state |
 |---|---|
@@ -25,14 +25,14 @@ Status captured 2026-08-27 during the first Phase 4D extraction checkpoint.
 | Working branch | `CleanUp` |
 | Pull request | Draft PR #39, `CleanUp` into `develop` |
 | Last fully green checkpoint | `7153e30e` — Phase 4C corrected detector baseline |
-| Current checkpoint | Phase 4D.1 — external help-manual ownership |
+| Current checkpoint | Phase 4D.1 — external help-manual ownership; corrective test commit after `80bee13b` |
 | Package version | `5.11.3` |
 | Active phase | Phase 4 — HTML views |
 | Merge readiness | Not ready; Phases 4–7 still have work |
 
 ### Phase 4C — complete and green
 
-The corrected lexical template scanner is now authoritative. Commit `48c23b5` fixed the false positive but initially failed because the old plan assumed 29 findings. GitHub CI proved the accurate baseline is 50 genuine large HTML templates. Corrective commit `7153e30e` locks both the exact total and per-file distribution; PR Test, Push Test, browser interaction/coverage and Pages are green.
+The corrected lexical template scanner is authoritative. Commit `48c23b5` fixed the false positive but initially failed because the old plan assumed 29 findings. GitHub CI proved the accurate baseline is 50 genuine large HTML templates. Corrective commit `7153e30e` locks both the exact total and per-file distribution; PR Test, Push Test, browser interaction/coverage and Pages are green.
 
 Verified Phase 4C debt baseline:
 
@@ -58,31 +58,37 @@ Verified Phase 4C debt baseline:
 
 Problem found during inspection:
 
-- `views/survival-manual.html` already owns the field manual shell.
-- `SurvivalUIMixin.help()` renders it.
-- `IndustryUIMixin.help()` then appends additional Industry HTML.
-- `V55UIMixin.help()` finally replaces nine sections with embedded template literals.
-- Therefore the actual player-visible final text was not owned by the external view, and seven of the 11 `v55-ui.js` debt findings were those final help-section strings.
+- `views/survival-manual.html` already owned the field-manual shell.
+- `SurvivalUIMixin.help()` rendered it.
+- `IndustryUIMixin.help()` appended additional Industry HTML.
+- `V55UIMixin.help()` finally replaced nine sections with embedded template literals.
+- Therefore the player-visible final text was not owned by the external view, and seven of the 11 `v55-ui.js` debt findings were final help-section strings.
 
-Behaviour-preserving implementation:
+Behaviour-preserving implementation in `80bee13b`:
 
-1. `views/survival-manual.html` now contains the exact final text that V55 previously displayed for Industry, Controls, Quality, Deposits, Sites, Technology, Trade, Portfolio and Saving/Game Log sections.
-2. Dynamic values previously interpolated in V55 are explicit view placeholders populated by `SurvivalUIMixin.help()`:
-   - workforce percentage;
-   - site-output progression;
-   - Industry processing bonus;
-   - trade interval/export capacity/passenger capacity;
-   - dedicated transport days;
-   - game-log telemetry interval.
-3. `V55UIMixin.help()` is removed; it no longer replaces externally owned sections after rendering.
-4. `IndustryUIMixin.help()` and its now-unused Survival import are removed; Industry no longer appends markup after the external view renders.
-5. The base `SurvivalUIMixin.help()` remains the single manual renderer and still owns template loading/caching, resource catalogue injection and help-index click behaviour.
-6. No domain/service state or gameplay calculation changes.
-7. `tests/how-to-play.test.js` now asserts the final visible V55 manual wording lives in `views/survival-manual.html`, dynamic bindings remain present, and V55/Industry no longer own post-render help markup.
-8. Architecture debt is expected to fall from 50 to 43. `v55-ui.js` falls from 11 to 4; every other measured file remains unchanged.
-9. Do not start 4D.2 until PR Test, Push Test and Pages for this checkpoint are green.
+1. `views/survival-manual.html` contains the exact final text V55 previously displayed for Industry, Controls, Quality, Deposits, Sites, Technology, Trade, Portfolio and Saving/Game Log.
+2. Dynamic values are view placeholders populated by `SurvivalUIMixin.help()`: workforce %, site-output progression, Industry processing bonus, trade interval/export capacity/passenger capacity, dedicated transport days and game-log telemetry interval.
+3. `V55UIMixin.help()` is removed; V55 no longer replaces externally owned sections after rendering.
+4. `IndustryUIMixin.help()` and its now-unused Survival import are removed; Industry no longer appends manual markup after render.
+5. `SurvivalUIMixin.help()` remains the single manual renderer and still owns loading/caching, resource catalogue injection and help-index clicks.
+6. No domain/service state or gameplay calculation changed.
+7. Architecture CI on `80bee13b` confirmed the expected debt result exactly: **43 total**, with `v55-ui.js` reduced from 11 to 4 and every other per-file count matching the expected map.
 
-Expected debt after this checkpoint:
+### `80bee13b` failed gate — stale How-to-Play assertion
+
+The PR Test unit/regression stage reached `tests/how-to-play.test.js` after all earlier architecture/domain/regression tests passed. It failed only because an old assertion still required the underlying phrase `Quality affects economic value, not the basic collection rate` in `views/survival-manual.html`.
+
+That phrase belonged to the older base manual and was not the final text players saw: V55 had already replaced the Quality section at runtime with `quality no longer changes extraction speed`. The 4D.1 external view intentionally preserves that final visible V55 wording. Therefore changing production content back to satisfy the stale assertion would alter the behaviour this checkpoint is meant to preserve.
+
+Corrective verification in this commit:
+
+1. Remove only that obsolete base-manual phrase assertion.
+2. Keep the existing final-visible assertion for `quality no longer changes extraction speed`.
+3. Keep retained assertions for unaffected Surveying and Renewable sections.
+4. Keep the exact 43-template architecture map unchanged.
+5. Record this failed gate here and require PR Test, Push Test and Pages green before starting 4D.2.
+
+Verified/expected debt for 4D.1 remains:
 
 | File | Findings |
 |---|---:|
@@ -104,7 +110,7 @@ Expected debt after this checkpoint:
 
 ### Branch relationship with `develop`
 
-Before this 4D.1 checkpoint, `CleanUp` is 324 commits ahead of and 2 commits behind `develop`. The effective missing content remains the ten level images (`assets/art/levels/L1.png`–`L10.png`). Reconcile them only in the controlled Phase 7 checkpoint.
+Before the original 4D.1 commit, `CleanUp` was 324 commits ahead of and 2 commits behind `develop`. The effective missing content remains the ten level images (`assets/art/levels/L1.png`–`L10.png`). Reconcile them only in the controlled Phase 7 checkpoint.
 
 ### Protected unrelated worktree changes
 
@@ -134,7 +140,7 @@ Do not overwrite/revert/reformat:
 | 1 — Canonical modules | Complete | Zero versioned production JavaScript. |
 | 2 — Startup/import cleanup | Complete | Zero import maps and internal version-query imports. |
 | 3 — State/events/lifecycle | Complete | Explicit store/boundaries/disposal; zero app globals/document events. |
-| 4 — HTML views | In progress | Accurate baseline 50. 4D.1 targets external help ownership and expected debt 43. |
+| 4 — HTML views | In progress | Accurate baseline 50. 4D.1 production extraction measures 43; corrective remote verification is required before 4D.2. |
 | 5 — Feature controllers | Pending formal pass | Inherited/mixin ownership decomposition remains. |
 | 6 — CSS cleanup | Partially complete early | Versioned CSS already zero; ownership/duplicate audit follows Phase 5. |
 | 7 — Final validation | Pending | Branch reconciliation, browser/mobile matrix, campaign/save/load/lifecycle/long-soak sign-off remain. |
@@ -145,22 +151,23 @@ Do not overwrite/revert/reformat:
 - `2b2040ad` — sortable planet table externalized; green.
 - `48c23b5` — lexical template detector introduced; scanner correct but checkpoint failed on obsolete 29-count assumption.
 - `7153e30e` — exact 50-template corrected baseline locked; all remote checks green.
+- `80bee13b` — external help ownership production change; architecture reached expected 43, but checkpoint not green because of one stale How-to-Play phrase assertion.
 
 ## Exact next step after 4D.1 is green
 
 ### 4D.2 — finish remaining `v55-ui.js` large presentation templates
 
-The four expected remaining findings are the operational-workforce card, dedicated-transport card/action block (including its large nested action template), and renewable-harvest card.
+The four remaining findings are the operational-workforce card, dedicated-transport card/action block (including its large nested action template), and renewable-harvest card.
 
 Implementation contract:
 
 1. Inspect existing colony/tile view ownership before editing.
-2. Externalize the three static card families into reusable view fragments/hosts rather than creating new controller HTML strings.
-3. Preserve all current workforce, supported-capacity, transport-blocking, harvest-intensity and ecological-condition values as data supplied by existing services/state.
+2. Externalize the three static card families into reusable view fragments/hosts rather than new controller HTML strings.
+3. Preserve current workforce, supported-capacity, transport-blocking, harvest-intensity and ecological-condition values as data supplied by existing services/state.
 4. Keep `requestTransport()` and existing renewable-harvest mutation paths authoritative; UI only renders and dispatches actions.
 5. Prefer one delegated action owner or explicit listener release so panel rerenders cannot accumulate listeners.
 6. Add focused ownership/behaviour tests and update the exact architecture map.
-7. Expected goal: remove `v55-ui.js` from large-template debt entirely before moving to `technology-presentation-ui.js`.
+7. Expected goal: remove `v55-ui.js` from large-template debt entirely, taking total debt from 43 to 39, before moving to `technology-presentation-ui.js`.
 8. Update this plan and require all remote gates green.
 
 ## Remaining Phase 4D queue
