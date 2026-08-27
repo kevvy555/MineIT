@@ -16,7 +16,7 @@ This is the canonical recovery record for the `CleanUp` branch. The refactor is 
 
 ## Current repository status
 
-Status captured 2026-08-27 while preparing Phase 4D.9.
+Status captured 2026-08-27 while correcting Phase 4D.9.
 
 | Item | Current state |
 |---|---|
@@ -24,11 +24,12 @@ Status captured 2026-08-27 while preparing Phase 4D.9.
 | Working branch | `CleanUp` |
 | Pull request | Draft PR #39, `CleanUp` → `develop` |
 | Last fully green checkpoint | `ef1fcdc5` — Phase 4D.8 Quick Trade Sell/Buy ownership + stale assertion alignment |
-| Current checkpoint | Phase 4D.9 — externalize `survival-ui.js` immediate Colony Lost and Corporation Failed views |
+| Current branch checkpoint | `09414475` — first Phase 4D.9 survival extraction candidate; Node guard reported 8 templates because Help resource catalogue still contained one genuine large template |
+| Current correction | externalize the Help resource catalogue with category/row templates so `survival-ui.js` reaches zero measured large templates |
 | Package version | `5.11.3` |
 | Active phase | Phase 4 — HTML view ownership |
-| Verified large-template debt | 9 |
-| Expected after current checkpoint | 7 |
+| Verified pre-4D.9 debt | 9 |
+| Expected after corrected 4D.9 | 7 |
 | Branch reconciliation | Deferred to Phase 7 |
 | Merge readiness | Not ready; Phases 4–7 remain |
 
@@ -39,55 +40,46 @@ Status captured 2026-08-27 while preparing Phase 4D.9.
 - `48c23b5` / `7153e30e` — corrected lexical template scanner and exact genuine baseline 50; green.
 - `227101c8` — external help/manual ownership; debt 50 → 43; green.
 - `3d03bc53` — V55 operation cards; debt 43 → 39. Push `33047421531`, PR `33047425532`, Pages `33047420869`.
-- `1c12a122` — all nine technology-presentation findings externalized; debt 39 → 30. Push `33048664562`, PR `33048667800`, Pages `33048664150`.
-- `9b8201fe` — land presentation ownership; debt 30 → 24. Push `33050871178`, PR `33050873588`, Pages `33050870040`.
-- `01051465` — colony-tech cleanup fully green; debt 24 → 19. Push `33051923546`, PR `33051926517`, Pages `33051922844`.
-- `c21c0a29` — resource presentation extraction reached 15 in Node, but browser startup exposed top-level-awaited preload delaying `DOMContentLoaded` registration.
-- `c27fc9d1` — fixed resource preload to eager non-blocking and guarded against awaited preload; debt 19 → 15. Push `33053336531`, PR `33053339742`, Pages `33053335423`; browser startup/interactions/coverage green.
-- `4623e3cc` — UI-enhancement ownership; debt 15 → 11. Push `33054163574`, PR `33054167037`, Pages `33054162621`; browser startup/interactions/coverage green.
-- `3cb24872` — Quick Trade Sell/Buy views externalized; architecture reached 9, but Test found a stale `global-expansion.test.js` source-location assertion for protected-reserve copy.
-- `ef1fcdc5` — aligned that stale assertion to `views/quick-trade-sell.html`. Phase 4D.8 fully green; debt 11 → 9. Push Test `33054929802`, PR Test `33054933882`, browser startup/presentation interactions green, Pages `33054929350` green.
+- `1c12a122` — technology presentation; debt 39 → 30. Push `33048664562`, PR `33048667800`, Pages `33048664150`.
+- `9b8201fe` — land presentation; debt 30 → 24. Push `33050871178`, PR `33050873588`, Pages `33050870040`.
+- `01051465` — colony-tech cleanup; debt 24 → 19. Push `33051923546`, PR `33051926517`, Pages `33051922844`.
+- `c21c0a29` — resource extraction reached 15 in Node, but browser startup exposed top-level-awaited preload delaying `DOMContentLoaded` registration.
+- `c27fc9d1` — non-blocking resource preload fix; debt 19 → 15. Push `33053336531`, PR `33053339742`, Pages `33053335423`; browser startup/interactions/coverage green.
+- `4623e3cc` — UI-enhancement ownership; debt 15 → 11. Push `33054163574`, PR `33054167037`, Pages `33054162621`; browser green.
+- `3cb24872` — Quick Trade Sell/Buy extraction reached 9; Test found one stale source-location assertion.
+- `ef1fcdc5` — stale Quick Trade assertion aligned to external view. Phase 4D.8 fully green; debt 11 → 9. Push `33054929802`, PR `33054933882`, Pages `33054929350`; browser green.
 
-## Verified debt after Phase 4D.8
+## Phase 4D.9 failure/correction record
 
-| File | Findings |
-|---|---:|
-| `js/ui/adaptive-building-ui.js` | 2 |
-| `js/ui/survival-ui.js` | 2 |
-| `js/ui/building-details-ui.js` | 1 |
-| `js/ui/contract-ui.js` | 1 |
-| `js/ui/industry-ui.js` | 1 |
-| `js/ui/map-first-ui.js` | 1 |
-| `js/ui/resource-development-ui.js` | 1 |
-| **Total** | **9** |
+`09414475` externalized the immediate Colony Lost and Corporation Failed modal markup and preserved the existing detailed dead-colony management view. Push Test `33066818902` stopped in the Node architecture guard before browser execution. Exact scanner output was:
 
-## Current Phase 4D.9 — Survival terminal-view ownership
+- `adaptive-building-ui.js`: 2
+- `building-details-ui.js`: 1
+- `contract-ui.js`: 1
+- `industry-ui.js`: 1
+- `map-first-ui.js`: 1
+- `resource-development-ui.js`: 1
+- `survival-ui.js`: 1
+- total: **8**
 
-`survival-ui.js` has two genuine large templates and they are both active terminal-state notifications:
+The remaining survival finding was the dynamically string-built Help resource catalogue, not the already-externalized terminal modal. Do not weaken the guard to 8. The corrected checkpoint externalizes that catalogue too.
 
-1. `colonyLost()` — immediate notification when the active colony dies while other colonies may remain.
-2. `gameOver()` — all colonies are lost and the corporation must restart.
+## Corrected Phase 4D.9 contract
 
-The How to Play manual is already externally owned by `views/survival-manual.html` and is not part of this extraction.
+- Keep existing `views/colony-lost.html` unchanged. `colony-tech-ui.js` owns it as the detailed dead-colony management panel (death date, final Industry, stocks, abandon action).
+- `views/survival-colony-lost.html` owns the immediate colony-death notification from `SurvivalUIMixin.colonyLost()`.
+- `views/corporation-failed.html` owns the all-colonies-lost/game-over notification and actions.
+- `survival-ui.js` eagerly preloads only terminal views without top-level `await`; delayed terminal render retries only while the matching terminal state remains current.
+- `gameOver()` remains the authoritative state mutation/save boundary and delegates retryable presentation to render-only `renderGameOver()`.
+- The How to Play manual remains owned by `views/survival-manual.html`.
+- Add `views/survival-resource-catalog.html`, containing the resource-catalog host plus category and row `<template>` elements.
+- Help loads the manual and resource-catalog external sources together only when Help is requested. The external resource fragment is injected into the manual's existing `{{RESOURCES}}` slot.
+- After opening the manual, `populateHelpResourceCatalog()` clones category/row templates into `DocumentFragment`, fills values with `textContent`, and uses bounded `replaceChildren()`; no row/card HTML loop remains in JavaScript.
+- Keep all resource data, price calculations, Mining requirements and manual copy unchanged.
+- `tests/survival-view-ownership.test.js` locks semantic path separation, detailed dead-colony view preservation, non-blocking terminal preload, one-time game-over mutation boundary, resource category/row template ownership, fragment population, and zero large templates in `survival-ui.js`.
+- Architecture debt must be exactly **7** and `survival-ui.js` must be absent from the measured map before 4D.10 begins.
 
-During candidate review an existing `views/colony-lost.html` was found. It is already actively owned by `colony-tech-ui.js` for the **detailed dead-colony management panel** (death date, final industry, stocks, abandon action). Do not repurpose or overwrite it. The immediate survival notification gets its own semantic view instead.
-
-### 4D.9 candidate contract
-
-- Keep existing `views/colony-lost.html` completely unchanged for `colony-tech-ui.js` dead-colony management.
-- Add `views/survival-colony-lost.html` with the immediate loss copy, dynamic colony name/status, and surviving-colonies action.
-- Add `views/corporation-failed.html` with the existing all-colonies-lost copy and reset/colonies actions.
-- `survival-ui.js` eagerly preloads the two new views without top-level `await`.
-- `renderSurvivalView()` reads resolved cache synchronously; if a view is still loading, it retries only while the matching terminal condition is still true.
-- A pending immediate colony-lost notification must not override a later corporation-game-over state.
-- `gameOver()` retains authoritative mutation/save exactly at the command boundary: set `state.company.gameOver=true`, save, then call render-only `renderGameOver()`. Async retry must never repeat mutation/save.
-- `colonyLost()` recomputes the number of surviving colonies when it finally renders; when none survive the surviving-colonies button is removed so final DOM/behaviour matches the existing implementation.
-- Keep all Help/manual bindings unchanged.
-- Add `tests/survival-view-ownership.test.js` to lock semantic path separation, the existing management view markers, non-blocking preload, terminal guards, one-time game-over mutation boundary and zero large templates in `survival-ui.js`.
-- Exact architecture debt changes 9 → **7** and `survival-ui.js` must remain absent thereafter.
-- Require Push Test, PR Test, browser interaction/coverage and Pages green before Phase 4D.10.
-
-### Expected debt after Phase 4D.9
+### Expected debt after corrected Phase 4D.9
 
 | File | Findings |
 |---|---:|
@@ -128,14 +120,14 @@ Do not overwrite/revert/reformat:
 | 1 — Canonical modules | Complete | Zero versioned production JS. |
 | 2 — Startup/import cleanup | Complete | Zero import maps/internal version-query imports. |
 | 3 — State/events/lifecycle | Complete | Explicit store/boundaries/disposal; zero app globals/document events. |
-| 4 — HTML views | In progress | Baseline 50; green: 43 → 39 → 30 → 24 → 19 → 15 → 11 → 9; current target 7. |
+| 4 — HTML views | In progress | Baseline 50; green: 43 → 39 → 30 → 24 → 19 → 15 → 11 → 9; corrected current target 7. |
 | 5 — Feature controllers | Pending formal pass | Decompose inherited/mixin ownership and remove shadowed compatibility wrappers. |
 | 6 — CSS cleanup | Partially complete early | Versioned CSS zero; ownership/duplicate audit follows Phase 5. |
 | 7 — Final validation | Pending | Reconcile branch + mobile/browser/campaign/save/lifecycle/soak sign-off. |
 
-## Next queue after Phase 4D.9 is green
+## Next queue after Phase 4D.9 is fully green
 
-1. `adaptive-building-ui.js` — 2. Active dense unified-building presentation. Likely one shared external adaptive-building shell plus repeated card/requirement/operating-mode templates; preserve synchronous tile-decoration contract and extraction/domain commands.
+1. `adaptive-building-ui.js` — 2 measured findings: the unified adaptive-building shell and extraction operating-mode control. Externalize those while preserving the synchronous tile-decoration contract. Also replace its direct `tile.harvestIntensity` assignment with the existing `ResourceService.adjustHarvestIntensity()` domain command; this is behaviour-preserving architecture cleanup using the same 25–200% clamp/rule already established elsewhere.
 2. Single-finding families, inspect active-vs-shadowed ownership before changing:
    - `building-details-ui.js`
    - `contract-ui.js`

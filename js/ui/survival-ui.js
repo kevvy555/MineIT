@@ -3,8 +3,9 @@ import { CONFIG } from "../core/config.js";
 import { getLoadedViewTemplate,loadViewTemplate,preloadViewTemplates,renderViewSource } from "../core/view-template.js";
 
 const SURVIVAL_VIEWS={colonyLost:"./views/survival-colony-lost.html",corporationFailed:"./views/corporation-failed.html"};
+const HELP_VIEWS={manual:"./views/survival-manual.html",resourceCatalog:"./views/survival-resource-catalog.html"};
 preloadViewTemplates(Object.values(SURVIVAL_VIEWS));
-let survivalManualSource="",survivalManualLoading=null;
+let survivalManualSource="",survivalResourceCatalogSource="",survivalManualLoading=null;
 
 export class SurvivalUIMixin {
   renderSurvivalView(path,slots,retry,isCurrent){
@@ -32,23 +33,37 @@ export class SurvivalUIMixin {
     this.modal.querySelector("[data-gameover-reset]").onclick=()=>this.onHardReset();
     return true;
   }
+  setHelpResourceText(root,selector,value){const node=root?.querySelector(selector);if(node)node.textContent=String(value??"");}
+  populateHelpResourceCatalog(){
+    const host=this.modal.querySelector("[data-help-resource-catalog]"),categoryTemplate=this.modal.querySelector("[data-help-resource-category-template]"),rowTemplate=this.modal.querySelector("[data-help-resource-row-template]");
+    if(!host||!categoryTemplate||!rowTemplate)return;
+    const catalog=this.resources.catalog(),categories=document.createDocumentFragment();
+    for(const category of["Food","Build","Fuel","Ore"]){
+      const categoryNode=categoryTemplate.content.firstElementChild.cloneNode(true),heading=categoryNode.querySelector("[data-help-resource-category-name]"),rows=categoryNode.querySelector("[data-help-resource-rows]"),rowFragment=document.createDocumentFragment();
+      heading.className=category.toLowerCase();heading.textContent=category;
+      for(const resource of catalog.filter(item=>item.category===category)){
+        const row=rowTemplate.content.firstElementChild.cloneNode(true),price=this.resources.baseSellPrice(resource.type,resource.id);
+        this.setHelpResourceText(row,"[data-help-resource-name]",resource.name);this.setHelpResourceText(row,"[data-help-resource-rarity]",resource.rarity);this.setHelpResourceText(row,"[data-help-resource-kind]",resource.manufactured?"Manufactured":resource.renewable?"Renewable":"Finite");this.setHelpResourceText(row,"[data-help-resource-mining]",`M${resource.miningLevel||1}`);this.setHelpResourceText(row,"[data-help-resource-price]",`${price<10?`£${price.toFixed(2)}`:formatMoney(price)}/u`);this.setHelpResourceText(row,"[data-help-resource-unlock]",resource.unlock||"Surface Recovery");rowFragment.append(row);
+      }
+      rows.replaceChildren(rowFragment);categories.append(categoryNode);
+    }
+    host.replaceChildren(categories);
+  }
   help(){
-    if(!survivalManualSource){
+    if(!survivalManualSource||!survivalResourceCatalogSource){
       if(!survivalManualLoading){
-        survivalManualLoading=loadViewTemplate("./views/survival-manual.html").then(source=>{
-          survivalManualSource=source;survivalManualLoading=null;this.help();
+        survivalManualLoading=Promise.all([loadViewTemplate(HELP_VIEWS.manual),loadViewTemplate(HELP_VIEWS.resourceCatalog)]).then(([manual,resourceCatalog])=>{
+          survivalManualSource=manual;survivalResourceCatalogSource=resourceCatalog;survivalManualLoading=null;this.help();
         }).catch(error=>{
           survivalManualLoading=null;this.diagnostics?.error?.("survival help template failed",error);this.toast("Unable to load the field manual.");
         });
       }
       return false;
     }
-    const catalog=this.resources.catalog();
-    const resources=["Food","Build","Fuel","Ore"].map(category=>{const items=catalog.filter(r=>r.category===category);return`<div class="help-resource-category"><h4 class="${category.toLowerCase()}">${category}</h4><div class="help-resource-table">${items.map(r=>`<div class="help-resource-row"><strong>${r.name}</strong><span>${r.rarity}</span><span>${r.manufactured?"Manufactured":r.renewable?"Renewable":"Finite"}</span><span>M${r.miningLevel||1}</span><span>${this.resources.baseSellPrice(r.type,r.id)<10?`£${this.resources.baseSellPrice(r.type,r.id).toFixed(2)}`:formatMoney(this.resources.baseSellPrice(r.type,r.id))}/u</span><small>${r.unlock||"Surface Recovery"}</small></div>`).join("")}</div></div>`;}).join("");
     const body=renderViewSource(survivalManualSource,{
       DEDICATED_TRANSPORT_DAYS:CONFIG.DEDICATED_TRANSPORT_DAYS,
       DEDICATED_TRANSPORT_BASE_COST:formatMoney(CONFIG.DEDICATED_TRANSPORT_BASE_COST),
-      RESOURCES:resources,
+      RESOURCES:survivalResourceCatalogSource,
       WORKFORCE_SHARE_PCT:Math.round(CONFIG.WORKFORCE_SHARE*100),
       SITE_OUTPUT_PROGRESS:CONFIG.SITE_OUTPUT_LEVELS.slice(0,6).map((value,index)=>`L${index+1} ${value}/d`).join(" • "),
       INDUSTRY_PROCESSING_MAX_BONUS_PCT:Math.round(CONFIG.INDUSTRY_PROCESSING_MAX_BONUS*100),
@@ -59,6 +74,6 @@ export class SurvivalUIMixin {
       RENEWAL_YEARS:CONFIG.RENEWAL_YEARS,
       LOG_TELEMETRY_INTERVAL_DAYS:CONFIG.LOG_TELEMETRY_INTERVAL_DAYS
     });
-    this.open("How to Play",body);this.modal.querySelectorAll("[data-help-target]").forEach(button=>button.onclick=()=>{const target=this.modal.querySelector(`#${button.dataset.helpTarget}`);target?.scrollIntoView({behavior:"smooth",block:"start"});});return true;
+    this.open("How to Play",body);this.populateHelpResourceCatalog();this.modal.querySelectorAll("[data-help-target]").forEach(button=>button.onclick=()=>{const target=this.modal.querySelector(`#${button.dataset.helpTarget}`);target?.scrollIntoView({behavior:"smooth",block:"start"});});return true;
   }
 }
