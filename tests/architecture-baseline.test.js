@@ -12,7 +12,6 @@ const cssFiles=walk(path.join(root,"css")).filter(f=>f.endsWith(".css"));
 const source=new Map(jsFiles.map(file=>[rel(file),fs.readFileSync(file,"utf8")]));
 const index=fs.readFileSync(path.join(root,"index.html"),"utf8");
 const verifiedHtmlDebt={
-  "js/ui/colony-tech-ui.js":5,
   "js/ui/resource-ui.js":4,
   "js/ui/ui-enhancements.js":4,
   "js/ui/adaptive-building-ui.js":2,
@@ -58,8 +57,8 @@ assert.equal(debt.queryImports,0,"Version-query imports must not return");
 assert.equal(debt.globalAssignments,0,`Global application assignments must not return: ${globalAssignments.join(", ")}`);
 assert.equal(debt.documentAppEvents,0,"Document-level application events must not return");
 assert.ok(!largeHtmlTemplatesByFile.some(entry=>entry.file=="js/domain/expansion-service.js"),"Domain template literals must not be misclassified as HTML view debt");
-assert.equal(debt.largeHtmlTemplates,24,"Verified Phase 4D land-view extraction debt must change only in a reviewed checkpoint");
+assert.equal(debt.largeHtmlTemplates,19,"Verified Phase 4D colony-tech extraction debt must change only in a reviewed checkpoint");
 assert.deepEqual(actualHtmlDebt,verifiedHtmlDebt,"Per-file HTML debt map changed; update the verified map only with reviewed extraction evidence");
-for(const file of["js/ui/v55-ui.js","js/ui/technology-presentation-ui.js","js/ui/land-ui.js"])assert.ok(!largeHtmlTemplatesByFile.some(entry=>entry.file==file),`${file} large presentation templates must stay externalized`);
+for(const file of["js/ui/v55-ui.js","js/ui/technology-presentation-ui.js","js/ui/land-ui.js","js/ui/colony-tech-ui.js"])assert.ok(!largeHtmlTemplatesByFile.some(entry=>entry.file==file),`${file} large presentation templates must stay externalized`);
 
 console.log("CleanUp architecture baseline guard passed");
