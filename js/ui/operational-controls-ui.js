@@ -1,6 +1,5 @@
 import { UIController as BaseUIController } from "./map-first-ui.js";
 import { operatingMode,riskExposure,supportsOverdrive } from "../domain/extraction-overdrive.js";
-import { clamp } from "../core/utils.js";
 
 const NEXT_MODE={normal:"pushed",pushed:"hard",hard:"normal"};
 
@@ -47,10 +46,9 @@ export class UIController extends BaseUIController{
   }
   adjustHarvest(delta){
     const tile=this.selectedTile;if(!tile||!tile.developed||!this.resources.isRenewable(tile)||tile.renewableWiped)return;
-    this.resources.ensureRenewable(tile);
-    const before=Math.round((Number(tile.harvestIntensity)||1)*100),after=clamp(before+delta,25,200);
-    tile.harvestIntensity=after/100;this.onRecalculate?.();
-    this.logEvent?.("harvest-intensity",`${tile.name} harvest changed from ${before}% to ${after}%.`,{x:tile.x,y:tile.y,resource:tile.name,before,after,sustainableRate:this.resources.sustainableRate(tile)});
+    const result=this.resources.adjustHarvestIntensity(tile,delta);if(!result.ok){this.toast(result.reason);return;}
+    const {before,after,sustainableRate}=result;this.onRecalculate?.();
+    this.logEvent?.("harvest-intensity",`${tile.name} harvest changed from ${before}% to ${after}%.`,{x:tile.x,y:tile.y,resource:tile.name,before,after,sustainableRate});
     this.repo.save(this.state);this.toast(`${tile.name} harvest set to ${after}%.`);this.render();
   }
   cycleOperatingMode(){
