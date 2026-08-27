@@ -4,14 +4,15 @@ This is the canonical recovery record for the `CleanUp` branch. The cleanup/refa
 
 ## Current repository status
 
-Status captured 2026-08-27 after the third user-reported post-refactor interaction regression was fixed and validated.
+Status captured 2026-08-27 after the canvas/touch activation model was unified and fully validated.
 
 | Item | Current state |
 |---|---|
 | Repository | `kevvy555/MineIT` |
 | Working branch | `CleanUp` |
 | Pull request | Draft PR #39, `CleanUp` → `develop` |
-| Last fully green production checkpoint | `188075dc` — landed Player Colony Ship opening-gesture click-through fix |
+| Last production checkpoint | `bb33deea` — unified canvas activation on `click` |
+| Last fully validated functional head | `bc31f1e5` — production checkpoint plus test-ownership alignment |
 | Package version | `5.11.3` |
 | Cleanup phases | **0–7 complete** |
 | Large embedded HTML-template debt | **0** |
@@ -21,11 +22,11 @@ Status captured 2026-08-27 after the third user-reported post-refactor interacti
 | Application globals/document app-event debt | **0** |
 | CSS orphan debt | **0** |
 | Branch reconciliation | **Complete** — `develop` is an ancestor of `CleanUp` |
-| Current compare to `develop` | **372 ahead / 0 behind** at `188075dc` |
+| Current compare to `develop` | **379 ahead / 0 behind** at `bc31f1e5` |
 | PR state | Open and draft; intentionally not merged |
 | Automated regression status | **GREEN** |
 | Merge readiness | **BLOCKED ON USER HANDS-ON RECHECK** |
-| Remaining action | User rechecks Trade Ship, landed Player Ship, and Star Map on deployed `CleanUp`; only then consider explicit merge approval |
+| Remaining action | User rechecks Trade Ship, landed Player Ship, Star Map and normal map gestures on deployed `CleanUp`; only then consider explicit merge approval |
 
 ## Post-refactor regression corrections
 
@@ -126,22 +127,10 @@ Exact root cause:
 - Because the modal had already appeared under that gesture and its buttons were live, the compatibility click could land on the **STAR MAP** action.
 - This produced the exact observed navigation stack: Star Map appeared first, while Back returned to the already-opened Player Colony Ship flow.
 
-Fix:
-- `player-ship-ui.js` now owns one stable `pointerup` tracker and one capture-phase modal click guard, both installed once in the controller constructor and explicitly removed in `dispose()`.
-- When **Player Colony Ship** is opened, the controller snapshots the pointer coordinates that opened it.
-- If an immediate action click arrives within 500 ms at essentially the same coordinates (24 px tolerance), it is treated as compatibility click-through and stopped before the active ship-navigation action handler runs.
-- A genuine second tap has its own coordinates and is not delayed or disabled; the six actions remain immediately usable.
-- No navigation/domain state, ship state, Star Map rules, or action semantics changed.
-
-Regression coverage:
-- `tests/post-refactor-regressions.test.js` now locks the opening-pointer snapshot, capture-phase action guard, coordinate match, and `stopImmediatePropagation()` contract, while also proving the active `ship-navigation-ui.js` override opens through the guarded **Player Colony Ship** presentation path.
-- New `tests/player-ship-clickthrough-probe.html` reproduces the mobile sequence directly:
-  1. pointer down/up on the landed player ship;
-  2. immediate compatibility `click` targeted at STAR MAP using the same opening coordinates;
-  3. assert the modal is still titled **Player Colony Ship** and no Star Map canvas opened;
-  4. issue a separate deliberate STAR MAP click;
-  5. assert Star Map then opens normally with no runtime errors.
-- `.github/workflows/test.yml` now runs this dedicated probe on every Push/PR in addition to the existing five-viewport matrix, multi-colony lifecycle and UI lifecycle soak.
+Temporary fix at this checkpoint:
+- `player-ship-ui.js` tracked the pointer that opened the panel and suppressed a matching immediate compatibility click.
+- The workaround was lifecycle-owned and validated, but the user correctly identified that it compensated for a deeper inconsistency: canvas activation occurred on `pointerup` while DOM activation occurred on `click`.
+- Correction D below replaces this workaround with the permanent interaction architecture. The Correction C guard/listeners were removed; they must not return.
 
 Validation for `188075dc`:
 - Push Test `33096942755` — **success**;
@@ -151,15 +140,79 @@ Validation for `188075dc`:
 - dedicated mobile click-through browser probe green;
 - existing Star Map/trade/mobile/multi-colony/lifecycle browser matrix green.
 
+### Correction D — unified activation architecture: click activates, pointer events track gestures
+
+Production checkpoint: `bb33deeaff39ce77f1bc1d78a7b06406d9b977f5`
+
+Fully validated functional head: `bc31f1e530e87c75d913a73626f1570e9e1b35a7`
+
+The user asked to fix the architectural cause of Correction C rather than retain a permanent ghost-click workaround.
+
+Permanent interaction rule:
+- **`click` is the one normal activation event for both canvas and DOM controls.**
+- `pointerdown`, `pointermove`, `pointerup`, and `pointercancel` are gesture-state events only.
+- Pointer gestures may detect movement, long-press/inspect, drag/multi-select, and cancellation, but `pointerup` must not invoke the normal tile/ship activation callback.
+- If a pointer gesture is consumed by long-press, drag or multi-select, its subsequent compatibility `click` is suppressed exactly once.
+- A clean tap completes pointer gesture tracking and is activated by the browser's resulting `click`.
+
+Production changes at `bb33deea`:
+1. `js/ui/world-view.js`
+   - canonical `bindInput()` now performs normal map activation only in a canvas `click` listener;
+   - `pointerup` only finalises gesture state and multi-selection;
+   - `suppressClick` consumes the follow-on click after a drag, long press or multi-select;
+   - ordinary revealed-tile selection and one-tap surveying retain the same downstream callbacks.
+2. `js/ui/world-view-runtime.js`
+   - removed the separate landed-player-ship capture-phase pointer path;
+   - removed `bindPlayerShipCapture()`, `_shipPointer`, capture handlers, `stopImmediatePropagation()` and runtime `onPlayerShipClick` ownership;
+   - ship clicks now flow through the same canonical canvas activation path as every other map tile.
+3. `js/ui/player-ship-ui.js`
+   - removed the temporary Correction C global pointer tracker/modal click guard and its lifecycle wiring;
+   - direct landed-ship interception in `selectMapTile()` remains and opens **Player Colony Ship** before generic map selection.
+
+No gameplay/domain state changed. No new production module was created. No versioned/copy production file was created.
+
+Regression contract after Correction D:
+- `tests/post-refactor-regressions.test.js` requires `pointerup` not to call `onTap`, requires canvas `click` to own `onTap`, requires gesture click suppression, and forbids the ship-specific pointer/ghost-click paths from returning.
+- `tests/player-ship-clickthrough-probe.html` now verifies the actual architecture directly:
+  1. pointer down/up on the landed player ship **does not** open the panel by itself;
+  2. the canvas `click` from that tap opens **Player Colony Ship** and does not enter Star Map;
+  3. a separate deliberate DOM click on **STAR MAP** opens Star Map normally;
+  4. a moved/consumed pointer gesture followed by its click does not activate the ship;
+  5. the next clean tap/click activates normally again;
+  6. no browser runtime error is produced.
+- `tests/ui-lifecycle-soak.html` uses the same pointerdown → pointerup → click sequence for repeated ship navigation.
+- `tests/presentation-architecture.test.js`, `tests/map-first-ux.test.js`, and `tests/ship-expansion.test.js` now lock the new owner map rather than requiring the removed ship pointer hook.
+
+Validation history:
+- Initial production run exposed stale tests that explicitly required the old `onPlayerShipClick`/capture-pointer implementation. The zero-debt guard itself was already green.
+- Test-only alignment commits:
+  - `50f0e81f` — presentation architecture ownership;
+  - `092da35e` — map-first ownership;
+  - `bc31f1e5` — ShipExpansion ownership.
+- These corrections did **not** restore or weaken the old runtime path; they changed the tests to require the new architecture.
+
+Final validation at `bc31f1e5`:
+- Push Test `33103002884` — **success**;
+- PR Test `33103006969` — **success**;
+- Pages `33103001491` — **success**;
+- full Node/regression/domain suite green;
+- architecture baseline remains: versioned JS 0, versioned CSS 0, query imports 0, import map false, global assignments 0, document app events 0, large HTML templates 0;
+- dedicated player-ship click/drag-suppression browser probe green;
+- five mobile/landscape viewport probes green;
+- multi-colony lifecycle browser probe green;
+- repeated UI/Star Map lifecycle soak green;
+- existing painted Star Map and populated Frontier planet-table checks remain green.
+
 ### Required hands-on recheck before merge
 
-Do not merge PR #39 until the user confirms all three deployed flows:
+Do not merge PR #39 until the user confirms the deployed flows:
 
 1. Let the Corporate Trade Ship arrive; open it and confirm **Sell** shows real colony stock and **Buy** shows resource categories/items.
 2. Tap the landed player ship on the colony map and confirm the **Player Colony Ship** six-action panel remains open first; it must not immediately enter Star Map.
-3. Open **Star Map** deliberately (especially with the Corporate Trade Ship docked) and confirm **Koplin Frontier and the wider star systems visibly render and remain interactive with no new diagnostics error**.
+3. Tap **STAR MAP** separately and confirm **Koplin Frontier and the wider star systems visibly render and remain interactive with no new diagnostics error**.
+4. Confirm ordinary map taps still select/act normally, and a drag/multi-select does not also trigger a stray tile/ship activation on release.
 
-If any one still fails, keep PR #39 draft and make a targeted correction from the latest green functional checkpoint.
+If any one still fails, keep PR #39 draft and make a targeted correction from the latest green functional head.
 
 ## Phase 7 technical validation before the regression reports
 
@@ -197,7 +250,7 @@ This checkpoint proved:
 - first-contract renewal + second-colony lifecycle browser flow;
 - repeated UI open/close lifecycle soak with observer/listener/live-DOM growth bounds.
 
-The user-reported regressions showed why DOM-presence/lifecycle checks alone were insufficient for extracted presentation and pointer behavior. The targeted functional checks above must remain part of the regression suite.
+The user-reported regressions showed why DOM-presence/lifecycle checks alone were insufficient for extracted presentation and input behavior. The targeted functional checks above must remain part of the regression suite.
 
 ## Phase completion summary
 
@@ -213,7 +266,8 @@ The user-reported regressions showed why DOM-presence/lifecycle checks alone wer
 | 7 — Final validation/reconciliation | Complete | `e633bf1f`; Push `33087964519`, PR `33087970503`, Pages `33087964360`; 25-year soak + browser matrix green. |
 | Post-refactor correction A | Automated green | `3c089e87`; Push `33093417010`, PR `33093421033`, Pages `33093415710`. |
 | Post-refactor correction B | Automated green | `46bad27a`; Push `33095033305`, PR `33095036882`, Pages `33095031958`. |
-| Post-refactor correction C | Automated green; hands-on pending | `188075dc`; Push `33096942755`, PR `33096948691`, Pages `33096941912`. |
+| Post-refactor correction C | Superseded by D | `188075dc`; validated temporary ghost-click guard, later removed. |
+| Post-refactor correction D | Automated green; hands-on pending | production `bb33deea`, validated head `bc31f1e5`; Push `33103002884`, PR `33103006969`, Pages `33103001491`. |
 
 ## Important architecture decisions to preserve
 
@@ -229,7 +283,7 @@ Deleted compatibility bridges must stay absent:
 
 Remaining prototype-qualified `.call(this)` dispatches are intentional manual-super boundaries required by the legacy multiple-mixin composition. `tests/controller-owner-map.test.js` locks them. Do not rewrite the inheritance/mixin system casually.
 
-### Presentation and pointer ownership
+### Presentation and input ownership
 
 - static application markup belongs in `/views`;
 - repeated rows/controls use templates/fragments and bounded replacement;
@@ -240,8 +294,11 @@ Remaining prototype-qualified `.call(this)` dispatches are intentional manual-su
 - production UI should render/dispatch, not own gameplay rules;
 - optional content in fixed CSS-grid screens must not change direct-child row ownership unexpectedly;
 - browser tests for canvas workflows must prove the canvas is actually painted and that prerequisite UI binding completed without runtime errors;
-- a pointer gesture that opens a new modal must not be able to click through into newly created action controls from the same physical gesture;
-- global/window pointer listeners must have one controller owner and explicit disposal; never add them per render/open.
+- **normal activation is `click` everywhere, including canvas**;
+- pointer events are gesture tracking only: down/move/up/cancel must not directly perform normal activation;
+- a consumed long-press, drag or multi-select must suppress exactly its follow-on compatibility click;
+- do not reintroduce ship-specific pointer capture or a modal ghost-click guard; the unified click path is the canonical solution;
+- pointer/listener owners must have explicit lifecycle/disposal when they outlive a local element.
 
 ### CSS ownership
 
@@ -271,6 +328,7 @@ Remaining prototype-qualified `.call(this)` dispatches are intentional manual-su
 - No document-level application event bus.
 - Every listener/observer/timer/RAF needs a clear owner/disposal lifetime.
 - No version-suffixed production JS/CSS, import maps or internal version-query imports.
+- Modify canonical production owners in place; do not create versioned/copy replacement modules.
 - Preserve mobile/touch behaviour and gameplay semantics.
 
 ## Protected unrelated work
