@@ -20,7 +20,8 @@ assert.match(industry,/getLoadedViewTemplate\(INDUSTRY_CAPACITY_VIEW\)/);
 assert.match(industry,/createContextualFragment\(source\)/);
 assert.match(industry,/body\.isConnected&&needs\.isConnected/);
 assert.match(industry,/needs\.before\(fragment\)/);
-for(const marker of["data-industry-capacity-card","data-industry-status","data-industry-load","data-industry-processing","Food and Fuel"])assert.ok(capacityView.includes(marker),`missing Industry capacity marker ${marker}`);
+for(const marker of["data-industry-capacity-card","data-industry-status","data-industry-load","data-industry-processing","data-industry-copy"])assert.ok(capacityView.includes(marker),`missing Industry capacity marker ${marker}`);
+assert.match(industry,/Food and Fuel/,"state-dependent Industry guidance must remain bound by the controller");
 
 assert.equal(largeHtmlTemplates(contract).length,0,"contract UI must not regain a large inline application template");
 assert.equal(largeHtmlTemplates(industry).length,0,"industry UI must not regain a large inline application template");
