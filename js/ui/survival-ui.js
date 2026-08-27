@@ -1,12 +1,37 @@
 import { formatMoney, formatNumber } from "../core/utils.js";
 import { CONFIG } from "../core/config.js";
-import { loadViewTemplate,renderViewSource } from "../core/view-template.js";
+import { getLoadedViewTemplate,loadViewTemplate,preloadViewTemplates,renderViewSource } from "../core/view-template.js";
 
+const SURVIVAL_VIEWS={colonyLost:"./views/survival-colony-lost.html",corporationFailed:"./views/corporation-failed.html"};
+preloadViewTemplates(Object.values(SURVIVAL_VIEWS));
 let survivalManualSource="",survivalManualLoading=null;
 
 export class SurvivalUIMixin {
-  colonyLost(){const living=this.state.portfolio.colonies.filter(entry=>entry.data?.status!=="dead").length;this.open("Colony Lost",`<article class="card"><h3 class="bad">${this.state.contract.colonyName} HAS BEEN LOST</h3><p>The population reached zero after life-support failure. Extraction, Industry and the mining charter are permanently ended on this world.</p><div class="effect warn">${living?`${living} other operating colon${living===1?"y":"ies"} remain. Switch to one of them to continue the corporation.`:"No operating colonies remain."}</div></article>${living?`<button class="action" data-lost-colonies>VIEW SURVIVING COLONIES</button>`:""}`);const button=this.modal.querySelector("[data-lost-colonies]");if(button)button.onclick=()=>this.coloniesPanel();}
-  gameOver(){this.state.company.gameOver=true;this.repo.save(this.state);this.open("Corporation Failed",`<article class="card"><h3 class="bad">ALL COLONIES LOST</h3><p>Your corporation has no surviving population on any world. Mining operations have ended.</p><div class="effect warn">A new corporation starts again with Contract 01. The old dead-colony records remain only until the reset is confirmed.</div></article><div class="grid2"><button data-gameover-colonies>VIEW COLONIES</button><button data-gameover-reset class="bad">START NEW CORPORATION</button></div>`);this.modal.querySelector("[data-gameover-colonies]").onclick=()=>this.coloniesPanel();this.modal.querySelector("[data-gameover-reset]").onclick=()=>this.onHardReset();}
+  renderSurvivalView(path,slots,retry,isCurrent){
+    const source=getLoadedViewTemplate(path);
+    if(source)return renderViewSource(source,slots);
+    const revision=(this.survivalViewRevision||0)+1;this.survivalViewRevision=revision;
+    loadViewTemplate(path).then(()=>{if(this.survivalViewRevision===revision&&isCurrent())retry();}).catch(error=>{if(this.survivalViewRevision!==revision)return;this.diagnostics?.error?.("survival status template failed",error);this.toast("Unable to load the colony status screen.");});
+    return null;
+  }
+  colonyLost(){
+    const living=this.state.portfolio.colonies.filter(entry=>entry.data?.status!=="dead").length;
+    const body=this.renderSurvivalView(SURVIVAL_VIEWS.colonyLost,{COLONY_NAME:this.state.contract.colonyName,COLONY_STATUS:living?`${living} other operating colon${living===1?"y":"ies"} remain. Switch to one of them to continue the corporation.`:"No operating colonies remain."},()=>this.colonyLost(),()=>this.state.status==="dead"&&!this.state.company.gameOver);
+    if(!body)return false;
+    this.open("Colony Lost",body);
+    const button=this.modal.querySelector("[data-lost-colonies]");
+    if(!living)button?.remove();else if(button)button.onclick=()=>this.coloniesPanel();
+    return true;
+  }
+  gameOver(){this.state.company.gameOver=true;this.repo.save(this.state);return this.renderGameOver();}
+  renderGameOver(){
+    const body=this.renderSurvivalView(SURVIVAL_VIEWS.corporationFailed,{},()=>this.renderGameOver(),()=>!!this.state.company.gameOver);
+    if(!body)return false;
+    this.open("Corporation Failed",body);
+    this.modal.querySelector("[data-gameover-colonies]").onclick=()=>this.coloniesPanel();
+    this.modal.querySelector("[data-gameover-reset]").onclick=()=>this.onHardReset();
+    return true;
+  }
   help(){
     if(!survivalManualSource){
       if(!survivalManualLoading){
