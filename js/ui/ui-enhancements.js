@@ -1,9 +1,8 @@
-import { formatMoney, formatNumber } from "../core/utils.js";
+import { formatNumber } from "../core/utils.js";
 import { getLoadedViewTemplate,loadViewTemplate,preloadViewTemplates } from "../core/view-template.js";
 
-const TECH_LABELS={power:"POWER",food:"FOOD PRODUCTION",mining:"MINING"};
 const COLLECTION_COLUMNS=[["name","Resource"],["category","Category"],["rate","Rate"],["stock","Stock"],["remaining","Remaining"]];
-const ENHANCEMENT_VIEWS={collection:"./views/current-collection.html",menu:"./views/game-menu.html",technology:"./views/legacy-technology.html"};
+const ENHANCEMENT_VIEWS={collection:"./views/current-collection.html",menu:"./views/game-menu.html"};
 preloadViewTemplates(Object.values(ENHANCEMENT_VIEWS));
 
 export class UIEnhancementsMixin {
@@ -34,27 +33,6 @@ export class UIEnhancementsMixin {
     const empty=body.querySelector("[data-collection-empty]"),table=body.querySelector("[data-collection-table]");empty.hidden=rows.length>0;table.hidden=rows.length===0;
     if(!rows.length){this.setEnhancementText(empty,"[data-collection-empty-copy]",this.state.contract.ended?"This colony's mining contract has ended.":"Survey a resource tile and develop it to begin collection.");return true;}
     this.populateCollectionHeaders(body);this.populateCollectionRows(body,this.sortedCollectionRows(rows));this.bindCollectionSort(body);return true;
-  }
-
-  legacyTechnologyAction(category,tech,{owned,current,next},access){
-    const node=document.createElement(next?"button":"span");
-    if(next){node.dataset.techCat=category;node.disabled=!access||this.state.company.cash<tech.cost;node.textContent=formatMoney(tech.cost);}
-    else node.textContent=current?"ACTIVE":owned?"✓":"🔒";
-    return node;
-  }
-  buildLegacyTechnologyCard(body,category,tech,level,access){
-    const fragment=this.cloneEnhancementTemplate(body,"[data-tech-card-template]");if(!fragment)return null;const card=fragment.querySelector("[data-tech-card]"),owned=tech.level<level,current=tech.level===level,next=tech.level===level+1,future=tech.level>level+1,stateClass=owned?"owned":current?"current":next?"next":"future",stateLabel=owned?"OWNED":current?"CURRENT":next?"NEXT":"LOCKED";
-    card.classList.add(stateClass);this.setEnhancementText(card,"[data-tech-card-level]",`L${tech.level}`);this.setEnhancementText(card,"[data-tech-card-name]",tech.name);this.setEnhancementText(card,"[data-tech-card-state]",stateLabel);this.setEnhancementText(card,"[data-tech-card-description]",tech.description);this.setEnhancementText(card,"[data-tech-card-effect]",this.techEffect(category,tech));const requirement=card.querySelector("[data-tech-card-requirement]");requirement.hidden=!future;if(future)requirement.textContent=`Requires ${TECH_LABELS[category]} L${tech.level-1}`;card.querySelector("[data-tech-card-action]").replaceChildren(this.legacyTechnologyAction(category,tech,{owned,current,next},access));return card;
-  }
-  populateLegacyTechnology(body,categories,access){
-    const host=body.querySelector("[data-tech-tree]"),paths=document.createDocumentFragment();
-    for(const category of categories){const level=this.technology.level(this.state,category),items=this.technology.tree(category).filter(tech=>(this.showOldTech||tech.level>=level)&&(this.showFutureTech||tech.level<=Math.min(10,level+1))),fragment=this.cloneEnhancementTemplate(body,"[data-tech-path-template]");if(!fragment)continue;const path=fragment.querySelector("[data-tech-path]"),roadmap=path.querySelector("[data-tech-roadmap]"),cards=document.createDocumentFragment();this.setEnhancementText(path,"[data-tech-path-label]",TECH_LABELS[category]);this.setEnhancementText(path,"[data-tech-path-level]",`L${level}/10`);for(const tech of items){const card=this.buildLegacyTechnologyCard(body,category,tech,level,access);if(card)cards.append(card);}roadmap.replaceChildren(cards);paths.append(fragment);}host?.replaceChildren(paths);
-  }
-  bindLegacyTechnology(body){body.addEventListener("click",event=>{const button=event.target.closest?.("button");if(!button||!body.contains(button))return;if(button.matches("[data-tech-future-toggle]")){this.showFutureTech=!this.showFutureTech;this.tech();return;}if(button.matches("[data-tech-old-toggle]")){this.showOldTech=!this.showOldTech;this.tech();return;}if(!button.matches("[data-tech-cat]"))return;const result=this.technology.buy(this.state,button.dataset.techCat);if(result.ok){this.onRecalculate?.();this.repo.save(this.state);this.toast(`${result.tech.name} licensed permanently.`);this.tech();}else this.toast(result.reason);});}
-  tech(){
-    const source=this.enhancementViewSource(ENHANCEMENT_VIEWS.technology,"legacy technology",()=>this.tech());if(!source)return false;
-    this.onRecalculate?.();if(this.showFutureTech===undefined)this.showFutureTech=true;if(this.showOldTech===undefined)this.showOldTech=true;const access=this.technology.canAccessStore(this.state),categories=["power","food","mining"];
-    this.open("Corporate Technology",source);const body=this.modal.querySelector(".modal-body");if(!body)return false;this.setEnhancementText(body,"[data-tech-access-title]",access?"CORPORATE SYSTEMS ONLINE":"CORPORATE SYSTEMS UNAVAILABLE");this.setEnhancementText(body,"[data-tech-access-text]",this.technology.accessText(this.state));this.setEnhancementText(body,"[data-tech-future-toggle]",this.showFutureTech?"HIDE FUTURE TECH":"SHOW FUTURE TECH");this.setEnhancementText(body,"[data-tech-old-toggle]",this.showOldTech?"HIDE OLD TECH":"SHOW OLD TECH");this.populateLegacyTechnology(body,categories,access);this.bindLegacyTechnology(body);return true;
   }
 
   menu(){

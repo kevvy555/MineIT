@@ -5,7 +5,6 @@ import { ContractUIMixin } from "./contract-ui.js";
 import { IndustryUIMixin } from "./industry-ui.js";
 import { UIEnhancementsMixin } from "./ui-enhancements.js";
 
-const TECH_LABELS={power:"POWER",food:"FOOD PRODUCTION",mining:"MINING"};
 const OPERATION_VIEWS={workforce:"./views/operational-workforce.html",transport:"./views/dedicated-colony-transport.html",renewable:"./views/renewable-harvest.html"};
 
 export class V55UIMixin {
@@ -118,7 +117,6 @@ export class V55UIMixin {
     this.repo.save(this.state);
   }
   techEffect(category,tech){if(category==="power")return`Power ${formatNumber(tech.powerCapacity)} • Population cap ${formatNumber(tech.populationCap)} • Industry L${tech.industryCap} • Fuel intensity ${tech.fuelIntensity.toFixed(3)}×`;if(category==="food"){const efficiency=Math.max(.70,1-(tech.level-1)*.035);return`Natural Food workforce requirement ×${efficiency.toFixed(2)}${tech.syntheticFood?` • Synthetic food ${formatNumber(tech.syntheticFood)}/day`:""}`;}const efficiency=Math.max(.65,1-(tech.level-1)*.04),slots=clamp(1+Math.floor((tech.level-1)/2),1,5),unlocks=this.resources.catalog().filter(r=>r.miningLevel===tech.level&&!r.manufactured).map(r=>r.name);return`Extraction workforce ×${efficiency.toFixed(2)} • Survey slots ${slots}${unlocks.length?` • Unlocks: ${unlocks.join(", ")}`:""}`;}
-  tech(){UIEnhancementsMixin.prototype.tech.call(this);this.modal.querySelectorAll("[data-tech-cat]").forEach(button=>{if(button.dataset.logged55)return;button.dataset.logged55="1";const original=button.onclick;button.onclick=e=>{const category=button.dataset.techCat,before=this.technology.level(this.state,category),cash=this.state.company.cash;original?.call(button,e);const after=this.technology.level(this.state,category);if(after>before){const tech=this.technology.current(this.state,category);this.logEvent("technology-purchased",`${TECH_LABELS[category]} technology advanced to L${after}: ${tech.name}.`,{category,level:after,name:tech.name,cost:cash-this.state.company.cash});this.repo.save(this.state);}};});}
   menu(){UIEnhancementsMixin.prototype.menu.call(this);const grid=this.modal.querySelector(".grid2");if(!grid)return;const button=document.createElement("button");button.textContent="GAME LOG";button.dataset.gameLog="1";grid.insertBefore(button,grid.querySelector("[data-reset]"));button.onclick=()=>this.gameLogPanel();}
   async gameLogPanel(){
     const events=[...(this.gameLog?.ensure(this.state).events||[])].slice(-250).reverse(),esc=v=>String(v??"").replace(/[&<>]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[ch]));
