@@ -6,12 +6,16 @@
   </section>
   {{MANIFEST_OVERVIEW}}
   <section class="exp-section compact-section">
-    <div class="exp-section-head"><h3>SHIP FUEL TANK</h3><span>Dedicated tank • counts against ship capacity</span></div>
+    <div class="exp-section-head"><h3>SHIP FUEL TANK</h3><span>Dedicated 2,000-unit tank</span></div>
     <div class="exp-load-list" data-ship-fuel-rows></div>
+  </section>
+  <section class="exp-section compact-section">
+    <div class="exp-section-head"><h3>TRANSIT FOOD STORE</h3><span>Dedicated 2,000 units • general-hold Food is used after this</span></div>
+    <div class="exp-load-list" data-ship-food-rows></div>
   </section>
   {{PASSENGER_LOADER}}
   <section class="exp-section compact-section">
-    <div class="exp-section-head"><h3>EXPEDITION CARGO</h3><span>Only stocked resources are shown.</span></div>
+    <div class="exp-section-head"><h3>GENERAL HOLD</h3><span>8,000 units • Food can also support transit from here.</span></div>
     {{CARGO_TABS}}
     <div class="exp-load-list" data-ship-cargo-rows></div>
     {{CARGO_PAGER}}
@@ -29,11 +33,13 @@
       <small data-ship-load-detail></small>
       <div class="exp-resource-load"><i data-ship-load-progress></i></div>
     </span>
-    <div>
+    <div class="exp-load-actions">
       <button data-ship-load-quantity="100" data-qty="100">+100</button>
       <button data-ship-load-quantity="1000" data-qty="1000">+1K</button>
       <button data-ship-load-quantity="max" data-qty="max">MAX</button>
-      <button data-ship-unload>UNLOAD</button>
+      <button data-ship-unload-quantity="100" data-qty="100">−100</button>
+      <button data-ship-unload-quantity="1000" data-qty="1000">−1K</button>
+      <button data-ship-unload-quantity="all" data-qty="all">ALL OUT</button>
     </div>
   </div>
 </template>
