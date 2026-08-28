@@ -4,130 +4,67 @@ import { formatNumber } from "../core/utils.js";
 import { renderViewTemplate } from "../core/view-template.js";
 
 const esc=value=>String(value??"").replace(/[&<>\"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;"}[ch]));
+const clamp=(value,min,max)=>Math.max(min,Math.min(max,Number(value)||0));
+const SHIP_HIT_ID="__player_ship__";
 
-/** Full-screen deterministic player-ship navigation, system selection and demolition confirmation. */
+/** Full-screen deterministic player-ship navigation, live rerouting and demolition confirmation. */
 export class UIController extends PlayerShipUIController{
   constructor(opts){super(opts);this._shipNavActive=false;this.selectedStarSystemId=null;this.demolitionRevision=0;this.starMapRevision=0;}
-
   dispose(){super.dispose?.();}
 
   open(title,body){
-    this.modal.className="panel modal hidden";
-    super.open(title,body);
-    const close=this.modal.querySelector("[data-close]");
+    this.modal.className="panel modal hidden";super.open(title,body);const close=this.modal.querySelector("[data-close]");
     if(close){close.classList.add("danger-close");close.onclick=()=>{this._shipNavActive=false;this.modal.classList.add("hidden");};}
-    if(this._shipNavActive&&title!=="Player Colony Ship"){
-      const bar=this.modal.querySelector(".panel-title");if(bar&&close){const back=document.createElement("button");back.type="button";back.className="ship-panel-back";back.dataset.shipBack="1";back.textContent="‹ BACK";back.onclick=()=>{this._shipNavActive=false;this.playerShipPanel();};bar.insertBefore(back,close);}
-    }
+    if(this._shipNavActive&&title!=="Player Colony Ship"){const bar=this.modal.querySelector(".panel-title");if(bar&&close){const back=document.createElement("button");back.type="button";back.className="ship-panel-back";back.dataset.shipBack="1";back.textContent="‹ BACK";back.onclick=()=>{this._shipNavActive=false;this.playerShipPanel();};bar.insertBefore(back,close);}}
   }
 
   playerShipPanel(){
-    this._shipNavActive=false;
-    if(!this.playerShipHere()){this.toast("The player ship is not landed at this colony.");return;}
-    const actions=[
-      ["TECHNOLOGY","Research and licences","tech"],
-      ["STAR MAP","Systems, probes and routes","star-map"],
-      ["COLONIES","All colony operations","colonies"],
-      ["CARGO BAY","Load ship, fuel and colonists","cargo"],
-      ["COLONY SUMMARY","Current colony status","colony-summary"],
-      ["CORPORATION","Corporate overview","corporation"]
-    ];
-    this.open("Player Colony Ship",`<div class="ship-action-shell">${this.shipStatusMarkup?.()||""}<div class="ship-action-grid">${actions.map(([title,sub,action])=>`<button class="ship-action-tile" data-player-ship-action="${action}"><strong>${title}</strong><small>${sub}</small></button>`).join("")}</div></div>`);
-    this.modal.classList.add("player-ship-menu-modal");
-    this.modal.querySelectorAll("[data-player-ship-action]").forEach(button=>button.onclick=()=>{
-      this._shipNavActive=true;const action=button.dataset.playerShipAction;
-      if(action==="tech")this.tech();
-      else if(action==="star-map")this.starMap();
-      else if(action==="colonies")this.coloniesPanel();
-      else if(action==="cargo")this.shipPrep();
-      else if(action==="colony-summary")this.landColonyPanel();
-      else if(action==="corporation")this.company();
-    });
+    this._shipNavActive=false;const ship=this.expansion.ship(this.state);if(ship.status==="lost"){this.starMap();return;}
+    const cargoAvailable=ship.status==="docked"&&this.expansion.isAtActiveColony(this.state),actions=[["TECHNOLOGY","Research and licences","tech",true],["STAR MAP","Systems, probes and routes","star-map",true],["COLONIES","All colony operations","colonies",true],["CARGO BAY",cargoAvailable?"Load ship, Fuel, Food and colonists":"Available while docked at a colony","cargo",cargoAvailable],["COLONY SUMMARY","Current colony status","colony-summary",true],["CORPORATION","Corporate overview","corporation",true]];
+    this.open("Player Colony Ship",`<div class="ship-action-shell">${this.shipStatusMarkup?.()||""}<div class="ship-action-grid">${actions.map(([title,sub,action,enabled])=>`<button class="ship-action-tile" data-player-ship-action="${action}" ${enabled?"":"disabled"}><strong>${title}</strong><small>${sub}</small></button>`).join("")}</div></div>`);this.modal.classList.add("player-ship-menu-modal");
+    this.modal.querySelectorAll("[data-player-ship-action]").forEach(button=>button.onclick=()=>{if(button.disabled)return;this._shipNavActive=true;const action=button.dataset.playerShipAction;if(action==="tech")this.tech();else if(action==="star-map")this.starMap();else if(action==="colonies")this.coloniesPanel();else if(action==="cargo")this.shipPrep();else if(action==="colony-summary")this.landColonyPanel();else if(action==="corporation")this.company();});
   }
 
-  selectedSystem(){
-    const ex=this.expansion.ensure(this.state),ship=ex.ship;
-    let system=this.selectedStarSystemId?this.expansion.system(ex,this.selectedStarSystemId):null;
-    if(!system){const id=ship.targetSystemId||ship.systemId||ship.sourceSystemId||HOME_SYSTEM_ID;system=this.expansion.system(ex,id)||ex.systems.find(s=>!s.home)||ex.systems[0];}
-    if(system)this.selectedStarSystemId=system.id;return system;
-  }
-
-  systemStateLabel(system){
-    if(system.home)return"CORPORATE HOME";
-    if(system.surveyed)return this.expansion.coloniesInSystem(this.state,system.id).length?"COLONISED":"SURVEYED";
-    return this.expansion.probeFor(this.state,system.id)?"PROBE EN ROUTE":"UNKNOWN";
-  }
+  selectedSystem(){const ex=this.expansion.ensure(this.state),ship=ex.ship;let system=this.selectedStarSystemId?this.expansion.system(ex,this.selectedStarSystemId):null;if(!system){const id=ship.targetSystemId||ship.systemId||ship.sourceSystemId||HOME_SYSTEM_ID;system=this.expansion.system(ex,id)||ex.systems.find(s=>!s.home)||ex.systems[0];}if(system)this.selectedStarSystemId=system.id;return system;}
+  systemStateLabel(system){if(system.home)return"CORPORATE HOME";if(system.surveyed)return this.expansion.coloniesInSystem(this.state,system.id).length?"COLONISED":"SURVEYED";return this.expansion.probeFor(this.state,system.id)?"PROBE EN ROUTE":"UNKNOWN";}
 
   async starSystemDetailMarkup(system){
     if(!system)return`<div class="exp-empty">Tap a star system to inspect it.</div>`;
-    const ship=this.expansion.ship(this.state),probe=this.expansion.probeFor(this.state,system.id),arrived=ship.status==="arrived"&&ship.systemId===system.id,distance=this.expansion.distanceFromHome(this.state,system.id),stateLabel=this.systemStateLabel(system);
-    let content=`<div class="star-system-detail-head"><div><small>SELECTED SYSTEM</small><h3>${esc(system.name)}</h3></div><strong>${esc(stateLabel)}</strong></div><div class="exp-system-summary"><div><small>STAR</small><strong>${esc(system.starType)}</strong></div><div><small>PLANETS</small><strong>${formatNumber(system.planetCount)}</strong></div><div><small>HOME DISTANCE</small><strong>${Number(distance).toFixed(1)} ly</strong></div><div><small>STATUS</small><strong>${esc(stateLabel)}</strong></div></div>`;
-    if(!system.surveyed&&!system.home){
-      const check=this.expansion.canLaunchProbe(this.state,system.id),eta=probe?Math.max(0,probe.arrivalAbsoluteDay-this.expansion.absoluteDay(this.state)):null;
-      content+=probe?`<div class="exp-message compact"><strong>SURVEY PROBE EN ROUTE</strong><span>Data return in ${formatNumber(eta)} days.</span></div>`:`<div class="exp-message compact"><strong>PLANET DATA NOT YET AVAILABLE</strong><span>Survey this system to reveal broad planetary Food, Build, Fuel, Ore and habitability indicators.</span><small>Industry L${PROBE_UNLOCK_INDUSTRY_LEVEL} • ${PROBE_COST.build} Build • ${PROBE_COST.ore} Ore • ${PROBE_COST.fuel} Fuel</small><button data-launch-probe ${check.ok?"":"disabled"}>${check.ok?"BUILD + LAUNCH SURVEY PROBE":esc(check.reason)}</button></div>`;
-    }else if(system.home){
-      content+=`<div class="exp-message compact"><strong>KOPLIN CORPORATE LOGISTICS HUB</strong><span>Return exports here, buy corporate supplies and prepare frontier resupply runs.</span></div>`;
-    }else{
-      const planetTable=await this.planetTable(system,arrived);
-      content+=`<div class="star-system-planets"><div class="exp-section-head"><h3>PLANETS</h3><span>Broad survey data only — exact deposits require local surveying.</span></div>${planetTable}</div>`;
-    }
-    const canTarget=["docked","home"].includes(ship.status)&&ship.systemId!==system.id&&(system.home||system.surveyed);
-    if(canTarget)content+=`<button class="action exp-destination" data-set-destination>SET ${esc(system.name.toUpperCase())} AS DESTINATION</button>`;
+    const ship=this.expansion.ship(this.state),probe=this.expansion.probeFor(this.state,system.id),arrived=ship.status==="arrived"&&ship.systemId===system.id,distance=this.expansion.distanceFromHome(this.state,system.id),stateLabel=this.systemStateLabel(system);let content=`<div class="star-system-detail-head"><div><small>SELECTED SYSTEM</small><h3>${esc(system.name)}</h3></div><strong>${esc(stateLabel)}</strong></div><div class="exp-system-summary"><div><small>STAR</small><strong>${esc(system.starType)}</strong></div><div><small>PLANETS</small><strong>${formatNumber(system.planetCount)}</strong></div><div><small>HOME DISTANCE</small><strong>${Number(distance).toFixed(1)} ly</strong></div><div><small>STATUS</small><strong>${esc(stateLabel)}</strong></div></div>`;
+    if(!system.surveyed&&!system.home){const check=this.expansion.canLaunchProbe(this.state,system.id),eta=probe?Math.max(0,probe.arrivalAbsoluteDay-this.expansion.absoluteDay(this.state)):null;content+=probe?`<div class="exp-message compact"><strong>SURVEY PROBE EN ROUTE</strong><span>Data return in ${formatNumber(eta)} days.</span></div>`:`<div class="exp-message compact"><strong>PLANET DATA NOT YET AVAILABLE</strong><span>Survey this system to reveal broad planetary Food, Build, Fuel, Ore and habitability indicators.</span><small>Industry L${PROBE_UNLOCK_INDUSTRY_LEVEL} • ${PROBE_COST.build} Build • ${PROBE_COST.ore} Ore • ${PROBE_COST.fuel} Fuel</small><button data-launch-probe ${check.ok?"":"disabled"}>${check.ok?"BUILD + LAUNCH SURVEY PROBE":esc(check.reason)}</button></div>`;}
+    else if(system.home)content+=`<div class="exp-message compact"><strong>KOPLIN CORPORATE LOGISTICS HUB</strong><span>Return exports here, buy corporate supplies and prepare frontier resupply runs.</span></div>`;
+    else{const planetTable=await this.planetTable(system,arrived);content+=`<div class="star-system-planets"><div class="exp-section-head"><h3>PLANETS</h3><span>Broad survey data only — exact deposits require local surveying.</span></div>${planetTable}</div>`;}
+    const selectable=(system.home||system.surveyed)&&ship.status!=="lost",already=ship.status==="travelling"?ship.targetSystemId===system.id:ship.systemId===system.id,canTarget=selectable&&!already&&["docked","home","arrived","travelling"].includes(ship.status);
+    if(canTarget){const reroute=["travelling","arrived"].includes(ship.status),profile=reroute?this.expansion.profileBetween(this.state,this.expansion.shipPosition(this.state),system.id):this.expansion.travelProfile(this.state,system.id),supply=reroute?this.expansion.routeCanBeSupplied(this.state,profile):{ok:true},label=reroute?`REROUTE TO ${system.name.toUpperCase()}`:`SET ${system.name.toUpperCase()} AS DESTINATION`;content+=`<button class="action exp-destination" data-set-destination ${supply.ok?"":"disabled"}>${supply.ok?esc(label):esc(supply.reason)}</button>`;}
     if(ship.status==="home"&&system.home)content+=`<button class="action" data-open-home>OPEN CORPORATE LOGISTICS</button>`;
-    if(arrived)content+=`<div class="effect warn">PLAYER SHIP ARRIVED • Choose a planet, dock at an existing colony, or retain enough supplies for another journey.</div>`;
-    return `<section class="star-system-detail">${content}</section>`;
+    if(arrived)content+=`<div class="effect warn">PLAYER SHIP ARRIVED • Choose a planet, dock at an existing colony, or reroute while keeping enough Food and Fuel aboard.</div>`;
+    return`<section class="star-system-detail">${content}</section>`;
   }
 
-  async lostShipPanel(revision,ship){
-    let body;
-    try{body=await renderViewTemplate("./views/player-ship-lost.html",{LOST_REASON:esc(ship.lostReason||"The ship has been lost.")});}catch(error){if(revision!==this.starMapRevision)return;this.diagnostics?.error?.("lost ship template failed",error);this.toast("Unable to open the player ship status.");return;}
-    if(revision===this.starMapRevision)this.open("Player Colony Ship",body);
-  }
-
-  async starMap(){
-    const revision=++this.starMapRevision,ex=this.expansion.ensure(this.state),ship=ex.ship;if(ship.status==="lost"){await this.lostShipPanel(revision,ship);return;}
-    const selected=this.selectedSystem(),corporate=this.state.trade?.active?`<button class="exp-corporate-trade" data-corporate-trade>CORPORATE TRADE SHIP DOCKED • OPEN TRADE</button>`:"",cargoAvailable=ship.status==="docked"&&this.expansion.isAtActiveColony(this.state);
-    let body;
-    try{const systemDetail=await this.starSystemDetailMarkup(selected);if(revision!==this.starMapRevision)return;body=await renderViewTemplate("./views/star-map-screen.html",{SHIP_STATUS:this.shipStatusMarkup(),CORPORATE_TRADE:corporate,SYSTEM_DETAIL:systemDetail,SERVICE_RADIUS:ex.serviceRadiusLy.toFixed(1),CARGO_DISABLED:cargoAvailable?"":"disabled"});}catch(error){if(revision!==this.starMapRevision)return;this.diagnostics?.error?.("star map template failed",error);this.toast("Unable to open the star map.");return;}
-    if(revision!==this.starMapRevision)return;
-    this.open("Corporation Star Map",body);
-    this.modal.classList.add("star-map-modal","full-screen-panel");this.bindStarMapDetailActions(selected);
-    this.modal.querySelector("[data-corporate-trade]")?.addEventListener("click",()=>this.corporateTradeUI?.open());
-    this.modal.querySelector("[data-ship-prep]")?.addEventListener("click",()=>this.shipPrep());
-    requestAnimationFrame(()=>this.bindStarMap());
-  }
-
-  openSystem(systemId){this.selectedStarSystemId=systemId;this.starMap();}
+  async lostShipPanel(revision,ship){let body;try{body=await renderViewTemplate("./views/player-ship-lost.html",{LOST_REASON:esc(ship.lostReason||"The ship has been lost.")});}catch(error){if(revision!==this.starMapRevision)return;this.diagnostics?.error?.("lost ship template failed",error);this.toast("Unable to open the player ship status.");return;}if(revision===this.starMapRevision)this.open("Player Colony Ship",body);}
+  async starMap(){const revision=++this.starMapRevision,ex=this.expansion.ensure(this.state),ship=ex.ship;if(ship.status==="lost"){await this.lostShipPanel(revision,ship);return;}const selected=this.selectedSystem(),corporate=this.state.trade?.active?`<button class="exp-corporate-trade" data-corporate-trade>CORPORATE TRADE SHIP DOCKED • OPEN TRADE</button>`:"",cargoAvailable=ship.status==="docked"&&this.expansion.isAtActiveColony(this.state);let body;try{const systemDetail=await this.starSystemDetailMarkup(selected);if(revision!==this.starMapRevision)return;body=await renderViewTemplate("./views/star-map-screen.html",{SHIP_STATUS:this.shipStatusMarkup(),CORPORATE_TRADE:corporate,SYSTEM_DETAIL:systemDetail,SERVICE_RADIUS:ex.serviceRadiusLy.toFixed(1),CARGO_DISABLED:cargoAvailable?"":"disabled"});}catch(error){if(revision!==this.starMapRevision)return;this.diagnostics?.error?.("star map template failed",error);this.toast("Unable to open the star map.");return;}if(revision!==this.starMapRevision)return;this.open("Corporation Star Map",body);this.modal.classList.add("star-map-modal","full-screen-panel");this.bindStarMapDetailActions(selected);this.modal.querySelector("[data-corporate-trade]")?.addEventListener("click",()=>this.corporateTradeUI?.open());this.modal.querySelector("[data-ship-prep]")?.addEventListener("click",()=>this.shipPrep());requestAnimationFrame(()=>this.bindStarMap());}
+  openSystem(systemId){if(systemId===SHIP_HIT_ID){this.playerShipPanel();return;}this.selectedStarSystemId=systemId;this.starMap();}
 
   bindStarMapDetailActions(system){
-    if(!system)return;
-    const launch=this.modal.querySelector("[data-launch-probe]");if(launch&&!launch.disabled)launch.onclick=()=>{const r=this.expansion.launchProbe(this.state,system.id);if(!r.ok){this.toast(r.reason);return;}this.onRecalculate?.();this.onCapturePortfolio?.();this.repo.save(this.state);this.toast(`Survey probe launched • ${formatNumber(r.days)} days to data return.`);this.starMap();};
-    this.modal.querySelector("[data-set-destination]")?.addEventListener("click",()=>{const r=this.expansion.setTarget(this.state,system.id);if(!r.ok){this.toast(r.reason);return;}this.repo.save(this.state);this.toast(`${system.name} selected as ship destination.`);this.starMap();});
-    this.modal.querySelectorAll("[data-dock-colony]").forEach(button=>button.onclick=()=>{const id=button.dataset.dockColony;if(this.onSwitchColony?.(id)){this.expansion.dockAtColony(this.state,id);this.repo.save(this.state);this.toast(`Player ship docked at ${this.state.contract.colonyName}.`);this.playerShipPanel();}});
-    this.modal.querySelectorAll("[data-found-planet]").forEach(button=>button.onclick=()=>this.foundPlanet(system.id,button.dataset.foundPlanet));
-    this.modal.querySelector("[data-open-home]")?.addEventListener("click",()=>this.homeworld());
+    if(!system)return;const launch=this.modal.querySelector("[data-launch-probe]");if(launch&&!launch.disabled)launch.onclick=()=>{const r=this.expansion.launchProbe(this.state,system.id);if(!r.ok){this.toast(r.reason);return;}this.onRecalculate?.();this.onCapturePortfolio?.();this.repo.save(this.state);this.toast(`Survey probe launched • ${formatNumber(r.days)} days to data return.`);this.starMap();};
+    this.modal.querySelector("[data-set-destination]")?.addEventListener("click",()=>{const before=this.expansion.ship(this.state).status,r=this.expansion.setTarget(this.state,system.id);if(!r.ok){this.toast(r.reason);return;}this.onCapturePortfolio?.();this.repo.save(this.state);this.toast(before==="travelling"||before==="arrived"?`Ship rerouted to ${system.name}.`:`${system.name} selected as ship destination.`);this.starMap();});
+    this.modal.querySelectorAll("[data-dock-colony]").forEach(button=>button.onclick=()=>{const id=button.dataset.dockColony;if(this.onSwitchColony?.(id)){this.expansion.dockAtColony(this.state,id);this.repo.save(this.state);this.toast(`Player ship docked at ${this.state.contract.colonyName}.`);this.playerShipPanel();}});this.modal.querySelectorAll("[data-found-planet]").forEach(button=>button.onclick=()=>this.foundPlanet(system.id,button.dataset.foundPlanet));this.modal.querySelector("[data-open-home]")?.addEventListener("click",()=>this.homeworld());
+  }
+
+  starHit(canvas,pos){
+    const r=canvas.getBoundingClientRect(),x=pos.x-r.left,y=pos.y-r.top,ship=this.expansion.ship(this.state),shipPos=this.expansion.shipPosition(this.state);if(ship.status!=="lost"&&shipPos){const p=this.starScreen(canvas,shipPos);if(Math.hypot(p.x-x,p.y-y)<18)return{id:SHIP_HIT_ID};}
+    return super.starHit(canvas,pos);
   }
 
   drawStarMap(canvas,ctx){
-    super.drawStarMap(canvas,ctx);const system=this.selectedStarSystemId?this.expansion.system(this.state.company.expansion,this.selectedStarSystemId):null;if(!system)return;const p=this.starScreen(canvas,system);ctx.save();ctx.strokeStyle="#ffffff";ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,13,0,Math.PI*2);ctx.stroke();ctx.strokeStyle="#59d4ff";ctx.lineWidth=1;ctx.beginPath();ctx.arc(p.x,p.y,16,0,Math.PI*2);ctx.stroke();ctx.restore();
+    const r=canvas.getBoundingClientRect(),ex=this.state.company.expansion,systems=ex.systems,ship=ex.ship;ctx.clearRect(0,0,r.width,r.height);ctx.fillStyle="#030608";ctx.fillRect(0,0,r.width,r.height);
+    ctx.save();ctx.strokeStyle="rgba(80,220,170,.25)";ctx.lineWidth=1;const home=this.expansion.system(ex,HOME_SYSTEM_ID),hp=this.starScreen(canvas,home);ctx.beginPath();ctx.arc(hp.x,hp.y,ex.serviceRadiusLy*this.starView.scale,0,Math.PI*2);ctx.stroke();ctx.restore();
+    for(const system of systems){const p=this.starScreen(canvas,system),colonies=this.expansion.coloniesInSystem(this.state,system.id),probe=this.expansion.probeFor(this.state,system.id),playerHere=ship.systemId===system.id&&ship.status!=="travelling",corpHere=(this.state.portfolio?.colonies||[]).some(e=>e.data?.contract?.systemId===system.id&&e.data?.trade?.active);let fill=system.home?"#55e6af":system.surveyed?"#9ed7ff":"#7b8790";if(probe)fill="#f3cc67";ctx.fillStyle=fill;ctx.beginPath();ctx.arc(p.x,p.y,system.home?6:system.surveyed?4.5:3.5,0,Math.PI*2);ctx.fill();if(colonies.length){ctx.strokeStyle="#58e3ff";ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,9,0,Math.PI*2);ctx.stroke();}if(playerHere){ctx.fillStyle="#ffffff";ctx.beginPath();ctx.moveTo(p.x+12,p.y);ctx.lineTo(p.x+19,p.y-5);ctx.lineTo(p.x+19,p.y+5);ctx.closePath();ctx.fill();}if(corpHere){ctx.fillStyle="#ffcc66";ctx.fillRect(p.x-16,p.y-3,6,6);}ctx.fillStyle="rgba(235,244,248,.78)";ctx.font="11px system-ui";ctx.fillText(system.name,p.x+8,p.y-8);}
+    if(ship.status==="travelling"){const start=Number.isFinite(ship.routeStartX)&&Number.isFinite(ship.routeStartY)?{x:ship.routeStartX,y:ship.routeStartY}:this.expansion.system(ex,ship.sourceSystemId),to=this.expansion.system(ex,ship.targetSystemId),position=this.expansion.shipPosition(this.state);if(start&&to&&position){const a=this.starScreen(canvas,start),b=this.starScreen(canvas,to),p=this.starScreen(canvas,position);ctx.strokeStyle="rgba(255,255,255,.28)";ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(p.x+7,p.y);ctx.lineTo(p.x-5,p.y-4);ctx.lineTo(p.x-5,p.y+4);ctx.closePath();ctx.fill();ctx.strokeStyle="#59d4ff";ctx.lineWidth=1;ctx.beginPath();ctx.arc(p.x,p.y,12,0,Math.PI*2);ctx.stroke();}}
+    const selected=this.selectedStarSystemId?this.expansion.system(ex,this.selectedStarSystemId):null;if(selected){const p=this.starScreen(canvas,selected);ctx.save();ctx.strokeStyle="#ffffff";ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,13,0,Math.PI*2);ctx.stroke();ctx.strokeStyle="#59d4ff";ctx.lineWidth=1;ctx.beginPath();ctx.arc(p.x,p.y,16,0,Math.PI*2);ctx.stroke();ctx.restore();}
   }
 
-  renderAdaptiveBuilding(tile){
-    super.renderAdaptiveBuilding(tile);const button=this.tilePanel?.querySelector("[data-adaptive-demolish]");if(button)button.onclick=()=>this.demolitionPanel(tile);
-  }
+  renderAdaptiveBuilding(tile){super.renderAdaptiveBuilding(tile);const demolish=this.tilePanel?.querySelector("[data-adaptive-demolish]");if(demolish)demolish.onclick=()=>this.demolitionPanel(tile);const check=this.colony.canStopProduction(tile);if(!check.ok||!this.tilePanel)return;this.tilePanel.querySelector("[data-production-toggle]")?.remove();const stopped=tile.development?.kind==="extract"?tile.productionStopped===true:tile.development?.productionStopped===true,button=document.createElement("button");button.dataset.productionToggle="1";button.textContent=stopped?"START PRODUCTION":"STOP PRODUCTION";button.classList.toggle("warn",stopped);if(demolish)demolish.before(button);else this.tilePanel.append(button);button.onclick=()=>{const result=this.colony.setProductionStopped(this.state,tile,!stopped);if(!result.ok){this.toast(result.reason);return;}this.onRecalculate?.();this.repo.save(this.state);this.gameLog?.event?.(this.state,"production-toggle",`${tile.name||tile.development?.kind||"Building"} production ${result.stopped?"stopped":"started"}.`,{x:tile.x,y:tile.y,stopped:result.stopped});this.toast(result.stopped?"Production stopped. Operating load released.":"Production started.");this.render();this.renderAdaptiveBuilding(tile);};}
 
-  async demolitionPanel(tile){
-    const revision=++this.demolitionRevision,dev=tile?.development;if(!dev)return;const extract=dev.kind==="extract",label=extract?this.buildingLabel(dev):this.development.label(dev.kind),level=Math.max(1,Number(dev.level??tile.level)||1),investedBuild=Math.max(0,Math.floor(Number(dev.investedBuild)||0)),investedOre=Math.max(0,Math.floor(Number(dev.investedOre)||0)),recoverBuild=Math.floor(investedBuild*.25),recoverOre=Math.floor(investedOre*.25);
-    let impact="The tile will be cleared for redevelopment.";
-    if(extract)impact=tile.depleted||tile.renewableWiped?"The exhausted extraction site will be removed. The tile can be redeveloped.":"The extraction facility will be removed; the underlying resource remains available for future development.";
-    else if(tile.resourceCovered&&tile.resourceId)impact=`The covered ${tile.name} resource will become accessible again.`;
-    else if(tile.destroyedResource?.type==="food")impact="The natural Food resource previously destroyed by construction will not return.";
-    let body;
-    try{body=await renderViewTemplate("./views/demolition-confirm.html",{BUILDING_LABEL:esc(label),LEVEL:level,X:tile.x,Y:tile.y,INVESTED_BUILD:formatNumber(investedBuild),RECOVER_BUILD:formatNumber(recoverBuild),INVESTED_ORE:formatNumber(investedOre),RECOVER_ORE:formatNumber(recoverOre),IMPACT:esc(impact)});}catch(error){if(revision!==this.demolitionRevision)return;this.diagnostics?.error?.("demolition template failed",error);this.toast("Unable to open demolition confirmation.");return;}
-    if(revision!==this.demolitionRevision)return;
-    this.open("Confirm Demolition",body);
-    this.modal.classList.add("demolition-confirm-modal");
-    this.modal.querySelector("[data-demolish-no]").onclick=()=>this.modal.classList.add("hidden");
-    this.modal.querySelector("[data-demolish-yes]").onclick=()=>this.onDemolishDevelopment?.(tile);
-  }
+  async demolitionPanel(tile){const revision=++this.demolitionRevision,dev=tile?.development;if(!dev)return;const extract=dev.kind==="extract",label=extract?this.buildingLabel(dev):this.development.label(dev.kind),level=Math.max(1,Number(dev.level??tile.level)||1),investedBuild=Math.max(0,Math.floor(Number(dev.investedBuild)||0)),investedOre=Math.max(0,Math.floor(Number(dev.investedOre)||0)),recoverBuild=Math.floor(investedBuild*.25),recoverOre=Math.floor(investedOre*.25);let impact="The tile will be cleared for redevelopment.";if(extract)impact=tile.depleted||tile.renewableWiped?"The exhausted extraction site will be removed. The tile can be redeveloped.":"The extraction facility will be removed; the underlying resource remains available for future development.";else if(tile.resourceCovered&&tile.resourceId)impact=`The covered ${tile.name} resource will become accessible again.`;else if(tile.destroyedResource?.type==="food")impact="The natural Food resource previously destroyed by construction will not return.";let body;try{body=await renderViewTemplate("./views/demolition-confirm.html",{BUILDING_LABEL:esc(label),LEVEL:level,X:tile.x,Y:tile.y,INVESTED_BUILD:formatNumber(investedBuild),RECOVER_BUILD:formatNumber(recoverBuild),INVESTED_ORE:formatNumber(investedOre),RECOVER_ORE:formatNumber(recoverOre),IMPACT:esc(impact)});}catch(error){if(revision!==this.demolitionRevision)return;this.diagnostics?.error?.("demolition template failed",error);this.toast("Unable to open demolition confirmation.");return;}if(revision!==this.demolitionRevision)return;this.open("Confirm Demolition",body);this.modal.classList.add("demolition-confirm-modal");this.modal.querySelector("[data-demolish-no]").onclick=()=>this.modal.classList.add("hidden");this.modal.querySelector("[data-demolish-yes]").onclick=()=>this.onDemolishDevelopment?.(tile);}
 }
