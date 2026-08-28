@@ -1,18 +1,20 @@
 # MineIT Cleanup Plan and Final Handoff
 
-This is the canonical recovery record for the `CleanUp` branch. The cleanup/refactor is behaviour-preserving unless a gameplay change was separately approved. Do not rely on chat history to determine merge readiness; use this file and GitHub status.
+This is the canonical recovery record for the MineIT cleanup/refactor. The cleanup was behaviour-preserving unless a gameplay change was separately approved. PR #39 was hands-on approved by the user and merged from `CleanUp` into `develop` on 2026-08-28. Do not rely on chat history to determine the cleanup outcome; use this file and GitHub status.
 
 ## Current repository status
 
-Status captured 2026-08-27 after the canvas/touch activation model was unified and fully validated.
+Status captured 2026-08-28 after user hands-on approval, PR #39 merge, and successful post-merge validation on `develop`.
 
 | Item | Current state |
 |---|---|
 | Repository | `kevvy555/MineIT` |
-| Working branch | `CleanUp` |
-| Pull request | Draft PR #39, `CleanUp` → `develop` |
+| Working branch | `develop` |
+| Pull request | PR #39, `CleanUp` → `develop` — **merged** |
 | Last production checkpoint | `bb33deea` — unified canvas activation on `click` |
-| Last fully validated functional head | `bc31f1e5` — production checkpoint plus test-ownership alignment |
+| Last fully validated functional head before merge | `bc31f1e5` — production checkpoint plus test-ownership alignment |
+| Final `CleanUp` head merged | `58d5436f` — includes repository `AGENTS.md` development contract |
+| `develop` merge commit | `ed380c25f23239184b7f4dc727203312d6460511` |
 | Package version | `5.11.3` |
 | Cleanup phases | **0–7 complete** |
 | Large embedded HTML-template debt | **0** |
@@ -21,12 +23,29 @@ Status captured 2026-08-27 after the canvas/touch activation model was unified a
 | Import-map debt | **0** |
 | Application globals/document app-event debt | **0** |
 | CSS orphan debt | **0** |
-| Branch reconciliation | **Complete** — `develop` is an ancestor of `CleanUp` |
-| Current compare to `develop` | **379 ahead / 0 behind** at `bc31f1e5` |
-| PR state | Open and draft; intentionally not merged |
+| Branch reconciliation | **Complete** — `CleanUp` merged into `develop` |
+| Final pre-merge compare | **384 ahead / 0 behind** |
+| PR state | **Closed and merged** |
 | Automated regression status | **GREEN** |
-| Merge readiness | **BLOCKED ON USER HANDS-ON RECHECK** |
-| Remaining action | User rechecks Trade Ship, landed Player Ship, Star Map and normal map gestures on deployed `CleanUp`; only then consider explicit merge approval |
+| Merge readiness | **COMPLETE** |
+| Remaining cleanup action | None. Future feature/fix work should branch from current `develop` and continue to obey `AGENTS.md`. |
+
+## Merge completion — 2026-08-28
+
+- User completed the hands-on recheck and explicitly approved merging `CleanUp` into `develop`.
+- Final `CleanUp` head before merge: `58d5436f083d584dddcaccf29c32f75141c6f7c3`.
+- Pre-merge validation for that exact head:
+  - Push Test `33104258648` — **success**;
+  - PR Test `33104265356` — **success**;
+  - Pages `33104257657` — **success**.
+- Final compare immediately before merge: `CleanUp` **384 ahead / 0 behind** `develop`; merge base remained `01d56b2cc679a7293143a7e4fbef54c7f0ee2a20`.
+- PR #39 was marked ready for review and merged using the normal merge strategy with an expected-head guard.
+- Merge commit: `ed380c25f23239184b7f4dc727203312d6460511`.
+- GitHub verifies the merge commit and its two parents are the previous `develop` head and final `CleanUp` head.
+- Post-merge `develop` Test run `33156131648` — **success**:
+  - full Node/unit/regression/domain suite — success;
+  - browser/mobile presentation and interaction suite — success.
+- `CleanUp` was intentionally retained after merge; it was not deleted.
 
 ## Post-refactor regression corrections
 
@@ -203,16 +222,9 @@ Final validation at `bc31f1e5`:
 - repeated UI/Star Map lifecycle soak green;
 - existing painted Star Map and populated Frontier planet-table checks remain green.
 
-### Required hands-on recheck before merge
+### Hands-on recheck and merge approval — complete
 
-Do not merge PR #39 until the user confirms the deployed flows:
-
-1. Let the Corporate Trade Ship arrive; open it and confirm **Sell** shows real colony stock and **Buy** shows resource categories/items.
-2. Tap the landed player ship on the colony map and confirm the **Player Colony Ship** six-action panel remains open first; it must not immediately enter Star Map.
-3. Tap **STAR MAP** separately and confirm **Koplin Frontier and the wider star systems visibly render and remain interactive with no new diagnostics error**.
-4. Confirm ordinary map taps still select/act normally, and a drag/multi-select does not also trigger a stray tile/ship activation on release.
-
-If any one still fails, keep PR #39 draft and make a targeted correction from the latest green functional head.
+The user completed the deployed hands-on recheck and confirmed the cleanup branch looked good before explicitly approving the merge on 2026-08-28. The required flows were the Corporate Trade Ship Sell/Buy lists, landed Player Colony Ship opening path, deliberate Star Map navigation/rendering, and normal map tap/drag behaviour. PR #39 was then merged into `develop` as recorded in the merge-completion section above.
 
 ## Phase 7 technical validation before the regression reports
 
@@ -267,7 +279,7 @@ The user-reported regressions showed why DOM-presence/lifecycle checks alone wer
 | Post-refactor correction A | Automated green | `3c089e87`; Push `33093417010`, PR `33093421033`, Pages `33093415710`. |
 | Post-refactor correction B | Automated green | `46bad27a`; Push `33095033305`, PR `33095036882`, Pages `33095031958`. |
 | Post-refactor correction C | Superseded by D | `188075dc`; validated temporary ghost-click guard, later removed. |
-| Post-refactor correction D | Automated green; hands-on pending | production `bb33deea`, validated head `bc31f1e5`; Push `33103002884`, PR `33103006969`, Pages `33103001491`. |
+| Post-refactor correction D | **Merged / green** | production `bb33deea`, validated head `bc31f1e5`; final `CleanUp` `58d5436f`; merge `ed380c25`; post-merge Test `33156131648` success. |
 
 ## Important architecture decisions to preserve
 
@@ -337,19 +349,15 @@ Do not overwrite, revert, reformat or replace these unrelated user asset changes
 - `assets/art/development/algae-facility/originals/algae-facility-l4.png`
 - `assets/art/resources/food-resources/Originals/synthetic-nutrient.png`
 
-## Merge procedure — requires explicit user approval after hands-on recheck
+## Cleanup work complete — future branch guidance
 
-Do **not** merge automatically.
+PR #39 is merged and the cleanup work is complete. The old pre-merge procedure is retained here only as historical context through the completed evidence above.
 
-After the user confirms the post-refactor regression flows are correct and explicitly approves merging PR #39:
+For future MineIT work:
 
-1. Re-read `CleanUp`, `develop`, and PR #39 immediately before mutation.
-2. Require PR head to still be the hands-on-approved fully green head or a later documentation-only fully green head.
-3. Require `develop` to remain an ancestor / comparison `behind_by = 0`.
-4. Require PR #39 to remain mergeable and checks green.
-5. Mark PR #39 ready for review if GitHub requires draft removal before merge.
-6. Merge PR #39 into `develop` using the repository's normal merge strategy; do not force-push or bypass failed checks.
-7. Verify the resulting `develop` head and its post-merge workflow/Pages state.
-8. Only after that consider the `CleanUp` work complete/archivable.
-
-No additional cleanup/refactor work should be added now. Only targeted fixes for newly discovered validation failures should modify `CleanUp` before the merge.
+1. Start from the current `develop` branch unless the user explicitly chooses another base.
+2. Read root `AGENTS.md` before coding and preserve the architecture rules recorded in this plan.
+3. Use focused feature/fix branches rather than continuing broad cleanup work on `CleanUp`.
+4. Keep architecture/regression guards green and never restore versioned or shadow production implementations.
+5. Run focused tests during development and the full required CI/browser suite before significant merges.
+6. Keep `CleanUp` only as historical/archival context unless the user later asks to delete it.
