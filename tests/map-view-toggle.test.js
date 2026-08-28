@@ -1,0 +1,13 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const read=p=>fs.readFileSync(new URL(`../${p}`,import.meta.url),"utf8");
+const index=read("index.html"),controls=read("js/ui/map-controls.js"),world=read("css/world.css"),land=read("css/land.css");
+assert.match(index,/id="mapViewHost"/);
+assert.doesNotMatch(index,/mapFilterHost/);
+assert.match(controls,/class MapControls/);
+assert.match(controls,/dataset\.mapView/);
+assert.match(controls,/FILTERS/);
+assert.match(world,/#worldShell\{[^}]*grid-template-rows:var\(--map-toolbar-height\) minmax\(0,1fr\)/);
+assert.match(world,/\.map-view-toggle\{/);
+assert.doesNotMatch(land,/\.map-view-toggle\{/);
+console.log("persistent single-row map controls regression test passed");

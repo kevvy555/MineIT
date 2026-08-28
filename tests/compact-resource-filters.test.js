@@ -1,0 +1,17 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const read=p=>fs.readFileSync(new URL(`../${p}`,import.meta.url),"utf8");
+const controls=read("js/ui/map-controls.js"),view=read("js/ui/world-view-runtime.js"),css=read("css/world.css");
+assert.match(controls,/filtersOpen=false/);
+assert.match(controls,/filterCategory=null/);
+assert.match(controls,/mapFilterToggle/);
+assert.match(controls,/filterCategory/);
+assert.match(controls,/panel\.classList\.toggle\("hidden",!filtering\)/);
+assert.match(view,/canvas\.style\.removeProperty\("width"\)/);
+assert.match(view,/canvas\.style\.removeProperty\("height"\)/);
+assert.doesNotMatch(view,/canvas\.style\.width\s*=/);
+assert.doesNotMatch(view,/canvas\.style\.height\s*=/);
+assert.match(css,/\.map-filter-options\{[^}]*flex-wrap:nowrap[^}]*overflow-x:auto/);
+assert.match(css,/\.map-filter-tabs\{[^}]*overflow-x:auto/);
+assert.match(css,/#worldShell\{[^}]*grid-template-rows:var\(--map-toolbar-height\) minmax\(0,1fr\)/);
+console.log("compact in-toolbar resource filters regression test passed");

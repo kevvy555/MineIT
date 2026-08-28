@@ -1,24 +1,70 @@
-import { formatNumber } from "../core/utils.js?v=5.5.0";
-import { ResourceUIMixin } from "./resource-ui.js?v=5.5.0";
-import { ColonyTechUIMixin } from "./colony-tech-ui.js?v=5.5.0";
-import { ContractUIMixin } from "./contract-ui.js?v=5.5.0";
-import { PortfolioUIMixin } from "./portfolio-ui.js?v=5.5.0";
-import { UIEnhancementsMixin } from "./ui-enhancements.js?v=5.5.0";
-import { SurvivalUIMixin } from "./survival-ui.js?v=5.5.0";
-import { IndustryUIMixin } from "./industry-ui.js?v=5.5.0";
-import { V55UIMixin } from "./v55-ui.js?v=5.5.0";
-import { V55ContractLogUIMixin } from "./v55-contract-log-ui.js?v=5.5.0";
+import { formatNumber } from "../core/utils.js";
+import { ResourceUIMixin } from "./resource-ui.js";
+import { ColonyTechUIMixin } from "./colony-tech-ui.js";
+import { ContractUIMixin } from "./contract-ui.js";
+import { PortfolioUIMixin } from "./portfolio-ui.js";
+import { UIEnhancementsMixin } from "./ui-enhancements.js";
+import { SurvivalUIMixin } from "./survival-ui.js";
+import { IndustryUIMixin } from "./industry-ui.js";
+import { V55UIMixin } from "./v55-ui.js";
+import { V55ContractLogUIMixin } from "./v55-contract-log-ui.js";
+import { LandUIMixin } from "./land-ui.js";
 
 export class UIController {
-  constructor({state,repo,resources,inventory,collection,colony,portfolio,sites,technology,survey,contracts,world,icons,diagnostics,transport,gameLog,onHardReset,onNewContract,onSwitchColony,onRemoveColony,onMakeLiability,onRelocateColony,onRecalculate,onCapturePortfolio}){Object.assign(this,{state,repo,resources,inventory,collection,colony,portfolio,sites,technology,survey,contracts,world,icons,diagnostics,transport,gameLog,onHardReset,onNewContract,onSwitchColony,onRemoveColony,onMakeLiability,onRelocateColony,onRecalculate,onCapturePortfolio});this.tilePanel=document.querySelector("#tilePanel");this.modal=document.querySelector("#modal");this.toastEl=document.querySelector("#toast");this.errorBadge=document.querySelector("#errorBadge");this.bind();}
-  bind(){document.querySelector("#companyBtn").onclick=()=>this.company();document.querySelector("#collectionBtn").onclick=()=>this.currentCollection();document.querySelector("#colonyBtn").onclick=()=>this.colonyPanel();document.querySelector("#coloniesBtn").onclick=()=>this.coloniesPanel();document.querySelector("#techBtn").onclick=()=>this.tech();document.querySelector("#goalsBtn").onclick=()=>this.goals();document.querySelector("#menuBtn").onclick=()=>this.menu();document.querySelectorAll("[data-speed]").forEach(button=>button.onclick=()=>{const next=+button.dataset.speed;if(next>0&&(this.state.company?.pendingEvents?.length||this.state.trade?.active)){this.toast("Resolve the pending corporate ship before resuming time.");return;}if(this.state.company?.gameOver){this.toast("All colonies have been lost.");return;}this.state.speed=next;this.syncSpeed()});this.errorBadge.onclick=()=>this.diagnosticsPanel();this.diagnostics.subscribe(()=>this.updateErrorBadge());}
+  constructor({state,repo,resources,inventory,collection,colony,portfolio,sites,technology,survey,contracts,world,icons,diagnostics,transport,gameLog,land,development,onHardReset,onNewContract,onSwitchColony,onRemoveColony,onMakeLiability,onRelocateColony,onRecalculate,onCapturePortfolio,onSelectLand,onPlaceDevelopment,onDemolishDevelopment,onContractDecisionResolved,onProcessPendingEvent}){
+    Object.assign(this,{state,repo,resources,inventory,collection,colony,portfolio,sites,technology,survey,contracts,world,icons,diagnostics,transport,gameLog,land,development,onHardReset,onNewContract,onSwitchColony,onRemoveColony,onMakeLiability,onRelocateColony,onRecalculate,onCapturePortfolio,onSelectLand,onPlaceDevelopment,onDemolishDevelopment,onContractDecisionResolved,onProcessPendingEvent});
+    this.tilePanel=document.querySelector("#tilePanel");this.modal=document.querySelector("#modal");this.toastEl=document.querySelector("#toast");this.errorBadge=document.querySelector("#errorBadge");this.boundClickElements=[];this.bind();
+  }
+  bindClick(selector,handler){const element=document.querySelector(selector);if(!element)return null;element.onclick=handler;this.boundClickElements.push(element);return element;}
+  bind(){
+    this.bindClick("#companyBtn",()=>this.company());this.bindClick("#collectionBtn",()=>this.currentCollection());this.bindClick("#colonyBtn",()=>this.landColonyPanel());this.bindClick("#coloniesBtn",()=>this.coloniesPanel());this.bindClick("#techBtn",()=>this.tech());this.bindClick("#goalsBtn",()=>this.goals());this.bindClick("#menuBtn",()=>this.menu());
+    this.bindSpeedInputs();
+    if(this.errorBadge){this.errorBadge.onclick=()=>this.diagnosticsPanel();this.boundClickElements.push(this.errorBadge);}this.diagnosticsUnsubscribe=this.diagnostics.subscribe(()=>this.updateErrorBadge());
+  }
+  bindSpeedInputs(){
+    const controls=document.querySelector(".controls")||document.querySelector(".app-footer");
+    if(!controls||this.speedInputBound)return;
+    this.speedInputBound=true;this.speedControls=controls;
+    this.speedClickHandler=event=>{
+      const button=event.target.closest?.("[data-speed]");
+      if(!button||!controls.contains(button))return;
+      event.preventDefault();event.stopImmediatePropagation();this.setSpeed(+button.dataset.speed);
+    };
+    controls.addEventListener("click",this.speedClickHandler,true);
+  }
+  dispose(){
+    clearTimeout(this.toastTimer);this.toastTimer=null;
+    if(this.speedControls&&this.speedClickHandler)this.speedControls.removeEventListener("click",this.speedClickHandler,true);
+    this.speedControls=null;this.speedClickHandler=null;this.speedInputBound=false;
+    for(const element of this.boundClickElements||[])element.onclick=null;
+    this.boundClickElements=[];this.diagnosticsUnsubscribe?.();this.diagnosticsUnsubscribe=null;
+  }
+  setSpeed(next){
+    if(this.state.status==="site-selection"){this.toast("Choose a landing site before starting time.");return false;}
+    if(next>0&&(this.state.company?.pendingEvents?.length||this.state.trade?.active||this.state.status==="contract-decision")){this.toast("Resolve the pending corporate event before resuming time.");return false;}
+    if(this.state.company?.gameOver){this.toast("All colonies have been lost.");return false;}
+    this.state.speed=next;this.syncSpeed();return true;
+  }
   updateErrorBadge(){this.errorBadge.textContent=`ERROR LOG (${this.diagnostics.errors})`;this.errorBadge.classList.toggle("hidden",this.diagnostics.errors===0);}
   syncSpeed(){document.querySelectorAll("[data-speed]").forEach(b=>b.classList.toggle("active",+b.dataset.speed===this.state.speed));}
   panelTitle(title,icon=""){return`<div class="panel-title"><div class="resource-title">${icon}<strong>${title}</strong></div><button class="close" data-close>✕</button></div>`;}
   open(title,body){this.modal.innerHTML=`${this.panelTitle(title)}<div class="modal-body">${body}</div>`;this.modal.classList.remove("hidden");this.modal.querySelector("[data-close]").onclick=()=>this.modal.classList.add("hidden");}
   toast(message){this.toastEl.textContent=message;this.toastEl.classList.remove("hidden");clearTimeout(this.toastTimer);this.toastTimer=setTimeout(()=>this.toastEl.classList.add("hidden"),1900);}
   quality(q){const[label,cls]=this.resources.qualityBand(q);return`<span class="${cls}">Q${formatNumber(q)} • ${label}</span>`;}
-  stockFor(tile){return this.inventory.amountFor(this.state,tile.type,tile.resourceId);}
+  stockFor(tile){return tile?.resourceId?this.inventory.amountFor(this.state,tile.type,tile.resourceId):0;}
 }
-function mix(target,source){const descriptors=Object.getOwnPropertyDescriptors(source.prototype);delete descriptors.constructor;Object.defineProperties(target.prototype,descriptors);}
-mix(UIController,ResourceUIMixin);mix(UIController,ColonyTechUIMixin);mix(UIController,ContractUIMixin);mix(UIController,PortfolioUIMixin);mix(UIController,UIEnhancementsMixin);mix(UIController,SurvivalUIMixin);mix(UIController,IndustryUIMixin);mix(UIController,V55UIMixin);mix(UIController,V55ContractLogUIMixin);
+
+/**
+ * Copy an entire mixin prototype chain, oldest ancestor first. Several MineIT
+ * presentation adapters subclass a legacy mixin and override only one or two
+ * methods. Copying only own properties silently dropped inherited helpers such
+ * as company(), colonyStatus() and colonyDays(). Walking the chain makes the
+ * composition behave like normal class inheritance while keeping later mixins
+ * and child overrides authoritative.
+ */
+export function mix(target,source){
+  const chain=[];let proto=source?.prototype;
+  while(proto&&proto!==Object.prototype){chain.unshift(proto);proto=Object.getPrototypeOf(proto);}
+  for(const level of chain){const descriptors=Object.getOwnPropertyDescriptors(level);delete descriptors.constructor;Object.defineProperties(target.prototype,descriptors);}
+}
+mix(UIController,ResourceUIMixin);mix(UIController,ColonyTechUIMixin);mix(UIController,ContractUIMixin);mix(UIController,PortfolioUIMixin);mix(UIController,UIEnhancementsMixin);mix(UIController,SurvivalUIMixin);mix(UIController,IndustryUIMixin);mix(UIController,V55UIMixin);mix(UIController,V55ContractLogUIMixin);mix(UIController,LandUIMixin);

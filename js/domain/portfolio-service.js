@@ -1,8 +1,13 @@
-import { cloneColonyState, createColonyState, COLONY_STATE_KEYS } from "./game-state.js?v=5.5.0";
-import { CONFIG } from "../core/config.js?v=5.5.0";
+import { cloneColonyState,createColonyState,COLONY_STATE_KEYS } from "./game-state.js";
+import { CONFIG } from "../core/config.js";
+import { ExpansionService } from "./expansion-service.js";
 
 const clone=value=>JSON.parse(JSON.stringify(value));
+const GREEK=["Alpha","Beta","Gamma","Delta","Epsilon","Zeta","Eta","Theta","Iota","Kappa","Lambda","Mu","Nu","Xi","Omicron","Pi","Rho","Sigma","Tau","Upsilon","Phi","Chi","Psi","Omega"];
+
+/** Canonical multi-colony portfolio and expedition-founding service. */
 export class PortfolioService {
+  constructor(){this.expansion=new ExpansionService();}
   absoluteDay(state){return(Math.max(1,Number(state.year)||1)-1)*CONFIG.DAYS_PER_YEAR+Math.max(1,Number(state.day)||1);}
   ensure(state){state.portfolio||={activeColonyId:state.colonyId,colonies:[]};state.portfolio.colonies||=[];if(!state.portfolio.colonies.length)this.captureActive(state,true);if(!state.portfolio.activeColonyId)state.portfolio.activeColonyId=state.colonyId||state.portfolio.colonies[0]?.id;return state.portfolio;}
   activeEntry(state){this.ensure(state);return state.portfolio.colonies.find(c=>c.id===state.portfolio.activeColonyId)||null;}
@@ -10,7 +15,15 @@ export class PortfolioService {
   ensureShallow(state){state.portfolio||={activeColonyId:state.colonyId,colonies:[]};state.portfolio.colonies||=[];}
   apply(state,entry){const company=state.company,portfolio=state.portfolio,version=state.version,gameLog=state.gameLog,year=state.year,day=state.day,speed=state.speed;for(const key of COLONY_STATE_KEYS)delete state[key];Object.assign(state,clone(entry.data));state.company=company;state.portfolio=portfolio;state.version=version;state.gameLog=gameLog;state.year=year;state.day=day;state.speed=speed;state.portfolio.activeColonyId=entry.id;state.colonyId=entry.id;return state;}
   switchTo(state,id){this.captureActive(state,true);const entry=state.portfolio.colonies.find(c=>c.id===id);if(!entry)return false;this.apply(state,entry);return true;}
-  addColony(state,contract){this.captureActive(state,true);const number=Math.max(1,Number(state.company.nextColonyNumber)||state.portfolio.colonies.length+1);state.company.nextColonyNumber=number+1;state.company.gameOver=false;contract.colonyName=`Colony ${String(number).padStart(2,"0")}`;contract.localRevenue=0;contract.localCosts=0;const local=createColonyState(contract,this.absoluteDay(state)),entry={id:local.colonyId,name:contract.colonyName,createdAt:Date.now(),data:clone(local)};state.portfolio.colonies.push(entry);state.company.cash+=contract.advance||0;this.apply(state,entry);return entry;}
+  addColony(state,contract){
+    if(!contract?.expeditionArrival){this.captureActive(state,true);const number=Math.max(1,Number(state.company.nextColonyNumber)||state.portfolio.colonies.length+1);state.company.nextColonyNumber=number+1;state.company.gameOver=false;contract.colonyName=`Colony ${String(number).padStart(2,"0")}`;contract.localRevenue=0;contract.localCosts=0;const local=createColonyState(contract,this.absoluteDay(state)),entry={id:local.colonyId,name:contract.colonyName,createdAt:Date.now(),data:clone(local)};state.portfolio.colonies.push(entry);state.company.cash+=contract.advance||0;this.apply(state,entry);return entry;}
+    this.captureActive(state,true);this.expansion.ensure(state);const ship=this.expansion.ship(state);if(ship.status!=="arrived"||ship.systemId!==contract.systemId)throw new Error("Expedition colony can only be founded after the player ship arrives in the selected system.");
+    const manifest=this.expansion.expeditionManifest(state);if(manifest.passengers<=0)throw new Error("At least one colonist must disembark to found a colony.");
+    const number=Math.max(1,Number(state.company.nextColonyNumber)||state.portfolio.colonies.length+1);state.company.nextColonyNumber=number+1;state.company.gameOver=false;contract.colonyName=`Colony ${String(number).padStart(2,"0")}`;contract.localRevenue=0;contract.localCosts=0;contract.advance=0;
+    const local=createColonyState(contract,this.absoluteDay(state));local.pop=manifest.passengers;local.inventory=clone(manifest.cargo);local.status="playing";const entry={id:local.colonyId,name:contract.colonyName,createdAt:Date.now(),data:cloneColonyState(local)};state.portfolio.colonies.push(entry);this.expansion.consumeManifestForNewColony(state,local.colonyId);this.apply(state,entry);
+    const expansion=this.expansion.ensure(state),system=this.expansion.system(expansion,contract.systemId),planet=system?.planets?.find(p=>p.id===contract.planetId),siblings=(state.portfolio?.colonies||[]).filter(e=>e.id!==entry.id&&e.data?.contract?.systemId===contract.systemId&&e.data?.contract?.planetId===contract.planetId).length,suffix=GREEK[siblings]||`Site ${siblings+1}`,name=`${planet?.name||"Frontier"} ${suffix}`;
+    contract.colonyName=name;entry.name=name;if(entry.data?.contract)entry.data.contract.colonyName=name;if(state.contract)state.contract.colonyName=name;this.captureActive(state,true);return entry;
+  }
   entries(state){this.captureActive(state,true);return state.portfolio.colonies;}
   livingEntries(state){this.captureActive(state,true);return state.portfolio.colonies.filter(entry=>entry?.data?.status!=="dead");}
   hasLivingColony(state){return this.livingEntries(state).length>0;}

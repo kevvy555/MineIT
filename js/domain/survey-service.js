@@ -1,4 +1,4 @@
-import { clamp } from "../core/utils.js?v=5.5.0";
+import { clamp } from "../core/utils.js";
 
 export class SurveyService {
   constructor(world,contractService){this.world=world;this.contracts=contractService;}

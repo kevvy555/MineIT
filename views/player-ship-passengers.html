@@ -1,0 +1,14 @@
+<section class="exp-section">
+  <div class="exp-section-head">
+    <h3>COLONISTS</h3>
+    <span>People leave this colony as soon as they board.</span>
+  </div>
+  <div class="exp-passengers">
+    <div><small>COLONY</small><strong>{{COLONY_POPULATION}}</strong></div>
+    <div><small>ABOARD</small><strong>{{PASSENGERS}} / {{PASSENGER_CAPACITY}}</strong></div>
+    <button data-load-pax="10">+10</button>
+    <button data-load-pax="50">+50</button>
+    <button data-load-pax="max">MAX</button>
+    <button data-unload-pax {{UNLOAD_DISABLED}}>UNLOAD ALL</button>
+  </div>
+</section>

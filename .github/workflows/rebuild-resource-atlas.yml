@@ -1,0 +1,43 @@
+name: Rebuild resource atlas
+
+on:
+  push:
+    paths:
+      - 'assets/art/resources/*/Originals/*.png'
+      - 'assets/art/resources/*/originals/*.png'
+      - 'tools/build-resource-atlas.py'
+      - '.github/workflows/rebuild-resource-atlas.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: resource-atlas-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check pillow==11.3.0
+      - run: python tools/build-resource-atlas.py
+      - name: Commit rebuilt atlas
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/art/resources/resource-atlas-256.webp assets/art/resources/resource-atlas-256.json
+          if git diff --cached --quiet; then
+            echo "No resource atlas changes to commit."
+            exit 0
+          fi
+          git commit -m "Rebuild high-resolution resource atlas"
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          git push origin HEAD:"$GITHUB_REF_NAME"

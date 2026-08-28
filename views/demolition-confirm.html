@@ -1,0 +1,22 @@
+<div class="demolition-confirm">
+  <div class="demolition-title">
+    <small>YOU ARE ABOUT TO DEMOLISH</small>
+    <strong>{{BUILDING_LABEL}} L{{LEVEL}}</strong>
+    <span>Map tile {{X}}, {{Y}}</span>
+  </div>
+  <div class="demolition-breakdown">
+    <div><small>INVESTED BUILD</small><strong>{{INVESTED_BUILD}}</strong></div>
+    <div class="recovery"><small>BUILD RETURNED</small><strong>+{{RECOVER_BUILD}}</strong></div>
+    <div><small>INVESTED ORE</small><strong>{{INVESTED_ORE}}</strong></div>
+    <div class="recovery"><small>ORE RETURNED</small><strong>+{{RECOVER_ORE}}</strong></div>
+  </div>
+  <div class="demolition-impact">
+    <small>AFTER DEMOLITION</small>
+    <strong>{{IMPACT}}</strong>
+    <span>Recovery is 25% of the materials invested in this building.</span>
+  </div>
+  <div class="demolition-actions">
+    <button class="demolition-yes" data-demolish-yes>YES • DEMOLISH</button>
+    <button class="demolition-no" data-demolish-no>NO • KEEP BUILDING</button>
+  </div>
+</div>

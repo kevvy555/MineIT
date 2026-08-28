@@ -1,0 +1,10 @@
+<article class="card">
+  <h3 class="bad">RETURN REFUSED</h3>
+  <p>The known resource base is too depleted for the corporation to accept the colony. Finite reserve health is {{RESERVE_RATIO}} and no sufficient renewable resource base remains.</p>
+  <div class="effect warn">Ending the mining contract makes this a support-only liability colony. Extraction stops, but population still requires Food, Fuel and Power until relocation. There is no generic daily corporate cash charge.</div>
+</article>
+<div class="grid2" style="margin-top:7px">
+  <button data-liability>END CONTRACT<br><span class="tiny">KEEP COLONY RUNNING</span></button>
+  <button data-relocate {{RELOCATE_DISABLED}}>RELOCATE POPULATION<br><span class="tiny">{{RELOCATION_COST}}</span></button>
+</div>
+{{FINAL_COLONY_REQUIREMENT}}{{CASH_REQUIREMENT}}

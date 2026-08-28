@@ -83,6 +83,16 @@ jobs:
             fi
           done
 
+          echo "Testing landed player ship opening gesture click-through"
+          "$chrome" --headless --no-sandbox --disable-gpu --window-size=390,844 --virtual-time-budget=8000 --dump-dom http://127.0.0.1:8123/tests/player-ship-clickthrough-probe.html >/tmp/player-ship-clickthrough.html 2>/tmp/player-ship-clickthrough.log
+          if ! grep -q 'PASS player ship opening gesture cannot click through to Star Map' /tmp/player-ship-clickthrough.html; then
+            echo "Player ship click-through probe failed"
+            cat /tmp/player-ship-clickthrough.html
+            cat /tmp/player-ship-clickthrough.log
+            cat /tmp/mineit-http.log
+            exit 1
+          fi
+
           echo "Testing first-contract renewal and multi-colony event lifecycle"
           "$chrome" --headless --no-sandbox --disable-gpu --window-size=390,844 --virtual-time-budget=12000 --dump-dom http://127.0.0.1:8123/tests/multi-colony-lifecycle-probe.html >/tmp/lifecycle.html 2>/tmp/lifecycle.log
           if ! grep -q 'PASS first contract renewal, second colony, recovered ship queue and colony switching' /tmp/lifecycle.html; then

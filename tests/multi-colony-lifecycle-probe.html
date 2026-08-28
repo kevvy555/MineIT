@@ -1,0 +1,50 @@
+<!doctype html><meta charset="utf-8"><style>html,body,#frame{margin:0;width:100%;height:100%;border:0;overflow:hidden}#result{position:fixed;z-index:9999;top:0;left:0;background:white;color:black;font:12px monospace}</style><div id="result">WAIT</div><iframe id="frame"></iframe><script>
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const fail=(list,msg)=>list.push(msg);
+async function run(){
+  localStorage.clear();
+  const out=document.querySelector('#result'),frame=document.querySelector('#frame');frame.src='../index.html?lifecycle=581';
+  await new Promise(r=>frame.addEventListener('load',r,{once:true}));await sleep(2200);
+  const d=frame.contentDocument,w=frame.contentWindow,app=w.mineIT,errors=[];
+  if(!app){out.textContent='FAIL app did not start';return;}
+  const choice=d.querySelector('[data-land-choice]');if(choice){choice.click();await sleep(250);}
+  if(app.diagnostics.errors)fail(errors,'startup diagnostics errors:'+app.diagnostics.errors);
+
+  // First contract: objectives met at Y11 D1 and a ship due on the same day.
+  const s=app.state;s.company.cash=1e9;s.company.tech={housing:5,power:10,food:10,industry:5,mining:10};app.technology.recompute(s);s.year=11;s.day=1;s.speed=2;s.status='playing';s.contract.startAbsoluteDay=1;s.metrics.food=s.contract.goals.food;s.metrics.industry=s.contract.goals.industry;s.pop=s.contract.goals.pop;s.trade.active=false;s.trade.nextArrivalDay=3601;s.company.pendingEvents=[];s.company.eventReturnColonyId=null;s.company.eventResumeSpeed=1;delete s.contract.pendingDecision;delete s.contract.pendingDecisionPreviousStatus;
+  app.portfolio.captureActive(s,true);app.reconcileCorporateEvents();
+  if(s.company.pendingEvents[0]?.type!=='contract'||s.company.pendingEvents[1]?.type!=='ship')fail(errors,'same-day event priority is not contract then new ship');
+  app.beginCorporateEventQueueIfNeeded(2);await sleep(120);
+  if(!/Initial Contract Complete/i.test(d.querySelector('#modal')?.textContent||''))fail(errors,'initial contract completion popup missing');
+  d.querySelector('[data-renew]')?.click();await sleep(180);
+  if(!s.contract.completed||s.contract.renewals!==1||s.contract.ext<5)fail(errors,'five-year renewal did not apply');
+  if(!s.trade.active||!/DOCKED/i.test(d.querySelector('#modal')?.textContent||''))fail(errors,'same-day ship did not follow contract decision');
+  d.querySelector('[data-depart]')?.click();await sleep(180);
+  if(s.trade.active)fail(errors,'ship did not depart');if(s.speed!==2)fail(errors,'speed was not restored after first queue:'+s.speed);
+
+  // Open Colony 02 after the renewed first colony remains in the portfolio.
+  app.ui.contractBoard();await sleep(80);const contractButton=[...d.querySelectorAll('[data-contract]')].find(b=>!b.disabled);if(!contractButton)fail(errors,'no eligible second-colony contract');else{contractButton.click();await sleep(180);}
+  const secondLanding=d.querySelector('[data-land-choice]');if(secondLanding){secondLanding.click();await sleep(180);}
+  const secondId=s.colonyId,firstEntry=s.portfolio.colonies.find(e=>e.id!==secondId),firstId=firstEntry?.id;if(!firstEntry||s.portfolio.colonies.length!==2)fail(errors,'second colony was not created');
+
+  // Simulate the v5.8 orphan case: Colony 01 says a ship is docked, but the queue is empty.
+  if(firstEntry){firstEntry.data.trade.active=true;firstEntry.data.trade.arrivedAt=3601;firstEntry.data.status='playing';}
+  s.company.pendingEvents=[];s.company.eventReturnColonyId=null;s.company.eventResumeSpeed=1;s.speed=4;app.portfolio.captureActive(s,true);app.reconcileCorporateEvents();
+  if(s.company.pendingEvents[0]?.type!=='ship'||s.company.pendingEvents[0]?.colonyId!==firstId||!s.company.pendingEvents[0]?.recovered)fail(errors,'orphaned background ship was not recovered');
+  app.beginCorporateEventQueueIfNeeded(4);await sleep(180);
+  if(s.colonyId!==firstId||!s.trade.active||!/DOCKED/i.test(d.querySelector('#modal')?.textContent||''))fail(errors,'recovered ship did not switch to Colony 01 and open');
+  d.querySelector('[data-depart]')?.click();await sleep(200);
+  if(s.colonyId!==secondId)fail(errors,'event queue did not return to Colony 02');if(s.speed!==4)fail(errors,'event queue did not restore speed 4:'+s.speed);
+
+  // Real footer flow: All Colonies must open and both directions must switch without UI exceptions.
+  d.querySelector('#coloniesBtn')?.click();await sleep(100);let cards=[...d.querySelectorAll('[data-colony-id]')];if(cards.length!==2)fail(errors,'All Colonies did not render two cards');
+  cards.find(b=>b.dataset.colonyId===firstId)?.click();await sleep(140);if(s.colonyId!==firstId)fail(errors,'could not switch to Colony 01 from All Colonies');
+  d.querySelector('#coloniesBtn')?.click();await sleep(100);cards=[...d.querySelectorAll('[data-colony-id]')];cards.find(b=>b.dataset.colonyId===secondId)?.click();await sleep(140);if(s.colonyId!==secondId)fail(errors,'could not switch back to Colony 02');
+
+  // Corporation/Cash used to fail for the same inherited-mixin reason.
+  d.querySelector('#companyBtn')?.click();await sleep(100);if(d.querySelector('#modal')?.classList.contains('hidden')||!/Mining Corporation/i.test(d.querySelector('#modal')?.textContent||''))fail(errors,'Corporation panel did not open');
+  if(app.diagnostics.errors)fail(errors,'runtime diagnostics errors:'+app.diagnostics.errors);
+  out.textContent=errors.length?'FAIL '+errors.join(' | '):'PASS first contract renewal, second colony, recovered ship queue and colony switching';
+}
+run().catch(e=>document.querySelector('#result').textContent='FAIL '+e.stack);
+</script>

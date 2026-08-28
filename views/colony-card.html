@@ -1,0 +1,14 @@
+<button class="colony-card {{ACTIVE_CLASS}}" data-colony-id="{{COLONY_ID}}">
+  <div class="colony-card-top"><strong>{{NAME}}</strong><span class="{{STATUS_CLASS}}">{{STATUS_LABEL}}</span></div>
+  <div class="colony-card-env">T{{TIER}} • {{ENVIRONMENT}} • support ×{{SUPPORT_LOAD}}</div>
+  <div class="colony-card-grid">
+    <span>POP<strong>{{POPULATION}}</strong></span>
+    <span>IND<strong>{{INDUSTRY_EFFECTIVE}} / {{INDUSTRY_INSTALLED}} • {{STAFF_PERCENT}}%</strong></span>
+    <span>WORK<strong>{{WORKFORCE_PERCENT}}%</strong></span>
+    <span>AGE<strong>Y{{CONTRACT_YEAR}} D{{CONTRACT_DAY}}</strong></span>
+  </div>
+  <div class="colony-card-stock">
+    <span>F {{FOOD}}</span><span>FU {{FUEL}}</span><span>O {{ORE}}</span>{{PENDING_TRANSPORT}}
+  </div>
+  {{ACTIVE_TAG}}{{SHIP_TAG}}
+</button>

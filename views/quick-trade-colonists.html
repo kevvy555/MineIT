@@ -1,0 +1,28 @@
+<section class="trade-view-panel colonist-view">
+  <div class="trade-view-head">
+    <div><strong>COLONIST TRANSFER</strong><small>Choose any supported quantity from 1–250.</small></div>
+    <b>{{MAX}} max</b>
+  </div>
+  <div class="trade-colony-metrics">
+    <div class="trade-qmetric"><small>POPULATION</small><strong>{{POPULATION}}</strong></div>
+    <div class="trade-qmetric"><small>SUPPORTED</small><strong>{{SUPPORTED}}</strong></div>
+    <div class="trade-qmetric"><small>HOUSING FREE</small><strong>{{HOUSING_FREE}}</strong></div>
+    <div class="trade-qmetric"><small>PAX</small><strong>{{PAX}}</strong></div>
+    <div class="trade-qmetric"><small>FOOD MARGIN</small><strong class="{{FOOD_CLASS}}">{{FOOD_MARGIN}}/d</strong></div>
+    <div class="trade-qmetric"><small>POWER MARGIN</small><strong class="{{POWER_CLASS}}">{{POWER_MARGIN}}</strong></div>
+  </div>
+  <div class="trade-colonist-picker">
+    <div class="trade-colonist-buttons">
+      <button data-colonist-step="-10" {{MIN_DISABLED}}>−10</button>
+      <button data-colonist-step="-1" {{MIN_DISABLED}}>−1</button>
+      <input data-colonist-input type="number" min="1" max="{{INPUT_MAX}}" inputmode="numeric" value="{{QUANTITY}}">
+      <button data-colonist-step="1" {{MAX_DISABLED}}>+1</button>
+      <button data-colonist-step="10" {{MAX_DISABLED}}>+10</button>
+    </div>
+    <div class="trade-colonist-projection">
+      <div><small>COST</small><strong>{{COST}}</strong></div>
+      <div><small>AFTER TRANSFER</small><strong>{{AFTER_POPULATION}} / {{SUPPORTED}}</strong></div>
+    </div>
+  </div>
+  <button data-buy-colonists class="trade-primary colonist-buy" {{BUY_DISABLED}}>{{BUY_LABEL}}</button>
+</section>

@@ -1,5 +1,5 @@
-import { CONFIG } from "../core/config.js?v=5.5.0";
-import { CONTRACT_ARCHETYPES } from "../data/contracts.js?v=5.5.0";
+import { CONFIG } from "../core/config.js";
+import { CONTRACT_ARCHETYPES } from "../data/contracts.js";
 
 export class ContractService {
   absoluteDay(state){return(Math.max(1,Number(state.year)||1)-1)*CONFIG.DAYS_PER_YEAR+Math.max(1,Number(state.day)||1);}

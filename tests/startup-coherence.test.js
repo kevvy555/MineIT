@@ -1,8 +1,31 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-const BUILD="5.5.0";const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),"utf8"),build=BUILD.replaceAll(".","\\.");
-const index=read("index.html");assert.match(index,new RegExp(`js/app\\.js\\?v=${build}`));for(const css of["app","world","panels","portfolio","trade-quality","ui-enhancements"])assert.match(index,new RegExp(`css/${css}\\.css\\?v=${build}`));assert.match(index,/id="mapFilterHost"/);assert.match(index,/id="worldViewport"/);
-const app=read("js/app.js");for(const line of app.split("\n").filter(line=>line.startsWith("import ")))assert.match(line,new RegExp(`\\?v=${build}`),`Mixed app import: ${line}`);for(const module of["game-state","portfolio-service","resource-service","inventory-service","collection-service","colony-service","trade-service","world-service","site-service","technology-service","survey-service","simulation-engine","game-log-service","transport-service"])assert.match(app,new RegExp(`domain/${module}\\.js\\?v=${build}`));for(const module of["world-view","ui-controller","v55-trade-ui"])assert.match(app,new RegExp(`ui/${module}\\.js\\?v=${build}`));assert.match(app,new RegExp(`core/diagnostics\\.js\\?v=${build}`));assert.match(app,/startup failed/);assert.match(app,/STARTUP ERROR • TAP FOR DETAILS/);
-const ui=read("js/ui/ui-controller.js");for(const line of ui.split("\n").filter(line=>line.startsWith("import ")))assert.match(line,new RegExp(`\\?v=${build}`),`Mixed UI import: ${line}`);assert.match(ui,/v55-ui\.js\?v=5\.5\.0/);assert.match(ui,/mix\(UIController,V55UIMixin\)/);
-for(const file of["js/domain/game-state.js","js/domain/portfolio-service.js","js/domain/colony-service.js","js/domain/simulation-engine.js","js/domain/trade-service.js","js/domain/resource-service.js","js/domain/site-service.js","js/domain/contract-service.js","js/domain/transport-service.js","js/domain/game-log-service.js"])assert.ok(read(file).includes("v=5.5.0"),`${file} must use the v5.5 graph`);assert.match(read("js/ui/industry-ui.js"),/survival-ui\.js\?v=5\.5\.0/);assert.match(read("js/ui/industry-trade-ui.js"),/trade-ui\.js\?v=5\.5\.0/);assert.match(read("js/ui/v55-trade-ui.js"),/industry-trade-ui\.js\?v=5\.5\.0/);assert.ok(read("js/core/diagnostics.js").includes("5.5.0-global-time-workforce"));
-console.log("MineIT v5.5 startup/cache coherence test passed");
+const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),"utf8");
+
+const index=read("index.html"),app=read("js/app.js");
+
+// Startup shell and presentation assets must remain wired regardless of internal module layout.
+for(const css of["app","world","panels","portfolio","trade-quality","trade-quick","ui-enhancements","land","map-first","resource-details","adaptive-building-details","ship-expansion"])assert.match(index,new RegExp(`css/${css}(?:-v\\d+)?\\.css`),`missing ${css} stylesheet`);
+assert.ok(!index.includes("./css/building-details.css"),"obsolete building-details stylesheet must stay absent");
+assert.match(index,/resource-atlas-256\.webp/);assert.match(index,/js\/app\.js/);
+for(const id of["overlayRoot","contextBar","attentionStrip","colonyNavStrip","world","mapViewHost","tradeBtn","menuBtn"])assert.match(index,new RegExp(`id="${id}"`),`startup shell missing #${id}`);
+assert.doesNotMatch(index,/mapFilterHost/);assert.doesNotMatch(index,/world-view-hotfix/);
+
+// The application composition root must directly own the canonical services and presentation runtimes.
+for(const module of["game-state-runtime","portfolio-service","resource-service","inventory-service","collection-service","colony-service","trade-service","land-service","development-service","world-service","site-service","technology-service","survey-service","simulation-engine","game-log-service","transport-service"])assert.match(app,new RegExp(`domain/${module}\\.js`));
+for(const module of["world-view-runtime","ship-preparation-ui","corporate-trade-ui"])assert.match(app,new RegExp(`ui/${module}\\.js`));
+for(const marker of["advanceGlobalDate","processPendingCorporateEvent","processPendingShipEvent","reconcileCorporateEvents","startup failed","STARTUP ERROR • TAP FOR DETAILS"])assert.match(app,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")));
+
+// Canonical domain modules contain the active gameplay, rather than relying on version inheritance.
+const stateRuntime=read("js/domain/game-state-runtime.js"),portfolio=read("js/domain/portfolio-service.js"),trade=read("js/domain/trade-service.js"),simulation=read("js/domain/simulation-engine.js"),tech=read("js/domain/technology-service.js"),development=read("js/domain/development-service.js"),model=read("js/domain/building-model.js"),events=read("js/domain/corporate-event-service.js"),expansion=read("js/domain/expansion-service.js");
+assert.match(stateRuntime,/state\.version=9/);assert.match(stateRuntime,/ExpansionService/);
+assert.match(portfolio,/expeditionArrival/);assert.match(portfolio,/Alpha/);assert.match(portfolio,/ExpansionService/);
+assert.match(trade,/corporateServiceAvailable/);assert.match(trade,/serviceAvailable\(state\)/);
+assert.match(simulation,/ExpansionService/);assert.match(simulation,/onColonyDied/);assert.match(simulation,/siteEnded/);assert.match(simulation,/updateNetworks\(state,this\.collection\.activeSites/);
+assert.match(tech,/syncBuildingTotals/);assert.match(tech,/maxBuildingLevel/);assert.match(tech,/canExploit/);
+assert.match(development,/BUILDING_MODEL/);assert.match(development,/kind==="power"/);assert.doesNotMatch(development,/company\.cash-=/);
+assert.match(model,/SHIP_INFRASTRUCTURE/);assert.match(model,/housing:180/);assert.match(model,/power:30/);assert.match(model,/industry:50/);
+assert.match(events,/recovered/);assert.match(events,/contract-decision/);assert.match(events,/legacyPendingDecision/);
+assert.match(expansion,/PLAYER_SHIP_CAPACITY/);assert.match(expansion,/CORPORATE_SERVICE_RADIUS_LY/);assert.match(expansion,/awaitingDestination/);
+
+console.log("MineIT canonical startup coherence test passed");
