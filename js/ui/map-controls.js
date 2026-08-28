@@ -1,7 +1,7 @@
 import { STATE_FILTERS, SIZE_FILTERS } from "./map-filter-definitions.js";
 
 const QUICK_FILTERS=[
-  ["all","ALL"],["problems","PROBLEMS"],["buildings","BUILDINGS"],["upgradeable","UPGRADE"],
+  ["all","ALL"],["problems","PROBLEMS"],["buildings","BUILDINGS"],["housing","HOUSING"],["industry","INDUSTRY"],["power","POWER"],["upgradeable","UPGRADE"],
   ["food","FOOD"],["build","BUILD"],["fuel","FUEL"],["ore","ORE"]
 ];
 
