@@ -1,6 +1,6 @@
-import { CONFIG } from "../core/config.js?v=5.5.5";
-import { CONTRACT_ARCHETYPES } from "../data/contracts.js?v=5.5.5";
-import { hashString, seededRandom } from "../core/utils.js?v=5.5.5";
+import { CONFIG } from "../core/config.js";
+import { CONTRACT_ARCHETYPES } from "../data/contracts.js";
+import { hashString, seededRandom } from "../core/utils.js";
 
 export const EXPANSION_VERSION=1;
 export const HOME_SYSTEM_ID="corporate-home";

@@ -1,9 +1,12 @@
 name: Test
 
 on:
+  workflow_dispatch:
+
   push:
     branches:
       - develop
+      - CleanUp
       - 'feature/**'
       - 'refactor/**'
       - 'hotfix/**'
@@ -12,6 +15,7 @@ on:
     branches:
       - develop
       - main
+      - CleanUp
       - 'feature/**'
       - 'fix/**'
 
@@ -23,8 +27,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Run unit and regression tests
-        run: npm test
+      - name: Run unit, regression and domain coverage tests
+        run: |
+          rm -rf .coverage
+          NODE_V8_COVERAGE=.coverage/raw npm test
+          node tests/coverage-report.js
       - name: Browser startup and presentation interaction tests
         run: |
           python3 -m http.server 8123 --bind 127.0.0.1 >/tmp/mineit-http.log 2>&1 &
@@ -76,12 +83,32 @@ jobs:
             fi
           done
 
+          echo "Testing landed player ship opening gesture click-through"
+          "$chrome" --headless --no-sandbox --disable-gpu --window-size=390,844 --virtual-time-budget=8000 --dump-dom http://127.0.0.1:8123/tests/player-ship-clickthrough-probe.html >/tmp/player-ship-clickthrough.html 2>/tmp/player-ship-clickthrough.log
+          if ! grep -q 'PASS player ship opening gesture cannot click through to Star Map' /tmp/player-ship-clickthrough.html; then
+            echo "Player ship click-through probe failed"
+            cat /tmp/player-ship-clickthrough.html
+            cat /tmp/player-ship-clickthrough.log
+            cat /tmp/mineit-http.log
+            exit 1
+          fi
+
           echo "Testing first-contract renewal and multi-colony event lifecycle"
           "$chrome" --headless --no-sandbox --disable-gpu --window-size=390,844 --virtual-time-budget=12000 --dump-dom http://127.0.0.1:8123/tests/multi-colony-lifecycle-probe.html >/tmp/lifecycle.html 2>/tmp/lifecycle.log
           if ! grep -q 'PASS first contract renewal, second colony, recovered ship queue and colony switching' /tmp/lifecycle.html; then
             echo "Multi-colony lifecycle probe failed"
             cat /tmp/lifecycle.html
             cat /tmp/lifecycle.log
+            cat /tmp/mineit-http.log
+            exit 1
+          fi
+
+          echo "Testing repeated UI open/close lifecycle stability"
+          "$chrome" --headless --no-sandbox --disable-gpu --window-size=420,920 --virtual-time-budget=20000 --dump-dom http://127.0.0.1:8123/tests/ui-lifecycle-soak.html >/tmp/ui-soak.html 2>/tmp/ui-soak.log
+          if ! grep -q 'PASS UI lifecycle soak' /tmp/ui-soak.html; then
+            echo "UI lifecycle soak failed"
+            cat /tmp/ui-soak.html
+            cat /tmp/ui-soak.log
             cat /tmp/mineit-http.log
             exit 1
           fi

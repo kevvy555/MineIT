@@ -1,36 +1,38 @@
-const powerNames=[
-  ["Combustion Generator","Basic chemical-fuel generators for a small surface colony."],
-  ["Steam Turbine Grid","Larger thermal plant and district power distribution."],
-  ["Gas Turbine Grid","High-output generators and sealed habitat support."],
-  ["Fission Reactor","Compact reactors suitable for harsh and hot-world colonies."],
-  ["High-Flux Fission","High-density reactor parks for major industrial settlements."],
-  ["Fusion Reactor","Sustained fusion power for large deep-reach colonies."],
-  ["Compact Fusion Grid","Distributed fusion with very high colony capacity."],
-  ["Antimatter-Catalysed Grid","Extreme-density power for advanced extraction worlds."],
-  ["Vacuum Energy Array","Near post-scarcity colony-scale power generation."],
-  ["Stellar Tap","Extreme power infrastructure for the largest possible claims."]
+const BUILDING_TECH_COSTS=[0,25000,90000,300000,1000000];
+const MINING_TECH_COSTS=[0,25000,90000,300000,1000000,3500000,12000000,40000000,130000000,400000000];
+const cost=(list,level)=>list[Math.max(0,Math.min(list.length-1,level-1))];
+
+const housing=[
+  ["Basic Habitats","Simple modular accommodation for a new surface colony."],
+  ["Modular Habitats","Larger linked residential modules with improved life-support integration."],
+  ["Dense Residential Blocks","Multi-level sealed housing designed for growing settlements."],
+  ["Arcology Housing","High-density residential complexes with integrated colony services."],
+  ["Integrated Habitat Complexes","Maximum-density self-contained residential districts."]
 ];
-const powerCapacity=[30,60,110,190,320,520,850,1350,2200,3600];
-const fuelIntensity=[.10,.09,.08,.065,.055,.045,.035,.025,.016,.010];
-const popCaps=[250,500,900,1500,2500,4000,6500,10000,16000,25000];
-const industryCaps=[2,4,7,11,16,23,32,44,60,80];
-const foodNames=[
-  ["Field Agriculture","Basic open-air cultivation and husbandry on hospitable worlds."],
-  ["Controlled Greenhouses","Protected agriculture with improved use of local food resources."],
-  ["Sealed Hydroponics","Closed food production for barren worlds and non-breathable atmospheres."],
-  ["Aeroponics","High-density controlled agriculture with low water and land demand."],
-  ["Synthetic Protein","Industrial protein production independent of local animal life."],
-  ["Closed-Loop Biospheres","Recycling-intensive food systems for large sealed colonies."],
-  ["Atmospheric Nutrient Synthesis","Processes hostile local atmospheres into agricultural feedstock."],
-  ["Chemosynthetic Farming","Food production from mineral and chemical energy pathways."],
-  ["Molecular Food Fabrication","Direct molecular assembly of colony foodstocks."],
-  ["Matter Synthesis","Extreme closed-loop food production with minimal planetary dependence."]
+const power=[
+  ["Combustion Generator","Basic fuel-burning generators for small settlements."],
+  ["Steam Turbine Plant","Larger thermal generation and district power distribution."],
+  ["Gas Turbine Grid","High-output generation with improved fuel efficiency."],
+  ["Fission Reactor","Compact reactor systems for major colonies and harsh worlds."],
+  ["Fusion Reactor","Very high-density generation for advanced industrial settlements."]
 ];
-const foodMult=[1,1.12,1.28,1.48,1.72,2.05,2.45,2.95,3.60,4.50];
-const synthetic=[0,0,15,30,55,90,140,210,320,500];
-const miningNames=[
+const food=[
+  ["Field Agriculture","Basic farms, ranches and local biological harvesting."],
+  ["Controlled Greenhouses","Protected agriculture and improved renewable-resource handling."],
+  ["Sealed Hydroponics","Closed food systems for difficult planetary environments."],
+  ["Aeroponics","High-density controlled agriculture with strong labour efficiency."],
+  ["Synthetic Protein","Advanced biological and synthetic food production."]
+];
+const industry=[
+  ["Basic Workshops","General fabrication, repair and low-volume colony manufacturing."],
+  ["Mechanised Fabrication","Powered machine shops and repeatable component production."],
+  ["Automated Manufacturing","Automated production lines and improved material utilisation."],
+  ["Heavy Industrial Complexes","Large-scale fabrication, processing and equipment production."],
+  ["Integrated Production Systems","Highly automated colony-wide industrial manufacturing."]
+];
+const mining=[
   ["Surface Recovery","Hand tools and light machinery for exposed and renewable resources."],
-  ["Quarrying","Quarries and bulk excavation unlock stone, clay, silica and shallow beds."],
+  ["Quarrying","Bulk excavation unlocks stone, clay, silica and shallow beds."],
   ["Shaft Mining","Underground mines unlock iron, copper, coal and structural minerals."],
   ["Deep Mining","Deep workings unlock advanced metals, precious ores and gemstones."],
   ["Rotary Drilling","Drilling rigs unlock oil and natural gas extraction."],
@@ -40,12 +42,25 @@ const miningNames=[
   ["Exotic Matter Separation","Advanced separation unlocks exotic fuel crystals and crystals."],
   ["Quantum Bore Systems","Top-tier extraction unlocks the most extreme element deposits."]
 ];
-const miningMult=[1,1.12,1.28,1.48,1.72,2.00,2.35,2.80,3.40,4.20];
-const techCosts=[0,25000,90000,300000,1000000,3500000,12000000,40000000,130000000,400000000];
-function cost(level){return techCosts[Math.max(0,Math.min(9,level-1))];}
+
+const powerFuel=[.10,.085,.070,.050,.035];
+const foodOutput=[1,1.12,1.28,1.48,1.72];
+const synthetic=[0,0,15,30,55];
+const industryWorkforce=[1,.96,.91,.85,.78];
+const industryOre=[1,.96,.90,.83,.75];
+const industryProcessing=[1,1.05,1.10,1.18,1.28];
+const miningWorkforce=[1,.96,.92,.88,.84,.80,.76,.72,.68,.65];
+
+const buildingTree=(category,rows,extra=()=>({}))=>rows.map((row,index)=>({
+  id:`${category}-${index+1}`,category,level:index+1,name:row[0],description:row[1],cost:cost(BUILDING_TECH_COSTS,index+1),maxBuildingLevel:index+1,...extra(index)
+}));
+
 export const TECH_TREES=Object.freeze({
-  power:powerNames.map((x,i)=>({id:`power-${i+1}`,category:"power",level:i+1,name:x[0],description:x[1],cost:cost(i+1),powerCapacity:powerCapacity[i],fuelIntensity:fuelIntensity[i],populationCap:popCaps[i],industryCap:industryCaps[i]})),
-  food:foodNames.map((x,i)=>({id:`food-${i+1}`,category:"food",level:i+1,name:x[0],description:x[1],cost:cost(i+1),productionMultiplier:foodMult[i],syntheticFood:synthetic[i]})),
-  mining:miningNames.map((x,i)=>({id:`mining-${i+1}`,category:"mining",level:i+1,name:x[0],description:x[1],cost:cost(i+1),extractionMultiplier:miningMult[i]}))
+  housing:Object.freeze(buildingTree("housing",housing)),
+  power:Object.freeze(buildingTree("power",power,i=>({fuelIntensity:powerFuel[i]}))),
+  food:Object.freeze(buildingTree("food",food,i=>({productionMultiplier:foodOutput[i],syntheticFood:synthetic[i]}))),
+  industry:Object.freeze(buildingTree("industry",industry,i=>({workforceEfficiency:industryWorkforce[i],oreEfficiency:industryOre[i],processingEfficiency:industryProcessing[i]}))),
+  mining:Object.freeze(mining.map((row,index)=>({id:`mining-${index+1}`,category:"mining",level:index+1,name:row[0],description:row[1],cost:cost(MINING_TECH_COSTS,index+1),workforceEfficiency:miningWorkforce[index]})))
 });
+
 export const TECHNOLOGIES=Object.freeze(Object.values(TECH_TREES).flat());

@@ -1,4 +1,4 @@
-import { supportsOverdrive,setOperatingMode,advanceOverdriveRisk,isAccidentShutdown,advanceShutdownDay } from "./extraction-overdrive.js?v=5.6.2";
+import { supportsOverdrive,setOperatingMode,advanceOverdriveRisk,isAccidentShutdown,advanceShutdownDay } from "./extraction-overdrive.js";
 
 export class CollectionService {
   constructor(resourceService,inventoryService,technologyService){this.resources=resourceService;this.inventory=inventoryService;this.technology=technologyService;}

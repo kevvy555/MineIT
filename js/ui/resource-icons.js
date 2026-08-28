@@ -23,69 +23,40 @@ const PATHS={
 };
 const ID_ALIAS={flora:"food",nutrient:"food",protein:"fungal",thermal:"food",fiber:"food",limestone:"stone",structural:"build",ceramic:"silica",fissile:"ore",brine:"oil","exotic-fuel":"exotic","surface-iron":"iron",reactive:"ore",conductive:"ore",platinum:"silver",palladium:"silver",sapphire:"gems",ruby:"gems",emerald:"gems",magnetic:"ore",crystal:"exotic",advanced:"exotic"};
 
-const IMAGE_PATHS=Object.freeze({
-  fungal:"./assets/art/resources/food-resources/fungal-shelf.webp",
-  flora:"./assets/art/resources/food-resources/edible-flora.webp",
-  herd:"./assets/art/resources/food-resources/grazing-herd.webp",
-  nutrient:"./assets/art/resources/food-resources/nutrient-crop.webp",
-  protein:"./assets/art/resources/food-resources/protein-bloom.webp",
-  thermal:"./assets/art/resources/food-resources/thermal-algae.webp",
-  synthetic:"./assets/art/resources/food-resources/synthetic-nutrient.webp",
-  fiber:"./assets/art/resources/build-resources/construction-fibre.webp",
-  stone:"./assets/art/resources/build-resources/stone.webp",
-  clay:"./assets/art/resources/build-resources/clay.webp",
-  silica:"./assets/art/resources/build-resources/silica.webp",
-  limestone:"./assets/art/resources/build-resources/limestone.webp",
-  structural:"./assets/art/resources/build-resources/structural-mineral.webp",
-  ceramic:"./assets/art/resources/build-resources/advanced-ceramic-feedstock.webp",
-  biomass:"./assets/art/resources/fuel-resources/biomass.webp",
-  peat:"./assets/art/resources/fuel-resources/peat-bed.webp",
-  coal:"./assets/art/resources/fuel-resources/coal-seam.webp",
-  oil:"./assets/art/resources/fuel-resources/crude-oil.webp",
-  gas:"./assets/art/resources/fuel-resources/natural-gas.webp",
-  fissile:"./assets/art/resources/fuel-resources/fissile-mineral.webp",
-  brine:"./assets/art/resources/fuel-resources/hydrogen-rich-brine.webp",
-  "exotic-fuel":"./assets/art/resources/fuel-resources/exotic-fuel-crystal.webp",
-  "surface-iron":"./assets/art/resources/industrial-ores/surface-iron-nodules.webp",
-  iron:"./assets/art/resources/industrial-ores/iron-ore.webp",
-  copper:"./assets/art/resources/industrial-ores/copper-ore.webp",
-  reactive:"./assets/art/resources/industrial-ores/reactive-metal-ore.webp",
-  conductive:"./assets/art/resources/industrial-ores/conductive-ore.webp",
-  magnetic:"./assets/art/resources/industrial-ores/magnetic-ore.webp",
-  exotic:"./assets/art/resources/industrial-ores/exotic-industrial-mineral.webp",
-  advanced:"./assets/art/resources/industrial-ores/advanced-element-deposit.webp",
-  silver:"./assets/art/resources/precious-metals/silver.webp",
-  gold:"./assets/art/resources/precious-metals/gold.webp",
-  gems:"./assets/art/resources/precious-metals/gemstone-deposit.webp",
-  platinum:"./assets/art/resources/precious-metals/platinum.webp",
-  palladium:"./assets/art/resources/precious-metals/palladium.webp",
-  sapphire:"./assets/art/resources/precious-metals/sapphire.webp",
-  ruby:"./assets/art/resources/precious-metals/ruby.webp",
-  emerald:"./assets/art/resources/precious-metals/emerald.webp",
-  diamond:"./assets/art/resources/precious-metals/diamond.webp",
-  crystal:"./assets/art/resources/precious-metals/exotic-crystal.webp"
-});
+const ATLAS_PATH="./assets/art/resources/resource-atlas-256.webp?v=5.9.7";
+const FRAME=256,COLS=8;
+const ATLAS_IDS=[
+  "fungal","flora","herd","nutrient","protein","thermal","synthetic",
+  "fiber","stone","clay","silica","limestone","structural","ceramic",
+  "biomass","peat","coal","oil","gas","fissile","brine","exotic-fuel",
+  "surface-iron","iron","copper","reactive","conductive","magnetic","exotic","advanced",
+  "silver","gold","gems","platinum","palladium","sapphire","ruby","emerald","diamond","crystal"
+];
+const ATLAS_INDEX=new Map(ATLAS_IDS.map((id,index)=>[id,index]));
 
+/** Canonical resource artwork service: atlas-backed map art with SVG fallback icons. */
 export class ResourceIcons{
-  constructor(){this.imageCache=new Map();this.assetReadyCallback=null;}
-  setOnReady(callback){this.assetReadyCallback=typeof callback==="function"?callback:null;}
+  constructor(){this.assetReadyCallback=null;this.atlasImage=null;this.atlasStatus="idle";this.loadAtlas();}
+  setOnReady(callback){this.assetReadyCallback=typeof callback==="function"?callback:null;if(this.atlasStatus==="ready"&&this.assetReadyCallback)queueMicrotask(()=>this.assetReadyCallback?.());}
   colorFor(tile){if(tile.type==="food")return"#79e09a";if(tile.type==="build")return"#9ad0e2";if(tile.type==="fuel")return"#ff9f5f";return"#c7a0ff";}
   markup(id,type="ore"){return PATHS[id]||PATHS[ID_ALIAS[id]]||PATHS[type]||PATHS.ore;}
   svg(id,color="#eaf4f8",size=32,type="ore"){return`<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${this.markup(id,type)}</svg>`;}
-  imagePath(tile){return IMAGE_PATHS[tile?.resourceId]||null;}
-  imageEntry(tile){
-    const path=this.imagePath(tile);if(!path||typeof Image==="undefined")return null;
-    if(this.imageCache.has(path))return this.imageCache.get(path);
-    const image=new Image(),entry={image,status:"loading"};this.imageCache.set(path,entry);image.decoding="async";
-    image.onload=()=>{entry.status=image.naturalWidth>0?"ready":"error";if(entry.status==="ready")this.assetReadyCallback?.();};
-    image.onerror=()=>{entry.status="error";};
-    image.src=path;return entry;
+  frameIndex(tile){return ATLAS_INDEX.get(tile?.resourceId);}
+  hasAtlasFrame(tile){return this.frameIndex(tile)!==undefined;}
+  imagePath(tile){return this.hasAtlasFrame(tile)?ATLAS_PATH:null;}
+  loadAtlas(){
+    if(this.atlasImage||typeof Image==="undefined")return this.atlasImage;
+    const image=new Image();this.atlasImage=image;this.atlasStatus="loading";image.decoding="sync";
+    try{image.fetchPriority="high";}catch{}
+    image.onload=()=>{this.atlasStatus=image.naturalWidth>=FRAME&&image.naturalHeight>=FRAME?"ready":"error";if(this.atlasStatus==="ready")this.assetReadyCallback?.();};
+    image.onerror=()=>{this.atlasStatus="error";};image.src=ATLAS_PATH;return image;
   }
+  imageEntry(tile){if(!this.hasAtlasFrame(tile))return null;const image=this.loadAtlas();return image?{image,status:this.atlasStatus}:null;}
+  isImageLoading(tile){return this.hasAtlasFrame(tile)&&this.atlasStatus==="loading";}
   drawBackground(ctx,tile,x,y,size,alpha=1){
-    const entry=this.imageEntry(tile);if(!entry||entry.status!=="ready"||!entry.image.complete||entry.image.naturalWidth<=0)return false;
-    ctx.save();ctx.globalAlpha=alpha;
-    try{ctx.drawImage(entry.image,x,y,size,size);}catch{entry.status="error";ctx.restore();return false;}
-    ctx.restore();return true;
+    const index=this.frameIndex(tile);if(index===undefined)return false;const image=this.loadAtlas();if(this.atlasStatus!=="ready"||!image?.complete||image.naturalWidth<=0)return false;
+    const sx=(index%COLS)*FRAME,sy=Math.floor(index/COLS)*FRAME;ctx.save();ctx.globalAlpha=alpha;
+    try{ctx.drawImage(image,sx,sy,FRAME,FRAME,x,y,size,size);}catch{this.atlasStatus="error";ctx.restore();return false;}ctx.restore();return true;
   }
   compiled(id,type){this.cache||={};const k=`${type}:${id}`;if(this.cache[k])return this.cache[k];const markup=this.markup(id,type),shapes=[];if(typeof Path2D!=="undefined"){const pathRe=/<path d="([^"]+)"\/>/g;let m;while((m=pathRe.exec(markup))!==null){try{shapes.push({kind:"path",value:new Path2D(m[1])})}catch{}}}const circleRe=/<circle cx="([^"]+)" cy="([^"]+)" r="([^"]+)"\/>/g;let c;while((c=circleRe.exec(markup))!==null)shapes.push({kind:"circle",cx:+c[1],cy:+c[2],r:+c[3]});return this.cache[k]=shapes;}
   fallback(ctx,tile,cx,cy,size){ctx.save();ctx.translate(cx,cy);ctx.strokeStyle=this.colorFor(tile);ctx.lineWidth=Math.max(1.4,size*.075);const r=size*.34;ctx.beginPath();if(tile.type==="food"){ctx.moveTo(0,r);ctx.bezierCurveTo(-r,-r*.1,-r*.8,-r*.9,0,-r);ctx.bezierCurveTo(r*.8,-r*.9,r,-r*.1,0,r);}else if(tile.type==="fuel"){ctx.moveTo(0,-r);ctx.bezierCurveTo(r*.9,-r*.1,r*.6,r*.8,0,r);ctx.bezierCurveTo(-r*.8,r*.6,-r*.7,-r*.2,0,-r);}else{ctx.moveTo(-r*.8,r*.55);ctx.lineTo(-r*.45,-r*.7);ctx.lineTo(r*.35,-r);ctx.lineTo(r*.85,-r*.15);ctx.lineTo(r*.5,r*.75);ctx.lineTo(-r*.35,r);ctx.closePath();}ctx.stroke();ctx.restore();}

@@ -1,23 +1,49 @@
-import { formatNumber } from "../core/utils.js?v=5.5.5";
-import { ResourceUIMixin } from "./resource-ui-v562.js?v=5.6.2";
-import { ColonyTechUIMixin } from "./colony-tech-ui.js?v=5.5.5";
-import { ContractUIMixin } from "./contract-ui.js?v=5.5.5";
-import { PortfolioUIMixin } from "./portfolio-ui.js?v=5.5.5";
-import { UIEnhancementsMixin } from "./ui-enhancements.js?v=5.5.5";
-import { SurvivalUIMixin } from "./survival-ui.js?v=5.5.5";
-import { IndustryUIMixin } from "./industry-ui.js?v=5.5.5";
-import { V55UIMixin } from "./v55-ui.js?v=5.5.5";
-import { V55ContractLogUIMixin } from "./v55-contract-log-ui.js?v=5.5.5";
-import { LandUIMixin } from "./land-ui.js?v=5.5.5";
+import { formatNumber } from "../core/utils.js";
+import { ResourceUIMixin } from "./resource-ui.js";
+import { ColonyTechUIMixin } from "./colony-tech-ui.js";
+import { ContractUIMixin } from "./contract-ui.js";
+import { PortfolioUIMixin } from "./portfolio-ui.js";
+import { UIEnhancementsMixin } from "./ui-enhancements.js";
+import { SurvivalUIMixin } from "./survival-ui.js";
+import { IndustryUIMixin } from "./industry-ui.js";
+import { V55UIMixin } from "./v55-ui.js";
+import { V55ContractLogUIMixin } from "./v55-contract-log-ui.js";
+import { LandUIMixin } from "./land-ui.js";
 
 export class UIController {
   constructor({state,repo,resources,inventory,collection,colony,portfolio,sites,technology,survey,contracts,world,icons,diagnostics,transport,gameLog,land,development,onHardReset,onNewContract,onSwitchColony,onRemoveColony,onMakeLiability,onRelocateColony,onRecalculate,onCapturePortfolio,onSelectLand,onPlaceDevelopment,onDemolishDevelopment,onContractDecisionResolved,onProcessPendingEvent}){
     Object.assign(this,{state,repo,resources,inventory,collection,colony,portfolio,sites,technology,survey,contracts,world,icons,diagnostics,transport,gameLog,land,development,onHardReset,onNewContract,onSwitchColony,onRemoveColony,onMakeLiability,onRelocateColony,onRecalculate,onCapturePortfolio,onSelectLand,onPlaceDevelopment,onDemolishDevelopment,onContractDecisionResolved,onProcessPendingEvent});
-    this.tilePanel=document.querySelector("#tilePanel");this.modal=document.querySelector("#modal");this.toastEl=document.querySelector("#toast");this.errorBadge=document.querySelector("#errorBadge");this.bind();
+    this.tilePanel=document.querySelector("#tilePanel");this.modal=document.querySelector("#modal");this.toastEl=document.querySelector("#toast");this.errorBadge=document.querySelector("#errorBadge");this.boundClickElements=[];this.bind();
   }
+  bindClick(selector,handler){const element=document.querySelector(selector);if(!element)return null;element.onclick=handler;this.boundClickElements.push(element);return element;}
   bind(){
-    document.querySelector("#companyBtn").onclick=()=>this.company();document.querySelector("#collectionBtn").onclick=()=>this.currentCollection();document.querySelector("#colonyBtn").onclick=()=>this.landColonyPanel();document.querySelector("#coloniesBtn").onclick=()=>this.coloniesPanel();document.querySelector("#techBtn").onclick=()=>this.tech();document.querySelector("#goalsBtn").onclick=()=>this.goals();document.querySelector("#menuBtn").onclick=()=>this.menu();
-    document.querySelectorAll("[data-speed]").forEach(button=>button.onclick=()=>{const next=+button.dataset.speed;if(this.state.status==="site-selection"){this.toast("Choose a landing site before starting time.");return;}if(next>0&&(this.state.company?.pendingEvents?.length||this.state.trade?.active)){this.toast("Resolve the pending corporate event before resuming time.");return;}if(this.state.company?.gameOver){this.toast("All colonies have been lost.");return;}this.state.speed=next;this.syncSpeed();});this.errorBadge.onclick=()=>this.diagnosticsPanel();this.diagnostics.subscribe(()=>this.updateErrorBadge());
+    this.bindClick("#companyBtn",()=>this.company());this.bindClick("#collectionBtn",()=>this.currentCollection());this.bindClick("#colonyBtn",()=>this.landColonyPanel());this.bindClick("#coloniesBtn",()=>this.coloniesPanel());this.bindClick("#techBtn",()=>this.tech());this.bindClick("#goalsBtn",()=>this.goals());this.bindClick("#menuBtn",()=>this.menu());
+    this.bindSpeedInputs();
+    if(this.errorBadge){this.errorBadge.onclick=()=>this.diagnosticsPanel();this.boundClickElements.push(this.errorBadge);}this.diagnosticsUnsubscribe=this.diagnostics.subscribe(()=>this.updateErrorBadge());
+  }
+  bindSpeedInputs(){
+    const controls=document.querySelector(".controls")||document.querySelector(".app-footer");
+    if(!controls||this.speedInputBound)return;
+    this.speedInputBound=true;this.speedControls=controls;
+    this.speedClickHandler=event=>{
+      const button=event.target.closest?.("[data-speed]");
+      if(!button||!controls.contains(button))return;
+      event.preventDefault();event.stopImmediatePropagation();this.setSpeed(+button.dataset.speed);
+    };
+    controls.addEventListener("click",this.speedClickHandler,true);
+  }
+  dispose(){
+    clearTimeout(this.toastTimer);this.toastTimer=null;
+    if(this.speedControls&&this.speedClickHandler)this.speedControls.removeEventListener("click",this.speedClickHandler,true);
+    this.speedControls=null;this.speedClickHandler=null;this.speedInputBound=false;
+    for(const element of this.boundClickElements||[])element.onclick=null;
+    this.boundClickElements=[];this.diagnosticsUnsubscribe?.();this.diagnosticsUnsubscribe=null;
+  }
+  setSpeed(next){
+    if(this.state.status==="site-selection"){this.toast("Choose a landing site before starting time.");return false;}
+    if(next>0&&(this.state.company?.pendingEvents?.length||this.state.trade?.active||this.state.status==="contract-decision")){this.toast("Resolve the pending corporate event before resuming time.");return false;}
+    if(this.state.company?.gameOver){this.toast("All colonies have been lost.");return false;}
+    this.state.speed=next;this.syncSpeed();return true;
   }
   updateErrorBadge(){this.errorBadge.textContent=`ERROR LOG (${this.diagnostics.errors})`;this.errorBadge.classList.toggle("hidden",this.diagnostics.errors===0);}
   syncSpeed(){document.querySelectorAll("[data-speed]").forEach(b=>b.classList.toggle("active",+b.dataset.speed===this.state.speed));}

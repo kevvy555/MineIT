@@ -38,7 +38,9 @@ const defs=readFileSync(new URL("../js/ui/map-filter-definitions.js",import.meta
 const css=readFileSync(new URL("../css/world.css",import.meta.url),"utf8");
 for(const label of["DEVELOPED","NOT DEVELOPED","LOCKED","FOOD","BUILD","FUEL","ORE"])
   assert.ok(defs.includes(label),`Missing filter definition: ${label}`);
-for(const label of["STATE","TYPE","SIZE","QUALITY","ALL","CLEAR"])
-  assert.ok(controls.includes(label),`Missing filter control: ${label}`);
+for(const label of["STATE","SIZE","QUALITY","ALL","CLEAR","PROBLEMS","BUILDINGS","UPGRADE","FOOD","BUILD","FUEL","ORE"])
+  assert.ok(controls.includes(label),`Missing canonical map control: ${label}`);
+assert.doesNotMatch(controls,/\[\["land","LAND"\],\["resource","RESOURCES"\]\]/,"canonical controls must expose one unified map");
+assert.match(controls,/dispose\(\)/,"document-level map focus listener must have an explicit disposal path");
 assert.match(css,/\.map-filter-options/);
-console.log("MineIT map filters test passed");
+console.log("MineIT canonical map filters test passed");

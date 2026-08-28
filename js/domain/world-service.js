@@ -1,5 +1,5 @@
-import { RESOURCE_TYPES } from "../data/resources.js?v=5.5.5";
-import { clamp, hashString, seededRandom, tileKey } from "../core/utils.js?v=5.5.5";
+import { RESOURCE_TYPES } from "../data/resources.js";
+import { clamp, hashString, seededRandom, tileKey } from "../core/utils.js";
 
 const SURFACE_CHANCE={plain:.44,hill:.60,mountain:.72,lake:.52};
 const TERRAIN_WEIGHTS={

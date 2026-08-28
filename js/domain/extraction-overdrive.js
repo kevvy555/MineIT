@@ -1,4 +1,4 @@
-import { hashString } from "../core/utils.js?v=5.5.5";
+import { hashString } from "../core/utils.js";
 
 export const OVERDRIVE_RISK_PERIOD=30;
 export const OVERDRIVE_ACCIDENT_CHANCE=.25;

@@ -1,0 +1,105 @@
+import { UIController as ResourceDevelopmentUIController } from "./resource-development-ui.js";
+import { formatNumber } from "../core/utils.js";
+import { getLoadedViewTemplate,loadViewTemplate,preloadViewTemplates,renderViewSource } from "../core/view-template.js";
+import { developmentKind,developmentLevel,developmentOriginalPath } from "./land-art.js";
+import { OPERATING_MODES,operatingMode,riskExposure,supportsOverdrive,isAccidentShutdown,OVERDRIVE_RISK_PERIOD } from "../domain/extraction-overdrive.js";
+
+const LOCAL_KINDS=new Set(["housing","power","industry"]);
+const MAX_LEVEL=5;
+const ADAPTIVE_BUILDING_VIEW="./views/adaptive-building.html";
+const FAMILY_LABELS={
+  housing:"Housing",power:"Power Plant",industry:"Industry",quarry:"Quarry",mine:"Mine","deep-mine":"Deep Mine",rig:"Extraction Rig",farm:"Farm",ranch:"Ranch","bio-harvester":"Bio Harvester","algae-facility":"Algae Facility"
+};
+const upper=value=>String(value??"").replace(/-/g," ").toUpperCase();
+preloadViewTemplates([ADAPTIVE_BUILDING_VIEW]);
+
+/** Unified task-first presentation for every developed colony building. */
+export class UIController extends ResourceDevelopmentUIController{
+  isAdaptiveBuilding(tile){const kind=tile?.development?.kind;return !!kind&&(LOCAL_KINDS.has(kind)||kind==="extract");}
+  buildingLabel(dev){const kind=developmentKind(dev);return FAMILY_LABELS[kind]||upper(kind||"Building");}
+  detailCard(label,value,sub="",cls=""){return `<div class="adaptive-building-card ${cls}"><small>${label}</small><strong>${value}</strong>${sub?`<span>${sub}</span>`:""}</div>`;}
+  requirementCard(label,value,current,ready){return `<div class="adaptive-building-requirement ${ready?"ready":"blocked"}"><small>${label}</small><strong>${value}</strong><span>${current}</span></div>`;}
+  setAdaptiveText(root,selector,value){const node=root?.querySelector(selector);if(node)node.textContent=String(value??"");return node;}
+  adaptiveViewSource(tile){
+    const source=getLoadedViewTemplate(ADAPTIVE_BUILDING_VIEW);if(source)return source;
+    const revision=(this.adaptiveViewRevision||0)+1;this.adaptiveViewRevision=revision;
+    loadViewTemplate(ADAPTIVE_BUILDING_VIEW).then(()=>{if(this.adaptiveViewRevision===revision&&this.activeAdaptiveTile===tile)this.renderAdaptiveBuilding(tile);}).catch(error=>{if(this.adaptiveViewRevision!==revision)return;this.diagnostics?.error?.("adaptive building view failed",error);this.toast("Unable to open building details.");});
+    return null;
+  }
+
+  localBuildingData(tile){
+    const dev=tile.development,kind=dev.kind,level=developmentLevel(dev),label=this.development.label(kind),terrain=this.land.terrainLabel(tile.terrain),capacity=this.development.contribution(kind,level),totals=this.colony.totals(this.state),next=this.development.canUpgrade(this.state,tile),max=level>=MAX_LEVEL||next.max,nextLevel=max?level:next.nextLevel||level+1,nextCapacity=this.development.contribution(kind,nextLevel),gain=Math.max(0,nextCapacity-capacity),cost=max?null:this.development.cost(this.state,tile,kind,nextLevel),buildStock=this.inventory.amount(this.state,"build"),oreStock=this.inventory.amount(this.state,"ore"),techRequired=max?level:next.techRequired||nextLevel,currentTech=this.development.techLevel(this.state,kind),covered=tile.resourceCovered&&tile.resourceId?`${tile.name} • Q${formatNumber(tile.quality||0)}`:null;
+    let overview=[];
+    if(kind==="housing"){
+      const total=Math.max(0,totals.housing||0),occupied=Math.max(0,Number(this.state.pop)||0),free=Math.max(0,total-occupied);
+      overview=[this.detailCard("THIS BUILDING",`+${formatNumber(capacity)}`),this.detailCard("COLONY HOUSING",formatNumber(total)),this.detailCard("OCCUPIED",formatNumber(occupied)),this.detailCard("FREE SPACES",formatNumber(free),free<=Math.max(10,total*.1)?"Near capacity":"Available")];
+    }else if(kind==="power"){
+      const demand=this.colony.demand(this.state),total=Math.max(0,totals.power||0),used=Math.max(0,Number(demand.powerDemand)||0),surplus=total-used;
+      overview=[this.detailCard("THIS BUILDING",`+${formatNumber(capacity)} POWER`),this.detailCard("COLONY POWER",formatNumber(total)),this.detailCard("DEMAND",formatNumber(used)),this.detailCard("SURPLUS",`${surplus>=0?"+":""}${formatNumber(surplus)}`,surplus<0?"Power shortage":"Available capacity",surplus<0?"blocked":"ready")];
+    }else{
+      const installed=Math.max(0,totals.industry||0),operational=Math.max(0,this.colony.industryOperationalCapacity(this.state)),factor=Math.round(this.colony.industryPopulationFactor(this.state)*100);
+      overview=[this.detailCard("THIS BUILDING",`+${formatNumber(capacity)} INDUSTRY`),this.detailCard("COLONY INDUSTRY",formatNumber(installed)),this.detailCard("OPERATIONAL",formatNumber(operational)),this.detailCard("STAFFING FACTOR",`${factor}%`,factor<100?"Population constrained":"Fully supported",factor<100?"blocked":"ready")];
+    }
+    const requirements=max?"": [this.requirementCard("BUILD",formatNumber(cost.build||0),`${formatNumber(buildStock)} available`,buildStock>=(cost.build||0)),...(cost.ore>0?[this.requirementCard("ORE",formatNumber(cost.ore),`${formatNumber(oreStock)} available`,oreStock>=cost.ore)]:[]),this.requirementCard(`${upper(label)} TECH`,`L${techRequired}`,`Current L${currentTech}`,currentTech>=techRequired)].join("");
+    const status=this.state.status==="dead"?"OFFLINE":"ACTIVE";
+    const alert=this.state.status==="dead"?{level:"bad",title:"COLONY LOST",text:"This building is offline because the colony population has been lost."}:covered?{level:"warn",title:"RESOURCE COVERED",text:`This building covers ${covered}; that resource cannot be extracted while the building remains here.`}:null;
+    return{dev,label,level,kicker:"COLONY BUILDING",status,meta:[upper(kind),upper(terrain)],overview:overview.join(""),operations:"",alert,next,max,nextLevel,modeControl:null,harvestControl:null,upgrade:max?`<div class="adaptive-building-max"><strong>MAX LEVEL</strong><span>${label} has reached L${MAX_LEVEL}.</span></div>`:`<div class="adaptive-building-upgrade-result">${this.detailCard("NEXT LEVEL",`${upper(label)} L${nextLevel}`)}${this.detailCard("IMPROVEMENT",`+${formatNumber(gain)} ${kind==="housing"?"HOUSING":kind==="power"?"POWER":"INDUSTRY"}`)}</div>`,requirements:max?`<div class="adaptive-building-max compact"><strong>NO FURTHER REQUIREMENTS</strong><span>Maximum building level reached.</span></div>`:`<div class="adaptive-building-requirements">${requirements}</div><div class="adaptive-building-ready-state ${next.ok?"ready":"blocked"}">${next.ok?"READY TO UPGRADE":next.reason||"UPGRADE BLOCKED"}</div>`,upgradeLabel:max?"MAX LEVEL":next.ok?`UPGRADE TO L${nextLevel}`:"UPGRADE BLOCKED"};
+  }
+
+  extractionPlannedRequirements(tile,level){
+    const nextLevel=Math.min(MAX_LEVEL,level+1),build=this.sites.upgradeBuildCost(this.state,tile),ore=this.sites.upgradeOreCost(tile,nextLevel),industryRequired=this.sites.upgradeIndustryRequirement(tile,nextLevel),powerRequired=this.sites.upgradePowerRequirement(tile,nextLevel),currentWorkers=this.colony.siteWorkforce(this.state,tile),nextTile={...tile,level:nextLevel,development:{...tile.development,level:nextLevel}},nextWorkers=this.colony.siteWorkforce(this.state,nextTile),workforce=Math.max(0,nextWorkers-currentWorkers),techRequired=tile.type==="food"?nextLevel:tile.requiredMiningLevel||1;
+    return{nextLevel,build,ore,industryRequired,powerRequired,workforce,techRequired};
+  }
+
+  extractionBuildingData(tile){
+    const dev=tile.development,level=developmentLevel(dev),label=this.buildingLabel(dev),category=this.resources.categoryName(tile.type),renewable=this.resources.isRenewable(tile),overdrive=supportsOverdrive(tile),shutdown=isAccidentShutdown(tile),depleted=!!tile.depleted||!!tile.renewableWiped,emergency=!!this.state.colony?.emergencyMode&&tile.type!=="food"&&tile.type!=="fuel",paused=shutdown||depleted||emergency||this.state.status==="dead"||this.state.contract?.ended,nominalRate=this.resources.collectionRate(this.state,tile),rate=paused?0:nominalRate,workers=this.colony.siteWorkforce(this.state,tile),power=this.colony.sitePowerDemand(tile),stock=this.stockFor(tile),life=this.resources.estimatedLifeYears(this.state,tile),remaining=renewable?(this.resources.renewableCondition(tile)?.label||tile.abundanceLabel||"Renewable"):formatNumber(Math.max(0,tile.reserve||0)),size=renewable?(tile.abundanceLabel||"Renewable"):(tile.depositScale||"Finite"),next=this.sites.upgradeRequirements(this.state,tile),max=level>=MAX_LEVEL||next.max,planned=max?null:this.extractionPlannedRequirements(tile,level),nextLevel=max?level:planned.nextLevel,currentRate=this.resources.collectionRate(this.state,tile),nextTile=max?tile:{...tile,level:nextLevel,development:{...dev,level:nextLevel}},nextRate=max?currentRate:this.resources.collectionRate(this.state,nextTile),gain=Math.max(0,nextRate-currentRate),totals=this.colony.totals(this.state),buildStock=this.inventory.amount(this.state,"build"),oreStock=this.inventory.amount(this.state,"ore"),freeWorkforce=this.colony.freeWorkforce(this.state),techCategory=tile.type==="food"?"food":"mining",currentTech=this.technology.level(this.state,techCategory),mode=overdrive?operatingMode(tile):null,risk=overdrive?riskExposure(tile):0,harvest=renewable?Math.round((Number(tile.harvestIntensity)||1)*100):null;
+    const overview=[this.detailCard("OUTPUT",paused?"0 / DAY":`+${formatNumber(rate)} / DAY`,paused?`Normal ${formatNumber(nominalRate)} / day`:"Current production",paused?"blocked":""),this.detailCard(renewable?"RESOURCE CONDITION":"RESOURCE LEFT",remaining,renewable?size:"Deposit remaining"),this.detailCard("STAFF",formatNumber(workers)),this.detailCard("POWER USE",`${formatNumber(power)} / DAY`)].join("");
+    const ops=[this.detailCard("QUALITY",`Q${formatNumber(tile.quality||0)}`),this.detailCard("IN STOCK",formatNumber(stock)),this.detailCard(renewable?"HARVEST":"EST. LIFE",renewable?`${harvest}%`:life===null||life===undefined?"—":life>=100?`${Math.round(life)} YEARS`:`${life.toFixed(1)} YEARS`),overdrive?this.detailCard("RISK EXPOSURE",`${risk.toFixed(1)} / ${OVERDRIVE_RISK_PERIOD}`,mode==="normal"?"Risk reducing":`${OPERATING_MODES[mode].risk} risk`,mode==="hard"?"blocked":mode==="pushed"?"warn":"ready"):this.detailCard(renewable?"ABUNDANCE":"DEPOSIT SIZE",upper(size))].join("");
+    let alert=null,status="ACTIVE";
+    if(depleted){status="DEPLETED";alert={level:"bad",title:"RESOURCE EXHAUSTED",text:"This extraction facility no longer has a usable resource. Demolish it to clear the tile."};}
+    else if(shutdown){const days=Math.max(1,Math.ceil(Number(tile.accidentShutdownDays)||0)),last=tile.lastAccident;status="SHUT DOWN";alert={level:"bad",title:last?.name||"EXTRACTION ACCIDENT",text:`Safety shutdown: ${days} day${days===1?"":"s"} remaining${last?.outcome==="fatalities"?` • ${last.deaths} fatalities`:last?" • machinery damage":""}.`};}
+    else if(emergency){status="PAUSED";alert={level:"warn",title:"EMERGENCY MODE",text:"Non-essential extraction is paused until colony Emergency Mode is cleared."};}
+    else if(this.state.contract?.ended){status="CONTRACT ENDED";alert={level:"warn",title:"CONTRACT ENDED",text:"Extraction is disabled because this colony is now support-only."};}
+    else if(this.state.status==="dead"){status="OFFLINE";alert={level:"bad",title:"COLONY LOST",text:"This extraction facility is permanently offline."};}
+    else if(overdrive)status=OPERATING_MODES[mode].label;
+    const reqCards=max?"": [this.requirementCard("BUILD",formatNumber(planned.build||0),`${formatNumber(buildStock)} available`,buildStock>=(planned.build||0)),...(planned.ore>0?[this.requirementCard("ORE",formatNumber(planned.ore),`${formatNumber(oreStock)} available`,oreStock>=planned.ore)]:[]),...(planned.industryRequired>0?[this.requirementCard("INDUSTRY",formatNumber(planned.industryRequired),`${formatNumber(totals.industry||0)} installed`,(totals.industry||0)>=planned.industryRequired)]:[]),...(planned.powerRequired>0?[this.requirementCard("POWER",formatNumber(planned.powerRequired),`${formatNumber(totals.power||0)} capacity`,(totals.power||0)>=planned.powerRequired)]:[]),...(planned.workforce>0?[this.requirementCard("WORKFORCE",formatNumber(planned.workforce),`${formatNumber(freeWorkforce)} free`,freeWorkforce>=planned.workforce)]:[]),this.requirementCard(`${techCategory.toUpperCase()} TECH`,`L${planned.techRequired}`,`Current L${currentTech}`,currentTech>=planned.techRequired)].join("");
+    return{dev,label,level,kicker:`${upper(category)} FACILITY`,status,meta:[tile.name,upper(tile.resourceRarity||"Resource"),upper(size)],overview,operations:ops,alert,next,max,nextLevel,modeControl:overdrive&&!shutdown&&!depleted?{mode,risk}:null,harvestControl:renewable&&!depleted?harvest:null,upgrade:max?`<div class="adaptive-building-max"><strong>MAX LEVEL</strong><span>${label} has reached L${MAX_LEVEL}.</span></div>`:`<div class="adaptive-building-upgrade-result">${this.detailCard("NEXT LEVEL",`${upper(label)} L${nextLevel}`)}${this.detailCard("IMPROVEMENT",`+${formatNumber(gain)} ${upper(category)} / DAY`)}</div>`,requirements:max?`<div class="adaptive-building-max compact"><strong>NO FURTHER REQUIREMENTS</strong><span>Maximum extraction level reached.</span></div>`:`<div class="adaptive-building-requirements">${reqCards}</div><div class="adaptive-building-ready-state ${next.ok?"ready":"blocked"}">${next.ok?"READY TO UPGRADE":next.reason||"UPGRADE BLOCKED"}</div>`,upgradeLabel:max?"MAX LEVEL":next.ok?`UPGRADE TO L${nextLevel}`:"UPGRADE BLOCKED"};
+  }
+
+  populateAdaptiveArt(root,data,heroLabel){
+    const kind=developmentKind(data.dev),level=developmentLevel(data.dev),src=kind==="power"?null:developmentOriginalPath(data.dev),fallback=kind==="power"?"⚡":"◆",art=root.querySelector("[data-adaptive-art]"),image=root.querySelector("[data-adaptive-art-image]");
+    art?.setAttribute("aria-label",`${data.label} level ${level}`);this.setAdaptiveText(root,"[data-adaptive-art-fallback]",fallback);
+    if(image&&src){image.src=src;image.alt=`${data.label} level ${level}`;image.style.display="";image.onerror=()=>{image.style.display="none";};}else image?.remove();
+    this.setAdaptiveText(root,"[data-adaptive-kicker]",data.kicker);this.setAdaptiveText(root,"[data-adaptive-name]",heroLabel);this.setAdaptiveText(root,"[data-adaptive-status]",data.status);
+  }
+  populateAdaptiveBadges(root,items){
+    const host=root.querySelector("[data-adaptive-badges]"),template=root.querySelector("[data-adaptive-badge-template]");if(!host||!template)return;const badges=document.createDocumentFragment();
+    for(const item of items.filter(Boolean)){const row=template.content.cloneNode(true);this.setAdaptiveText(row,"[data-adaptive-badge]",item);badges.append(row);}host.replaceChildren(badges);
+  }
+  populateAdaptiveAlert(root,alertData){const alert=root.querySelector("[data-adaptive-alert]");if(!alert)return;alert.hidden=!alertData;if(!alertData)return;alert.className=`adaptive-building-alert ${alertData.level}`;this.setAdaptiveText(alert,"[data-adaptive-alert-title]",alertData.title);this.setAdaptiveText(alert,"[data-adaptive-alert-text]",alertData.text);}
+  populateAdaptiveMode(root,modeData){
+    const block=root.querySelector("[data-adaptive-mode]");if(!block)return;block.hidden=!modeData;if(!modeData)return;this.setAdaptiveText(block,"[data-adaptive-mode-risk]",`Risk ${modeData.risk.toFixed(1)} / ${OVERDRIVE_RISK_PERIOD}`);
+    const host=block.querySelector("[data-adaptive-mode-buttons]"),template=root.querySelector("[data-adaptive-mode-template]"),buttons=document.createDocumentFragment();if(!host||!template)return;
+    for(const profile of Object.values(OPERATING_MODES)){const row=template.content.cloneNode(true),button=row.querySelector("[data-adaptive-mode-option]");button.dataset.adaptiveMode=profile.key;button.classList.toggle("active",profile.key===modeData.mode);this.setAdaptiveText(row,"[data-adaptive-mode-label]",profile.label);this.setAdaptiveText(row,"[data-adaptive-mode-details]",`${Math.round(profile.workforce*100)}% staff • ${Math.round(profile.output*100)}% output${profile.key==="normal"?"":` • ${profile.risk} risk`}`);buttons.append(row);}host.replaceChildren(buttons);
+  }
+  populateAdaptiveHarvest(root,harvest){const block=root.querySelector("[data-adaptive-harvest]");if(!block)return;block.hidden=harvest===null||harvest===undefined;if(block.hidden)return;this.setAdaptiveText(block,"[data-adaptive-harvest-value]",`${harvest}%`);const down=block.querySelector('[data-harvest-delta="-25"]'),up=block.querySelector('[data-harvest-delta="25"]');if(down)down.disabled=harvest<=25;if(up)up.disabled=harvest>=200;}
+
+  renderAdaptiveBuilding(tile){
+    const panel=this.tilePanel;if(!panel||!this.isAdaptiveBuilding(tile))return false;this.activeAdaptiveTile=tile;
+    const source=this.adaptiveViewSource(tile);if(!source){panel.classList.add("hidden");return false;}
+    const extract=tile.development.kind==="extract",data=extract?this.extractionBuildingData(tile):this.localBuildingData(tile),heroLabel=`${data.label} L${data.level}`,html=renderViewSource(source,{OVERVIEW:data.overview,OPERATIONS:data.operations||"",UPGRADE:data.upgrade,REQUIREMENTS:data.requirements,UPGRADE_DISABLED:data.next.ok&&!data.max?"":"disabled",UPGRADE_LABEL:data.upgradeLabel}),fragment=document.createRange().createContextualFragment(html),root=fragment.querySelector("[data-adaptive-building-shell]");if(!root)return false;
+    this.populateAdaptiveArt(root,data,heroLabel);this.populateAdaptiveBadges(root,data.meta);this.populateAdaptiveAlert(root,data.alert);this.populateAdaptiveMode(root,data.modeControl);this.populateAdaptiveHarvest(root,data.harvestControl);const operations=root.querySelector("[data-adaptive-operations-section]");if(operations)operations.hidden=!data.operations;
+    panel.classList.remove("resource-detail-panel","building-detail-panel");panel.classList.add("adaptive-building-panel");panel.replaceChildren(fragment);panel.classList.remove("hidden");
+    panel.querySelector("[data-adaptive-close]").onclick=()=>{this.activeAdaptiveTile=null;panel.classList.add("hidden");};
+    const upgrade=panel.querySelector("[data-adaptive-upgrade]");
+    if(upgrade&&data.next.ok&&!data.max)upgrade.onclick=()=>{const before=data.level,result=extract?this.sites.upgrade(this.state,tile):this.development.upgrade(this.state,tile);if(!result.ok){this.toast(result.reason);this.renderAdaptiveBuilding(tile);return;}if(extract)this.land.syncExtraction(tile,result.build);this.onRecalculate?.();this.logEvent?.(extract?"site-upgraded":"land-development-upgraded",`${data.label} at ${tile.x},${tile.y} upgraded to L${extract?tile.level:tile.development.level}.`,{x:tile.x,y:tile.y,kind:tile.development?.kind,resource:tile.name,fromLevel:before,level:extract?tile.level:tile.development.level,buildCost:result.build,oreCost:result.ore||0});this.repo.save(this.state);this.toast(`${data.label} upgraded.`);this.renderContext?.();this.renderAdaptiveBuilding(tile);};
+    panel.querySelector("[data-adaptive-demolish]").onclick=()=>{if(confirm(`Demolish ${data.label} L${data.level}?${extract?" The resource remains if it is not exhausted.":""}`))this.onDemolishDevelopment?.(tile);};
+    panel.querySelectorAll("button[data-adaptive-mode]").forEach(button=>button.onclick=()=>{const before=operatingMode(tile),result=this.collection.setOperatingMode(this.state,tile,button.dataset.adaptiveMode);if(!result.ok){this.toast(result.reason);return;}this.onRecalculate?.();this.logEvent?.("site-operating-mode",`${tile.name} changed from ${before.toUpperCase()} to ${result.profile.label} operation.`,{x:tile.x,y:tile.y,resource:tile.name,before,after:button.dataset.adaptiveMode,riskExposure:riskExposure(tile)});this.repo.save(this.state);this.toast(`${tile.name}: ${result.profile.label} selected.`);this.renderContext?.();this.renderAdaptiveBuilding(tile);});
+    panel.querySelectorAll("[data-harvest-delta]").forEach(button=>button.onclick=()=>{const result=this.resources.adjustHarvestIntensity(tile,Number(button.dataset.harvestDelta));if(!result.ok){this.toast(result.reason);return;}this.onRecalculate?.();this.logEvent?.("harvest-intensity",`${tile.name} harvest changed from ${result.before}% to ${result.after}%.`,{x:tile.x,y:tile.y,resource:tile.name,before:result.before,after:result.after,sustainableRate:result.sustainableRate});this.repo.save(this.state);this.toast(`${tile.name} harvest set to ${result.after}%.`);this.renderContext?.();this.renderAdaptiveBuilding(tile);});
+    return true;
+  }
+
+  localBuildingPanel(tile){this.activeAdaptiveTile=tile;this.renderAdaptiveBuilding(tile);}
+  tile(tile){this.tilePanel?.classList.remove("adaptive-building-panel");if(this.isAdaptiveBuilding(tile)){this.activeAdaptiveTile=tile;this.renderAdaptiveBuilding(tile);return;}this.activeAdaptiveTile=null;super.tile(tile);}
+  landTile(tile){if(this.isAdaptiveBuilding(tile)){this.activeAdaptiveTile=tile;this.renderAdaptiveBuilding(tile);return;}this.activeAdaptiveTile=null;super.landTile(tile);}
+}

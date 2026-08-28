@@ -1,4 +1,4 @@
-import { CONFIG } from "../core/config.js?v=5.5.5";
+import { CONFIG } from "../core/config.js";
 
 const clone=value=>JSON.parse(JSON.stringify(value));
 export class GameLogService {

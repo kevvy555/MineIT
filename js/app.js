@@ -1,35 +1,45 @@
-import { CONFIG } from "./core/config.js?v=5.5.5";
-import { Diagnostics } from "./core/diagnostics.js?v=5.5.5";
-import { ContractService } from "./domain/contract-service.js?v=5.5.5";
-import { CorporateEventService } from "./domain/corporate-event-service.js?v=5.8.1";
-import { createGameState, normalizeState } from "./domain/game-state.js?v=5.5.5";
-import { PortfolioService } from "./domain/portfolio-service.js?v=5.5.5";
-import { ResourceService } from "./domain/resource-service.js?v=5.5.5";
-import { InventoryService } from "./domain/inventory-service.js?v=5.5.5";
-import { CollectionService } from "./domain/collection-service.js?v=5.5.5";
-import { ColonyService } from "./domain/colony-service.js?v=5.5.5";
-import { TradeService } from "./domain/trade-service.js?v=5.5.5";
-import { LandService } from "./domain/land-service.js?v=5.5.5";
-import { DevelopmentService } from "./domain/development-service.js?v=5.5.5";
-import { WorldService } from "./domain/world-service.js?v=5.5.5";
-import { SiteService } from "./domain/site-service.js?v=5.5.5";
-import { TechnologyService } from "./domain/technology-service.js?v=5.5.5";
-import { SurveyService } from "./domain/survey-service.js?v=5.5.5";
-import { SimulationEngine } from "./domain/simulation-engine.js?v=5.5.5";
-import { GameLogService } from "./domain/game-log-service.js?v=5.5.5";
-import { TransportService } from "./domain/transport-service.js?v=5.5.5";
-import { SaveRepository } from "./persistence/save-repository.js?v=5.5.5";
-import { ResourceIcons } from "./ui/resource-icons.js?v=5.5.5";
-import { WorldView } from "./ui/world-view.js?v=5.5.5";
-import { UIController } from "./ui/ui-controller.js?v=5.5.5";
-import { TradeUI } from "./ui/v55-trade-ui.js?v=5.5.5";
+import { CONFIG } from "./core/config.js";
+import { Diagnostics } from "./core/diagnostics.js";
+import { GameStore } from "./core/game-store.js";
+import { ContractService } from "./domain/contract-service.js";
+import { CorporateEventService } from "./domain/corporate-event-service.js";
+import { createGameState, normalizeState } from "./domain/game-state-runtime.js";
+import { PortfolioService } from "./domain/portfolio-service.js";
+import { ResourceService } from "./domain/resource-service.js";
+import { InventoryService } from "./domain/inventory-service.js";
+import { CollectionService } from "./domain/collection-service.js";
+import { ColonyService } from "./domain/colony-service.js";
+import { TradeService } from "./domain/trade-service.js";
+import { LandService } from "./domain/land-service.js";
+import { DevelopmentService } from "./domain/development-service.js";
+import { WorldService } from "./domain/world-service.js";
+import { SiteService } from "./domain/site-service.js";
+import { TechnologyService } from "./domain/technology-service.js";
+import { SurveyService } from "./domain/survey-service.js";
+import { SimulationEngine } from "./domain/simulation-engine.js";
+import { GameLogService } from "./domain/game-log-service.js";
+import { TransportService } from "./domain/transport-service.js";
+import { SaveRepository } from "./persistence/save-repository.js";
+import { ResourceIcons } from "./ui/resource-icons.js";
+import { WorldView } from "./ui/world-view-runtime.js";
+import { UIController } from "./ui/ship-preparation-ui.js";
+import { TradeUI } from "./ui/corporate-trade-ui.js";
+
+let bootApp=null;
 
 class MineITApp {
+  get state(){return this.store.getState();}
+
   constructor(){
     this.diagnostics=new Diagnostics();
-    window.mineITBoot=this;
-    addEventListener("error",e=>this.diagnostics.error("window.error",e.error||e.message));
-    addEventListener("unhandledrejection",e=>this.diagnostics.error("unhandledrejection",e.reason));
+    bootApp=this;
+    this.disposed=false;
+    this.rafId=null;
+    this.onWindowError=e=>this.diagnostics.error("window.error",e.error||e.message);
+    this.onUnhandledRejection=e=>this.diagnostics.error("unhandledrejection",e.reason);
+    this.onVisibilityChange=()=>{if(document.hidden)this.repo?.save(this.state);};
+    addEventListener("error",this.onWindowError);
+    addEventListener("unhandledrejection",this.onUnhandledRejection);
 
     this.contracts=new ContractService();
     this.repo=new SaveRepository(this.diagnostics);
@@ -52,7 +62,7 @@ class MineITApp {
     this.icons=new ResourceIcons();
 
     const saved=this.repo.load();
-    this.state=normalizeState(saved||createGameState(this.contracts.first()));
+    this.store=new GameStore(normalizeState(saved||createGameState(this.contracts.first())));
     this.events.ensure(this.state.company);
     this.portfolio.ensure(this.state);
     this.land.ensure(this.state);
@@ -78,18 +88,21 @@ class MineITApp {
       onPlaceDevelopment:(tile,kind)=>this.placeDevelopment(tile,kind),
       onDemolishDevelopment:tile=>this.demolishDevelopment(tile),
       onContractDecisionResolved:action=>this.resolveContractDecision(action),
-      onProcessPendingEvent:()=>this.processPendingCorporateEvent()
+      onProcessPendingEvent:()=>this.processPendingCorporateEvent(),
+      onMapFocus:mode=>this.view?.setFocus(mode)
     });
     this.tradeUI=new TradeUI({state:this.state,trade:this.trade,repo:this.repo,ui:this.ui,gameLog:this.gameLog,onDepart:()=>this.onShipDepart()});
-    this.view=new WorldView({state:this.state,world:this.world,survey:this.survey,resources:this.resources,technology:this.technology,icons:this.icons,diagnostics:this.diagnostics,land:this.land,onTap:(x,y)=>this.tap(x,y),onMulti:cells=>this.multi(cells),onInspect:(x,y)=>this.inspect(x,y)});
+    this.view=new WorldView({state:this.state,world:this.world,survey:this.survey,resources:this.resources,technology:this.technology,icons:this.icons,diagnostics:this.diagnostics,land:this.land,onTap:(x,y)=>this.tap(x,y),onMulti:cells=>this.multi(cells),onInspect:(x,y)=>this.inspect(x,y),onSelect:(x,y)=>this.ui.selectMapTile(x,y),onPlayerShipClick:()=>this.ui.playerShipPanel()});
 
     this.accumulator=0;
     this.lastFrame=performance.now();
     this.lastHudFrame=0;
+    this.animationFrameHandler=now=>this.loop(now);
     this.renderAll();
-    requestAnimationFrame(now=>this.loop(now));
-    document.addEventListener("visibilitychange",()=>{if(document.hidden)this.repo.save(this.state)});
+    this.rafId=requestAnimationFrame(this.animationFrameHandler);
+    document.addEventListener("visibilitychange",this.onVisibilityChange);
     queueMicrotask(()=>{
+      if(this.disposed)return;
       this.reconcileCorporateEvents();
       if(this.state.company.gameOver)this.ui.gameOver?.();
       else if(this.state.company.pendingEvents?.length)this.beginCorporateEventQueueIfNeeded(this.state.speed);
@@ -228,7 +241,7 @@ class MineITApp {
 
   hardReset(){
     if(!confirm("Erase all MineIT saves on this browser?"))return;
-    this.repo.clearAll();const fresh=createGameState(this.contracts.first());Object.keys(this.state).forEach(k=>delete this.state[k]);Object.assign(this.state,fresh);this.events.ensure(this.state.company);this.afterEventQueueAction=null;
+    this.repo.clearAll();this.store.replaceState(createGameState(this.contracts.first()),{label:"hard-reset",notify:false});this.events.ensure(this.state.company);this.afterEventQueueAction=null;
     this.portfolio.ensure(this.state);this.land.ensure(this.state);this.development.sync(this.state);this.portfolio.captureActive(this.state,true);this.gameLog.ensure(this.state);
     this.gameLog.event(this.state,"corporation-founded","Mining corporation reset and Contract 01 established.",{build:"5.8.1"});
     this.prepareActive();this.ui.modal.classList.add("hidden");this.ui.tilePanel.classList.add("hidden");this.renderAll();this.repo.save(this.state);this.ui.landSelection();
@@ -267,8 +280,6 @@ class MineITApp {
     for(const order of arrivals)this.gameLog.event(local,"transport-arrived",`Dedicated transport delivered ${formatNumberSafe(order.amount)} colonists to ${entryName}.`,{quantity:order.amount,cost:order.cost,population:local.pop,orderId:order.id},local.colonyId,entryName);
     this.engine.recalculate(local);
 
-    // Evaluate both conditions before changing contract status so a contract
-    // decision and a ship due on the same corporation day are both queued.
     const deadline=this.contracts.deadlineState(local),shipDue=this.trade.shouldArrive(local);
     if(deadline)this.queueContractDecision(local,deadline,entryName);
     if(shipDue){
@@ -291,8 +302,6 @@ class MineITApp {
     this.events.ensure(company);this.portfolio.captureActive(this.state,true);
     const ids=this.state.portfolio.colonies.map(entry=>entry.id);
     this.events.sanitize(company,ids);
-    // Anything already persisted in the queue is, by definition, already
-    // waiting when this session starts. Docked ships get top recovery priority.
     for(const event of company.pendingEvents)if(event.type==="ship")event.recovered=true;
 
     const recover=(local,name)=>{
@@ -412,6 +421,7 @@ class MineITApp {
   }
 
   loop(now){
+    if(this.disposed)return;
     this.diagnostics.heartbeat++;
     try{
       const delta=Math.min(120,now-this.lastFrame);this.lastFrame=now;
@@ -421,13 +431,31 @@ class MineITApp {
       }
       if(now-this.lastHudFrame>=125){this.lastHudFrame=now;this.ui.render();this.tradeUI.render();}
     }catch(e){this.diagnostics.error("animation loop failed",e);}
-    requestAnimationFrame(next=>this.loop(next));
+    if(!this.disposed)this.rafId=requestAnimationFrame(this.animationFrameHandler);
+  }
+
+  dispose({save=true}={}){
+    if(this.disposed)return;
+    if(save&&this.repo&&this.store)this.repo.save(this.state);
+    this.disposed=true;
+    if(this.rafId!==null){cancelAnimationFrame(this.rafId);this.rafId=null;}
+    removeEventListener("error",this.onWindowError);
+    removeEventListener("unhandledrejection",this.onUnhandledRejection);
+    document.removeEventListener("visibilitychange",this.onVisibilityChange);
+    this.ui?.dispose?.();
+    this.tradeUI?.dispose?.();
+    this.view?.dispose?.();
+    this.repo?.setBeforeSave(null);
+    this.store?.dispose?.();
+    this.onWindowError=null;this.onUnhandledRejection=null;this.onVisibilityChange=null;this.animationFrameHandler=null;
+    if(bootApp===this)bootApp=null;
   }
 }
 
 function formatNumberSafe(value){const n=Number(value)||0;return Math.abs(n)>=1000?Math.round(n).toLocaleString():n>=10?Math.round(n).toString():n.toFixed(1).replace(/\.0$/,"");}
 
-addEventListener("DOMContentLoaded",()=>{
-  try{const app=new MineITApp();window.mineIT=app;window.mineITBoot=app;}
-  catch(error){console.error(error);const app=window.mineITBoot;app?.diagnostics?.error("startup failed",error);const badge=document.querySelector("#errorBadge");if(badge){badge.textContent="STARTUP ERROR • TAP FOR DETAILS";badge.classList.remove("hidden");if(app?.ui)badge.onclick=()=>app.ui.diagnosticsPanel();}}
-});
+const startMineIT=()=>{
+  try{bootApp=new MineITApp();}
+  catch(error){console.error(error);const app=bootApp;app?.diagnostics?.error("startup failed",error);const badge=document.querySelector("#errorBadge");if(badge){badge.textContent="STARTUP ERROR • TAP FOR DETAILS";badge.classList.remove("hidden");if(app?.ui)badge.onclick=()=>app.ui.diagnosticsPanel();}}
+};
+addEventListener("DOMContentLoaded",startMineIT,{once:true});
