@@ -44,7 +44,9 @@ export function buildingCost(kind,level=1,terrainMultiplier=1){
 }
 export function buildingTechCategory(kind){return buildingDefinition(kind)?.tech||null;}
 export function localBuildings(state,kind=null){return Object.values(state?.tiles||{}).filter(tile=>buildingKind(tile?.development)&&(!kind||tile.development.kind===kind));}
-export function builtCapacity(state,kind){return localBuildings(state,kind).reduce((sum,tile)=>sum+buildingCapacity(kind,tile.development.level),0);}
+export function productionStopped(tile){return tile?.development?.productionStopped===true;}
+export function operatingBuildings(state,kind=null){return localBuildings(state,kind).filter(tile=>tile.development.kind==="housing"||!productionStopped(tile));}
+export function builtCapacity(state,kind){return operatingBuildings(state,kind).reduce((sum,tile)=>sum+buildingCapacity(kind,tile.development.level),0);}
 export function maxBuiltLevel(state,kind){return localBuildings(state,kind).reduce((max,tile)=>Math.max(max,buildingLevel(tile.development)),0);}
 
 export function syncBuildingTotals(state){
