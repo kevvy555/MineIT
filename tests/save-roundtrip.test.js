@@ -11,7 +11,9 @@ const state=createGameState(contracts.first());portfolio.ensure(state);expansion
 const firstId=state.colonyId;
 
 state.company.cash=987654;
-state.company.tech={housing:3,power:4,food:2,industry:3,mining:5};
+state.company.tech={housing:3,power:4,food:2,industry:3,mining:5,scanning:4};
+state.colony.tech={housing:2,power:3,food:2,industry:2,mining:4,scanning:3};
+state.colony.engineeringDeployments=[{id:"roundtrip-engineering",colonyId:firstId,status:"preparing",orderAbsoluteDay:12,preparationDaysRemaining:3,transportCost:5000,packageSubtotal:15000,paidTotal:20000,upgrades:[{category:"mining",level:5,techId:"mining-5",name:"Rotary Drilling",packageCost:15000}]}];
 state.company.pendingEvents.push({id:"roundtrip-event",type:"ship",colonyId:firstId,colonyName:state.contract.colonyName,absoluteDay:42});
 
 const second=contracts.make(contracts.archetype({arch:"arid"}),2,0);second.colonyName="Roundtrip Secondary";portfolio.addColony(state,second);assert.equal(state.portfolio.colonies.length,2);
@@ -34,6 +36,8 @@ portfolio.captureActive(state,true);
 const expected={
   cash:state.company.cash,
   tech:{...state.company.tech},
+  localTech:{...state.colony.tech},
+  engineering:JSON.parse(JSON.stringify(state.colony.engineeringDeployments)),
   colonies:state.portfolio.colonies.map(c=>({id:c.id,name:c.name})),
   activeId:state.colonyId,
   pop:state.pop,
@@ -46,9 +50,12 @@ const serialized=JSON.stringify(state);
 assert.ok(serialized.length>1000,"realistic save should contain substantial state");
 const loaded=normalizeState(JSON.parse(serialized));portfolio.ensure(loaded);expansion.ensure(loaded);
 
-assert.equal(loaded.version,9);
+assert.equal(loaded.version,10);
 assert.equal(loaded.company.cash,expected.cash);
 assert.deepEqual(loaded.company.tech,expected.tech);
+assert.deepEqual(loaded.colony.tech,expected.localTech);
+assert.deepEqual(loaded.colony.engineeringDeployments,expected.engineering);
+assert.equal(loaded.colony.spaceport.level,1);
 assert.equal(loaded.company.pendingEvents.length,expected.eventCount);
 assert.deepEqual(loaded.portfolio.colonies.map(c=>({id:c.id,name:c.name})),expected.colonies);
 assert.equal(loaded.colonyId,expected.activeId);
@@ -65,4 +72,6 @@ portfolio.captureActive(loaded,true);const serializedAgain=JSON.stringify(loaded
 assert.equal(loadedAgain.portfolio.colonies.length,2);
 assert.equal(expansion.ship(loadedAgain).passengers,expected.ship.passengers);
 assert.equal(expansion.fuelAmount(loadedAgain),expected.ship.fuel);
-console.log("MineIT realistic multi-colony + player-ship save round-trip passed");
+assert.equal(loadedAgain.colony.engineeringDeployments[0].status,"preparing");
+assert.equal(loadedAgain.colony.tech.scanning,expected.localTech.scanning);
+console.log("MineIT realistic multi-colony + player-ship + engineering-deployment save round-trip passed");
