@@ -22,9 +22,19 @@ async function run(){
   const modal=d.getElementById('modal'),tilePanel=d.getElementById('tilePanel');
   for(const id of['coloniesBtn','techBtn','menuBtn','tradeBtn']){
     const b=d.getElementById(id);if(!b||b.disabled)continue;
-    modal?.classList.add('hidden');tilePanel?.classList.add('hidden');b.click();await sleep(100);
+    modal?.classList.add('hidden');tilePanel?.classList.add('hidden');b.click();await sleep(id==='techBtn'?250:100);
     const runtimeError=!!d.querySelector('#errorBadge:not(.hidden)');if(!modal||modal.classList.contains('hidden'))fail.push(id+':did not open modal'+(runtimeError?':runtime error':''));
-    modal?.querySelector('[data-close]')?.click();modal?.classList.add('hidden');await sleep(30);
+    if(id==='techBtn'){
+      const screen=d.querySelector('[data-technology-screen]');if(!screen)fail.push('technology full-screen workspace missing');else{
+        if(screen.scrollHeight>screen.clientHeight+2)fail.push('technology screen has outer vertical scroll '+screen.scrollHeight+'>'+screen.clientHeight);
+        if(d.querySelectorAll('[data-tech-category]').length!==6)fail.push('technology category selector count');
+        if(!d.querySelector('[data-tech-package-contents] .technology-package-item'))fail.push('technology package contents missing');
+        if(!d.querySelector('[data-tech-costs] .technology-cost-row.total'))fail.push('technology cost total missing');
+        if(!d.querySelector('[data-tech-delivery-summary]'))fail.push('technology delivery ledger summary missing');
+        const scanning=[...d.querySelectorAll('[data-tech-category]')].find(x=>x.textContent.includes('SCANNING'));if(!scanning)fail.push('scanning category missing');else{scanning.click();await sleep(40);if(d.querySelectorAll('[data-tech-level]').length!==10)fail.push('scanning must expose ten compact level selectors');if(!/SCANNING/.test(d.querySelector('[data-tech-path-label]')?.textContent||''))fail.push('technology category interaction did not update detail');}
+      }
+    }
+    modal?.querySelector('[data-tech-close]')?.click();modal?.querySelector('[data-close]')?.click();modal?.classList.add('hidden');await sleep(30);
   }
   out.textContent=fail.length?'FAIL '+fail.join(' | '):'PASS presentation layout, unified map, contextual actions and footer controls';
 }
