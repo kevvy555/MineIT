@@ -1,7 +1,7 @@
 # Stage 8 Feature — Scanning Resurvey and Buried Resources
 
 Status: **Not Started**  
-Design state: **Approved for implementation after review**
+Design state: **Pending user review before implementation**
 
 ## Purpose
 
