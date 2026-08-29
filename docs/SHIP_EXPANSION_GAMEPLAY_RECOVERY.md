@@ -1,101 +1,328 @@
 # Ship Expansion Gameplay — Recovery Plan
 
-Branch: `feature/ship-expansion-gameplay`
+Branch: `feature/ship-expansion-gameplay`  
 Base: `develop`
 
-## Status
+## Current status
 
-**Implementation complete and branch CI green.**
+The original ShipExpansion gameplay batch is complete and the **Engineering Ship / Spaceport technology-delivery foundation for Progression Stage 8 is now implemented and validated**.
 
-Latest gameplay-validation commit: `a13cedd75cb8b352f6f7699c4a5b39bda388cfc0`
-Passing GitHub Actions run: `33161638300`
+Stage 8 itself remains **In Progress** because specialised player-designed freight ships, scalable ore transport and the wider logistics network are still future work.
 
-That run passed both:
+Latest gameplay-validation commit: `1da0182adfb76682cced262921f7f399f142e7c0`  
+Passing GitHub Actions run: `33256279805`  
+Passing job: `99110466141`
+
+That exact-head run passed:
 
 - full unit / regression / domain coverage suite;
+- Engineering Ship / Spaceport / Mining-Scanning delivery regression;
+- save-v10 migration and realistic save round-trip;
+- long simulation soak;
 - browser startup and presentation interaction probes.
 
-No merge to `develop` has been performed from this recovery work.
+No PR or merge to `develop` has been performed.
 
-## Agreed rules
+---
 
-- Player ship total physical capacity: 12,000 units.
-- General hold: 8,000 units.
-- Dedicated transit Food store: 2,000 units.
-- Dedicated Fuel tank: 2,000 units.
-- Food in the general hold can also be consumed during transit after dedicated Food is exhausted.
-- Minimum launch crew: 10 colonists.
-- A travelling/arrived ship may be rerouted from its live position when remaining Fuel/Food can support the new route.
-- Colony stock reserve is one numeric amount per colony and applies to every resource.
-- Zero Food immediately removes workforce. Food starvation does not cause mortality until 30 complete days without Food. Power mortality is unchanged.
-- Natural population growth is removed; new colonists must come from explicit transfer/expansion mechanics.
-- Corporate Ship colonist MAX SAFE is a convenience based on sustainable Food surplus and may be manually overridden up to hard housing/power/passenger limits.
-- Galaxy generation guarantees at least two frontier systems inside Corporate supply range.
+## Canonical progression tracking
 
-## Completed domain work
+Top-level progression status is maintained in:
 
-- [x] Separate player-ship cargo/Food/Fuel capacities and save migration (`EXPANSION_VERSION=2`).
-- [x] Minimum 10-colonist launch rule.
-- [x] Live-position rerouting with remaining route supply validation.
-- [x] Transit Food consumption from dedicated store then general-hold Food.
-- [x] Two guaranteed nearby generated frontier systems.
-- [x] Stop/start production domain state for extraction, Power and Industry.
-- [x] Stopped extraction removed from collection/workforce/power load.
-- [x] Stopped Power/Industry removed from operational capacity totals.
-- [x] Positive renewable-harvest changes blocked when no free workforce exists.
-- [x] 30-day zero-Food mortality grace and zero-Food workforce shutdown.
-- [x] Natural population growth removed.
-- [x] Colony-wide stock reserve with legacy per-resource reserve migration.
-- [x] Corporate Ship category sell-all quote/actions in `TradeService`.
-- [x] Food-safe colonist transfer helper calculations while retaining manual override.
-- [x] Sole-colony unaffordable contract extension transitions to corporation failure state.
-- [x] New-colony founding transfers all remaining general cargo, dedicated Food, dedicated Fuel and passengers from the player ship into the colony transaction.
+`docs/PLAYER_PROGRESSION_STAGES.md`
 
-## Completed UI work
+Current relevant state:
 
-- [x] Corporate Ship Sell All Food / Build / Fuel / Ore controls with values.
-- [x] Corporate Ship colonist MAX SAFE control and projected Food surplus.
-- [x] Housing / Industry / Power map focus controls added and restricted to matching developed buildings.
-- [x] Player ship preparation shows separate general hold, transit Food and Fuel capacities plus route requirements.
-- [x] Player ship preparation supports increment/decrement controls for cargo, Fuel, Food and colonists.
-- [x] Star Map allows the travelling/arrived player ship to be selected and inspected.
-- [x] Star Map supports live-position rerouting through `ExpansionService`.
-- [x] Persistent `STAR MAP` footer action added alongside Corporate Ship and menu controls with mobile-fit layout.
-- [x] Building details expose Stop Production / Start Production through the canonical production-state service path.
-- [x] Renewable harvest UI surfaces workforce-blocked adjustments rather than allowing invalid increases.
-- [x] Colony Summary owns the single colony-wide stock-reserve editor; the old per-resource reserve entry point is removed.
-- [x] Critical Food/Fuel warning presentation added for <=10 days of supply.
-- [x] Full-screen corporation-failed report added for unaffordable final-colony contract failure.
-- [x] Corporate Home / frontier logistics and player-ship routing continue through the existing canonical controller chain.
-- [x] Temporary parallel `ship-gameplay-extension.js` implementation removed.
+- Stages 1–7: **Complete**
+- Stage 8 Logistics Bottleneck: **In Progress**
+- Stages 9–22: **Not Started**
 
-## Completed validation
+Stage 8 now has its physical technology/logistics-support foundation, but must not move to Complete until the specialised freight/logistics gameplay loop exists end-to-end.
 
-- [x] Architecture ownership guards pass.
-- [x] Controller mutation-boundary guards pass.
-- [x] CSS ownership / orphan checks pass.
-- [x] Save round-trip including player ship and multi-colony state passes.
-- [x] Legacy reserve/save migration regression passes.
-- [x] Ship capacity / Food / Fuel / minimum-crew regression passes.
-- [x] Live rerouting regression passes.
-- [x] New-colony manifest transfer regression passes.
-- [x] Zero-Food workforce and 30-day starvation grace regression passes.
-- [x] Natural-population-growth removal regression passes.
-- [x] Corporate trade / reserve / category sell-all regression passes.
-- [x] Building filter and production-control ownership regression passes.
-- [x] Contract-failure and sole-player-ship-loss paths covered.
-- [x] Long simulation soak test passes.
-- [x] Browser startup probe passes.
-- [x] Presentation interaction / mobile interaction probes pass.
-- [x] Full branch CI green before PR/merge.
+---
 
-## Test history
+## Original ShipExpansion rules already complete
 
-- Initial corrected ship-domain slice passed branch CI on `ec510f46a726761ff731691b4b0171c32bc126b0`.
-- During completion, stale assertions for shared ship capacity, per-resource reserves, old Help copy and the pre-Star-Map footer were migrated to the agreed gameplay rules.
-- The final ShipExpansion fixture was corrected to address explicit stocked resource lots rather than whichever starter lot happened to appear first in inventory.
-- GitHub Actions run `33161638300` on `a13cedd75cb8b352f6f7699c4a5b39bda388cfc0` completed successfully, including browser/presentation probes.
+- Player colony-establishment ship total physical capacity: 12,000.
+  - 8,000 general hold.
+  - 2,000 dedicated Food store.
+  - 2,000 dedicated Fuel tank.
+- Food may also occupy the general hold and supplements transit Food.
+- Minimum 10 colonists before launch/interstellar continuation.
+- Mid-transit reroute uses the live interpolated position; consumed supplies remain consumed and the new route must be supportable by remaining Food/Fuel.
+- One colony-wide stock reserve amount applies to every resource.
+- Zero Food immediately removes workforce; Food mortality begins only after 30 complete zero-Food days.
+- Natural population growth is disabled; population increases only through explicit mechanics.
+- Corporate colonist MAX SAFE is a convenience control; manual transfer remains allowed within hard housing/power/passenger/cash constraints.
+- At least two frontier systems are generated inside Corporate Ship service range.
+- Stop Production removes the relevant output, inputs, workforce and operational loads; Start Production resumes them.
+- Sole-colony contract failure with an unaffordable extension produces corporation failure rather than a stuck deadline state.
+- Full-screen corporation-failed report exists.
+- Critical Food/Fuel warnings exist at <=10 days.
+- Housing / Industry / Power building-only map filters exist.
+- Ship preparation supports loading and decrement/unloading controls for cargo, Food, Fuel and colonists.
+- Persistent Star Map footer action exists.
+- In-transit ship is selected and rerouted through the Star Map.
+- New-colony founding transfers all remaining cargo, dedicated Food, dedicated Fuel and passengers into the new colony.
+- Temporary parallel `ship-gameplay-extension.js` was removed; canonical controllers own the behavior.
 
-## Recovery / handoff note
+---
 
-If work resumes in another chat/session, start from this file and the head of `feature/ship-expansion-gameplay`. The implementation checklist is complete. The next lifecycle action is review/PR handling against `develop`; do not merge automatically without the requested review/merge decision. Keep gameplay rules in domain services and preserve the current canonical controller chain.
+# Engineering Ship / Spaceport Foundation
+
+Design source:
+
+`docs/Progression Stages/Stage 8/EngineeringShipAndSpaceport.md`
+
+Final design-rules commit:
+
+`d06e61c13560616839652025874181ece5aa5d21` — `Finalize engineering ship dispatch and pricing rules`
+
+## Locked delivery rules
+
+Technology is no longer an abstract instant activation at the target colony.
+
+A colony capability upgrade now follows this physical lifecycle:
+
+**AVAILABLE → ORDERED / SAME-DAY BATCH → PREPARING → IN TRANSIT → ORBITAL HOLDING OR LANDED → COMMISSIONING → ACTIVE → COMPLETE**
+
+Key rules:
+
+- Same-colony upgrades ordered on the same game day share one Engineering Deployment.
+- A deployment spends **5 full game days preparing** before launch.
+- The first upgrade in a deployment pays:
+  - its individual package price;
+  - one fixed Engineering Ship transport price.
+- Further same-day upgrades in that deployment pay only their individual package price.
+- There is no percentage discount on technology packages.
+- Batching savings come solely from avoiding additional Engineering Ship transport charges.
+- Pre-launch cancellation is supported throughout preparation.
+- Post-launch cancellation is not supported.
+- Engineering Ship transport price is fixed for the current feature rather than distance-based.
+- Remote colonies outside normal Corporate Ship service radius remain valid Engineering Ship destinations.
+- Exact transport-price value, Engineering Ship travel-speed formula, commissioning duration and future berth classes remain balance constants/deferred design rather than hard gameplay architecture.
+
+Current provisional balance constant for Engineering Ship transport: **£5,000**.
+
+---
+
+## Mining / Scanning split
+
+Corporate capability now contains separate Mining and Scanning paths.
+
+- Mining: 10 levels.
+- Scanning: 10 levels.
+- Combined Mining + Scanning package progression preserves the economic scale previously carried by the single Mining path.
+- Existing saves migrate Scanning from their prior Mining level.
+- Existing contract/planet Scanning requirements migrate from their prior Mining requirement where absent.
+
+Scanning now controls discovery fidelity independently from Mining exploitation capability.
+
+Higher-tier resources may appear as unresolved anomalies when colony Scanning is insufficient. Once the required Scanning capability is physically deployed, the tile can be surveyed again and resolves to the same deterministic hidden resource.
+
+---
+
+## Corporate access vs colony-deployed capability
+
+This distinction is now canonical and important:
+
+- `company.tech` = corporation-level authorised/highest capability context.
+- `colony.tech` = capability physically commissioned and active at the current colony.
+
+Operational systems must use **deployed colony capability**, not merely corporate access.
+
+This is enforced for:
+
+- Mining/extraction capability;
+- Food production capability;
+- Housing building upgrades;
+- Power building upgrades;
+- Industry building upgrades;
+- Scanning/discovery capability;
+- local operational technology effects.
+
+Corporate access remains appropriate for corporation-level eligibility such as expansion/prospect requirements where the corporation is deciding whether it has access to the required package.
+
+### Important bug found during implementation
+
+A regression pass found that `DevelopmentService` was still reading `state.company.tech` for Housing/Power/Industry building gates. This meant purchasing/authorising a package could unlock a local building before its Engineering Ship physically arrived.
+
+Fixed in:
+
+`de0314aec4a0dec8b88e00d91e7a0582e019e265` — `Gate local buildings on deployed colony technology`
+
+`DevelopmentService` now reads `state.colony.tech`, and regression coverage proves company access alone does not activate local building upgrades.
+
+---
+
+## Engineering Deployment implementation
+
+Core implementation commit:
+
+`fee3f0929ca064093284b02aa308131e64320942` — `Implement engineering-delivered colony technology`
+
+Canonical lifecycle ownership lives in `TechnologyService` and daily progression is driven from the simulation/day-processing path.
+
+Persisted deployment states include:
+
+- `batching`
+- `preparing`
+- `in-transit`
+- `orbital-holding`
+- `landed`
+- `commissioning`
+- `complete`
+- `cancelled`
+
+Deployment records preserve the upgrade packages, costs, timing and lifecycle state through save/load.
+
+Engineering specialists remain ship-based:
+
+- they do not join colony population;
+- they do not consume colony Housing;
+- they do not consume player-ship passenger capacity.
+
+---
+
+## Spaceport foundation
+
+A Basic Spaceport is now persistent colony infrastructure at canonical tile `(0,0)`.
+
+Shared berth accounting is owned by:
+
+`js/domain/spaceport-model.js`
+
+The same berth model counts:
+
+- landed player colony ship;
+- docked Corporate Ship;
+- landed/commissioning Engineering Ships.
+
+If no berth is available:
+
+- an arriving Engineering Ship enters Orbital Holding;
+- an arriving Corporate Ship enters Orbital Holding rather than bypassing the Spaceport.
+
+The Basic Spaceport state is added during save-v10 migration without resetting existing colony progress.
+
+The player-ship presentation now identifies the persistent Spaceport even when the player ship is elsewhere, and the landed player-ship menu exposes the Spaceport berth/orbital-holding panel.
+
+Future freight ships should reuse this same berth model rather than adding a second landing-capacity system.
+
+---
+
+## Save migration
+
+Runtime save schema is now **v10**.
+
+Migration preserves existing games by:
+
+- adding `scanning` from previous Mining level when missing;
+- giving existing colonies deployed capability equivalent to their prior technology state;
+- migrating missing Scanning requirements from Mining requirements;
+- adding Basic Spaceport state;
+- preserving Engineering Deployment lifecycle state through round-trip serialization.
+
+Relevant save/regression coverage includes `tests/save-roundtrip.test.js` and `tests/technology-delivery.test.js`.
+
+---
+
+## Presentation work
+
+Engineering Ship / Scanning presentation commit:
+
+`bf4c6d1d89546e8917947de649b25548733c5a38` — `Add Engineering Ship and Scanning presentation`
+
+Implemented presentation includes:
+
+- separate Scanning technology path;
+- deployed/current/ordered capability states;
+- Engineering Deployment list;
+- included upgrade packages;
+- package subtotal;
+- fixed Engineering Ship transport cost;
+- paid total;
+- shared-transport saving;
+- preparation/transit/orbital-holding/commissioning state;
+- pre-launch cancellation action;
+- unresolved-anomaly Scanning requirement and re-survey path;
+- Spaceport berth/landed/orbital-holding panel.
+
+Spaceport/player-ship navigation polish is covered by:
+
+`1da0182adfb76682cced262921f7f399f142e7c0` — `Protect Spaceport player ship navigation`
+
+---
+
+## Validation state
+
+Passing exact gameplay head before this documentation refresh:
+
+- Commit: `1da0182adfb76682cced262921f7f399f142e7c0`
+- Workflow run: `33256279805`
+- Job: `99110466141`
+- Result: **SUCCESS**
+
+Validated:
+
+- [x] architecture baseline and ownership guards;
+- [x] controller mutation-boundary guards;
+- [x] zero versioned-JS/query-import/large-template architecture debt;
+- [x] CSS ownership/orphan checks;
+- [x] Engineering Ship five-day preparation;
+- [x] fixed transport + package pricing;
+- [x] same-day batching and shared-transport saving;
+- [x] pre-launch cancellation and post-launch lockout;
+- [x] Engineering Ship orbital holding and berth release;
+- [x] Corporate Ship orbital holding through the same Spaceport model;
+- [x] commissioning before capability activation;
+- [x] specialists do not consume population/Housing;
+- [x] Mining/Scanning split and migrated economic guards;
+- [x] unresolved-resource re-survey after Scanning deployment;
+- [x] local buildings require deployed colony technology;
+- [x] save-v10 migration and realistic save round-trip;
+- [x] original ShipExpansion capacity/reroute/new-colony transfer rules;
+- [x] long simulation soak;
+- [x] browser startup;
+- [x] browser/presentation interaction tests.
+
+---
+
+## Next logical Stage 8 work
+
+Do **not** redesign the colony-establishment ship into an ore hauler.
+
+The next major gameplay loop is the actual logistics bottleneck solution:
+
+1. player-designed/built freight ships;
+2. ship size/hull and cargo capacity choices;
+3. engines/range/Fuel/speed trade-offs;
+4. freight operating/build costs;
+5. scalable ore/resource hauling independent of the Corporate Ship;
+6. routes between colonies, buyers and future logistics hubs;
+7. later planets/moons/stations as refuelling/storage/transfer hubs;
+8. eventual buyer/contract/refining systems described in Progression Stages 9–12.
+
+The intended economic pressure remains a rotating bottleneck:
+
+**Production Rate → Transport Capacity → Buyer Demand**
+
+There should be no permanent hard ceiling on profit. Expansion should move the current constraint rather than create a final fixed capacity limit.
+
+---
+
+## Recovery / handoff
+
+If another chat/session resumes this work:
+
+1. start from the head of `feature/ship-expansion-gameplay`;
+2. read this file;
+3. read `docs/PLAYER_PROGRESSION_STAGES.md`;
+4. read `docs/Progression Stages/Stage 8/EngineeringShipAndSpaceport.md`;
+5. preserve `TechnologyService` as canonical owner of capability deployment;
+6. preserve `spaceport-model.js` as canonical berth accounting;
+7. keep operational technology gates on `colony.tech`, not `company.tech`;
+8. keep Stage 8 **In Progress** until specialised freight/logistics is playable end-to-end;
+9. update this recovery file and the progression tracker whenever meaningful Stage 8 progress is committed.
+
+No PR or merge should be created automatically without an explicit user request.
