@@ -2,14 +2,16 @@ import { UIController as LegacyUIController } from "./cash-policy-ui.js";
 import { formatMoney,formatNumber } from "../core/utils.js";
 import { loadViewTemplate } from "../core/view-template.js";
 import { BUILDING_MODEL,SHIP_INFRASTRUCTURE,buildingCapacity,localBuildings,syncBuildingTotals } from "../domain/building-model.js";
+import { berthStatus } from "../domain/spaceport-model.js";
 
 const LOCAL_KINDS=["housing","power","industry"];
-const TECH_LABELS={housing:"HOUSING",power:"POWER",food:"FOOD PRODUCTION",industry:"INDUSTRY",mining:"MINING / EXTRACTION"};
+const TECH_LABELS={housing:"HOUSING",power:"POWER",food:"FOOD PRODUCTION",industry:"INDUSTRY",mining:"MINING / EXTRACTION",scanning:"SCANNING / PROSPECTING"};
 const VIEW_PATHS={
   buildChoice:"./views/build-choice.html",
   localBuilding:"./views/local-building-panel.html",
   localInfrastructure:"./views/local-infrastructure-card.html",
-  technology:"./views/corporate-technology.html"
+  technology:"./views/corporate-technology.html",
+  spaceport:"./views/spaceport-panel.html"
 };
 const findMetric=(root,label)=>[...root.querySelectorAll(".metric")].find(m=>m.querySelector("small")?.textContent.trim()===label)||null;
 
@@ -91,40 +93,55 @@ export class UIController extends LegacyUIController{
   }
   colonyPanel(){if(this.state.status==="dead")return super.colonyPanel();return this.landColonyPanel();}
 
-  company(){super.company();const body=this.modal.querySelector(".grid2");if(!body)return;for(const [label,cat] of [["Housing technology","housing"],["Industry technology","industry"]])this.appendMetric(body,label,`L${this.technology.level(this.state,cat)}`);}
+  company(){super.company();const body=this.modal.querySelector(".grid2");if(!body)return;for(const [label,cat] of [["Housing capability (colony)","housing"],["Industry capability (colony)","industry"],["Scanning capability (colony)","scanning"]])this.appendMetric(body,label,`L${this.technology.level(this.state,cat)}`);}
   techEffect(category,tech){
     if(category==="housing")return`Allows Housing buildings up to L${tech.level} • L${tech.level} provides ${formatNumber(buildingCapacity("housing",tech.level))} housing per building`;
     if(category==="power")return`Allows Power buildings up to L${tech.level} • L${tech.level} generates ${formatNumber(buildingCapacity("power",tech.level))} • fuel intensity ${tech.fuelIntensity.toFixed(3)}×`;
     if(category==="food")return`Allows Food facilities up to L${tech.level} • production ×${tech.productionMultiplier.toFixed(2)}${tech.syntheticFood?` • synthetic food ${formatNumber(tech.syntheticFood)}/day`:""}`;
     if(category==="industry")return`Allows Industry buildings up to L${tech.level} • L${tech.level} provides ${formatNumber(buildingCapacity("industry",tech.level))} Industry • Ore use ×${tech.oreEfficiency.toFixed(2)}`;
-    const unlocks=this.resources.catalog().filter(r=>r.miningLevel===tech.level&&!r.manufactured).map(r=>r.name);return`${unlocks.length?`Unlocks: ${unlocks.join(", ")}`:"Extraction-method licence"} • mining workforce ×${tech.workforceEfficiency.toFixed(2)}`;
+    if(category==="scanning")return`Detects resources requiring Scanning L${tech.level} • ${tech.surveySlots} survey slot${tech.surveySlots===1?"":"s"} • survey time ×${tech.scanTimeFactor.toFixed(3)} • hint tier ${tech.hintTier}`;
+    const unlocks=this.resources.catalog().filter(r=>r.miningLevel===tech.level&&!r.manufactured).map(r=>r.name);return`${unlocks.length?`Extraction equipment for: ${unlocks.join(", ")}`:"Advanced extraction equipment"} • mining workforce ×${tech.workforceEfficiency.toFixed(2)}`;
   }
 
   async tech(){
-    this.onRecalculate?.();if(this.showFutureTech===undefined)this.showFutureTech=true;const source=await this.loadPresentationView(VIEW_PATHS.technology,"corporate technology");if(!source)return;
-    const access=this.technology.canAccessStore(this.state),cats=["housing","power","food","industry","mining"];
-    this.open("Corporate Technology",source);const body=this.modal.querySelector(".modal-body");if(!body)return;
-    this.setPresentationText(body,"[data-tech-access-title]",access?"CORPORATE SYSTEMS ONLINE":"CORPORATE SYSTEMS UNAVAILABLE");this.setPresentationText(body,"[data-tech-access-text]",this.technology.accessText(this.state));this.setPresentationText(body,"[data-tech-toggle]",this.showFutureTech?"HIDE FUTURE TECH":"SHOW FUTURE TECH");
-    this.populateTechnologyPaths(body,cats,access);body.addEventListener("click",event=>this.handleTechnologyClick(event));
+    this.onRecalculate?.();if(this.showFutureTech===undefined)this.showFutureTech=true;const source=await this.loadPresentationView(VIEW_PATHS.technology,"corporate capability packages");if(!source)return;
+    const access=this.technology.canAccessStore(this.state),cats=["housing","power","food","industry","mining","scanning"];
+    this.open("Corporate Capability Packages",source);const body=this.modal.querySelector(".modal-body");if(!body)return;
+    this.setPresentationText(body,"[data-tech-access-title]",access?"CORPORATE ENGINEERING SUPPORT ONLINE":"CORPORATE ENGINEERING SUPPORT UNAVAILABLE");this.setPresentationText(body,"[data-tech-access-text]",this.technology.accessText(this.state));this.setPresentationText(body,"[data-tech-toggle]",this.showFutureTech?"HIDE FUTURE TECH":"SHOW FUTURE TECH");
+    this.populateEngineeringDeployments(body);this.populateTechnologyPaths(body,cats,access);body.addEventListener("click",event=>this.handleTechnologyClick(event));
+  }
+  populateEngineeringDeployments(body){
+    const deployments=this.technology.deployments(this.state,{activeOnly:true}),host=body.querySelector("[data-engineering-deployments]"),empty=body.querySelector("[data-engineering-empty]"),fragment=document.createDocumentFragment();this.setPresentationText(body,"[data-engineering-count]",deployments.length?`${deployments.length} ACTIVE`:"NONE");if(empty)empty.hidden=deployments.length>0;
+    for(const deployment of deployments){const row=this.cloneViewTemplate(body,"[data-engineering-deployment-template]");if(!row)continue;const card=row.querySelector("[data-engineering-deployment]");this.setPresentationText(card,"[data-engineering-title]",`ENGINEERING SHIP • ${deployment.upgrades?.length||0} UPGRADE${deployment.upgrades?.length===1?"":"S"}`);this.setPresentationText(card,"[data-engineering-status]",this.technology.deploymentStatusText(deployment));this.setPresentationText(card,"[data-engineering-upgrades]",(deployment.upgrades||[]).map(upgrade=>`${TECH_LABELS[upgrade.category]||upgrade.category} L${upgrade.level} — ${upgrade.name}`).join(" • "));this.setPresentationText(card,"[data-engineering-packages]",formatMoney(deployment.packageSubtotal||0));this.setPresentationText(card,"[data-engineering-transport]",formatMoney(deployment.transportCost||0));this.setPresentationText(card,"[data-engineering-total]",formatMoney(deployment.paidTotal||0));const saving=card.querySelector("[data-engineering-saving]");if(saving)saving.textContent=(deployment.sharedTransportSaving||0)>0?`Shared Engineering Ship transport saved ${formatMoney(deployment.sharedTransportSaving)} versus separate deployments.`:`Additional upgrades ordered today can share this Engineering Ship's transport charge.`;const cancel=card.querySelector("[data-engineering-cancel]");cancel.dataset.engineeringCancel=deployment.id;cancel.hidden=!["batching","preparing"].includes(deployment.status);fragment.append(row);}
+    host?.replaceChildren(fragment);
   }
   populateTechnologyPaths(body,cats,access){
     const host=body.querySelector("[data-tech-tree]"),paths=document.createDocumentFragment();
     for(const cat of cats){
-      const tree=this.technology.tree(cat),level=this.technology.level(this.state,cat),items=tree.filter(t=>this.showFutureTech||t.level<=level),path=this.cloneViewTemplate(body,"[data-tech-path-template]");if(!path)continue;
-      const section=path.querySelector("[data-tech-path]");this.setPresentationText(section,"[data-tech-path-label]",TECH_LABELS[cat]);this.setPresentationText(section,"[data-tech-path-level]",`L${level}/${tree.length}`);const roadmap=section.querySelector("[data-tech-roadmap]"),cards=document.createDocumentFragment();
-      for(const tech of items){const card=this.buildTechnologyCard(body,cat,tech,level,access);if(card)cards.append(card);}roadmap.replaceChildren(cards);paths.append(path);
+      const tree=this.technology.tree(cat),level=this.technology.level(this.state,cat),pending=this.technology.pendingForCategory(this.state,cat),pendingLevel=pending?.upgrades?.find(upgrade=>upgrade.category===cat)?.level||0,items=tree.filter(t=>this.showFutureTech||t.level<=level||t.level===pendingLevel),path=this.cloneViewTemplate(body,"[data-tech-path-template]");if(!path)continue;
+      const section=path.querySelector("[data-tech-path]");this.setPresentationText(section,"[data-tech-path-label]",TECH_LABELS[cat]);this.setPresentationText(section,"[data-tech-path-level]",`DEPLOYED L${level}/${tree.length}`);const roadmap=section.querySelector("[data-tech-roadmap]"),cards=document.createDocumentFragment();
+      for(const tech of items){const card=this.buildTechnologyCard(body,cat,tech,level,access,pending);if(card)cards.append(card);}roadmap.replaceChildren(cards);paths.append(path);
     }
     host?.replaceChildren(paths);
   }
-  buildTechnologyCard(body,category,tech,level,access){
-    const fragment=this.cloneViewTemplate(body,"[data-tech-card-template]");if(!fragment)return null;const card=fragment.querySelector("[data-tech-card]"),owned=tech.level<level,current=tech.level===level,next=tech.level===level+1,future=tech.level>level+1,stateClass=owned?"owned":current?"current":next?"next":"future",stateLabel=owned?"OWNED":current?"CURRENT":next?"NEXT":"LOCKED";
+  buildTechnologyCard(body,category,tech,level,access,pending){
+    const fragment=this.cloneViewTemplate(body,"[data-tech-card-template]");if(!fragment)return null;const card=fragment.querySelector("[data-tech-card]"),pendingUpgrade=pending?.upgrades?.find(upgrade=>upgrade.category===category&&upgrade.level===tech.level),ordered=!!pendingUpgrade,owned=tech.level<level,current=tech.level===level,next=tech.level===level+1,future=tech.level>level+1,stateClass=ordered?"next":owned?"owned":current?"current":next?"next":"future",stateLabel=ordered?this.technology.deploymentStatusText(pending):owned?"DEPLOYED":current?"ACTIVE":next?"AVAILABLE":"LOCKED";
     card.classList.add(stateClass);this.setPresentationText(card,"[data-tech-card-level]",`L${tech.level}`);this.setPresentationText(card,"[data-tech-card-name]",tech.name);this.setPresentationText(card,"[data-tech-card-state]",stateLabel);this.setPresentationText(card,"[data-tech-card-description]",tech.description);this.setPresentationText(card,"[data-tech-card-effect]",this.techEffect(category,tech));
-    const requirement=card.querySelector("[data-tech-card-requirement]");requirement.hidden=!future;if(future)requirement.textContent=`Requires ${TECH_LABELS[category]} L${tech.level-1}`;
-    const action=card.querySelector("[data-tech-card-action]");action.replaceChildren(this.technologyAction(category,tech,{owned,current,next,access}));return fragment;
+    const requirement=card.querySelector("[data-tech-card-requirement]");requirement.hidden=!future&&!ordered;if(future)requirement.textContent=`Requires deployed ${TECH_LABELS[category]} L${tech.level-1}`;else if(ordered)requirement.textContent="Paid package is awaiting Engineering Ship delivery and commissioning at this colony.";
+    const action=card.querySelector("[data-tech-card-action]");action.replaceChildren(this.technologyAction(category,tech,{owned,current,next,ordered,access}));return fragment;
   }
-  technologyAction(category,tech,{owned,current,next,access}){const node=document.createElement(next?"button":"span");if(next){node.dataset.techCat=category;node.disabled=!access||this.state.company.cash<tech.cost;node.textContent=formatMoney(tech.cost);}else node.textContent=current?"ACTIVE":owned?"✓":"🔒";return node;}
+  technologyAction(category,tech,{owned,current,next,ordered,access}){const actionable=next&&!ordered,node=document.createElement(actionable?"button":"span");if(actionable){const quote=this.technology.quoteOrder(this.state,category);node.dataset.techCat=category;node.disabled=!access||!quote.ok||this.state.company.cash<quote.total;node.textContent=quote.ok?`ORDER • ${formatMoney(quote.total)}${quote.joinsBatch?" • SHARED SHIP":""}`:quote.reason;}else node.textContent=ordered?"ORDERED":current?"ACTIVE":owned?"✓":"🔒";return node;}
   handleTechnologyClick(event){
+    const cancel=event.target.closest?.("[data-engineering-cancel]");if(cancel&&this.modal.contains(cancel)){const result=this.technology.cancelDeployment(this.state,cancel.dataset.engineeringCancel);if(result.ok){this.repo.save(this.state);this.toast(`Engineering Deployment cancelled • ${formatMoney(result.refund)} refunded.`);this.tech();}else this.toast(result.reason);return;}
     const toggle=event.target.closest?.("[data-tech-toggle]");if(toggle){this.showFutureTech=!this.showFutureTech;this.tech();return;}
-    const button=event.target.closest?.("[data-tech-cat]");if(!button||!this.modal.contains(button))return;const result=this.technology.buy(this.state,button.dataset.techCat);if(result.ok){this.onRecalculate?.();this.repo.save(this.state);this.toast(`${result.tech.name} licensed permanently.`);this.tech();}else this.toast(result.reason);
+    const button=event.target.closest?.("[data-tech-cat]");if(!button||!this.modal.contains(button))return;const result=this.technology.orderUpgrade(this.state,button.dataset.techCat);if(result.ok){this.repo.save(this.state);this.toast(result.joinsBatch?`${result.tech.name} added to today's Engineering Ship deployment.`:`${result.tech.name} ordered • Engineering Ship preparation starts at day end.`);this.tech();}else this.toast(result.reason);
   }
+
+  async spaceportPanel(){
+    const source=await this.loadPresentationView(VIEW_PATHS.spaceport,"spaceport");if(!source)return false;const status=berthStatus(this.state);this.open(`${this.state.contract?.colonyName||"Colony"} — Spaceport`,source);const body=this.modal.querySelector(".modal-body");if(!body)return false;this.setPresentationText(body,"[data-spaceport-level]",`L${status.level}`);this.setPresentationText(body,"[data-spaceport-berths]",`${status.used} / ${status.capacity}`);this.setPresentationText(body,"[data-spaceport-free]",status.free);
+    this.renderSpaceportShips(body,"[data-spaceport-landed]","[data-spaceport-landed-empty]",status.occupants.map(ship=>({name:ship.label,detail:ship.type==="engineering-ship"?this.technology.deploymentStatusText(ship.deployment):ship.type==="corporate-ship"?"Conglomerate trade/support visit":"Player-owned colony ship"})));
+    const orbit=[];if(this.state.trade?.orbitalHolding)orbit.push({name:"Corporate Ship",detail:"ORBITAL HOLDING — waiting for Spaceport berth"});for(const deployment of this.technology.deployments(this.state,{activeOnly:true}).filter(d=>d.status==="orbital-holding"))orbit.push({name:"Engineering Ship",detail:`${this.technology.deploymentStatusText(deployment)} • ${(deployment.upgrades||[]).map(u=>`${TECH_LABELS[u.category]||u.category} L${u.level}`).join(", ")}`});this.renderSpaceportShips(body,"[data-spaceport-orbit]","[data-spaceport-orbit-empty]",orbit);
+    const company=body.querySelector("[data-spaceport-company]");if(company)company.onclick=()=>this.company();const player=body.querySelector("[data-spaceport-player-ship]"),ship=this.state.company?.expansion?.ship,docked=ship?.status==="docked"&&ship.colonyId===this.state.colonyId;if(player){player.hidden=!docked;player.onclick=()=>this.playerShipPanel?.();}return true;
+  }
+  renderSpaceportShips(body,hostSelector,emptySelector,ships){const host=body.querySelector(hostSelector),empty=body.querySelector(emptySelector),fragment=document.createDocumentFragment();if(empty)empty.hidden=ships.length>0;for(const ship of ships){const row=this.cloneViewTemplate(body,"[data-spaceport-ship-template]");if(!row)continue;this.setPresentationText(row,"[data-spaceport-ship-name]",ship.name);this.setPresentationText(row,"[data-spaceport-ship-detail]",ship.detail);fragment.append(row);}host?.replaceChildren(fragment);}
 }

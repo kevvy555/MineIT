@@ -27,10 +27,10 @@ export class ResourceUIMixin {
   }
   renderUnsurveyedTile(tile){
     const source=this.resourceViewSource(RESOURCE_VIEW_PATHS.unsurveyed,"survey details",()=>this.tile(tile));if(!source)return;
-    const days=this.survey.days(this.state,tile.x,tile.y),active=this.survey.isActive(this.state,tile.x,tile.y),queued=this.survey.isQueued(this.state,tile.x,tile.y);
-    this.setResourcePanel(`Unsurveyed sector ${tile.x},${tile.y}`,source);this.setResourceText(this.tilePanel,"[data-survey-hint]",this.world.hint(this.state,tile.x,tile.y));this.setResourceText(this.tilePanel,"[data-survey-time]",`${days} days`);this.setResourceText(this.tilePanel,"[data-survey-slots]",`${this.state.scans.length}/${this.survey.slots(this.state)}`);
-    const scan=this.tilePanel.querySelector("[data-scan]");scan.disabled=active||queued||this.state.contract.ended;scan.textContent=this.state.contract.ended?"CONTRACT ENDED":active?"SURVEY ACTIVE":queued?"QUEUED":"QUEUE SURVEY";
-    this.showResourcePanel();scan.onclick=()=>{const result=this.survey.enqueue(this.state,tile.x,tile.y);if(result.ok){this.tilePanel.classList.add("hidden");this.toast(result.active?"Survey started.":"Added to survey queue.");}};
+    const days=this.survey.days(this.state,tile.x,tile.y),active=this.survey.isActive(this.state,tile.x,tile.y),queued=this.survey.isQueued(this.state,tile.x,tile.y),blocked=this.survey.blockedReason(this.state,tile.x,tile.y);
+    this.setResourcePanel(tile.unresolved?`Unresolved anomaly ${tile.x},${tile.y}`:`Unsurveyed sector ${tile.x},${tile.y}`,source);this.setResourceText(this.tilePanel,"[data-survey-hint]",this.world.hint(this.state,tile.x,tile.y));this.setResourceText(this.tilePanel,"[data-survey-time]",`${days} days`);this.setResourceText(this.tilePanel,"[data-survey-slots]",`${this.state.scans.length}/${this.survey.slots(this.state)}`);const requirement=this.tilePanel.querySelector("[data-survey-requirement]");if(requirement){requirement.hidden=!blocked;requirement.textContent=blocked;}
+    const scan=this.tilePanel.querySelector("[data-scan]");scan.disabled=!!blocked||active||queued||this.state.contract.ended;scan.textContent=this.state.contract.ended?"CONTRACT ENDED":blocked?`SCANNING L${tile.unresolvedScanningLevel||1} REQUIRED`:active?"SURVEY ACTIVE":queued?"QUEUED":tile.unresolved?"RESURVEY ANOMALY":"QUEUE SURVEY";
+    this.showResourcePanel();scan.onclick=()=>{const result=this.survey.enqueue(this.state,tile.x,tile.y);if(result.ok){this.tilePanel.classList.add("hidden");this.toast(result.active?"Survey started.":"Added to survey queue.");}else if(result.reason)this.toast(result.reason);};
   }
   renderResourceTile(tile){
     const source=this.resourceViewSource(RESOURCE_VIEW_PATHS.site,"resource details",()=>this.tile(tile));if(!source)return;

@@ -2,11 +2,34 @@
   <article class="card">
     <h3 data-tech-access-title></h3>
     <p data-tech-access-text></p>
-    <div class="effect">Housing, Power, Food and Industry technology set the maximum level of each individual building. Mining technology is the deliberate exception: it unlocks extraction methods/resources, while each mine site's L1–L5 development controls local efficiency.</div>
+    <div class="effect">Housing, Power, Food and Industry set each colony's building capability. Mining controls what deposits can be physically exploited. Scanning controls what deposits can be detected and how effectively land can be surveyed. L2+ capability packages require a dedicated Engineering Ship visit before they become active.</div>
   </article>
   <button data-tech-toggle></button>
 </div>
+
+<article class="card" data-engineering-section>
+  <div class="tech-path-header"><strong>ENGINEERING DEPLOYMENTS</strong><span data-engineering-count></span></div>
+  <p>Orders placed for this colony on the same game day share one Engineering Ship transport charge. The conglomerate prepares each deployment for five days before launch.</p>
+  <div data-engineering-deployments></div>
+  <div class="effect" data-engineering-empty>No Engineering Ship deployments are currently active for this colony.</div>
+</article>
+
 <div class="tech-tree" data-tech-tree></div>
+
+<template data-engineering-deployment-template>
+  <article class="card" data-engineering-deployment>
+    <div class="tech-roadmap-title"><strong data-engineering-title></strong><span data-engineering-status></span></div>
+    <p data-engineering-upgrades></p>
+    <div class="grid3">
+      <div class="metric"><small>Upgrade packages</small><strong data-engineering-packages></strong></div>
+      <div class="metric"><small>Ship transport</small><strong data-engineering-transport></strong></div>
+      <div class="metric"><small>Total paid</small><strong data-engineering-total></strong></div>
+    </div>
+    <div class="effect good" data-engineering-saving></div>
+    <button data-engineering-cancel>CANCEL DEPLOYMENT</button>
+  </article>
+</template>
+
 <template data-tech-path-template>
   <section class="tech-path" data-tech-path>
     <div class="tech-path-header"><strong data-tech-path-label></strong><span data-tech-path-level></span></div>
