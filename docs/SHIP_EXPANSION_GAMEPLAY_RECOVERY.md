@@ -5,19 +5,20 @@ Base: `develop`
 
 ## Current status
 
-The original ShipExpansion gameplay batch is complete and the **Engineering Ship / Spaceport technology-delivery foundation for Progression Stage 8 is now implemented and validated**.
+The original ShipExpansion gameplay batch is complete. The **Engineering Ship / Spaceport technology-delivery foundation** and the **Scanning Resurvey / Buried Resources feature** for Progression Stage 8 are now implemented and validated.
 
 Stage 8 itself remains **In Progress** because specialised player-designed freight ships, scalable ore transport and the wider logistics network are still future work.
 
-Latest gameplay-validation commit: `b66039806bc2eb0fbdde6bcfef8c3ebfdb21e40b`  
-Passing GitHub Actions run: `33263915459`  
-Passing job: `99130442966`
+Latest validated gameplay commit: `8bcbf927ea7b691602aca76850f6ca1ee69f4b5b`  
+Passing GitHub Actions run: `33266200034`  
+Passing job: `99136585382`
 
 That exact-head run passed:
 
 - full unit / regression / domain coverage suite;
 - Engineering Ship / Spaceport / Mining-Scanning delivery regression;
-- save-v10 migration and realistic save round-trip;
+- Scanning resurvey / buried-resource regression;
+- save-v11 migration and realistic save round-trip;
 - long simulation soak;
 - browser startup and presentation interaction probes;
 - mobile/coarse-pointer ship and Corporate Ship touch-target regression guards;
@@ -39,7 +40,7 @@ Current relevant state:
 - Stage 8 Logistics Bottleneck: **In Progress**
 - Stages 9–22: **Not Started**
 
-Stage 8 now has its physical technology/logistics-support foundation, but must not move to Complete until the specialised freight/logistics gameplay loop exists end-to-end.
+Stage 8 now has physical technology delivery, Spaceport berth handling, scanning/resurvey discovery and buried-resource land-use decisions. It must not move to Complete until the specialised freight/logistics gameplay loop exists end-to-end.
 
 ---
 
@@ -84,7 +85,7 @@ Final design-rules commit:
 
 Technology is no longer an abstract instant activation at the target colony.
 
-A colony capability upgrade now follows this physical lifecycle:
+A colony capability upgrade follows:
 
 **AVAILABLE → ORDERED / SAME-DAY BATCH → PREPARING → IN TRANSIT → ORBITAL HOLDING OR LANDED → COMMISSIONING → ACTIVE → COMPLETE**
 
@@ -92,68 +93,42 @@ Key rules:
 
 - Same-colony upgrades ordered on the same game day share one Engineering Deployment.
 - A deployment spends **5 full game days preparing** before launch.
-- The first upgrade in a deployment pays:
-  - its individual package price;
-  - one fixed Engineering Ship transport price.
-- Further same-day upgrades in that deployment pay only their individual package price.
-- There is no percentage discount on technology packages.
-- Batching savings come solely from avoiding additional Engineering Ship transport charges.
-- Pre-launch cancellation is supported throughout preparation.
-- Post-launch cancellation is not supported.
-- Engineering Ship transport price is fixed for the current feature rather than distance-based.
+- The first upgrade pays its package price plus one fixed Engineering Ship transport price.
+- Further same-day upgrades in that deployment pay only their individual package prices.
+- There is no percentage discount on technology packages; batching savings are avoided transport charges.
+- Pre-launch cancellation is supported; post-launch cancellation is not.
+- Engineering Ship transport price is fixed for the current feature.
 - Remote colonies outside normal Corporate Ship service radius remain valid Engineering Ship destinations.
-- Exact transport-price value, Engineering Ship travel-speed formula, commissioning duration and future berth classes remain balance constants/deferred design rather than hard gameplay architecture.
 
-Current provisional balance constant for Engineering Ship transport: **£5,000**.
+Current provisional Engineering Ship transport balance constant: **£5,000**.
 
 ---
 
 ## Mining / Scanning split
 
-Corporate capability now contains separate Mining and Scanning paths.
+Corporate capability contains separate Mining and Scanning paths:
 
-- Mining: 10 levels.
-- Scanning: 10 levels.
+- Mining: 10 levels — controls extraction capability.
+- Scanning: 10 levels — controls discovery capability, survey effects and which natural resources can be detected.
 - Combined Mining + Scanning package progression preserves the economic scale previously carried by the single Mining path.
-- Existing saves migrate Scanning from their prior Mining level.
-- Existing contract/planet Scanning requirements migrate from their prior Mining requirement where absent.
+- Existing old saves migrate Scanning from prior Mining level where absent.
 
-Scanning now controls discovery fidelity independently from Mining exploitation capability.
-
-Higher-tier resources may appear as unresolved anomalies when colony Scanning is insufficient. Once the required Scanning capability is physically deployed, the tile can be surveyed again and resolves to the same deterministic hidden resource.
+The old unresolved-anomaly model has now been superseded by the completed Scanning Resurvey feature below.
 
 ---
 
 ## Corporate access vs colony-deployed capability
 
-This distinction is now canonical and important:
+This distinction is canonical:
 
 - `company.tech` = corporation-level authorised/highest capability context.
 - `colony.tech` = capability physically commissioned and active at the current colony.
 
-Operational systems must use **deployed colony capability**, not merely corporate access.
+Operational systems use **deployed colony capability**, including Mining, Food, Housing, Power, Industry and Scanning.
 
-This is enforced for:
-
-- Mining/extraction capability;
-- Food production capability;
-- Housing building upgrades;
-- Power building upgrades;
-- Industry building upgrades;
-- Scanning/discovery capability;
-- local operational technology effects.
-
-Corporate access remains appropriate for corporation-level eligibility such as expansion/prospect requirements where the corporation is deciding whether it has access to the required package.
-
-### Important bug found during implementation
-
-A regression pass found that `DevelopmentService` was still reading `state.company.tech` for Housing/Power/Industry building gates. This meant purchasing/authorising a package could unlock a local building before its Engineering Ship physically arrived.
-
-Fixed in:
+A regression pass previously found `DevelopmentService` reading `state.company.tech` for Housing/Power/Industry building gates, which could activate a building upgrade before its Engineering Ship arrived. That was fixed in:
 
 `de0314aec4a0dec8b88e00d91e7a0582e019e265` — `Gate local buildings on deployed colony technology`
-
-`DevelopmentService` now reads `state.colony.tech`, and regression coverage proves company access alone does not activate local building upgrades.
 
 ---
 
@@ -163,32 +138,17 @@ Core implementation commit:
 
 `fee3f0929ca064093284b02aa308131e64320942` — `Implement engineering-delivered colony technology`
 
-Canonical lifecycle ownership lives in `TechnologyService` and daily progression is driven from the simulation/day-processing path.
+Canonical lifecycle ownership is in `TechnologyService`; daily progression is driven from simulation/day processing.
 
-Persisted deployment states include:
+Persisted states include `batching`, `preparing`, `in-transit`, `orbital-holding`, `landed`, `commissioning`, `complete`, and `cancelled`.
 
-- `batching`
-- `preparing`
-- `in-transit`
-- `orbital-holding`
-- `landed`
-- `commissioning`
-- `complete`
-- `cancelled`
-
-Deployment records preserve the upgrade packages, costs, timing and lifecycle state through save/load.
-
-Engineering specialists remain ship-based:
-
-- they do not join colony population;
-- they do not consume colony Housing;
-- they do not consume player-ship passenger capacity.
+Engineering specialists remain ship-based and do not consume colony population, Housing or player-ship passenger capacity.
 
 ---
 
 ## Spaceport foundation
 
-A Basic Spaceport is now persistent colony infrastructure at canonical tile `(0,0)`.
+A Basic Spaceport is persistent colony infrastructure at canonical tile `(0,0)`.
 
 Shared berth accounting is owned by:
 
@@ -200,79 +160,119 @@ The same berth model counts:
 - docked Corporate Ship;
 - landed/commissioning Engineering Ships.
 
-If no berth is available:
+If no berth is available, arriving Corporate or Engineering Ships enter Orbital Holding rather than bypassing the Spaceport.
 
-- an arriving Engineering Ship enters Orbital Holding;
-- an arriving Corporate Ship enters Orbital Holding rather than bypassing the Spaceport.
-
-The Basic Spaceport state is added during save-v10 migration without resetting existing colony progress.
-
-The player-ship presentation now identifies the persistent Spaceport even when the player ship is elsewhere, and the landed player-ship menu exposes the Spaceport berth/orbital-holding panel.
-
-Future freight ships should reuse this same berth model rather than adding a second landing-capacity system.
+The Basic Spaceport is supplied as startup infrastructure and future freight ships must reuse this same berth model rather than create a second landing-capacity system.
 
 ---
 
-## Save migration
+# Scanning Resurvey / Buried Resources — Complete
 
-Runtime save schema is now **v10**.
+Design and implementation source:
+
+`docs/Progression Stages/Stage 8/ScanningResurveyAndBuriedResources.md`
+
+This feature replaces the earlier behaviour where insufficient Scanning visibly produced an unresolved anomaly and therefore leaked that a resource existed.
+
+## Discovery rules
+
+- Every natural resource now has an explicit `scanningLevel` from L1–L10 based on **physical detectability in its natural location**, not Mining/extraction difficulty.
+- Clearly visible biology and exposed materials are L1.
+- Shallow beds/materials are L2.
+- conventional buried seams/ore bodies are L3.
+- deeper/weaker metallic and precious signatures are L4.
+- deep fluid reservoirs are L5.
+- specialist/high-value mineral signatures are L6.
+- extreme-pressure deposits are L7.
+- unusual deep-core deposits are L8.
+- exotic matter/crystals are L9.
+- Advanced Element Deposit is L10.
+- Manufactured Synthetic Nutrient does not participate in natural discovery.
+
+Canonical mapping is in `js/data/resources.js` and documented in the feature spec.
+
+## No hidden-resource information leak
+
+If the current scanner cannot detect the deterministic resource truth for a tile, the scan resolves as ordinary clear land / no deposit detected.
+
+The player is **not** shown:
+
+- a locked deposit;
+- an unresolved anomaly;
+- the hidden required Scanning level;
+- any marker that distinguishes a genuinely empty tile from a richer tile beyond current detection.
+
+World truth remains deterministic from the world seed. Rescanning never rerolls resource type, quality or deposit size.
+
+## Scan history and resurvey
+
+Each surveyed tile persists:
+
+`lastScannedAtLevel`
+
+A non-Spaceport tile is resurveyable when:
+
+`lastScannedAtLevel < colony.tech.scanning`
+
+Important anti-leak rule: **all** previously scanned eligible tiles become resurveyable after better Scanning is commissioned, including genuinely empty tiles.
+
+The normal colony map shows a **yellow `?`** for a resurvey opportunity. No additional Scanning filter was added.
+
+Tapping a resurveyable tile queues it through the existing survey queue/slot system.
+
+Resurvey duration is **50% of the equivalent first-survey duration**, rounded to whole days with minimum 1 day.
+
+## Developed-tile scanning
+
+Housing, Industry and Power can be scanned/rescanned while continuing to operate.
+
+If a better scan discovers a resource underneath one of those buildings:
+
+- the building remains in place and operational;
+- the deterministic resource becomes permanently known;
+- `resourceCovered` marks exploitation as blocked by the development;
+- normal demolition removes the building and exposes the same known resource;
+- no resource reroll occurs.
+
+Known resources may also deliberately be built over with Housing, Industry or Power. Building over a known Food/resource tile no longer destroys the resource truth.
+
+The existing building details communicate `RESOURCE COVERED` and the map keeps the building as the primary visual with a secondary resource indicator.
+
+The Basic Spaceport remains excluded until relocation/resurvey rules are designed.
+
+## Save v11 migration
+
+Runtime save schema is now **v11**.
 
 Migration preserves existing games by:
 
-- adding `scanning` from previous Mining level when missing;
-- giving existing colonies deployed capability equivalent to their prior technology state;
-- migrating missing Scanning requirements from Mining requirements;
-- adding Basic Spaceport state;
-- preserving Engineering Deployment lifecycle state through round-trip serialization.
+- maintaining the earlier Mining→Scanning technology migration where needed;
+- maintaining colony-deployed capability state;
+- adding/preserving `lastScannedAtLevel` for existing surveyed tiles;
+- converting old unresolved-anomaly tiles into ordinary completed clear scans at the colony's deployed Scanning level so old saves do not leak hidden-resource locations;
+- removing obsolete per-tile legacy hidden-deep/anomaly fields;
+- preserving known resources beneath normal buildings;
+- preserving active survey Scanning level through save/load;
+- retaining Engineering Deployment and Basic Spaceport state.
 
-Relevant save/regression coverage includes `tests/save-roundtrip.test.js` and `tests/technology-delivery.test.js`.
-
----
-
-## Presentation work
-
-Engineering Ship / Scanning presentation commit:
-
-`bf4c6d1d89546e8917947de649b25548733c5a38` — `Add Engineering Ship and Scanning presentation`
-
-Implemented presentation includes:
-
-- separate Scanning technology path;
-- deployed/current/ordered capability states;
-- Engineering Deployment list;
-- included upgrade packages;
-- package subtotal;
-- fixed Engineering Ship transport cost;
-- paid total;
-- shared-transport saving;
-- preparation/transit/orbital-holding/commissioning state;
-- pre-launch cancellation action;
-- unresolved-anomaly Scanning requirement and re-survey path;
-- Spaceport berth/landed/orbital-holding panel.
-
-Spaceport/player-ship navigation polish is covered by:
-
-`1da0182adfb76682cced262921f7f399f142e7c0` — `Protect Spaceport player ship navigation`
+Primary coverage is in `tests/technology-delivery.test.js`, `tests/save-roundtrip.test.js`, and `tests/map-first-ux.test.js`.
 
 ---
 
 ## Mobile touchscreen reliability fix
 
-A pre-existing Android/touchscreen issue was reported where ship-panel buttons and Corporate Ship colonist controls sometimes required many taps before a click registered.
+A pre-existing Android/touchscreen issue caused ship-panel buttons and Corporate Ship colonist controls to sometimes require many taps.
 
-The affected controls were using normal browser `click` handlers correctly, but several touch targets were only around 25–38px high and were embedded in touch-scrollable panels. Small involuntary finger movement can therefore be interpreted as scrolling rather than activation, cancelling the click.
+The fix keeps browser-standard semantic `click` handling and does not add parallel `touchstart`/`pointerdown` action handlers.
 
-The fix deliberately keeps standard semantic button/click behaviour rather than introducing `touchstart` or `pointerdown` action handlers that could double-fire or conflict with gestures.
+Implemented:
 
-Implemented changes:
+- all buttons use `touch-action: manipulation`;
+- coarse-pointer devices get minimum 44px targets for Player Ship, ship-preparation, Star Map, Corporate Ship and Spaceport actions;
+- Corporate Ship colonist +/- controls use 44px columns/targets;
+- compact layouts cannot shrink those mobile targets below the minimum.
 
-- all buttons opt into `touch-action: manipulation`;
-- coarse-pointer devices receive minimum 44px targets for Player Ship, ship-preparation, Star Map, Corporate Ship and Spaceport actions;
-- Corporate Ship colonist +/- controls use 44px columns and 44px minimum button dimensions;
-- compact ship CSS cannot shrink these coarse-pointer targets below the mobile minimum because the touch-target rule is explicitly authoritative;
-- regression guards in `tests/map-first-ux.test.js` protect the shared tap policy and Corporate Ship colonist target sizing.
-
-Implementation commits:
+Commits:
 
 - `ef1d920a53810b8f4d144b88f06860bc9e1958b4` — `Improve mobile tap reliability for ship controls`
 - `eb4e362ae83c16c2e81cf3dcc5af9f0d1cab6f88` — `Protect coarse-pointer ship touch targets`
@@ -281,42 +281,30 @@ Implementation commits:
 
 ## Corporate Trade Ship full-screen layout fix
 
-A real-phone screenshot showed the Corporate Trade Ship buy screen rendering inside a partial-height modal. With the new 44px touch targets, the available vertical space was too small and the four buy rows collapsed, causing resource labels and BUY controls to overlap.
+The Corporate Trade Ship is a full-screen mobile workflow after a real-phone screenshot showed resource BUY rows collapsing/overlapping in the former partial-height modal.
 
-The Corporate Trade Ship presentation is now explicitly a **full-screen workflow**, matching the Player Ship/Star Map philosophy.
+Preserved rules:
 
-Implemented in:
+- dynamic mobile viewport (`100dvh`) with safe-area padding;
+- trade shell owns available vertical space;
+- buy/sell rows have a 48px minimum height;
+- constrained screens scroll the resource-list region instead of collapsing rows;
+- mobile action columns preserve 44px touch targets.
+
+Commits:
 
 - `0c22baf6f6476420f6411618ea75144658b6de9c` — `Make corporate trade ship full screen`
 - `b66039806bc2eb0fbdde6bcfef8c3ebfdb21e40b` — `Protect full-screen corporate trade layout`
-
-Layout rules now preserved:
-
-- Corporate Trade Ship fills the dynamic mobile viewport (`100dvh`) with safe-area padding;
-- modal border/radius are removed for the full-screen workflow;
-- the trade shell owns all available vertical space;
-- buy/sell resource lists have a 48px minimum row height;
-- resource lists scroll internally when a short viewport cannot display all four rows;
-- rows are no longer allowed to shrink to zero and visually overlap;
-- mobile resource action columns are widened slightly while retaining the 44px coarse-pointer target policy.
-
-Exact-head validation:
-
-- Commit: `b66039806bc2eb0fbdde6bcfef8c3ebfdb21e40b`
-- Workflow run: `33263915459`
-- Job: `99130442966`
-- Unit / regression / domain coverage: **SUCCESS**
-- Browser startup / presentation interaction: **SUCCESS**
 
 ---
 
 ## Validation state
 
-Passing exact gameplay head before this documentation refresh:
+Passing exact gameplay head before the documentation refresh:
 
-- Commit: `b66039806bc2eb0fbdde6bcfef8c3ebfdb21e40b`
-- Workflow run: `33263915459`
-- Job: `99130442966`
+- Commit: `8bcbf927ea7b691602aca76850f6ca1ee69f4b5b`
+- Workflow run: `33266200034`
+- Job: `99136585382`
 - Result: **SUCCESS**
 
 Validated:
@@ -332,18 +320,24 @@ Validated:
 - [x] Engineering Ship orbital holding and berth release;
 - [x] Corporate Ship orbital holding through the same Spaceport model;
 - [x] commissioning before capability activation;
-- [x] specialists do not consume population/Housing;
-- [x] Mining/Scanning split and migrated economic guards;
-- [x] unresolved-resource re-survey after Scanning deployment;
-- [x] local buildings require deployed colony technology;
-- [x] save-v10 migration and realistic save round-trip;
+- [x] Mining/Scanning split and deployed capability gates;
+- [x] explicit L1–L10 resource Scanning detection mapping;
+- [x] insufficient scans do not reveal hidden deposit existence/required level;
+- [x] truly empty and secretly richer tiles both become resurveyable after a Scanning upgrade;
+- [x] yellow `?` resurvey marker on the normal map with no new filter;
+- [x] 50%-duration resurvey through existing queue/slots;
+- [x] Housing/Industry/Power resurvey while operating;
+- [x] buried known resource remains blocked under development until normal demolition;
+- [x] known resources can deliberately be built over without erasing resource truth;
+- [x] Spaceport excluded from buried-resource/resurvey decisions;
+- [x] save-v11 migration and realistic save round-trip;
+- [x] legacy unresolved anomalies migrate without information leakage;
 - [x] original ShipExpansion capacity/reroute/new-colony transfer rules;
-- [x] coarse-pointer ship and Corporate Ship control sizing/touch policy;
+- [x] mobile touch target policy;
 - [x] full-screen Corporate Trade Ship workflow;
 - [x] non-collapsing/scrollable buy and sell rows on constrained viewports;
 - [x] long simulation soak;
-- [x] browser startup;
-- [x] browser/presentation interaction tests.
+- [x] browser startup and presentation interaction tests.
 
 ---
 
@@ -362,7 +356,7 @@ The next major gameplay loop is the actual logistics bottleneck solution:
 7. later planets/moons/stations as refuelling/storage/transfer hubs;
 8. eventual buyer/contract/refining systems described in Progression Stages 9–12.
 
-The intended economic pressure remains a rotating bottleneck:
+The intended economic pressure remains:
 
 **Production Rate → Transport Capacity → Buyer Demand**
 
@@ -378,12 +372,16 @@ If another chat/session resumes this work:
 2. read this file;
 3. read `docs/PLAYER_PROGRESSION_STAGES.md`;
 4. read `docs/Progression Stages/Stage 8/EngineeringShipAndSpaceport.md`;
-5. preserve `TechnologyService` as canonical owner of capability deployment;
-6. preserve `spaceport-model.js` as canonical berth accounting;
-7. keep operational technology gates on `colony.tech`, not `company.tech`;
-8. preserve standard `click` activation for buttons; use coarse-pointer sizing/touch CSS rather than parallel touch handlers;
-9. preserve Corporate Trade Ship as a full-screen workflow and let resource rows scroll instead of collapsing;
-10. keep Stage 8 **In Progress** until specialised freight/logistics is playable end-to-end;
-11. update this recovery file and the progression tracker whenever meaningful Stage 8 progress is committed.
+5. read `docs/Progression Stages/Stage 8/ScanningResurveyAndBuriedResources.md`;
+6. preserve `TechnologyService` as canonical owner of capability deployment;
+7. preserve `spaceport-model.js` as canonical berth accounting;
+8. keep operational technology gates on `colony.tech`, not `company.tech`;
+9. preserve `lastScannedAtLevel` as canonical scan-history input and derive resurvey eligibility rather than storing a UI flag;
+10. never make the yellow resurvey marker conditional on hidden resource presence;
+11. preserve deterministic resource truth across scans, building coverage and demolition;
+12. preserve standard `click` activation for buttons and the coarse-pointer target policy;
+13. preserve Corporate Trade Ship as a full-screen workflow with scrollable resource rows;
+14. keep Stage 8 **In Progress** until specialised freight/logistics is playable end-to-end;
+15. update this recovery file and progression tracker whenever meaningful Stage 8 progress is committed.
 
 No PR or merge should be created automatically without an explicit user request.
