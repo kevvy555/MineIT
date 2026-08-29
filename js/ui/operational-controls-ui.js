@@ -1,9 +1,17 @@
 import { UIController as BaseUIController } from "./map-first-ui.js";
 import { operatingMode,riskExposure,supportsOverdrive } from "../domain/extraction-overdrive.js";
+import { formatNumber } from "../core/utils.js";
 import { renderViewTemplate } from "../core/view-template.js";
 
 const NEXT_MODE={normal:"pushed",pushed:"hard",hard:"normal"};
 const displayDays=days=>days===null||days===undefined?"SAFE":`${Math.max(0,Math.ceil(Number(days)||0))} DAYS`;
+const FLOW_EPSILON=.0001;
+const RESOURCE_FLOW_METRICS={
+  food:{production:"food",consumption:"foodDemand"},
+  build:{production:"buildProduction",consumption:"buildDemand"},
+  fuel:{production:"fuelProduction",consumption:"fuelDemand"},
+  ore:{production:"oreProduction",consumption:"oreDemand"}
+};
 
 /** Direct renewable harvest, extraction operating-mode, critical warnings and contextual map controls. */
 export class UIController extends BaseUIController{
@@ -28,6 +36,17 @@ export class UIController extends BaseUIController{
   cycleOperatingMode(){const tile=this.selectedTile;if(!tile||!supportsOverdrive(tile))return;const before=operatingMode(tile),next=NEXT_MODE[before]||"normal",r=this.collection.setOperatingMode(this.state,tile,next);if(!r.ok){this.toast(r.reason);this.renderContext();return;}this.onRecalculate?.();this.logEvent?.("site-operating-mode",`${tile.name} changed from ${before.toUpperCase()} to ${next.toUpperCase()} operation.`,{x:tile.x,y:tile.y,resource:tile.name,before,after:next,riskExposure:riskExposure(tile)});this.repo.save(this.state);this.toast(`${tile.name}: ${r.profile.label} • ${Math.round(r.profile.workforce*100)}% staff • ${Math.round(r.profile.output*100)}% output.`);this.render();}
   runContextAction(action,kind=null){if(action==="harvest-down"){this.adjustHarvest(-25);return;}if(action==="harvest-up"){this.adjustHarvest(25);return;}if(action==="mode"){this.cycleOperatingMode();return;}super.runContextAction(action,kind);}
 
+  resourceFlow(type){
+    const metrics=this.state.metrics||{},keys=RESOURCE_FLOW_METRICS[type]||{},stock=Math.max(0,Number(this.inventory.amount(this.state,type))||0),production=Math.max(0,Number(metrics[keys.production])||0),consumption=Math.max(0,Number(metrics[keys.consumption])||0),surplus=production-consumption,declining=surplus<-FLOW_EPSILON,days=declining?stock/Math.abs(surplus):null;return{stock,production,consumption,surplus,declining,days};
+  }
+  resourceFlowText(flow){const sign=flow.surplus>FLOW_EPSILON?"+":flow.surplus<-FLOW_EPSILON?"-":"";return`${formatNumber(flow.stock)} +${formatNumber(flow.production)} -${formatNumber(flow.consumption)} S${sign}${formatNumber(Math.abs(flow.surplus))}`;}
+  resourceDaysText(days){return days===null||days===undefined?"∞d":days<=0?"0d":`${Math.max(1,Math.ceil(Number(days)||0))}d`;}
+  renderResourceFlowHud(){
+    for(const type of Object.keys(RESOURCE_FLOW_METRICS)){
+      const flow=this.resourceFlow(type),value=document.querySelector(`#${type}Stock`),days=document.querySelector(`#${type}DaysHud`),card=document.querySelector(`#${type}ResourceHud`);if(value)value.textContent=this.resourceFlowText(flow);if(days){days.textContent=this.resourceDaysText(flow.days);days.classList.remove("warn");}if(card){card.classList.toggle("good",!flow.declining);card.classList.toggle("bad",flow.declining);card.title=`Stock ${formatNumber(flow.stock)} • Production +${formatNumber(flow.production)}/d • Consumed -${formatNumber(flow.consumption)}/d • Surplus ${flow.surplus>=0?"+":"-"}${formatNumber(Math.abs(flow.surplus))}/d`;}
+    }
+  }
+
   async checkCriticalResourceWarnings(){
     if(this.state.company?.gameOver||this.state.status==="dead"||!this.modal?.classList.contains("hidden"))return;
     const critical=[];for(const [type,days] of [["food",this.state.metrics?.foodDays],["fuel",this.state.metrics?.fuelDays]]){const isCritical=days!==null&&days!==undefined&&Number(days)<=10;if(!isCritical){this.criticalResourceWarnings[type]=false;continue;}if(!this.criticalResourceWarnings[type]){this.criticalResourceWarnings[type]=true;critical.push(type);}}
@@ -36,7 +55,5 @@ export class UIController extends BaseUIController{
     if(revision!==this.criticalWarningRevision||this.state.colonyId!==colonyId||!this.modal?.classList.contains("hidden"))return;this.open("Critical Resource Warning",body);
   }
 
-  renderMapFirstHud(){
-    super.renderMapFirstHud();const setDaysState=(id,days)=>{const el=document.querySelector(`#${id}`);if(!el)return;el.classList.remove("warn");if(days!==null&&days!==undefined&&days<=30)el.classList.add("warn");};setDaysState("foodDaysHud",this.state.metrics?.foodDays);setDaysState("fuelDaysHud",this.state.metrics?.fuelDays);setDaysState("oreDaysHud",this.state.metrics?.oreDays);this.checkCriticalResourceWarnings();
-  }
+  renderMapFirstHud(){super.renderMapFirstHud();this.renderResourceFlowHud();this.checkCriticalResourceWarnings();}
 }
