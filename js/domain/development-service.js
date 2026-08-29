@@ -32,8 +32,8 @@ export class DevelopmentService{
     const check=this.canPlace(state,tile,kind);if(!check.ok)return check;
     this.inventory.consumeCategory(state,"build",check.build);if(check.ore)this.inventory.consumeCategory(state,"ore",check.ore);
     tile.development={kind,level:1,investedBuild:check.build,investedOre:check.ore||0};
-    let destroyedFood=false;if(tile.resourceId){if(tile.type==="food"){destroyedFood=true;tile.destroyedResource={type:tile.type,resourceId:tile.resourceId,name:tile.name,quality:tile.quality};Object.assign(tile,{type:null,family:null,resourceId:null,name:"Developed Land",quality:null,resourceRarity:null,resourceMult:null,requiredMiningLevel:0,requiredMiningTech:null,sustainability:null,reserve:null,initialReserve:null,empty:true,resourceCovered:false});}else tile.resourceCovered=true;}
-    this.sync(state);return{ok:true,...check,level:1,destroyedFood};
+    if(tile.resourceId)tile.resourceCovered=true;
+    this.sync(state);return{ok:true,...check,level:1,destroyedFood:false};
   }
   canUpgrade(state,tile){
     const dev=tile?.development,kind=dev?.kind;if(!BUILDING_MODEL[kind])return{ok:false,reason:"This development is not upgraded through colony construction."};
