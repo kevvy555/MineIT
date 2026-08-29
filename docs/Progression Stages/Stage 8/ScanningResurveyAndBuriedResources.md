@@ -1,7 +1,7 @@
 # Stage 8 Feature — Scanning Resurvey and Buried Resources
 
-Status: **In Progress**  
-Design state: **Approved for implementation**
+Status: **Complete**  
+Design state: **Implemented and validated**
 
 ## Purpose
 
@@ -63,7 +63,7 @@ A previously scanned tile that can now benefit from better Scanning equipment di
 
 The yellow marker means only **resurvey opportunity**, never guaranteed resource presence. Once rescanned at the current level, the yellow marker disappears until Scanning capability increases again.
 
-No additional Scanning map filter or focus mode is required. The yellow marker must work directly on the normal colony map, including over normal colony development.
+No additional Scanning map filter or focus mode is required. The yellow marker works directly on the normal colony map, including over normal colony development.
 
 ### 5. Resurvey uses the existing survey queue and is faster
 
@@ -210,7 +210,7 @@ Manufactured resources such as Synthetic Nutrient do not participate in natural 
 
 ## Deterministic discovery
 
-A tile's underlying resource truth must not reroll when rescanned. Improved Scanning reveals additional information from the same deterministic world seed.
+A tile's underlying resource truth does not reroll when rescanned. Improved Scanning reveals additional information from the same deterministic world seed.
 
 Repeated scans at the same Scanning level cannot create different resources, qualities or deposit sizes.
 
@@ -226,7 +226,7 @@ Housing, Industry and Power are included because they are normal player-managed 
 
 ---
 
-## UI expectations
+## UI behaviour
 
 The normal colony map distinguishes:
 
@@ -244,35 +244,41 @@ If a resource is known beneath a building:
 
 ---
 
-## State / save implications
+## State / save behaviour
 
-Implementation must persist per-tile survey metadata including the latest Scanning level used. Resurvey eligibility is derived from persisted scan level versus current deployed colony Scanning capability rather than stored as a separate UI flag.
+Runtime save schema is **v11** for this feature.
 
-Hidden resource truth should remain deterministic from the canonical world seed rather than UI state.
+Per-tile survey history persists `lastScannedAtLevel`. Resurvey eligibility is derived from scan level versus current deployed colony Scanning capability rather than stored as a separate UI-owned flag.
 
-Existing saves must migrate safely. Existing surveyed tiles receive a sensible `lastScannedAtLevel` based on the deployed Scanning capability associated with that colony at migration time. Existing revealed resources remain known.
+Legacy unresolved-anomaly tiles migrate to ordinary completed clear scans at the colony's deployed Scanning level, removing the previous hidden-resource information leak. Existing revealed resources remain known, and resources covered by normal buildings retain their deterministic resource state.
 
 ---
 
-## Required implementation coverage
+## Implementation
 
-Regression/domain/browser coverage must prove at minimum:
+Canonical implementation lives in:
 
-1. insufficient Scanning does not reveal that a hidden resource exists;
-2. both truly empty and secretly richer tiles become resurveyable after a Scanning upgrade;
-3. the yellow `?` therefore does not leak resource presence;
-4. rescanning at a higher level can reveal a deterministic previously hidden deposit;
-5. rescanning at the same level does not repeatedly become available;
-6. resurvey duration is 50% of equivalent first-survey time;
-7. Housing, Industry and Power tiles can be scanned/rescanned while operating;
-8. a resource revealed beneath a building remains blocked until demolition;
-9. normal demolition exposes the known resource without rerolling it;
-10. the player can intentionally build normal development over a known undeveloped resource;
-11. save/load preserves scan level and buried-resource knowledge;
-12. the Spaceport remains excluded;
-13. normal map/browser interaction distinguishes normal and yellow survey markers on mobile;
-14. no separate Scanning map filter is introduced;
-15. explicit resource Scanning levels follow the detection ladder above rather than falling back to Mining difficulty.
+- `js/data/resources.js` — explicit L1–L10 detection requirements;
+- `js/domain/world-service.js` — deterministic hidden-resource truth and scanner-dependent reveal;
+- `js/domain/survey-service.js` — resurvey eligibility, queueing and 50% duration;
+- `js/domain/development-service.js` — building-over-resource preservation and normal demolition exposure;
+- `js/domain/game-state-runtime.js` — v11 scan-history migration;
+- `js/ui/world-view-runtime.js` — yellow resurvey marker and normal-map resurvey interaction.
+
+Primary regression coverage:
+
+- `tests/technology-delivery.test.js`;
+- `tests/save-roundtrip.test.js`;
+- `tests/map-first-ux.test.js`;
+- existing startup/survival/expansion regression suite.
+
+Validated gameplay head:
+
+- Commit: `8bcbf927ea7b691602aca76850f6ca1ee69f4b5b`
+- Workflow run: `33266200034`
+- Job: `99136585382`
+- Unit / regression / domain coverage: **SUCCESS**
+- Browser startup / presentation interaction: **SUCCESS**
 
 ---
 
@@ -283,4 +289,4 @@ Only these remain deferred:
 - whether later quality-of-life tools should support batch/multi-select resurveying beyond the existing selection behaviour;
 - future Spaceport relocation/resurvey/exploitation behaviour.
 
-These do not block implementation of the core feature.
+These do not block completion of this feature.
