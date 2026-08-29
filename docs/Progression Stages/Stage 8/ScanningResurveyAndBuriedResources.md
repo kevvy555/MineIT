@@ -1,13 +1,13 @@
 # Stage 8 Feature — Scanning Resurvey and Buried Resources
 
-Status: **Not Started**  
-Design state: **Pending user review before implementation**
+Status: **In Progress**  
+Design state: **Approved for implementation**
 
 ## Purpose
 
 Make Scanning technology feel like improved discovery capability rather than a visible lock on known resources.
 
-The player should not be told that a previously scanned tile contains a resource that their current scanner cannot detect. Instead, higher Scanning technology should create new reasons to revisit previously surveyed ground, including developed colony tiles.
+The player should not be told that a previously scanned tile contains a resource that their current scanner cannot detect. Instead, higher Scanning technology creates new reasons to revisit previously surveyed ground, including developed colony tiles.
 
 The intended player experience is:
 
@@ -27,21 +27,15 @@ Do not present states such as:
 - `Unresolved deposit` where the message itself proves something valuable exists;
 - locked-resource markers that distinguish a genuinely empty tile from a resource the current scanner cannot detect.
 
-A scan performed with insufficient Scanning capability should resolve only what that scanner is capable of detecting.
-
-The visible result may therefore be effectively:
+A scan performed with insufficient Scanning capability resolves only what that scanner can detect. The visible result is effectively:
 
 **NO DEPOSIT DETECTED**
 
 The player must not know whether that means the tile is truly empty or whether something remains below the current detection capability.
 
----
-
 ### 2. Every scan records the Scanning level used
 
-Each surveyed tile must persist the Scanning capability that produced its latest result.
-
-Conceptually:
+Each surveyed tile persists the Scanning capability that produced its latest result:
 
 `lastScannedAtLevel`
 
@@ -49,11 +43,7 @@ A tile becomes eligible for resurvey whenever:
 
 `lastScannedAtLevel < colony.tech.scanning`
 
-This rule applies to all previously scanned eligible tiles, not only tiles that secretly contain a newly detectable resource.
-
-That prevents the resurvey marker itself becoming a hidden-resource detector.
-
----
+This applies to all previously scanned eligible tiles, not only tiles that secretly contain a newly detectable resource. The resurvey marker therefore cannot itself become a hidden-resource detector.
 
 ### 3. Scanning upgrades make old scans resurveyable
 
@@ -61,42 +51,29 @@ When a higher Scanning level is physically commissioned at a colony:
 
 - previously scanned eligible tiles remain in their current visible state;
 - any tile last scanned with a lower Scanning level becomes eligible for resurvey;
-- the game does **not** automatically reveal or automatically rescan those tiles;
+- the game does not automatically reveal or automatically rescan those tiles;
 - the player chooses which old areas are worth revisiting.
-
-This makes each Scanning upgrade refresh the exploration value of previously developed territory without invalidating prior map knowledge.
-
----
 
 ### 4. Yellow question mark means resurvey available
 
-A previously scanned tile that can now benefit from better Scanning equipment should display a **yellow `?`**.
-
-Meaning:
+A previously scanned tile that can now benefit from better Scanning equipment displays a **yellow `?`**.
 
 - normal/unscanned `?` = first survey still required;
-- yellow `?` = this tile was scanned before, but the colony now has better Scanning capability and may resurvey it.
+- yellow `?` = previously scanned with older equipment and eligible for resurvey.
 
-The yellow marker must indicate only **resurvey opportunity**, never guaranteed resource presence.
+The yellow marker means only **resurvey opportunity**, never guaranteed resource presence. Once rescanned at the current level, the yellow marker disappears until Scanning capability increases again.
 
-Once the tile is rescanned at the current Scanning level, the yellow `?` disappears until Scanning capability increases again.
+No additional Scanning map filter or focus mode is required. The yellow marker must work directly on the normal colony map, including over normal colony development.
 
-The normal map may show the marker in a restrained way; a Scanning/Upgrade-focused map view may emphasize it more strongly later if required.
+### 5. Resurvey uses the existing survey queue and is faster
 
----
+Resurvey is a normal survey action using the same queue and survey-slot system rather than a separate mechanic.
 
-### 5. Resurvey uses the existing survey queue
+The player chooses whether surveying capacity is spent on unexplored tiles or old scans.
 
-Resurvey should be a normal survey action using the same queue/capacity system rather than a separate parallel mechanic.
+A resurvey takes **50% of the equivalent first-survey time**, rounded to whole game days with a minimum of 1 day. The speed increase represents existing terrain/geology records and known coordinates allowing the new equipment to focus on improved sensor passes rather than repeating the complete initial survey.
 
-The player chooses whether to spend surveying capacity on:
-
-- unexplored tiles; or
-- previously explored tiles that can now benefit from the improved scanner.
-
-Automatic mass-resurvey is intentionally not part of the initial feature.
-
-Potential future quality-of-life options such as multi-select or `RESCAN ALL VISIBLE` are deferred until the individual resurvey loop has been tested for pacing and friction.
+Automatic mass-resurvey is intentionally not part of the initial feature. Batch/multi-select quality-of-life can be considered later if needed.
 
 ---
 
@@ -104,20 +81,9 @@ Potential future quality-of-life options such as multi-select or `RESCAN ALL VIS
 
 ### 6. Housing, Industry and Power remain scannable
 
-Housing, Industry and Power must **not** block scanning or resurveying.
+Housing, Industry and Power do not block scanning or resurveying. A developed tile can be rescanned while the building remains fully operational.
 
-A developed tile can be rescanned while the building remains fully operational.
-
-Scanning does not:
-
-- stop production;
-- consume the building;
-- reduce building output;
-- require demolition first.
-
-The scanner is determining what exists beneath/around the established site, not physically extracting it.
-
----
+Scanning does not stop production, consume the building, reduce output, or require demolition first.
 
 ### 7. A resource can be discovered beneath an existing building
 
@@ -125,150 +91,196 @@ If a resurvey reveals a resource under Housing, Industry or Power:
 
 - the resource becomes permanently known;
 - the existing building remains in place and continues operating;
-- the resource is shown as **blocked by the current development**;
+- the resource is marked as blocked by current development;
 - the player cannot exploit the deposit until the occupying building is demolished.
 
-Example presentation:
+Example:
 
 **High-Quality Cobalt Deposit**  
 **Blocked by Housing L5**
 
-This creates a deliberate economic decision:
-
-**Keep the valuable mature building, or demolish it to gain access to the deposit.**
-
----
+The decision is deliberately economic: keep the mature building or demolish it to expose the deposit.
 
 ### 8. Demolition uses normal building rules
 
-There is no special demolition penalty simply because a resource exists beneath a building.
-
-If the player chooses to exploit the resource:
-
-1. demolish the Housing/Industry/Power using the normal demolition/recovery rules;
-2. the known resource remains on the tile;
-3. once the site is clear, normal extraction-development rules apply.
-
----
+There is no extra demolition penalty because a resource exists beneath a building. Normal demolition/recovery rules apply. The known resource remains after demolition and normal extraction-development rules then become available.
 
 ### 9. Known resources may still be built over
 
-A known undeveloped resource should not permanently reserve the tile for extraction.
-
-The player may intentionally place Housing, Industry or Power over a known deposit if that development is strategically more valuable.
-
-Doing so temporarily blocks exploitation but does not erase the resource knowledge.
-
-This preserves genuine land-use opportunity cost instead of making resource discovery automatically dictate colony layout.
+A known undeveloped resource does not permanently reserve a tile for extraction. The player may intentionally place Housing, Industry or Power over it. Doing so blocks exploitation but preserves the known resource and its deterministic properties until the development is removed.
 
 ---
 
-## Resource-discovery rules
+## Resource Scanning levels
 
-### 10. Later Scanning levels primarily reveal plausible hidden/subsurface resources
+Scanning level is based on **how physically detectable the resource is in its natural location**, not on how hard it is to extract. Mining technology remains the extraction requirement.
 
-The resources unlocked by progressively better Scanning should make physical sense.
+### Scanning L1 — Surface Survey Suite
 
-Higher Scanning levels are especially appropriate for:
+Clearly visible surface biology/materials or very strong exposed signatures:
 
-- deeper ores;
-- rare metals;
-- gemstones/mineral concentrations;
-- underground fuels;
-- brines;
-- deep geological deposits;
-- exotic or difficult-to-detect subsurface materials.
+- Fungal Shelf
+- Edible Flora
+- Grazing Herd
+- Nutrient Crop
+- Protein Bloom
+- Construction Fibre
+- Stone
+- Biomass
+- Surface Iron Nodules
 
-Obvious surface resources such as major vegetation/food sites should generally be detectable at early Scanning levels rather than suddenly appearing beneath long-established heavy development at a very high scanner tier.
+### Scanning L2 — Shallow Geophysical Survey
 
-Exact resource-to-Scanning-level mapping remains a balance/data-design task for implementation.
+Shallow beds, water-associated biology and near-surface geological material:
+
+- Thermal Algae
+- Clay
+- Silica
+- Limestone
+- Peat Bed
+
+### Scanning L3 — Subsurface Tomography
+
+Common buried seams and conventional subsurface ore bodies:
+
+- Structural Mineral
+- Coal Seam
+- Iron Ore
+- Copper Ore
+
+### Scanning L4 — Deep Spectral Survey
+
+Deeper or weaker metallic/mineral signatures and precious mineralisation:
+
+- Reactive Metal Ore
+- Conductive Ore
+- Silver
+- Gold
+- Gemstone Deposit
+- Magnetic Ore
+
+### Scanning L5 — Seismic Prospecting Array
+
+Deep fluid reservoirs and targets primarily identified through seismic/gravimetric structure:
+
+- Crude Oil
+- Natural Gas
+
+### Scanning L6 — Precision Mineral Spectrometry
+
+Weak specialist/high-value mineral signatures requiring high-resolution mineral analysis:
+
+- Advanced Ceramic Feedstock
+- Fissile Mineral
+- Platinum
+- Palladium
+- Sapphire
+- Ruby
+- Emerald
+
+### Scanning L7 — High-Pressure Geochemistry
+
+Extreme-pressure/deep geochemical deposits:
+
+- Hydrogen-rich Brine
+- Diamond
+
+### Scanning L8 — Deep-Core Imaging
+
+Very deep, high-temperature or unusual core mineralisation:
+
+- Exotic Industrial Mineral
+
+### Scanning L9 — Exotic Matter Detection
+
+Non-standard matter/crystal signatures requiring specialist detection arrays:
+
+- Exotic Fuel Crystal
+- Exotic Crystal
+
+### Scanning L10 — Quantum Resonance Survey
+
+Weakest and most unusual deep advanced-element signatures:
+
+- Advanced Element Deposit
+
+Manufactured resources such as Synthetic Nutrient do not participate in natural planetary discovery.
 
 ---
 
-### 11. Hidden resource generation remains deterministic
+## Deterministic discovery
 
-A tile's underlying resource truth must not reroll when rescanned.
+A tile's underlying resource truth must not reroll when rescanned. Improved Scanning reveals additional information from the same deterministic world seed.
 
-Improved Scanning reveals additional deterministic information from the same underlying world state.
+Repeated scans at the same Scanning level cannot create different resources, qualities or deposit sizes.
 
-Repeated rescans at the same Scanning level must not produce different hidden resources, qualities or sizes.
+A previously known resource remains the same resource after later rescans; higher Scanning does not replace a known deposit with a newly rolled one.
 
 ---
 
 ## Spaceport exception
 
-### 12. Spaceport scanning/exploitation is deferred
+The Basic Spaceport is excluded from this first buried-resource implementation. It remains mandatory startup/logistics infrastructure and cannot become a forced demolition decision before Spaceport relocation has been designed.
 
-The Basic Spaceport is mandatory startup/logistics infrastructure and currently has special strategic importance.
-
-For this first feature:
-
-- do not create a situation where an effectively irreplaceable starting Spaceport must be demolished to access a major deposit;
-- Spaceport resurvey/exploitation behaviour is explicitly deferred until Spaceport relocation and broader freight/logistics mechanics are designed.
-
-Housing, Industry and Power are included now because they are normal player-managed development with existing demolition rules.
+Housing, Industry and Power are included because they are normal player-managed developments with existing demolition rules.
 
 ---
 
 ## UI expectations
 
-The player should be able to distinguish three broad map states without learning hidden information:
+The normal colony map distinguishes:
 
 - **Unsurveyed** — normal survey `?`;
 - **Surveyed at current Scanning level** — no resurvey marker;
 - **Surveyed at an older Scanning level** — yellow resurvey `?`.
 
-If a resource is discovered beneath a building, the tile presentation must show both truths:
+No additional map filter is added.
 
-- the current building remains the primary visible development;
-- a secondary marker/indicator shows that a known resource exists underneath and is blocked.
+If a resource is known beneath a building:
 
-Opening the tile should clearly explain the trade-off without implying that demolition is mandatory.
+- the building remains the primary visual;
+- a secondary resource badge/indicator communicates that a known resource is beneath it and blocked;
+- the tile details explain which development blocks exploitation without implying demolition is mandatory.
 
 ---
 
 ## State / save implications
 
-Implementation will likely require persisted per-tile survey metadata equivalent to:
+Implementation must persist per-tile survey metadata including the latest Scanning level used. Resurvey eligibility is derived from persisted scan level versus current deployed colony Scanning capability rather than stored as a separate UI flag.
 
-- latest Scanning level used;
-- current survey/resurvey eligibility;
-- deterministic hidden-resource truth where not already represented canonically;
-- known-but-blocked resource state beneath development.
+Hidden resource truth should remain deterministic from the canonical world seed rather than UI state.
 
-The exact data shape must be implemented through the existing canonical world/survey state owners rather than adding UI-owned flags.
-
-Save migration must preserve existing surveyed tiles. A migration strategy should assign a sensible `lastScannedAtLevel` based on the colony's deployed Scanning capability at migration time, unless existing survey history provides a more accurate source.
+Existing saves must migrate safely. Existing surveyed tiles receive a sensible `lastScannedAtLevel` based on the deployed Scanning capability associated with that colony at migration time. Existing revealed resources remain known.
 
 ---
 
 ## Required implementation coverage
 
-When implemented, regression/domain coverage should prove at minimum:
+Regression/domain/browser coverage must prove at minimum:
 
 1. insufficient Scanning does not reveal that a hidden resource exists;
 2. both truly empty and secretly richer tiles become resurveyable after a Scanning upgrade;
 3. the yellow `?` therefore does not leak resource presence;
 4. rescanning at a higher level can reveal a deterministic previously hidden deposit;
 5. rescanning at the same level does not repeatedly become available;
-6. Housing, Industry and Power tiles can be scanned/rescanned while operating;
-7. a resource revealed beneath a building remains blocked until demolition;
-8. normal demolition exposes the known resource without rerolling it;
-9. the player can intentionally build normal development over a known undeveloped resource;
-10. save/load preserves scan level, resurvey eligibility and buried-resource knowledge;
-11. the Spaceport remains excluded from this first buried-resource implementation;
-12. map/browser interaction correctly distinguishes normal survey and yellow resurvey markers on mobile.
+6. resurvey duration is 50% of equivalent first-survey time;
+7. Housing, Industry and Power tiles can be scanned/rescanned while operating;
+8. a resource revealed beneath a building remains blocked until demolition;
+9. normal demolition exposes the known resource without rerolling it;
+10. the player can intentionally build normal development over a known undeveloped resource;
+11. save/load preserves scan level and buried-resource knowledge;
+12. the Spaceport remains excluded;
+13. normal map/browser interaction distinguishes normal and yellow survey markers on mobile;
+14. no separate Scanning map filter is introduced;
+15. explicit resource Scanning levels follow the detection ladder above rather than falling back to Mining difficulty.
 
 ---
 
-## Deferred balance questions
+## Deferred items
 
-Not yet locked:
+Only these remain deferred:
 
-- whether resurvey should take the same time as an initial survey or receive a time reduction;
-- exact resource families and detection levels for Scanning L1–L10;
-- whether a dedicated Scanning map focus should emphasize resurvey markers;
-- whether later quality-of-life tools should support batch/multi-select resurveying;
+- whether later quality-of-life tools should support batch/multi-select resurveying beyond the existing selection behaviour;
 - future Spaceport relocation/resurvey/exploitation behaviour.
 
-These should not block the core feature design.
+These do not block implementation of the core feature.
