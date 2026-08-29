@@ -10,6 +10,7 @@ The tracker is development tooling, not gameplay state. Its authoritative data i
 
 - Open **Development Tasks** from the bottom-right burger menu.
 - Use a full-screen, touch-friendly panel.
+- Open new and existing tasks in a full-body editor overlay so the task list is never visible behind the form.
 - Pause the simulation while the task list or editor is open and restore the previous valid speed when it closes.
 - Require a secure site (`https://` or localhost) and feature-detect the browser file pickers.
 - Support Chrome 132 or newer on Android; browsers without writable local-file handles show an unsupported state rather than pretending to save.

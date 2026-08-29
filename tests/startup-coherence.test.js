@@ -7,7 +7,7 @@ const index=read("index.html"),app=read("js/app.js");
 // Startup shell and presentation assets must remain wired regardless of internal module layout.
 for(const css of["app","world","panels","portfolio","trade-quality","trade-quick","ui-enhancements","land","map-first","resource-details","adaptive-building-details","ship-expansion"])assert.match(index,new RegExp(`css/${css}(?:-v\\d+)?\\.css`),`missing ${css} stylesheet`);
 assert.ok(!index.includes("./css/building-details.css"),"obsolete building-details stylesheet must stay absent");
-assert.match(index,/resource-atlas-256\.webp/);assert.match(index,/ui-enhancements\.css\?v=5\.12\.0/);assert.match(index,/js\/app\.js\?v=5\.12\.0/);
+assert.match(index,/resource-atlas-256\.webp/);assert.match(index,/ui-enhancements\.css\?v=5\.12\.1/);assert.match(index,/js\/app\.js\?v=5\.12\.1/);
 for(const id of["overlayRoot","contextBar","attentionStrip","colonyNavStrip","world","mapViewHost","tradeBtn","menuBtn"])assert.match(index,new RegExp(`id="${id}"`),`startup shell missing #${id}`);
 assert.doesNotMatch(index,/mapFilterHost/);assert.doesNotMatch(index,/world-view-hotfix/);
 
