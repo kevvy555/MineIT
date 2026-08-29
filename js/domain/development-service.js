@@ -13,7 +13,7 @@ export class DevelopmentService{
     return this.land.terrainCostMultiplier(tile?.terrain,kind);
   }
   cost(state,tile,kind,nextLevel=1){const terrain=this.terrainMultiplier(tile,kind);if(!Number.isFinite(terrain))return{build:Infinity,ore:Infinity,cash:0};return buildingCost(kind,nextLevel,terrain);}
-  techLevel(state,kind){const category=buildingTechCategory(kind);return Math.max(1,Number(state.company?.tech?.[category])||1);}
+  techLevel(state,kind){const category=buildingTechCategory(kind);return Math.max(1,Number(state.colony?.tech?.[category])||1);}
   checkResources(state,cost){if(this.inventory.amount(state,"build")<cost.build)return`Need ${cost.build} Build materials.`;if((cost.ore||0)>0&&this.inventory.amount(state,"ore")<cost.ore)return`Need ${cost.ore} Ore.`;return null;}
   contribution(kind,level){return buildingCapacity(kind,level);}
   canPlace(state,tile,kind){
@@ -21,11 +21,11 @@ export class DevelopmentService{
     if(state.status==="dead")return{ok:false,reason:"This colony has been lost."};
     if(state.contract?.ended)return{ok:false,reason:"The mining contract has ended."};
     if(!tile?.revealed)return{ok:false,reason:"Survey this tile before construction."};
-    if(this.land.isShipTile(tile.x,tile.y))return{ok:false,reason:"The landing ship occupies this tile."};
+    if(this.land.isShipTile(tile.x,tile.y))return{ok:false,reason:"The Spaceport occupies this tile."};
     if(tile.development||tile.developed)return{ok:false,reason:"Demolish the existing development first."};
     if(tile.terrain==="lake")return{ok:false,reason:`Standard ${this.label(kind)} cannot be built on lakes.`};
     const cost=this.cost(state,tile,kind,1),resourceReason=this.checkResources(state,cost);if(resourceReason)return{ok:false,reason:resourceReason,...cost,nextLevel:1};
-    if(this.techLevel(state,kind)<1)return{ok:false,reason:`Requires ${this.label(kind)} technology L1.`,...cost,nextLevel:1};
+    if(this.techLevel(state,kind)<1)return{ok:false,reason:`Requires deployed ${this.label(kind)} technology L1.`,...cost,nextLevel:1};
     return{ok:true,...cost,nextLevel:1,capacity:buildingCapacity(kind,1),coversResource:!!tile.resourceId};
   }
   place(state,tile,kind){
@@ -40,7 +40,7 @@ export class DevelopmentService{
     if(state.status==="dead")return{ok:false,reason:"This colony has been lost."};if(state.contract?.ended)return{ok:false,reason:"The mining contract has ended."};
     const level=Math.max(1,Number(dev.level)||1);if(level>=MAX_BUILDING_LEVEL)return{ok:false,reason:`${this.label(kind)} is already at L${MAX_BUILDING_LEVEL}.`,max:true};
     const nextLevel=level+1,cost=this.cost(state,tile,kind,nextLevel),tech=this.techLevel(state,kind),resourceReason=this.checkResources(state,cost);
-    if(tech<nextLevel)return{ok:false,reason:`Requires ${this.label(kind)} Tech L${nextLevel}; corporation has L${tech}.`,...cost,nextLevel,techRequired:nextLevel};
+    if(tech<nextLevel)return{ok:false,reason:`Requires ${this.label(kind)} Tech L${nextLevel}; this colony has deployed L${tech}.`,...cost,nextLevel,techRequired:nextLevel};
     if(resourceReason)return{ok:false,reason:resourceReason,...cost,nextLevel,techRequired:nextLevel};
     return{ok:true,...cost,nextLevel,techRequired:nextLevel,currentCapacity:buildingCapacity(kind,level),capacity:buildingCapacity(kind,nextLevel)};
   }
