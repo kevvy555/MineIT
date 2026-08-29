@@ -29,7 +29,8 @@ const upgraded=siteService.upgrade(siteState,tile);assert.equal(upgraded.ok,true
 // Housing/Power/Industry construction follows the same local-material policy.
 const land={terrainCostMultiplier:()=>1,isShipTile:()=>false};
 const development=new DevelopmentService(inventory,land);
-const devState={status:"playing",company:{cash:32000,tech:{housing:2,power:1,food:1,industry:1,mining:1}},contract:{ended:false,localCosts:0},tiles:{},colony:{},metrics:{}};
+const devTech={housing:2,power:1,food:1,industry:1,mining:1,scanning:1};
+const devState={status:"playing",company:{cash:32000,tech:{...devTech}},contract:{ended:false,localCosts:0},tiles:{},colony:{tech:{...devTech}},metrics:{}};
 const landTile={x:2,y:2,terrain:"plain",revealed:true,developed:false,development:null,resourceId:null};devState.tiles["2,2"]=landTile;
 const devBefore=devState.company.cash;
 const placed=development.place(devState,landTile,"housing");assert.equal(placed.ok,true);assert.equal(placed.cash,0);assert.equal(devState.company.cash,devBefore,"Housing construction must use local resources, not cash");
