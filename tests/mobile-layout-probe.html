@@ -26,6 +26,9 @@ async function run(){
     const runtimeError=!!d.querySelector('#errorBadge:not(.hidden)');if(!modal||modal.classList.contains('hidden'))fail.push(id+':did not open modal'+(runtimeError?':runtime error':''));
     if(id==='techBtn'){
       const screen=d.querySelector('[data-technology-screen]');if(!screen)fail.push('technology full-screen workspace missing');else{
+        const appRect=d.getElementById('app')?.getBoundingClientRect(),screenRect=screen.getBoundingClientRect();
+        if(!appRect)fail.push('technology app viewport missing');else if(Math.abs(screenRect.top-appRect.top)>2||Math.abs(screenRect.left-appRect.left)>2||Math.abs(screenRect.right-appRect.right)>2||Math.abs(screenRect.bottom-appRect.bottom)>2)fail.push('technology workspace does not fill app viewport '+JSON.stringify({screen:{top:screenRect.top,left:screenRect.left,right:screenRect.right,bottom:screenRect.bottom},app:{top:appRect.top,left:appRect.left,right:appRect.right,bottom:appRect.bottom}}));
+        for(const selector of['.app-header','#contextBar','.app-footer','#mapViewHost']){const chrome=d.querySelector(selector);if(chrome&&w.getComputedStyle(chrome).display!=='none')fail.push('technology leaves game chrome visible '+selector);}
         if(screen.scrollHeight>screen.clientHeight+2)fail.push('technology screen has outer vertical scroll '+screen.scrollHeight+'>'+screen.clientHeight);
         if(d.querySelectorAll('[data-tech-category]').length!==6)fail.push('technology category selector count');
         if(!d.querySelector('[data-tech-package-contents] .technology-package-item'))fail.push('technology package contents missing');
@@ -35,6 +38,7 @@ async function run(){
       }
     }
     modal?.querySelector('[data-tech-close]')?.click();modal?.querySelector('[data-close]')?.click();modal?.classList.add('hidden');await sleep(30);
+    if(id==='techBtn')for(const selector of['.app-header','#contextBar','.app-footer']){const chrome=d.querySelector(selector);if(chrome&&w.getComputedStyle(chrome).display==='none')fail.push('game chrome did not restore after technology close '+selector);}
   }
   out.textContent=fail.length?'FAIL '+fail.join(' | '):'PASS presentation layout, unified map, contextual actions and footer controls';
 }
