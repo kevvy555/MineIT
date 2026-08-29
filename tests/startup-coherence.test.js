@@ -18,7 +18,7 @@ for(const marker of["advanceGlobalDate","processPendingCorporateEvent","processP
 
 // Canonical domain modules contain the active gameplay, rather than relying on version inheritance.
 const stateRuntime=read("js/domain/game-state-runtime.js"),portfolio=read("js/domain/portfolio-service.js"),trade=read("js/domain/trade-service.js"),simulation=read("js/domain/simulation-engine.js"),tech=read("js/domain/technology-service.js"),spaceport=read("js/domain/spaceport-model.js"),development=read("js/domain/development-service.js"),model=read("js/domain/building-model.js"),events=read("js/domain/corporate-event-service.js"),expansion=read("js/domain/expansion-service.js");
-assert.match(stateRuntime,/state\.version=10/);assert.match(stateRuntime,/ExpansionService/);assert.match(stateRuntime,/normalizeTechnologyState/);
+assert.match(stateRuntime,/state\.version=11/);assert.match(stateRuntime,/ExpansionService/);assert.match(stateRuntime,/normalizeTechnologyState/);assert.match(stateRuntime,/normalizeSurveyHistoryAcrossPortfolio/);assert.match(stateRuntime,/lastScannedAtLevel/);
 assert.match(portfolio,/expeditionArrival/);assert.match(portfolio,/Alpha/);assert.match(portfolio,/ExpansionService/);
 assert.match(trade,/corporateServiceAvailable/);assert.match(trade,/serviceAvailable\(state\)/);assert.match(trade,/hasFreeBerth/);assert.match(trade,/orbitalHolding/);
 assert.match(simulation,/ExpansionService/);assert.match(simulation,/onColonyDied/);assert.match(simulation,/siteEnded/);assert.match(simulation,/technology\.processDay/);assert.match(simulation,/updateNetworks\(state,this\.collection\.activeSites/);
