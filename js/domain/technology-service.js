@@ -8,17 +8,18 @@ const DEFAULT_TECH=Object.freeze({housing:1,power:1,food:1,industry:1,mining:1,s
 const BUILDING_TECHS=new Set(["housing","power","food","industry"]);
 const FINAL_DEPLOYMENT_STATES=new Set(["complete","cancelled"]);
 
-const normalizeTechMap=(source={})=>{
-  const mining=Math.max(1,Number(source.mining)||1),hadScanning=Number.isFinite(Number(source.scanning));
-  const tech=Object.assign({},DEFAULT_TECH,source||{});
-  if(!hadScanning)tech.scanning=mining;
+const normalizeTechMap=source=>{
+  const tech=source&&typeof source==="object"?source:{};
+  const mining=Math.max(1,Number(tech.mining)||1),hadScanning=Number.isFinite(Number(tech.scanning));
+  for(const[key,value]of Object.entries(DEFAULT_TECH))if(!Number.isFinite(Number(tech[key]))||Number(tech[key])<1)tech[key]=value;
+  tech.mining=mining;if(!hadScanning)tech.scanning=mining;
   return tech;
 };
 
 /** Migrate/normalise company access, colony-deployed capability, Engineering Deployments and the Basic Spaceport. */
 export function normalizeTechnologyState(state){
   state.company||={};
-  state.company.tech=normalizeTechMap(state.company.tech||{});
+  state.company.tech=normalizeTechMap(state.company.tech);
   state.colony||={};
   state.colony.tech=state.colony.tech&&typeof state.colony.tech==="object"?normalizeTechMap(state.colony.tech):{...state.company.tech};
   engineeringDeployments(state);
