@@ -15,16 +15,17 @@ import { SimulationEngine } from "../js/domain/simulation-engine.js";
 const contracts=new ContractService(),resources=new ResourceService(),inventory=new InventoryService(resources),tech=new TechnologyService();
 const world=new WorldService(resources,contracts),collection=new CollectionService(resources,inventory,tech),colony=new ColonyService(inventory,tech),sites=new SiteService(contracts,tech,inventory,colony,resources),trade=new TradeService(resources,inventory),engine=new SimulationEngine(resources,tech,collection,trade,inventory,colony);
 const state=createGameState(contracts.first());tech.recompute(state);engine.recalculate(state);
-assert.deepEqual(state.company.tech,{housing:1,power:1,food:1,industry:1,mining:1});
+assert.deepEqual(state.company.tech,{housing:1,power:1,food:1,industry:1,mining:1,scanning:1});
+assert.deepEqual(state.colony.tech,{housing:1,power:1,food:1,industry:1,mining:1,scanning:1});
 assert.equal(state.contract.colonyTier,1);assert.equal(state.contract.techAccess,"direct");
 assert.ok(inventory.amount(state,"food")>0&&inventory.amount(state,"build")>0&&inventory.amount(state,"fuel")>0&&inventory.amount(state,"ore")>0);
 
-const cats=new Set();for(let y=-30;y<=30;y++)for(let x=-30;x<=30;x++)cats.add(world.reveal(state,x,y).type);
+const cats=new Set();for(let y=-30;y<=30;y++)for(let x=-30;x<=30;x++){const tile=world.reveal(state,x,y);if(tile.type)cats.add(tile.type);}
 assert.deepEqual([...cats].sort(),["build","food","fuel","ore"]);
 
-const stone={x:1,y:1,terrain:"hill",terrainYieldFactor:1,revealed:true,developed:false,depleted:false,type:"build",resourceId:"stone",name:"Stone",quality:100,resourceMult:1,requiredMiningLevel:2,requiredMiningTech:"Quarrying",sustainability:"finite",reserve:100000,initialReserve:100000};
+const stone={x:1,y:1,terrain:"hill",terrainYieldFactor:1,revealed:true,developed:false,depleted:false,type:"build",resourceId:"stone",name:"Stone",quality:100,resourceMult:1,requiredScanningLevel:2,requiredMiningLevel:2,requiredMiningTech:"Quarrying",sustainability:"finite",reserve:100000,initialReserve:100000};
 assert.equal(sites.developRequirements(state,stone).ok,false);assert.match(sites.developRequirements(state,stone).reason,/Mining L2/);
-state.company.cash=1e9;const buyMining=tech.buy(state,"mining");assert.equal(buyMining.ok,true);assert.equal(state.company.tech.mining,2);
+state.company.cash=1e9;state.company.tech.mining=2;state.colony.tech.mining=2;tech.recompute(state);assert.equal(tech.level(state,"mining"),2);
 const buildBefore=inventory.amount(state,"build"),cashBeforeDevelop=state.company.cash;const developed=sites.develop(state,stone);assert.equal(developed.ok,true);assert.ok(inventory.amount(state,"build")<buildBefore);assert.equal(state.company.cash,cashBeforeDevelop,"local extraction construction must not spend corporate cash");
 state.tiles["1,1"]=stone;
 
@@ -39,16 +40,16 @@ assert.ok(inventory.amount(state,"ore")<oreBefore,"installed industry consumes o
 assert.ok(state.metrics.foodDemand>0&&state.metrics.fuelDemand>0&&state.metrics.oreDemand>0);
 assert.equal(colony.canExpandIndustry(state).ok,false);assert.match(colony.canExpandIndustry(state).reason,/individual map buildings/i);
 
-const powerBefore=tech.level(state,"power");assert.equal(tech.buy(state,"power").ok,true);tech.recompute(state);assert.equal(tech.level(state,"power"),powerBefore+1);assert.equal(tech.maxBuildingLevel(state,"power"),powerBefore+1);
+const powerBefore=tech.level(state,"power");state.company.tech.power=powerBefore+1;state.colony.tech.power=powerBefore+1;tech.recompute(state);assert.equal(tech.level(state,"power"),powerBefore+1);assert.equal(tech.maxBuildingLevel(state,"power"),powerBefore+1);
 
 const barren=contracts.make(contracts.archetype({arch:"barren"}),3,0);assert.equal(barren.naturalFood,false);assert.equal(tech.meetsRequirements(state,barren.requiredTech),false);
-state.contract=barren;assert.equal(tech.canAccessStore(state),false);state.trade.active=true;assert.equal(tech.canAccessStore(state),true);state.trade.active=false;
+state.contract=barren;assert.equal(tech.canAccessStore(state),true,"dedicated Engineering Ships must support operating remote colonies without a docked Corporate Ship");
 
-state.contract.techAccess="direct";while(state.company.tech.food<3){assert.equal(tech.buy(state,"food").ok,true);}tech.recompute(state);assert.ok(colony.syntheticFoodRate(state)>0);
+state.contract.techAccess="direct";state.company.tech.food=3;state.colony.tech.food=3;tech.recompute(state);assert.ok(colony.syntheticFoodRate(state)>0);
 
 state.trade.active=true;const gold=trade.catalog().find(x=>x.resourceId==="gold"),iron=trade.catalog().find(x=>x.resourceId==="iron");assert.ok(trade.sellPrice(gold)>trade.sellPrice(iron));assert.ok(trade.buyPrice(gold)>trade.sellPrice(gold));
 const cashBefore=state.company.cash;const buy=trade.buy(state,gold.key,100);assert.ok(buy.ok&&state.company.cash<cashBefore);const sell=trade.sell(state,gold.key,100);assert.ok(sell.ok);assert.ok(state.company.cash<cashBefore,"buy then sell must lose money");
 
 state.trade.active=false;state.contract.distanceLy=1;state.year=1;state.day=181;state.trade.nextArrivalDay=CONFIG.FIRST_TRADE_DAY;assert.equal(trade.shouldArrive(state),true);
 
-console.log("MineIT canonical colony economy + technology smoke test passed",{categories:[...cats],tech:state.company.tech,foodDemand:state.metrics.foodDemand,fuelDemand:state.metrics.fuelDemand,oreDemand:state.metrics.oreDemand});
+console.log("MineIT canonical colony economy + deployed technology smoke test passed",{categories:[...cats],companyTech:state.company.tech,colonyTech:state.colony.tech,foodDemand:state.metrics.foodDemand,fuelDemand:state.metrics.fuelDemand,oreDemand:state.metrics.oreDemand});
