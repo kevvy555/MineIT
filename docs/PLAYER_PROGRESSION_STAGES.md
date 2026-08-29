@@ -66,7 +66,8 @@ The status on each stage tracks **development implementation**, not an individua
 **Status:** In Progress  
 **Description:** Mining production begins growing beyond what the colony establishment ship or corporate collection system can realistically transport.  
 **Pressure:** Valuable resources accumulate in storage because freight throughput cannot keep pace with production.  
-**Solution:** Design, build and operate specialised freight ships with the right capacity, range, speed and efficiency for the required routes.
+**Solution:** Design, build and operate specialised freight ships with the right capacity, range, speed and efficiency for the required routes.  
+**Implementation progress:** The physical-support foundation for this stage is implemented: colony-specific capability deployment through conglomerate Engineering Ships, fixed Engineering Ship transport plus individual package pricing, same-day batching, five-day preparation, Spaceport berths, orbital holding, Mining/Scanning separation, higher-tier re-scanning and save-v10 persistence. Local buildings and extraction now consume only capabilities physically commissioned at that colony. The stage remains **In Progress** because player-designed freight ships, scalable ore transport and the broader logistics network are not yet implemented.
 
 ## 9. Refining Economics
 
