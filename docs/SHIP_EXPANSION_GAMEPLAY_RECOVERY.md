@@ -9,9 +9,9 @@ The original ShipExpansion gameplay batch is complete and the **Engineering Ship
 
 Stage 8 itself remains **In Progress** because specialised player-designed freight ships, scalable ore transport and the wider logistics network are still future work.
 
-Latest gameplay-validation commit: `eb4e362ae83c16c2e81cf3dcc5af9f0d1cab6f88`  
-Passing GitHub Actions run: `33262059977`  
-Passing job: `99125575158`
+Latest gameplay-validation commit: `b66039806bc2eb0fbdde6bcfef8c3ebfdb21e40b`  
+Passing GitHub Actions run: `33263915459`  
+Passing job: `99130442966`
 
 That exact-head run passed:
 
@@ -20,7 +20,8 @@ That exact-head run passed:
 - save-v10 migration and realistic save round-trip;
 - long simulation soak;
 - browser startup and presentation interaction probes;
-- mobile/coarse-pointer ship and Corporate Ship touch-target regression guards.
+- mobile/coarse-pointer ship and Corporate Ship touch-target regression guards;
+- full-screen Corporate Ship trade layout and non-collapsing resource-row regression guards.
 
 No PR or merge to `develop` has been performed.
 
@@ -276,10 +277,34 @@ Implementation commits:
 - `ef1d920a53810b8f4d144b88f06860bc9e1958b4` — `Improve mobile tap reliability for ship controls`
 - `eb4e362ae83c16c2e81cf3dcc5af9f0d1cab6f88` — `Protect coarse-pointer ship touch targets`
 
+---
+
+## Corporate Trade Ship full-screen layout fix
+
+A real-phone screenshot showed the Corporate Trade Ship buy screen rendering inside a partial-height modal. With the new 44px touch targets, the available vertical space was too small and the four buy rows collapsed, causing resource labels and BUY controls to overlap.
+
+The Corporate Trade Ship presentation is now explicitly a **full-screen workflow**, matching the Player Ship/Star Map philosophy.
+
+Implemented in:
+
+- `0c22baf6f6476420f6411618ea75144658b6de9c` — `Make corporate trade ship full screen`
+- `b66039806bc2eb0fbdde6bcfef8c3ebfdb21e40b` — `Protect full-screen corporate trade layout`
+
+Layout rules now preserved:
+
+- Corporate Trade Ship fills the dynamic mobile viewport (`100dvh`) with safe-area padding;
+- modal border/radius are removed for the full-screen workflow;
+- the trade shell owns all available vertical space;
+- buy/sell resource lists have a 48px minimum row height;
+- resource lists scroll internally when a short viewport cannot display all four rows;
+- rows are no longer allowed to shrink to zero and visually overlap;
+- mobile resource action columns are widened slightly while retaining the 44px coarse-pointer target policy.
+
 Exact-head validation:
 
-- Workflow run: `33262059977`
-- Job: `99125575158`
+- Commit: `b66039806bc2eb0fbdde6bcfef8c3ebfdb21e40b`
+- Workflow run: `33263915459`
+- Job: `99130442966`
 - Unit / regression / domain coverage: **SUCCESS**
 - Browser startup / presentation interaction: **SUCCESS**
 
@@ -289,9 +314,9 @@ Exact-head validation:
 
 Passing exact gameplay head before this documentation refresh:
 
-- Commit: `eb4e362ae83c16c2e81cf3dcc5af9f0d1cab6f88`
-- Workflow run: `33262059977`
-- Job: `99125575158`
+- Commit: `b66039806bc2eb0fbdde6bcfef8c3ebfdb21e40b`
+- Workflow run: `33263915459`
+- Job: `99130442966`
 - Result: **SUCCESS**
 
 Validated:
@@ -314,6 +339,8 @@ Validated:
 - [x] save-v10 migration and realistic save round-trip;
 - [x] original ShipExpansion capacity/reroute/new-colony transfer rules;
 - [x] coarse-pointer ship and Corporate Ship control sizing/touch policy;
+- [x] full-screen Corporate Trade Ship workflow;
+- [x] non-collapsing/scrollable buy and sell rows on constrained viewports;
 - [x] long simulation soak;
 - [x] browser startup;
 - [x] browser/presentation interaction tests.
@@ -355,7 +382,8 @@ If another chat/session resumes this work:
 6. preserve `spaceport-model.js` as canonical berth accounting;
 7. keep operational technology gates on `colony.tech`, not `company.tech`;
 8. preserve standard `click` activation for buttons; use coarse-pointer sizing/touch CSS rather than parallel touch handlers;
-9. keep Stage 8 **In Progress** until specialised freight/logistics is playable end-to-end;
-10. update this recovery file and the progression tracker whenever meaningful Stage 8 progress is committed.
+9. preserve Corporate Trade Ship as a full-screen workflow and let resource rows scroll instead of collapsing;
+10. keep Stage 8 **In Progress** until specialised freight/logistics is playable end-to-end;
+11. update this recovery file and the progression tracker whenever meaningful Stage 8 progress is committed.
 
 No PR or merge should be created automatically without an explicit user request.
