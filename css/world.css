@@ -41,6 +41,15 @@
 .toast{position:absolute;left:50%;top:7px;transform:translateX(-50%);z-index:30;background:#101820;border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:9px;max-width:85%;text-align:center}
 .error-badge{position:absolute;right:5px;bottom:5px;z-index:35;background:#4d1111;border-color:#ff7777;color:#fff;font-size:9px;font-weight:800}
 
+/* Technology is a true app-level workflow. While it is open the gameplay chrome leaves layout and the overlay owns the full dynamic viewport. */
+#app:has(#modal:not(.hidden) .technology-screen){grid-template-rows:minmax(0,1fr)}
+#app:has(#modal:not(.hidden) .technology-screen)>.app-header,
+#app:has(#modal:not(.hidden) .technology-screen)>#contextBar,
+#app:has(#modal:not(.hidden) .technology-screen)>.app-footer{display:none}
+#worldShell:has(#modal:not(.hidden) .technology-screen){grid-template-rows:minmax(0,1fr)}
+#worldShell:has(#modal:not(.hidden) .technology-screen)>#mapViewHost{display:none}
+#worldShell:has(#modal:not(.hidden) .technology-screen)>#overlayRoot{top:0}
+
 @media(max-width:370px){
   :root{--map-toolbar-height:28px}
   .map-view-toggle button{padding:2px 6px;font-size:6.4px}
