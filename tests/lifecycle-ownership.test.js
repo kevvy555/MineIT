@@ -16,6 +16,7 @@ assert.match(app,/removeEventListener\("error",this\.onWindowError\)/);
 assert.match(app,/removeEventListener\("unhandledrejection",this\.onUnhandledRejection\)/);
 assert.match(app,/document\.removeEventListener\("visibilitychange",this\.onVisibilityChange\)/);
 assert.match(app,/this\.ui\?\.dispose\?\.\(\)/);assert.match(app,/this\.tradeUI\?\.dispose\?\.\(\)/);assert.match(app,/this\.view\?\.dispose\?\.\(\)/);assert.match(app,/this\.store\?\.dispose\?\.\(\)/);
+assert.match(app,/this\.taskRepository\?\.dispose\?\.\(\)/);assert.match(app,/!this\.developmentTasksOpen/,"the development-task panel must suspend simulation without changing the saved game speed");
 assert.match(app,/addEventListener\("DOMContentLoaded",startMineIT,\{once:true\}\)/);
 
 assert.match(baseUi,/this\.speedClickHandler=/);assert.match(baseUi,/removeEventListener\("click",this\.speedClickHandler,true\)/);assert.match(baseUi,/this\.diagnosticsUnsubscribe=this\.diagnostics\.subscribe/);assert.match(baseUi,/this\.diagnosticsUnsubscribe\?\.\(\)/);assert.match(baseUi,/clearTimeout\(this\.toastTimer\)/);

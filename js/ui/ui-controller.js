@@ -4,6 +4,7 @@ import { ColonyTechUIMixin } from "./colony-tech-ui.js";
 import { ContractUIMixin } from "./contract-ui.js";
 import { PortfolioUIMixin } from "./portfolio-ui.js";
 import { UIEnhancementsMixin } from "./ui-enhancements.js";
+import { DevelopmentTasksUIMixin } from "./development-tasks-ui.js";
 import { SurvivalUIMixin } from "./survival-ui.js";
 import { IndustryUIMixin } from "./industry-ui.js";
 import { V55UIMixin } from "./v55-ui.js";
@@ -11,8 +12,8 @@ import { V55ContractLogUIMixin } from "./v55-contract-log-ui.js";
 import { LandUIMixin } from "./land-ui.js";
 
 export class UIController {
-  constructor({state,repo,resources,inventory,collection,colony,portfolio,sites,technology,survey,contracts,world,icons,diagnostics,transport,gameLog,land,development,onHardReset,onNewContract,onSwitchColony,onRemoveColony,onMakeLiability,onRelocateColony,onRecalculate,onCapturePortfolio,onSelectLand,onPlaceDevelopment,onDemolishDevelopment,onContractDecisionResolved,onProcessPendingEvent}){
-    Object.assign(this,{state,repo,resources,inventory,collection,colony,portfolio,sites,technology,survey,contracts,world,icons,diagnostics,transport,gameLog,land,development,onHardReset,onNewContract,onSwitchColony,onRemoveColony,onMakeLiability,onRelocateColony,onRecalculate,onCapturePortfolio,onSelectLand,onPlaceDevelopment,onDemolishDevelopment,onContractDecisionResolved,onProcessPendingEvent});
+  constructor({state,repo,taskRepository,taskClipboard,taskPreferencesStorage,resources,inventory,collection,colony,portfolio,sites,technology,survey,contracts,world,icons,diagnostics,transport,gameLog,land,development,onHardReset,onNewContract,onSwitchColony,onRemoveColony,onMakeLiability,onRelocateColony,onRecalculate,onCapturePortfolio,onSelectLand,onPlaceDevelopment,onDemolishDevelopment,onContractDecisionResolved,onProcessPendingEvent,onDevelopmentTasksOpenChange}){
+    Object.assign(this,{state,repo,taskRepository,taskClipboard,taskPreferencesStorage,resources,inventory,collection,colony,portfolio,sites,technology,survey,contracts,world,icons,diagnostics,transport,gameLog,land,development,onHardReset,onNewContract,onSwitchColony,onRemoveColony,onMakeLiability,onRelocateColony,onRecalculate,onCapturePortfolio,onSelectLand,onPlaceDevelopment,onDemolishDevelopment,onContractDecisionResolved,onProcessPendingEvent,onDevelopmentTasksOpenChange});
     this.tilePanel=document.querySelector("#tilePanel");this.modal=document.querySelector("#modal");this.toastEl=document.querySelector("#toast");this.errorBadge=document.querySelector("#errorBadge");this.boundClickElements=[];this.bind();
   }
   bindClick(selector,handler){const element=document.querySelector(selector);if(!element)return null;element.onclick=handler;this.boundClickElements.push(element);return element;}
@@ -33,7 +34,7 @@ export class UIController {
     controls.addEventListener("click",this.speedClickHandler,true);
   }
   dispose(){
-    clearTimeout(this.toastTimer);this.toastTimer=null;
+    clearTimeout(this.toastTimer);this.toastTimer=null;if(this.developmentTasksSessionActive)this.closeDevelopmentTasks?.();
     if(this.speedControls&&this.speedClickHandler)this.speedControls.removeEventListener("click",this.speedClickHandler,true);
     this.speedControls=null;this.speedClickHandler=null;this.speedInputBound=false;
     for(const element of this.boundClickElements||[])element.onclick=null;
@@ -67,4 +68,4 @@ export function mix(target,source){
   while(proto&&proto!==Object.prototype){chain.unshift(proto);proto=Object.getPrototypeOf(proto);}
   for(const level of chain){const descriptors=Object.getOwnPropertyDescriptors(level);delete descriptors.constructor;Object.defineProperties(target.prototype,descriptors);}
 }
-mix(UIController,ResourceUIMixin);mix(UIController,ColonyTechUIMixin);mix(UIController,ContractUIMixin);mix(UIController,PortfolioUIMixin);mix(UIController,UIEnhancementsMixin);mix(UIController,SurvivalUIMixin);mix(UIController,IndustryUIMixin);mix(UIController,V55UIMixin);mix(UIController,V55ContractLogUIMixin);mix(UIController,LandUIMixin);
+mix(UIController,ResourceUIMixin);mix(UIController,ColonyTechUIMixin);mix(UIController,ContractUIMixin);mix(UIController,PortfolioUIMixin);mix(UIController,UIEnhancementsMixin);mix(UIController,DevelopmentTasksUIMixin);mix(UIController,SurvivalUIMixin);mix(UIController,IndustryUIMixin);mix(UIController,V55UIMixin);mix(UIController,V55ContractLogUIMixin);mix(UIController,LandUIMixin);

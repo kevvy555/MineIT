@@ -3,10 +3,11 @@ import fs from "node:fs";
 import { largeHtmlTemplates } from "./template-literal-scanner.js";
 const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),"utf8");
 
-const ui=read("js/ui/ui-enhancements.js"),collection=read("views/current-collection.html"),menu=read("views/game-menu.html"),modernTech=read("js/ui/technology-presentation-ui.js"),modernTechView=read("views/corporate-technology.html"),survival=read("js/ui/survival-ui.js"),survivalManual=read("views/survival-manual.html"),industry=read("js/ui/industry-ui.js"),v55=read("js/ui/v55-ui.js");
+const ui=read("js/ui/ui-enhancements.js"),tasksUi=read("js/ui/development-tasks-ui.js"),tasksView=read("views/development-tasks.html"),collection=read("views/current-collection.html"),menu=read("views/game-menu.html"),modernTech=read("js/ui/technology-presentation-ui.js"),modernTechView=read("views/corporate-technology.html"),survival=read("js/ui/survival-ui.js"),survivalManual=read("views/survival-manual.html"),industry=read("js/ui/industry-ui.js"),v55=read("js/ui/v55-ui.js");
 for(const path of["./views/current-collection.html","./views/game-menu.html"])assert.ok(ui.includes(path),`missing UI-enhancement view path: ${path}`);
 for(const marker of["data-collection-empty","data-collection-head","data-collection-header-template","data-collection-row-template"])assert.ok(collection.includes(marker),`missing current-collection marker: ${marker}`);
-for(const marker of["data-game-menu","data-save","data-help","data-reset"])assert.ok(menu.includes(marker),`missing game-menu marker: ${marker}`);
+for(const marker of["data-game-menu","data-save","data-help","data-development-tasks","data-reset"])assert.ok(menu.includes(marker),`missing game-menu marker: ${marker}`);
+assert.match(ui,/data-development-tasks/);assert.match(tasksUi,/\.\/views\/development-tasks\.html/);for(const marker of["data-development-tasks-view","data-task-create-file","data-task-filter","data-task-copy-selected","data-task-row-template","data-task-editor"])assert.ok(tasksView.includes(marker),`missing development-task view marker: ${marker}`);assert.equal(largeHtmlTemplates(tasksUi).length,0,"development-task UI must keep static markup in its external view");
 for(const marker of["preloadViewTemplates(Object.values(ENHANCEMENT_VIEWS))","getLoadedViewTemplate","cloneNode(true)","replaceChildren"])assert.ok(ui.includes(marker),`missing external enhancement ownership marker: ${marker}`);
 assert.doesNotMatch(ui,/await\s+preloadViewTemplates\(/,"enhancement view preload must not delay module evaluation");
 assert.equal(largeHtmlTemplates(ui).length,0,"ui-enhancements must not retain large embedded HTML templates");

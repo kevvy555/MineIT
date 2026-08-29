@@ -20,6 +20,7 @@ import { SimulationEngine } from "./domain/simulation-engine.js";
 import { GameLogService } from "./domain/game-log-service.js";
 import { TransportService } from "./domain/transport-service.js";
 import { SaveRepository } from "./persistence/save-repository.js";
+import { DevelopmentTaskRepository } from "./persistence/development-task-repository.js";
 import { ResourceIcons } from "./ui/resource-icons.js";
 import { WorldView } from "./ui/world-view-runtime.js";
 import { UIController } from "./ui/ship-preparation-ui.js";
@@ -43,6 +44,7 @@ class MineITApp {
 
     this.contracts=new ContractService();
     this.repo=new SaveRepository(this.diagnostics);
+    this.taskRepository=new DevelopmentTaskRepository({diagnostics:this.diagnostics});
     this.resources=new ResourceService();
     this.inventory=new InventoryService(this.resources);
     this.technology=new TechnologyService();
@@ -73,9 +75,9 @@ class MineITApp {
     this.repo.setBeforeSave(()=>this.portfolio.captureActive(this.state,true));
     this.prepareActive();
 
-    this.afterEventQueueAction=null;
+    this.afterEventQueueAction=null;this.developmentTasksOpen=false;
     this.ui=new UIController({
-      state:this.state,repo:this.repo,resources:this.resources,inventory:this.inventory,collection:this.collection,colony:this.colony,portfolio:this.portfolio,sites:this.sites,technology:this.technology,survey:this.survey,contracts:this.contracts,world:this.world,icons:this.icons,diagnostics:this.diagnostics,transport:this.transport,gameLog:this.gameLog,land:this.land,development:this.development,
+      state:this.state,repo:this.repo,taskRepository:this.taskRepository,taskClipboard:navigator.clipboard,taskPreferencesStorage:localStorage,resources:this.resources,inventory:this.inventory,collection:this.collection,colony:this.colony,portfolio:this.portfolio,sites:this.sites,technology:this.technology,survey:this.survey,contracts:this.contracts,world:this.world,icons:this.icons,diagnostics:this.diagnostics,transport:this.transport,gameLog:this.gameLog,land:this.land,development:this.development,
       onHardReset:()=>this.hardReset(),
       onNewContract:c=>this.addColony(c),
       onSwitchColony:id=>this.switchColony(id),
@@ -89,7 +91,8 @@ class MineITApp {
       onDemolishDevelopment:tile=>this.demolishDevelopment(tile),
       onContractDecisionResolved:action=>this.resolveContractDecision(action),
       onProcessPendingEvent:()=>this.processPendingCorporateEvent(),
-      onMapFocus:mode=>this.view?.setFocus(mode)
+      onMapFocus:mode=>this.view?.setFocus(mode),
+      onDevelopmentTasksOpenChange:open=>{this.developmentTasksOpen=!!open;}
     });
     this.tradeUI=new TradeUI({state:this.state,trade:this.trade,repo:this.repo,ui:this.ui,gameLog:this.gameLog,onDepart:()=>this.onShipDepart()});
     this.view=new WorldView({state:this.state,world:this.world,survey:this.survey,resources:this.resources,technology:this.technology,icons:this.icons,diagnostics:this.diagnostics,land:this.land,onTap:(x,y)=>this.tap(x,y),onMulti:cells=>this.multi(cells),onInspect:(x,y)=>this.inspect(x,y),onSelect:(x,y)=>this.ui.selectMapTile(x,y),onPlayerShipClick:()=>this.ui.playerShipPanel()});
@@ -425,7 +428,7 @@ class MineITApp {
     this.diagnostics.heartbeat++;
     try{
       const delta=Math.min(120,now-this.lastFrame);this.lastFrame=now;
-      if(this.state.speed>0&&!this.state.company.gameOver&&!this.state.company.pendingEvents?.length){
+      if(this.state.speed>0&&!this.developmentTasksOpen&&!this.state.company.gameOver&&!this.state.company.pendingEvents?.length){
         this.accumulator+=delta*this.state.speed;
         while(this.accumulator>=CONFIG.DAY_MS&&this.state.speed>0&&!this.state.company.pendingEvents?.length){this.accumulator-=CONFIG.DAY_MS;this.tick();}
       }
@@ -446,6 +449,7 @@ class MineITApp {
     this.tradeUI?.dispose?.();
     this.view?.dispose?.();
     this.repo?.setBeforeSave(null);
+    void this.taskRepository?.dispose?.();
     this.store?.dispose?.();
     this.onWindowError=null;this.onUnhandledRejection=null;this.onVisibilityChange=null;this.animationFrameHandler=null;
     if(bootApp===this)bootApp=null;
