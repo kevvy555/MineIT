@@ -9,9 +9,9 @@ The original ShipExpansion gameplay batch is complete. The **Engineering Ship / 
 
 Stage 8 itself remains **In Progress** because specialised player-designed freight ships, scalable ore transport and the wider logistics network are still future work.
 
-Latest validated gameplay commit: `099237fbff4f9158af0a6c79ccc7ab7da72e6218`  
-Passing GitHub Actions run: `33274089654`  
-Passing job: `99157649205`
+Latest validated gameplay commit: `0fd0613293e7ad384f2489efe6615a0180127978`  
+Passing GitHub Actions run: `33274594553`  
+Passing job: `99158988423`
 
 That exact-head run passed:
 
@@ -23,7 +23,8 @@ That exact-head run passed:
 - browser startup and presentation interaction probes;
 - mobile/coarse-pointer ship and Corporate Ship touch-target regression guards;
 - full-screen Corporate Ship trade layout and non-collapsing resource-row regression guards;
-- full-screen Technology package/category/detail/delivery presentation at the supported phone and landscape browser-probe viewports.
+- Technology package/category/detail/delivery presentation at the supported phone and landscape browser-probe viewports;
+- true app-viewport Technology coverage with the game header, map toolbar, context bar and footer removed from layout while Technology is open and restored after close.
 
 No PR or merge to `develop` has been performed.
 
@@ -322,6 +323,14 @@ Presentation rules now preserved:
 - Package/cost/delivery regions may scroll internally on constrained screens while the overall Technology workflow remains bounded to the viewport.
 - Category, order and close controls preserve mobile/coarse-pointer touch sizing.
 
+A real Android screenshot exposed that the first implementation only filled `#overlayRoot`, which itself was bounded to the map region. That left the HUD, map toolbar, context bar and footer visible and reduced the vertical space available to the approved mockup. The canonical fix makes Technology an **app-level** full-screen workflow while it is open:
+
+- the app header/HUD, map toolbar, context bar and footer are removed from layout;
+- `#worldShell` expands to the full `100dvh` app area;
+- `#overlayRoot` expands from the map-only region to the full world shell;
+- closing Technology restores all normal game chrome automatically;
+- the mobile browser probe compares the Technology screen rectangle against the full `#app` rectangle and fails if any game chrome remains visible.
+
 Implementation/presentation commits:
 
 - `2883e9d77cd0f0ba245a04d2f3df3a1b6b39ee3b` — `Implement full-screen technology package presentation`
@@ -330,12 +339,14 @@ Implementation/presentation commits:
 - `d6e6b887f06592b12961aee721141986160c71ac` — `Protect full-screen technology package presentation`
 - `126f3644142868057048beff457894521838883b` — `Exercise full-screen technology layout on mobile viewports`
 - `f24bf9fc84ff3edce643290dbe2a048abbb7f17d`, `277be1cd2af3d6d7ac6e6355269aa69d9742870d`, `099237fbff4f9158af0a6c79ccc7ab7da72e6218` — compatibility guards updated to protect the new presentation rather than obsolete roadmap markup.
+- `079b752834eb2551b48000362589b4f8eb1ded2f` — `Make technology workspace app fullscreen`
+- `0fd0613293e7ad384f2489efe6615a0180127978` — `Protect true fullscreen technology viewport`
 
 Exact gameplay-head validation:
 
-- Commit: `099237fbff4f9158af0a6c79ccc7ab7da72e6218`
-- Workflow run: `33274089654`
-- Job: `99157649205`
+- Commit: `0fd0613293e7ad384f2489efe6615a0180127978`
+- Workflow run: `33274594553`
+- Job: `99158988423`
 - Unit / regression / domain coverage: **SUCCESS**
 - Browser startup / presentation interaction: **SUCCESS**
 
@@ -345,9 +356,9 @@ Exact gameplay-head validation:
 
 Passing exact gameplay head before this documentation refresh:
 
-- Commit: `099237fbff4f9158af0a6c79ccc7ab7da72e6218`
-- Workflow run: `33274089654`
-- Job: `99157649205`
+- Commit: `0fd0613293e7ad384f2489efe6615a0180127978`
+- Workflow run: `33274594553`
+- Job: `99158988423`
 - Result: **SUCCESS**
 
 Validated:
@@ -384,6 +395,8 @@ Validated:
 - [x] package component cost breakdown tied back to canonical `tech.cost`;
 - [x] Engineering Ship transport/shared-saving/amount-charged presentation;
 - [x] active and historical Engineering Ship delivery ledger;
+- [x] Technology workspace fills the complete app viewport rather than only the map overlay region;
+- [x] app header/HUD, map toolbar, context bar and footer are hidden while Technology is open and restored after close;
 - [x] full-screen Technology outer-scroll and category interaction checks across mobile/landscape browser viewports;
 - [x] long simulation soak;
 - [x] browser startup and presentation interaction tests.
@@ -424,16 +437,17 @@ If another chat/session resumes this work:
 5. read `docs/Progression Stages/Stage 8/ScanningResurveyAndBuriedResources.md`;
 6. preserve `TechnologyService` as canonical owner of capability deployment, package prices, batching, lifecycle and cancellation;
 7. preserve the full-screen Technology workspace as a presentation over `TechnologyService` rather than adding a second technology-purchase model;
-8. treat Technology component cost allocations as explanatory presentation values that must sum to canonical `tech.cost`, not as separate domain prices;
-9. preserve the Engineering Ship delivery ledger as a view of persisted deployment history, including completed/cancelled deliveries;
-10. preserve `spaceport-model.js` as canonical berth accounting;
-11. keep operational technology gates on `colony.tech`, not `company.tech`;
-12. preserve `lastScannedAtLevel` as canonical scan-history input and derive resurvey eligibility rather than storing a UI flag;
-13. never make the yellow resurvey marker conditional on hidden resource presence;
-14. preserve deterministic resource truth across scans, building coverage and demolition;
-15. preserve standard `click` activation for buttons and the coarse-pointer target policy;
-16. preserve Corporate Trade Ship as a full-screen workflow with scrollable resource rows;
-17. keep Stage 8 **In Progress** until specialised freight/logistics is playable end-to-end;
-18. update this recovery file and progression tracker whenever meaningful Stage 8 progress is committed.
+8. preserve Technology as an app-level full-screen workflow: while open it must replace the normal HUD/map-toolbar/context/footer layout rather than merely fill `#overlayRoot`'s normal map bounds;
+9. treat Technology component cost allocations as explanatory presentation values that must sum to canonical `tech.cost`, not as separate domain prices;
+10. preserve the Engineering Ship delivery ledger as a view of persisted deployment history, including completed/cancelled deliveries;
+11. preserve `spaceport-model.js` as canonical berth accounting;
+12. keep operational technology gates on `colony.tech`, not `company.tech`;
+13. preserve `lastScannedAtLevel` as canonical scan-history input and derive resurvey eligibility rather than storing a UI flag;
+14. never make the yellow resurvey marker conditional on hidden resource presence;
+15. preserve deterministic resource truth across scans, building coverage and demolition;
+16. preserve standard `click` activation for buttons and the coarse-pointer target policy;
+17. preserve Corporate Trade Ship as a full-screen workflow with scrollable resource rows;
+18. keep Stage 8 **In Progress** until specialised freight/logistics is playable end-to-end;
+19. update this recovery file and progression tracker whenever meaningful Stage 8 progress is committed.
 
 No PR or merge should be created automatically without an explicit user request.
