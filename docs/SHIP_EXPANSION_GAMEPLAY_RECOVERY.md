@@ -5,13 +5,13 @@ Base: `develop`
 
 ## Current status
 
-The original ShipExpansion gameplay batch is complete. The **Engineering Ship / Spaceport technology-delivery foundation** and the **Scanning Resurvey / Buried Resources feature** for Progression Stage 8 are now implemented and validated.
+The original ShipExpansion gameplay batch is complete. The **Engineering Ship / Spaceport technology-delivery foundation**, **Scanning Resurvey / Buried Resources feature**, and the **full-screen Technology package/delivery presentation** for Progression Stage 8 are now implemented and validated.
 
 Stage 8 itself remains **In Progress** because specialised player-designed freight ships, scalable ore transport and the wider logistics network are still future work.
 
-Latest validated gameplay commit: `8bcbf927ea7b691602aca76850f6ca1ee69f4b5b`  
-Passing GitHub Actions run: `33266200034`  
-Passing job: `99136585382`
+Latest validated gameplay commit: `099237fbff4f9158af0a6c79ccc7ab7da72e6218`  
+Passing GitHub Actions run: `33274089654`  
+Passing job: `99157649205`
 
 That exact-head run passed:
 
@@ -22,7 +22,8 @@ That exact-head run passed:
 - long simulation soak;
 - browser startup and presentation interaction probes;
 - mobile/coarse-pointer ship and Corporate Ship touch-target regression guards;
-- full-screen Corporate Ship trade layout and non-collapsing resource-row regression guards.
+- full-screen Corporate Ship trade layout and non-collapsing resource-row regression guards;
+- full-screen Technology package/category/detail/delivery presentation at the supported phone and landscape browser-probe viewports.
 
 No PR or merge to `develop` has been performed.
 
@@ -40,7 +41,7 @@ Current relevant state:
 - Stage 8 Logistics Bottleneck: **In Progress**
 - Stages 9–22: **Not Started**
 
-Stage 8 now has physical technology delivery, Spaceport berth handling, scanning/resurvey discovery and buried-resource land-use decisions. It must not move to Complete until the specialised freight/logistics gameplay loop exists end-to-end.
+Stage 8 now has physical technology delivery, Spaceport berth handling, scanning/resurvey discovery, buried-resource land-use decisions and a complete mobile capability-purchasing presentation. It must not move to Complete until the specialised freight/logistics gameplay loop exists end-to-end.
 
 ---
 
@@ -298,13 +299,55 @@ Commits:
 
 ---
 
+## Full-screen Technology package workspace
+
+The former vertically stacked technology roadmap has been replaced by the approved single-screen mobile design.
+
+Presentation rules now preserved:
+
+- Technology is a true full-screen workflow with no outer technology-page vertical scrolling at supported mobile viewports.
+- All six capability paths remain visible as compact selectors: Housing, Power, Food, Industry, Mining and Scanning.
+- Each category selector shows the colony's currently deployed capability level.
+- The selected path shows compact L1–L5 or L1–L10 level selectors with visually distinct owned/current/next/future/ordered states.
+- Only the selected technology level uses the main detail workspace, avoiding a long stack of repeated cards.
+- The detail area shows the complete gameplay effect for the selected capability, including relevant capacity, efficiency, extraction, detection, survey-slot, scan-speed and resurvey effects.
+- The package presentation explains that the purchase is a physical colony capability deployment rather than ownership of conglomerate intellectual property.
+- Every package explains the real-world-style contents appropriate to its category, such as machinery/sensors, specialist tooling or calibration equipment, control/analysis systems, commissioning engineers, training/certification and initial specialist spares or consumables.
+- The component cost allocation is **presentation/explanation only**. It always sums back to the canonical `tech.cost`; `TechnologyService` remains the authoritative owner of package price, transport charge and order behavior.
+- The cost panel shows component allocations, package subtotal, Engineering Ship transport, shared-transport saving when applicable and the actual amount charged if ordered now.
+- Same-day batching still uses the canonical Engineering Deployment order; the UI does not invent a parallel discount or purchase model.
+- The bottom Engineering Ship delivery ledger shows **all persisted deployments**, including completed/cancelled history as well as active deliveries.
+- Each delivery row shows a stable presentation order number, included upgrades and their package prices, order date, package subtotal, ship transport, lifecycle status and net paid amount.
+- Pre-launch deployments retain the canonical Cancel action; post-launch/history rows cannot be cancelled.
+- Package/cost/delivery regions may scroll internally on constrained screens while the overall Technology workflow remains bounded to the viewport.
+- Category, order and close controls preserve mobile/coarse-pointer touch sizing.
+
+Implementation/presentation commits:
+
+- `2883e9d77cd0f0ba245a04d2f3df3a1b6b39ee3b` — `Implement full-screen technology package presentation`
+- `d60cf41920d84fd3067974832fac25f0be91cfda` — `Replace technology roadmap with full-screen package workspace`
+- `75607bbb05524c9038ddbd4dc22467b5236e3304` — `Style technology as full-screen package workspace`
+- `d6e6b887f06592b12961aee721141986160c71ac` — `Protect full-screen technology package presentation`
+- `126f3644142868057048beff457894521838883b` — `Exercise full-screen technology layout on mobile viewports`
+- `f24bf9fc84ff3edce643290dbe2a048abbb7f17d`, `277be1cd2af3d6d7ac6e6355269aa69d9742870d`, `099237fbff4f9158af0a6c79ccc7ab7da72e6218` — compatibility guards updated to protect the new presentation rather than obsolete roadmap markup.
+
+Exact gameplay-head validation:
+
+- Commit: `099237fbff4f9158af0a6c79ccc7ab7da72e6218`
+- Workflow run: `33274089654`
+- Job: `99157649205`
+- Unit / regression / domain coverage: **SUCCESS**
+- Browser startup / presentation interaction: **SUCCESS**
+
+---
+
 ## Validation state
 
-Passing exact gameplay head before the documentation refresh:
+Passing exact gameplay head before this documentation refresh:
 
-- Commit: `8bcbf927ea7b691602aca76850f6ca1ee69f4b5b`
-- Workflow run: `33266200034`
-- Job: `99136585382`
+- Commit: `099237fbff4f9158af0a6c79ccc7ab7da72e6218`
+- Workflow run: `33274089654`
+- Job: `99157649205`
 - Result: **SUCCESS**
 
 Validated:
@@ -336,6 +379,12 @@ Validated:
 - [x] mobile touch target policy;
 - [x] full-screen Corporate Trade Ship workflow;
 - [x] non-collapsing/scrollable buy and sell rows on constrained viewports;
+- [x] full-screen six-category Technology selector and compact L1–L5/L1–L10 progression;
+- [x] selected Technology package gameplay effects and physical-package explanation;
+- [x] package component cost breakdown tied back to canonical `tech.cost`;
+- [x] Engineering Ship transport/shared-saving/amount-charged presentation;
+- [x] active and historical Engineering Ship delivery ledger;
+- [x] full-screen Technology outer-scroll and category interaction checks across mobile/landscape browser viewports;
 - [x] long simulation soak;
 - [x] browser startup and presentation interaction tests.
 
@@ -373,15 +422,18 @@ If another chat/session resumes this work:
 3. read `docs/PLAYER_PROGRESSION_STAGES.md`;
 4. read `docs/Progression Stages/Stage 8/EngineeringShipAndSpaceport.md`;
 5. read `docs/Progression Stages/Stage 8/ScanningResurveyAndBuriedResources.md`;
-6. preserve `TechnologyService` as canonical owner of capability deployment;
-7. preserve `spaceport-model.js` as canonical berth accounting;
-8. keep operational technology gates on `colony.tech`, not `company.tech`;
-9. preserve `lastScannedAtLevel` as canonical scan-history input and derive resurvey eligibility rather than storing a UI flag;
-10. never make the yellow resurvey marker conditional on hidden resource presence;
-11. preserve deterministic resource truth across scans, building coverage and demolition;
-12. preserve standard `click` activation for buttons and the coarse-pointer target policy;
-13. preserve Corporate Trade Ship as a full-screen workflow with scrollable resource rows;
-14. keep Stage 8 **In Progress** until specialised freight/logistics is playable end-to-end;
-15. update this recovery file and progression tracker whenever meaningful Stage 8 progress is committed.
+6. preserve `TechnologyService` as canonical owner of capability deployment, package prices, batching, lifecycle and cancellation;
+7. preserve the full-screen Technology workspace as a presentation over `TechnologyService` rather than adding a second technology-purchase model;
+8. treat Technology component cost allocations as explanatory presentation values that must sum to canonical `tech.cost`, not as separate domain prices;
+9. preserve the Engineering Ship delivery ledger as a view of persisted deployment history, including completed/cancelled deliveries;
+10. preserve `spaceport-model.js` as canonical berth accounting;
+11. keep operational technology gates on `colony.tech`, not `company.tech`;
+12. preserve `lastScannedAtLevel` as canonical scan-history input and derive resurvey eligibility rather than storing a UI flag;
+13. never make the yellow resurvey marker conditional on hidden resource presence;
+14. preserve deterministic resource truth across scans, building coverage and demolition;
+15. preserve standard `click` activation for buttons and the coarse-pointer target policy;
+16. preserve Corporate Trade Ship as a full-screen workflow with scrollable resource rows;
+17. keep Stage 8 **In Progress** until specialised freight/logistics is playable end-to-end;
+18. update this recovery file and progression tracker whenever meaningful Stage 8 progress is committed.
 
 No PR or merge should be created automatically without an explicit user request.
