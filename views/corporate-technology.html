@@ -1,50 +1,144 @@
-<div class="tech-toolbar">
-  <article class="card">
-    <h3 data-tech-access-title></h3>
-    <p data-tech-access-text></p>
-    <div class="effect">Housing, Power, Food and Industry set each colony's building capability. Mining controls what deposits can be physically exploited. Scanning controls what deposits can be detected and how effectively land can be surveyed. L2+ capability packages require a dedicated Engineering Ship visit before they become active.</div>
-  </article>
-  <button data-tech-toggle></button>
+<div class="technology-screen" data-technology-screen>
+  <header class="technology-topbar">
+    <div class="technology-title">
+      <small>CORPORATE CAPABILITY PACKAGES</small>
+      <strong>COLONY TECHNOLOGY</strong>
+    </div>
+    <button class="technology-cash" type="button">
+      <small>CORPORATION CASH</small>
+      <strong data-tech-cash></strong>
+    </button>
+    <button class="technology-close" type="button" data-tech-close aria-label="Close technology screen">✕</button>
+  </header>
+
+  <section class="technology-support">
+    <span class="technology-support-dot" aria-hidden="true"></span>
+    <div>
+      <strong data-tech-access-title></strong>
+      <small data-tech-access-text></small>
+    </div>
+    <button type="button" data-tech-toggle></button>
+  </section>
+
+  <nav class="technology-categories" data-tech-categories aria-label="Technology categories"></nav>
+
+  <main class="technology-workspace">
+    <section class="technology-path-head">
+      <div>
+        <strong data-tech-path-label></strong>
+        <small data-tech-path-level></small>
+      </div>
+      <div class="technology-legend" aria-label="Technology state legend">
+        <b class="owned">OWNED</b>
+        <b class="current">CURRENT</b>
+        <b class="next">NEXT</b>
+        <b class="pending">ORDERED</b>
+      </div>
+    </section>
+
+    <section class="technology-levels" data-tech-levels aria-label="Technology levels"></section>
+
+    <article class="technology-detail">
+      <div class="technology-detail-title">
+        <div class="technology-level-badge" data-tech-detail-level></div>
+        <div>
+          <h2 data-tech-detail-name></h2>
+          <p data-tech-detail-description></p>
+        </div>
+        <div class="technology-detail-state" data-tech-detail-state></div>
+      </div>
+
+      <div class="technology-metrics" data-tech-metrics></div>
+
+      <div class="technology-detail-body">
+        <section class="technology-package">
+          <div class="technology-section-title">
+            <strong>WHAT THIS PACKAGE DELIVERS</strong>
+            <span>PHYSICAL COLONY CAPABILITY</span>
+          </div>
+          <p class="technology-package-intro" data-tech-package-intro></p>
+          <div class="technology-effect" data-tech-effect></div>
+          <div class="technology-package-contents" data-tech-package-contents></div>
+        </section>
+
+        <section class="technology-costs">
+          <div class="technology-section-title">
+            <strong>FULL COST BREAKDOWN</strong>
+            <span>PACKAGE + DELIVERY</span>
+          </div>
+          <div class="technology-cost-rows" data-tech-costs></div>
+        </section>
+      </div>
+
+      <div class="technology-action-row">
+        <div class="technology-requirement">
+          <small>ORDER / DELIVERY</small>
+          <strong data-tech-requirement></strong>
+        </div>
+        <button class="technology-order" type="button" data-tech-order></button>
+      </div>
+    </article>
+  </main>
+
+  <section class="technology-delivery-ledger">
+    <div class="technology-ledger-head">
+      <strong>ENGINEERING SHIP DELIVERIES</strong>
+      <small data-tech-delivery-summary></small>
+    </div>
+    <div class="technology-deliveries" data-tech-deliveries></div>
+    <div class="technology-deliveries-empty" data-tech-deliveries-empty>No Engineering Ship deliveries have been purchased for this colony yet.</div>
+  </section>
 </div>
 
-<article class="card" data-engineering-section>
-  <div class="tech-path-header"><strong>ENGINEERING DEPLOYMENTS</strong><span data-engineering-count></span></div>
-  <p>Orders placed for this colony on the same game day share one Engineering Ship transport charge. The conglomerate prepares each deployment for five days before launch.</p>
-  <div data-engineering-deployments></div>
-  <div class="effect" data-engineering-empty>No Engineering Ship deployments are currently active for this colony.</div>
-</article>
-
-<div class="tech-tree" data-tech-tree></div>
-
-<template data-engineering-deployment-template>
-  <article class="card" data-engineering-deployment>
-    <div class="tech-roadmap-title"><strong data-engineering-title></strong><span data-engineering-status></span></div>
-    <p data-engineering-upgrades></p>
-    <div class="grid3">
-      <div class="metric"><small>Upgrade packages</small><strong data-engineering-packages></strong></div>
-      <div class="metric"><small>Ship transport</small><strong data-engineering-transport></strong></div>
-      <div class="metric"><small>Total paid</small><strong data-engineering-total></strong></div>
-    </div>
-    <div class="effect good" data-engineering-saving></div>
-    <button data-engineering-cancel>CANCEL DEPLOYMENT</button>
-  </article>
+<template data-tech-category-template>
+  <button class="technology-category" type="button" data-tech-category>
+    <span class="technology-category-icon" data-tech-category-icon></span>
+    <strong data-tech-category-label></strong>
+    <span data-tech-category-level></span>
+  </button>
 </template>
 
-<template data-tech-path-template>
-  <section class="tech-path" data-tech-path>
-    <div class="tech-path-header"><strong data-tech-path-label></strong><span data-tech-path-level></span></div>
-    <div class="tech-roadmap" data-tech-roadmap></div>
-  </section>
+<template data-tech-level-template>
+  <button class="technology-level" type="button" data-tech-level>
+    <span data-tech-level-label></span>
+    <i aria-hidden="true"></i>
+  </button>
 </template>
-<template data-tech-card-template>
-  <article class="tech-roadmap-card" data-tech-card>
-    <div class="tech-roadmap-level" data-tech-card-level></div>
-    <div class="tech-roadmap-copy">
-      <div class="tech-roadmap-title"><strong data-tech-card-name></strong><span data-tech-card-state></span></div>
-      <p data-tech-card-description></p>
-      <div class="effect" data-tech-card-effect></div>
-      <div class="requirement" data-tech-card-requirement></div>
+
+<template data-tech-metric-template>
+  <div class="technology-metric">
+    <small data-tech-metric-label></small>
+    <strong data-tech-metric-value></strong>
+  </div>
+</template>
+
+<template data-tech-package-item-template>
+  <div class="technology-package-item">
+    <span class="technology-package-check" aria-hidden="true">✓</span>
+    <div>
+      <strong data-tech-package-item-name></strong>
+      <small data-tech-package-item-description></small>
     </div>
-    <div class="tech-roadmap-action" data-tech-card-action></div>
+    <b data-tech-package-item-cost></b>
+  </div>
+</template>
+
+<template data-tech-cost-row-template>
+  <div class="technology-cost-row" data-tech-cost-row>
+    <span data-tech-cost-label></span>
+    <b data-tech-cost-value></b>
+  </div>
+</template>
+
+<template data-tech-delivery-template>
+  <article class="technology-delivery" data-tech-delivery>
+    <div class="technology-delivery-id"><strong data-tech-delivery-id></strong><small>DELIVERY</small></div>
+    <div class="technology-delivery-copy">
+      <strong data-tech-delivery-upgrades></strong>
+      <small data-tech-delivery-meta></small>
+    </div>
+    <div class="technology-delivery-status" data-tech-delivery-status></div>
+    <div class="technology-delivery-total"><small>NET PAID</small><strong data-tech-delivery-total></strong></div>
+    <button type="button" data-engineering-cancel>CANCEL</button>
   </article>
 </template>
