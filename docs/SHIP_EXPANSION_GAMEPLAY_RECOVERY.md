@@ -9,9 +9,9 @@ The original ShipExpansion gameplay batch is complete and the **Engineering Ship
 
 Stage 8 itself remains **In Progress** because specialised player-designed freight ships, scalable ore transport and the wider logistics network are still future work.
 
-Latest gameplay-validation commit: `1da0182adfb76682cced262921f7f399f142e7c0`  
-Passing GitHub Actions run: `33256279805`  
-Passing job: `99110466141`
+Latest gameplay-validation commit: `eb4e362ae83c16c2e81cf3dcc5af9f0d1cab6f88`  
+Passing GitHub Actions run: `33262059977`  
+Passing job: `99125575158`
 
 That exact-head run passed:
 
@@ -19,7 +19,8 @@ That exact-head run passed:
 - Engineering Ship / Spaceport / Mining-Scanning delivery regression;
 - save-v10 migration and realistic save round-trip;
 - long simulation soak;
-- browser startup and presentation interaction probes.
+- browser startup and presentation interaction probes;
+- mobile/coarse-pointer ship and Corporate Ship touch-target regression guards.
 
 No PR or merge to `develop` has been performed.
 
@@ -254,13 +255,43 @@ Spaceport/player-ship navigation polish is covered by:
 
 ---
 
+## Mobile touchscreen reliability fix
+
+A pre-existing Android/touchscreen issue was reported where ship-panel buttons and Corporate Ship colonist controls sometimes required many taps before a click registered.
+
+The affected controls were using normal browser `click` handlers correctly, but several touch targets were only around 25–38px high and were embedded in touch-scrollable panels. Small involuntary finger movement can therefore be interpreted as scrolling rather than activation, cancelling the click.
+
+The fix deliberately keeps standard semantic button/click behaviour rather than introducing `touchstart` or `pointerdown` action handlers that could double-fire or conflict with gestures.
+
+Implemented changes:
+
+- all buttons opt into `touch-action: manipulation`;
+- coarse-pointer devices receive minimum 44px targets for Player Ship, ship-preparation, Star Map, Corporate Ship and Spaceport actions;
+- Corporate Ship colonist +/- controls use 44px columns and 44px minimum button dimensions;
+- compact ship CSS cannot shrink these coarse-pointer targets below the mobile minimum because the touch-target rule is explicitly authoritative;
+- regression guards in `tests/map-first-ux.test.js` protect the shared tap policy and Corporate Ship colonist target sizing.
+
+Implementation commits:
+
+- `ef1d920a53810b8f4d144b88f06860bc9e1958b4` — `Improve mobile tap reliability for ship controls`
+- `eb4e362ae83c16c2e81cf3dcc5af9f0d1cab6f88` — `Protect coarse-pointer ship touch targets`
+
+Exact-head validation:
+
+- Workflow run: `33262059977`
+- Job: `99125575158`
+- Unit / regression / domain coverage: **SUCCESS**
+- Browser startup / presentation interaction: **SUCCESS**
+
+---
+
 ## Validation state
 
 Passing exact gameplay head before this documentation refresh:
 
-- Commit: `1da0182adfb76682cced262921f7f399f142e7c0`
-- Workflow run: `33256279805`
-- Job: `99110466141`
+- Commit: `eb4e362ae83c16c2e81cf3dcc5af9f0d1cab6f88`
+- Workflow run: `33262059977`
+- Job: `99125575158`
 - Result: **SUCCESS**
 
 Validated:
@@ -282,6 +313,7 @@ Validated:
 - [x] local buildings require deployed colony technology;
 - [x] save-v10 migration and realistic save round-trip;
 - [x] original ShipExpansion capacity/reroute/new-colony transfer rules;
+- [x] coarse-pointer ship and Corporate Ship control sizing/touch policy;
 - [x] long simulation soak;
 - [x] browser startup;
 - [x] browser/presentation interaction tests.
@@ -322,7 +354,8 @@ If another chat/session resumes this work:
 5. preserve `TechnologyService` as canonical owner of capability deployment;
 6. preserve `spaceport-model.js` as canonical berth accounting;
 7. keep operational technology gates on `colony.tech`, not `company.tech`;
-8. keep Stage 8 **In Progress** until specialised freight/logistics is playable end-to-end;
-9. update this recovery file and the progression tracker whenever meaningful Stage 8 progress is committed.
+8. preserve standard `click` activation for buttons; use coarse-pointer sizing/touch CSS rather than parallel touch handlers;
+9. keep Stage 8 **In Progress** until specialised freight/logistics is playable end-to-end;
+10. update this recovery file and the progression tracker whenever meaningful Stage 8 progress is committed.
 
 No PR or merge should be created automatically without an explicit user request.
