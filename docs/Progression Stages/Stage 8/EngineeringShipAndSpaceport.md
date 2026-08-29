@@ -35,7 +35,7 @@ The player does not manually route, crew or load Engineering Ships.
 
 The revised lifecycle is:
 
-**AVAILABLE → ORDERED / SAME-DAY BATCH → ENGINEERING SHIP DISPATCHED → IN TRANSIT → ORBITAL HOLDING OR LANDED → COMMISSIONING → ACTIVE → ENGINEERING SHIP DEPARTS**
+**AVAILABLE → ORDERED / SAME-DAY BATCH → 5-DAY PREPARATION → ENGINEERING SHIP DISPATCHED → IN TRANSIT → ORBITAL HOLDING OR LANDED → COMMISSIONING → ACTIVE → ENGINEERING SHIP DEPARTS**
 
 ## Available
 
@@ -43,15 +43,31 @@ The next sequential capability level is available to order.
 
 ## Ordered / same-day batch
 
-The player orders an upgrade and pays its package cost.
+The player orders an upgrade and pays its package cost plus the deployment's fixed Engineering Ship transport charge.
 
 Any additional technology upgrades ordered for the **same colony during the same game day** are added to the same Engineering Deployment Order.
 
-The order remains cancellable until launch.
+Because those additional upgrades use the already-booked Engineering Ship, they add only their individual upgrade-package price and do not add another transport charge.
+
+The order remains cancellable before launch.
+
+## Five-day preparation
+
+After the order day closes, the conglomerate requires **5 full game days** to assemble the equipment, allocate the specialists, prepare the Engineering Ship and complete pre-flight checks.
+
+During this preparation period:
+
+- the deployment status is `Preparing`;
+- the Engineering Ship has not launched;
+- the order may still be cancelled under the pre-launch cancellation rule;
+- the target colony does not gain any capability from the ordered upgrades;
+- additional upgrades ordered on later game days do not join this deployment and create a separate deployment order.
+
+The 5-day period is fixed for the current feature. Travel time begins only after preparation is complete and the Engineering Ship launches.
 
 ## Dispatch
 
-At the end of the game day, the order is closed and the conglomerate dispatches one Engineering Ship carrying every upgrade in that day's batch.
+At the end of the fifth preparation day, the conglomerate automatically dispatches one Engineering Ship carrying every upgrade in that deployment batch.
 
 Once the ship has launched, the order can no longer be cancelled.
 
@@ -87,7 +103,51 @@ When commissioning completes, all upgrades in the deployment become active toget
 
 ---
 
-# 3. Same-Day Upgrade Batching
+# 3. Engineering Deployment Pricing
+
+Every Engineering Deployment has two distinct cost components.
+
+## Fixed Engineering Ship transport price
+
+Each dispatched Engineering Ship has **one fixed transport/deployment price**.
+
+This represents:
+
+- ship mobilisation;
+- crew costs;
+- specialist transport;
+- fuel and flight operations;
+- loading and ground-support preparation;
+- engineering deployment administration.
+
+The fixed transport price is charged **once per Engineering Deployment Order**, regardless of whether that ship carries one upgrade or several upgrades batched together on the same game day.
+
+The exact monetary value is a balance constant and may be tuned without changing the gameplay rule.
+
+## Individual upgrade-package prices
+
+Every requested capability upgrade also has its own individual package price.
+
+This represents the actual specialist equipment, tooling, systems and commissioning requirements associated with that upgrade.
+
+Therefore:
+
+**Deployment Total = Fixed Engineering Ship Transport Price + Sum of Upgrade Package Prices**
+
+Example structure:
+
+- Engineering Ship transport: £X
+- Mining L4 package: £Y
+- Scanning L4 package: £Z
+- Total: £X + £Y + £Z
+
+If Mining L4 and Scanning L4 were ordered on separate game days, two separate deployments would be created and the fixed Engineering Ship transport price would be paid twice.
+
+This replaces the earlier generic percentage-based multi-upgrade discount idea. The saving from batching is now concrete and understandable: **the player pays for only one Engineering Ship instead of several**.
+
+---
+
+# 4. Same-Day Upgrade Batching
 
 Technology purchasing should reward planning without making the player micromanage dispatches.
 
@@ -95,40 +155,37 @@ Rules:
 
 - the first upgrade ordered on a game day creates an Engineering Deployment Order for that colony;
 - further upgrades ordered for the same colony before the end of that game day join that order;
+- only one Engineering Ship transport charge is applied to the deployment;
+- additional same-day upgrades add only their individual package price;
 - only one Engineering Ship is dispatched for the batch;
 - all upgrades in the batch arrive together;
 - all upgrades in the batch are commissioned during the same visit;
-- the batch launches automatically at the end of the game day;
+- after the order day ends the batch is closed and enters its fixed 5-day preparation period;
+- upgrades ordered on later days create new Engineering Deployment Orders;
 - the player does not need a separate Dispatch button.
-
-## Multi-upgrade discount
-
-A same-day batch receives a discount because only one Engineering Ship mobilisation, crew deployment and transport operation is required.
-
-The discount represents reduced **deployment/logistics cost**, not cheaper technology or intellectual property.
-
-Exact discount values are intentionally deferred to balancing.
 
 The UI should make the saving visible, for example:
 
 - Upgrade package subtotal
-- Engineering deployment cost
-- Multi-upgrade deployment saving
+- Engineering Ship transport
+- Shared-transport saving compared with separate deployments
 - Final order total
 
-This should create a useful decision: order an upgrade immediately, or combine several upgrades on the same day to reduce deployment cost.
+This creates a useful decision: order an upgrade immediately, or combine several upgrades on the same day so they share the transport cost.
 
 ---
 
-# 4. Cancellation
+# 5. Cancellation
 
 Cancellation is deliberately simple.
 
 ## Before launch
 
-The player may cancel an Engineering Deployment Order while it is still preparing during the order day.
+The player may cancel an Engineering Deployment Order at any point before its Engineering Ship launches, including during the fixed 5-day preparation period.
 
-The cancellation cost/refund rules can be balanced during implementation, but this is the **only cancellation window**.
+The cancellation cost/refund rule is deliberately a simple initial cancellation cost and should be represented by a single balance constant.
+
+This is the **only cancellation window**.
 
 ## After launch
 
@@ -142,7 +199,7 @@ No mid-flight cancellation system is required.
 
 ---
 
-# 5. Spaceport Foundation
+# 6. Spaceport Foundation
 
 The current concept of the player's colony ship occupying a special landing tile should evolve into a persistent **Spaceport**.
 
@@ -170,7 +227,7 @@ The Basic Spaceport is therefore another concrete item supplied free to a conglo
 
 ---
 
-# 6. Spaceport Upgrades
+# 7. Spaceport Upgrades
 
 The conglomerate provides the initial/basic Spaceport only.
 
@@ -188,7 +245,7 @@ The state/domain model should be designed so later work can support different sh
 
 ---
 
-# 7. Spaceport Berths
+# 8. Spaceport Berths
 
 Every landed ship consumes a Spaceport berth/ship slot.
 
@@ -208,7 +265,7 @@ The exact number and type of berths at each Spaceport level are deferred to the 
 
 ---
 
-# 8. Orbital Holding
+# 9. Orbital Holding
 
 Orbital Holding is the standard state for any arriving ship that cannot currently land.
 
@@ -227,7 +284,7 @@ Potential waiting fees or congestion costs for commercial third-party vessels ar
 
 ---
 
-# 9. Engineering Specialists
+# 10. Engineering Specialists
 
 Engineering specialists are temporary conglomerate personnel assigned to the Engineering Ship.
 
@@ -246,7 +303,7 @@ This keeps the technology-delivery system physical without creating unnecessary 
 
 ---
 
-# 10. Colonies Outside Corporate Ship Range
+# 11. Colonies Outside Corporate Ship Range
 
 Remote colonies remain eligible for technology advancement.
 
@@ -255,21 +312,22 @@ The normal Corporate Ship service radius controls ordinary corporate trade/suppo
 When an upgrade is ordered for a remote colony:
 
 1. the order is batched in the normal way;
-2. the conglomerate dispatches an Engineering Ship;
-3. the ship travels the greater distance;
-4. it enters Orbital Holding if necessary;
-5. it lands at the colony Spaceport;
-6. it commissions the upgrades;
-7. the capabilities become active;
-8. the Engineering Ship departs.
+2. the deployment spends 5 days preparing at the conglomerate;
+3. the conglomerate dispatches an Engineering Ship;
+4. the ship travels the greater distance;
+5. it enters Orbital Holding if necessary;
+6. it lands at the colony Spaceport;
+7. it commissions the upgrades;
+8. the capabilities become active;
+9. the Engineering Ship departs.
 
-Greater distance should primarily create **time pressure**. Whether it also increases deployment cost can be decided during balancing.
+Greater distance creates **time pressure only** for the current feature. The Engineering Ship transport price remains fixed regardless of destination distance unless later balancing explicitly changes that rule.
 
 This avoids technology progression becoming impossible merely because expansion has moved beyond the Corporate Ship service radius.
 
 ---
 
-# 11. Capability Scope
+# 12. Capability Scope
 
 For this implementation, a technology upgrade is requested for a specific colony and must physically be commissioned there.
 
@@ -288,7 +346,7 @@ This gives the logistics system meaningful physical consequences and supports la
 
 ---
 
-# 12. Relationship to the Normal Corporate Ship
+# 13. Relationship to the Normal Corporate Ship
 
 The ordinary Corporate Ship is no longer responsible for technology delivery.
 
@@ -307,13 +365,14 @@ This separation prevents one generic Corporate Ship from unrealistically providi
 
 ---
 
-# 13. UI / Player Information Requirements
+# 14. UI / Player Information Requirements
 
 The player should be able to see the status of each Engineering Deployment Order.
 
 Useful states include:
 
-- Preparing — dispatches end of day
+- Ordered / same-day batch
+- Preparing — day N of 5
 - Dispatched
 - In Transit
 - Orbital Holding — waiting for Spaceport berth
@@ -324,10 +383,11 @@ Useful states include:
 Before launch, the order view should also show:
 
 - all included upgrades;
-- package subtotal;
-- deployment cost;
-- same-day batching discount/saving;
+- upgrade-package subtotal;
+- fixed Engineering Ship transport price;
+- shared-transport saving compared with separate deployments;
 - final total;
+- expected dispatch date;
 - Cancel Order action.
 
 After launch, Cancel Order disappears/is disabled.
@@ -344,7 +404,7 @@ Exact mobile presentation belongs to implementation design.
 
 ---
 
-# 14. Deferred Decisions
+# 15. Deferred Decisions
 
 The following are intentionally **not locked yet**:
 
@@ -352,32 +412,35 @@ The following are intentionally **not locked yet**:
 - Small/Medium/Heavy or other berth-size classes;
 - exact Engineering Ship travel-speed formula;
 - exact commissioning durations;
-- exact multi-upgrade deployment discount;
+- exact monetary value of the fixed Engineering Ship transport price;
 - exact pre-launch cancellation fee/refund;
-- whether extreme distance increases Engineering Ship deployment cost;
 - whether independent companies later build/own their own engineering vessels;
 - commercial waiting/congestion fees for future third-party ships.
 
-These should be resolved when the relevant logistics and ship-design systems are developed.
+These should be resolved when the relevant logistics, balancing and ship-design systems are developed.
 
 ---
 
-# 15. Implementation Rules to Preserve
+# 16. Implementation Rules to Preserve
 
 When this feature is implemented:
 
 1. Technology upgrades must no longer activate immediately on purchase.
 2. Technology delivery must not depend on ordinary Corporate Ship visits.
 3. Same-colony upgrades ordered on the same game day must batch into one Engineering Deployment Order.
-4. The Engineering Ship must be conglomerate-owned and autonomously dispatched.
-5. The ship must physically travel to the target colony.
-6. A Spaceport berth must be available before commissioning can begin.
-7. Full Spaceports must cause Orbital Holding, not failed delivery.
-8. The normal Corporate Ship consumes a Spaceport berth when landed.
-9. Engineering specialists remain ship-based and consume no colony Housing/population/passenger space.
-10. Pre-launch cancellation is supported; post-launch cancellation is not.
-11. A Basic Spaceport is part of the conglomerate-funded colony startup package.
-12. Spaceport upgrades after the basic level are player-developed infrastructure.
-13. Exact Spaceport capacity/ship-size rules remain deferred until the wider freight-ship design is established.
-14. Remote colonies outside normal Corporate Ship range remain valid Engineering Ship destinations.
-15. Save/load and regression coverage must preserve every lifecycle state, including Orbital Holding and pending same-day batches.
+4. Every Engineering Deployment must charge exactly one fixed Engineering Ship transport price plus the price of each included upgrade package.
+5. The batching saving comes from sharing one Engineering Ship transport charge; do not apply a generic percentage discount to the upgrade packages.
+6. After the order day closes, every deployment must spend exactly 5 full game days preparing before launch.
+7. The Engineering Ship must be conglomerate-owned and autonomously dispatched.
+8. The ship must physically travel to the target colony.
+9. A Spaceport berth must be available before commissioning can begin.
+10. Full Spaceports must cause Orbital Holding, not failed delivery.
+11. The normal Corporate Ship consumes a Spaceport berth when landed.
+12. Engineering specialists remain ship-based and consume no colony Housing/population/passenger space.
+13. Pre-launch cancellation is supported throughout preparation; post-launch cancellation is not.
+14. A Basic Spaceport is part of the conglomerate-funded colony startup package.
+15. Spaceport upgrades after the basic level are player-developed infrastructure.
+16. Exact Spaceport capacity/ship-size rules remain deferred until the wider freight-ship design is established.
+17. Remote colonies outside normal Corporate Ship range remain valid Engineering Ship destinations.
+18. Engineering Ship transport price is fixed for the current feature rather than distance-based.
+19. Save/load and regression coverage must preserve every lifecycle state, including Preparing, Orbital Holding and pending same-day batches.
