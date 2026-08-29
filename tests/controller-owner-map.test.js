@@ -11,7 +11,7 @@ for(const removed of["building-details-ui.js","survival-presentation-ui.js"])ass
 // Legacy composition order is intentional. Later mixins own the public method while explicit calls below emulate the required super-chain.
 const mixOrder=["ResourceUIMixin","ColonyTechUIMixin","ContractUIMixin","PortfolioUIMixin","UIEnhancementsMixin","DevelopmentTasksUIMixin","SurvivalUIMixin","IndustryUIMixin","V55UIMixin","V55ContractLogUIMixin","LandUIMixin"];
 let previous=-1;for(const owner of mixOrder){const at=base.indexOf(`mix(UIController,${owner})`);assert.ok(at>previous,`legacy mixin order changed around ${owner}`);previous=at;}
-assert.doesNotMatch(tasks,/this\.state\.[A-Za-z0-9_$]+\s*=/,"development tasks must not mutate gameplay state");assert.match(tasks,/taskRepository\.(?:create|update|move|remove|markInProgress)/,"development-task UI must dispatch data changes to its persistence owner");
+assert.doesNotMatch(tasks,/this\.state\.[A-Za-z0-9_$]+\s*=/,"development tasks must not mutate gameplay state");for(const mutation of["create","update","setStatus","importText","move","remove","markInProgress"])assert.match(tasks,new RegExp(`taskRepository\\.${mutation}\\(`),`development-task UI must dispatch ${mutation} to its persistence owner`);
 
 const qualifiedCalls=(source)=>[...source.matchAll(/([A-Za-z0-9_$]+)\.prototype\.([A-Za-z0-9_$]+)\.call\(this/g)].map(match=>`${match[1]}.${match[2]}`);
 assert.deepEqual(qualifiedCalls(industry),["ColonyTechUIMixin.colonyPanel","UIEnhancementsMixin.currentCollection","ResourceUIMixin.tile"],"Industry delegates are the intentional legacy super-chain");

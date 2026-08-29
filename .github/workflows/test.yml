@@ -115,7 +115,7 @@ jobs:
 
           echo "Testing mobile development-task JSON and clipboard workflow"
           "$chrome" --headless --no-sandbox --disable-gpu --window-size=390,844 --virtual-time-budget=15000 --dump-dom http://127.0.0.1:8123/tests/development-tasks-probe.html >/tmp/development-tasks.html 2>/tmp/development-tasks.log
-          if ! grep -q 'PASS development task file, filters, editor, numbered multi-copy, autosave and simulation pause' /tmp/development-tasks.html; then
+          if ! grep -q 'PASS development task file, type/status filters, import, status icons, editor, numbered multi-copy, autosave and simulation pause' /tmp/development-tasks.html; then
             echo "Development Tasks interaction probe failed"
             cat /tmp/development-tasks.html
             cat /tmp/development-tasks.log

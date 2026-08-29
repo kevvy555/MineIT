@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { DevelopmentTaskFileError,DevelopmentTaskRepository,createDevelopmentTaskDocument,normalizeDevelopmentTaskDocument } from "../js/persistence/development-task-repository.js";
+import { DevelopmentTaskFileError,DevelopmentTaskRepository,createDevelopmentTaskDocument,normalizeDevelopmentTaskDocument,parseDevelopmentTaskImport } from "../js/persistence/development-task-repository.js";
 import { formatDevelopmentTasksForClipboard } from "../js/ui/development-tasks-ui.js";
 
 class MemoryHandleStore{
@@ -37,6 +37,13 @@ for(const invalid of[
   {version:1,items:[{...validTask,text:"  "}]},
   {version:1,items:[validTask,{...validTask}]}
 ])assert.throws(()=>normalizeDevelopmentTaskDocument(invalid),DevelopmentTaskFileError);
+assert.deepEqual(parseDevelopmentTaskImport("1. [BUG] Broken control\n- Uses selected default\n3) [FEATURE] Add export\n• Another default\n\n","feature"),[
+  {type:"bug",text:"Broken control"},
+  {type:"feature",text:"Uses selected default"},
+  {type:"feature",text:"Add export"},
+  {type:"feature",text:"Another default"}
+]);
+assert.throws(()=>parseDevelopmentTaskImport("Task","idea"),error=>error.code==="invalid-type");
 
 const handleStore=new MemoryHandleStore(),createdFile=new FakeFileHandle("mineit-issues.json");let id=0,tick=0;
 const repository=new DevelopmentTaskRepository({
@@ -72,5 +79,16 @@ await assert.rejects(()=>invalidRepository.selectExisting(),error=>error.code===
 const emptyFile=new FakeFileHandle("empty.json","   "),emptyStore=new MemoryHandleStore(),emptyRepository=new DevelopmentTaskRepository({handleStore:emptyStore,openFilePicker:async()=>[emptyFile],saveFilePicker:async()=>emptyFile});
 await emptyRepository.selectExisting();assert.deepEqual(JSON.parse(emptyFile.textValue),{version:1,items:[]},"an intentionally empty selected file should be initialized safely");
 
-await Promise.all([repository.dispose(),rememberedRepository.dispose(),invalidRepository.dispose(),emptyRepository.dispose()]);assert.equal(handleStore.disposed,true);
+const importFile=new FakeFileHandle("import.json"),importStore=new MemoryHandleStore();let importedId=0,importedTick=0;const importRepository=new DevelopmentTaskRepository({handleStore:importStore,openFilePicker:async()=>[importFile],saveFilePicker:async()=>importFile,createId:()=>`imported-${++importedId}`,now:()=>`2026-08-29T11:00:0${importedTick++}.000Z`});
+await importRepository.createNew();const writesBeforeImport=importFile.writes.length,imported=await importRepository.importText("1. [BUG] Broken control\n- Add compact control\n3) [FEATURE] Add another option","feature");
+assert.equal(importFile.writes.length,writesBeforeImport+1,"a batch import must auto-save with one JSON write");assert.deepEqual(imported.map(item=>({type:item.type,status:item.status,text:item.text})),[
+  {type:"bug",status:"backlog",text:"Broken control"},
+  {type:"feature",status:"backlog",text:"Add compact control"},
+  {type:"feature",status:"backlog",text:"Add another option"}
+]);
+assert.deepEqual(JSON.parse(importFile.textValue).items.map(item=>item.id),imported.map(item=>item.id),"imported task order must match pasted line order");
+const writesBeforeStatus=importFile.writes.length;await importRepository.setStatus(imported[1].id,"complete");assert.equal(importRepository.items()[1].status,"complete");assert.equal(JSON.parse(importFile.textValue).items[1].status,"complete","direct status changes must auto-save");await importRepository.setStatus(imported[1].id,"complete");assert.equal(importFile.writes.length,writesBeforeStatus+1,"selecting the active status must not rewrite the file");
+await assert.rejects(()=>importRepository.importText("\n • \n","bug"),error=>error.code==="blank-import");assert.equal(importFile.writes.length,writesBeforeStatus+1,"a blank import must not write the task file");
+
+await Promise.all([repository.dispose(),rememberedRepository.dispose(),invalidRepository.dispose(),emptyRepository.dispose(),importRepository.dispose()]);assert.equal(handleStore.disposed,true);
 console.log("MineIT development-task JSON persistence, recovery and clipboard contract passed");

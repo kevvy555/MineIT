@@ -31,6 +31,18 @@ export class BrowserFileHandleStore{
 
 export function createDevelopmentTaskDocument(){return{version:DOCUMENT_VERSION,items:[]};}
 
+export function parseDevelopmentTaskImport(text,defaultType="bug"){
+  if(!TASK_TYPES.has(defaultType))throw new DevelopmentTaskFileError("invalid-type","Choose Bug or Feature for untagged imported tasks.");
+  const parsed=[];
+  for(const source of String(text||"").split(/\r?\n/)){
+    let line=source.trim();if(!line)continue;
+    line=line.replace(/^(?:\d+[.)]|[-*•])\s*/,"").trim();
+    const tagged=line.match(/^\[(BUG|FEATURE)\]\s*/i),type=tagged?tagged[1].toLowerCase():defaultType;if(tagged)line=line.slice(tagged[0].length).trim();
+    if(line)parsed.push({type,text:line});
+  }
+  return parsed;
+}
+
 export function normalizeDevelopmentTaskDocument(value){
   if(!value||typeof value!=="object"||Array.isArray(value))throw new DevelopmentTaskFileError("invalid-json","The selected file is not a MineIT development-task document.");
   if(value.version!==DOCUMENT_VERSION)throw new DevelopmentTaskFileError("unsupported-version",`Task-file version ${String(value.version??"missing")} is not supported.`);
@@ -124,10 +136,18 @@ export class DevelopmentTaskRepository{
     this.document.items.unshift(item);await this.save();return{...item};
   }
 
+  async importText(text,defaultType="bug"){
+    this.assertReady();const entries=parseDevelopmentTaskImport(text,defaultType);if(!entries.length)throw new DevelopmentTaskFileError("blank-import","Paste at least one task, with one task on each line.");
+    const items=entries.map(entry=>{this.assertType(entry.type);const description=String(entry.text||"").trim();if(!description)throw new DevelopmentTaskFileError("blank-task","Imported tasks cannot have blank descriptions.");const timestamp=this.now();return{id:String(this.createId()),type:entry.type,status:"backlog",text:description,createdAt:timestamp,updatedAt:timestamp};});
+    this.document.items.unshift(...items);await this.save();return items.map(item=>({...item}));
+  }
+
   async update(id,{type,status,text}){
     this.assertReady();this.assertType(type);this.assertStatus(status);const description=String(text||"").trim();if(!description)throw new DevelopmentTaskFileError("blank-task","Enter a bug or feature description.");
     const item=this.find(id);Object.assign(item,{type,status,text:description,updatedAt:this.now()});await this.save();return{...item};
   }
+
+  async setStatus(id,status){this.assertReady();this.assertStatus(status);const item=this.find(id);if(item.status===status)return{...item};item.status=status;item.updatedAt=this.now();await this.save();return{...item};}
 
   async markInProgress(ids){
     this.assertReady();const wanted=new Set(ids),changed=[];

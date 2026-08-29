@@ -24,14 +24,19 @@
 
   <section class="development-task-workspace" data-task-workspace hidden>
     <div class="development-task-toolbar">
-      <button class="action" data-task-new>+ NEW BUG / FEATURE</button>
+      <div class="development-task-primary-actions">
+        <button class="action" data-task-new>+ NEW BUG / FEATURE</button>
+        <button data-task-import>⇩ IMPORT</button>
+      </div>
       <span data-task-total>0 TASKS</span>
     </div>
 
-    <div class="development-task-filters" role="group" aria-label="Task status filters">
+    <div class="development-task-filters" role="group" aria-label="Task filters">
       <button data-task-filter="backlog" aria-pressed="true">BACKLOG</button>
       <button data-task-filter="in-progress" aria-pressed="true">IN PROGRESS</button>
       <button data-task-filter="complete" aria-pressed="false">COMPLETE</button>
+      <button data-task-filter="bug" aria-pressed="true">BUGS</button>
+      <button data-task-filter="feature" aria-pressed="true">FEATURES</button>
     </div>
 
     <div class="development-task-selection">
@@ -43,7 +48,7 @@
       </div>
     </div>
 
-    <div class="development-task-empty" data-task-empty hidden>No tasks match the selected status filters.</div>
+    <div class="development-task-empty" data-task-empty hidden>No tasks match the selected filters.</div>
     <div class="development-task-list" data-task-list></div>
   </section>
 
@@ -74,11 +79,38 @@
     </div>
   </section>
 
+  <section class="development-task-editor development-task-import" data-task-import-panel hidden>
+    <div class="development-task-field">
+      <small>DEFAULT TYPE</small>
+      <div class="development-task-segments" role="group" aria-label="Default imported task type">
+        <button data-task-import-type="bug" aria-pressed="true">BUG</button>
+        <button data-task-import-type="feature" aria-pressed="false">FEATURE</button>
+      </div>
+    </div>
+    <label class="development-task-field development-task-description">
+      <small>ONE TASK PER LINE</small>
+      <textarea data-task-import-text rows="12" maxlength="50000" placeholder="1. First task&#10;2. [FEATURE] Optional type override"></textarea>
+    </label>
+    <p class="development-task-import-note">Blank lines, bullets and leading numbers are removed. Prefix a line with [BUG] or [FEATURE] to override the default.</p>
+    <p class="development-task-error" data-task-import-error hidden></p>
+    <div class="development-task-editor-actions">
+      <button data-task-import-cancel>CANCEL</button>
+      <button class="action" data-task-import-save>IMPORT</button>
+    </div>
+  </section>
+
   <template data-task-row-template>
     <article class="development-task-row" data-task-id>
       <label class="development-task-select"><input type="checkbox" data-task-select><span data-task-number>#1</span></label>
       <div class="development-task-copy">
-        <div class="development-task-badges"><strong data-task-type-label>BUG</strong><span data-task-status-label>BACKLOG</span></div>
+        <div class="development-task-badges">
+          <strong data-task-type-label>BUG</strong><span data-task-status-label>BACKLOG</span>
+          <div class="development-task-status-icons" role="group" aria-label="Set task status">
+            <button data-task-set-status="backlog" aria-label="Mark Backlog" title="Backlog">○</button>
+            <button data-task-set-status="in-progress" aria-label="Mark In Progress" title="In Progress">▶</button>
+            <button data-task-set-status="complete" aria-label="Mark Complete" title="Complete">✓</button>
+          </div>
+        </div>
         <p data-task-text></p>
       </div>
       <div class="development-task-actions">
