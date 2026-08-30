@@ -16,6 +16,8 @@ state.colony.tech={housing:2,power:3,food:2,industry:2,mining:4,scanning:3};
 state.colony.engineeringDeployments=[{id:"roundtrip-engineering",colonyId:firstId,status:"preparing",orderAbsoluteDay:12,preparationDaysRemaining:3,transportCost:5000,packageSubtotal:15000,paidTotal:20000,upgrades:[{category:"mining",level:5,techId:"mining-5",name:"Rotary Drilling",packageCost:15000}]}];
 state.company.pendingEvents.push({id:"roundtrip-event",type:"ship",colonyId:firstId,colonyName:state.contract.colonyName,absoluteDay:42});
 state.tiles["1,1"]={x:1,y:1,terrain:"plain",terrainVariant:1,revealed:true,lastScannedAtLevel:2,empty:true,resourceId:null,developed:false,development:null};
+state.tiles["2,2"]={x:2,y:2,terrain:"plain",terrainVariant:1,revealed:true,lastScannedAtLevel:2,empty:false,type:"ore",resourceId:"surface-iron",name:"Surface Iron Nodules",quality:120,depositScale:"large",terrainYieldFactor:1,requiredMiningLevel:1,developed:true,depleted:false,level:1,development:{kind:"extract",family:"mine",level:1,investedBuild:40,investedOre:0},resourceCovered:true,reserve:500,initialReserve:500};
+state.tiles["3,3"]={x:3,y:3,terrain:"plain",terrainVariant:1,revealed:true,lastScannedAtLevel:2,empty:false,type:"ore",resourceId:"surface-iron",name:"Surface Iron Nodules",quality:80,requiredMiningLevel:1,developed:false,depleted:false,development:{kind:"housing",level:1,investedBuild:55,investedOre:0},resourceCovered:false,reserve:500,initialReserve:500};
 
 const second=contracts.make(contracts.archetype({arch:"arid"}),2,0);second.colonyName="Roundtrip Secondary";portfolio.addColony(state,second);assert.equal(state.portfolio.colonies.length,2);
 assert.equal(portfolio.switchTo(state,firstId),true);
@@ -63,6 +65,9 @@ assert.deepEqual(loaded.portfolio.colonies.map(c=>({id:c.id,name:c.name})),expec
 assert.equal(loaded.colonyId,expected.activeId);
 assert.equal(loaded.pop,expected.pop);
 assert.equal(loaded.tiles["1,1"].lastScannedAtLevel,expected.lastScannedAtLevel,"per-tile scan history must survive save/load");
+assert.equal(loaded.tiles["2,2"].resourceCovered,false,"Scanning v11 normalization must repair extraction sites incorrectly marked as resource-covered");
+assert.ok(resources.sitePotentialRate(loaded.tiles["2,2"])>0,"repaired extraction sites must retain non-zero production potential after save/load");
+assert.equal(loaded.tiles["3,3"].resourceCovered,true,"a non-extraction building over a known resource must remain resource-covered");
 assert.equal(expansion.ship(loaded).status,expected.ship.status);
 assert.equal(expansion.ship(loaded).systemId,expected.ship.systemId);
 assert.equal(expansion.ship(loaded).targetSystemId,expected.ship.targetSystemId);
@@ -78,4 +83,5 @@ assert.equal(expansion.fuelAmount(loadedAgain),expected.ship.fuel);
 assert.equal(loadedAgain.colony.engineeringDeployments[0].status,"preparing");
 assert.equal(loadedAgain.colony.tech.scanning,expected.localTech.scanning);
 assert.equal(loadedAgain.tiles["1,1"].lastScannedAtLevel,expected.lastScannedAtLevel);
+assert.equal(loadedAgain.tiles["2,2"].resourceCovered,false,"extraction-site coverage repair must remain stable across repeated normalization");
 console.log("MineIT realistic multi-colony + player-ship + engineering-deployment + scan-history save round-trip passed");
