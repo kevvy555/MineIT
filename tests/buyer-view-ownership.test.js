@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),"utf8");
-const ui=read("js/ui/buyer-ui.js"),catalogue=read("views/conglomerate-buyers.html"),collection=read("views/buyer-collection-event.html"),css=read("css/conglomerate-buyers.css"),playerShip=read("js/ui/player-ship-ui.js");
+const ui=read("js/ui/buyer-ui.js"),catalogue=read("views/conglomerate-buyers.html"),collection=read("views/buyer-collection-event.html"),css=read("css/conglomerate-buyers.css"),playerShip=read("js/ui/player-ship-ui.js"),shipNavigation=read("js/ui/ship-navigation-ui.js");
 assert.match(ui,/loadViewTemplate\(CATALOG_VIEW\)/);assert.match(ui,/loadViewTemplate\(COLLECTION_VIEW\)/);assert.doesNotMatch(ui,/\.company\.buyers\s*=/,"BuyerUI must not own buyer state mutation");assert.doesNotMatch(ui,/\.happiness\s*=/,"BuyerUI must not mutate relationship happiness");assert.doesNotMatch(ui,/qualityBands\[[^\]]+\]\.amount\s*[-+]?=/,"BuyerUI must not mutate inventory lots");
 for(const marker of["data-buyers-screen","data-buyer-filter=\"status\"","data-buyer-filter=\"resource\"","data-buyer-filter=\"quality\"","data-buyer-filter=\"load\"","data-buyer-filter=\"price\"","data-buyer-filter=\"frequency\"","data-buyer-filter=\"reputation\"","data-buyer-filter=\"sort\"","data-buyer-profile","data-profile-history-template"])assert.ok(catalogue.includes(marker),`missing catalogue marker ${marker}`);
 for(const marker of["data-buyer-collection-screen","data-collection-ship-image","data-collection-portrait","data-collection-alert","data-collection-transfer","data-collection-wait","data-collection-score"])assert.ok(collection.includes(marker),`missing collection marker ${marker}`);
 assert.doesNotMatch(collection,/data-collection-scenario|<select/i,"production collection view must not retain mockup-only scenario controls");
-assert.match(css,/\.buyers-profile-dialog\{[^}]*height:50dvh/);assert.match(css,/\.modal:has\(\.buyers-service-screen\)/);assert.match(css,/\.modal:has\(\.buyer-collection-screen\)/);assert.match(css,/@media\(pointer:coarse\)/);assert.match(playerShip,/BUYERS SERVICE/);assert.match(playerShip,/buyerUI\?\.openCatalog/);
-console.log("Conglomerate Buyers Service external view ownership and approved mobile presentation contract passed");
+assert.match(css,/\.buyers-profile-dialog\{[^}]*height:50dvh/);assert.match(css,/\.modal:has\(\.buyers-service-screen\)/);assert.match(css,/\.modal:has\(\.buyer-collection-screen\)/);assert.match(css,/@media\(pointer:coarse\)/);
+assert.match(playerShip,/BUYERS SERVICE/);assert.match(playerShip,/buyerUI\?\.openCatalog/);
+assert.match(shipNavigation,/playerShipPanel\(\)/,"active ship-navigation layer must own the live player ship panel");assert.match(shipNavigation,/BUYERS SERVICE/);assert.match(shipNavigation,/action==="buyers"/);assert.match(shipNavigation,/buyerUI\?\.openCatalog/);
+console.log("Conglomerate Buyers Service external view ownership and active mobile ship entry contract passed");
