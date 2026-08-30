@@ -129,9 +129,21 @@ jobs:
             if ! grep -Fq '<div id="result">PASS buyer catalogue, profile and collection mobile viewport coverage</div>' "/tmp/buyers-$size.html"; then
               echo "Conglomerate Buyers Service presentation probe failed at $size"
               echo "Rendered buyer probe result:"
-              grep -o '<div id="result">[^<]*</div>' "/tmp/buyers-$size.html" || true
-              cat "/tmp/buyers-$size.log"
+              {
+                echo "viewport=$size"
+                grep -o '<div id="result">[^<]*</div>' "/tmp/buyers-$size.html" || echo '<div id="result">RESULT NOT FOUND</div>'
+                echo "--- chrome log ---"
+                cat "/tmp/buyers-$size.log"
+              } > /tmp/buyer-probe-result.txt
+              cat /tmp/buyer-probe-result.txt
               cat /tmp/mineit-http.log
               exit 1
             fi
           done
+      - name: Upload buyer probe failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: buyer-probe-failure
+          path: /tmp/buyer-probe-result.txt
+          if-no-files-found: ignore
