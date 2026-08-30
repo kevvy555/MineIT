@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<link rel="stylesheet" href="../css/app.css">
-<link rel="stylesheet" href="../css/panels.css">
-<link rel="stylesheet" href="../css/conglomerate-buyers.css">
+<base href="../">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/panels.css">
+<link rel="stylesheet" href="css/conglomerate-buyers.css">
 <style>
 :root{--good:#82dda0}
 html,body,#app{margin:0;width:100%;height:100%;overflow:hidden;background:#050708}
@@ -17,12 +18,12 @@ html,body,#app{margin:0;width:100%;height:100%;overflow:hidden;background:#05070
 <div id="app"><section id="modal" class="panel modal hidden"></section><div id="toast" class="toast hidden"></div></div>
 <div id="result">WAIT</div>
 <script type="module">
-import { ContractService } from "../js/domain/contract-service.js";
-import { createGameState } from "../js/domain/game-state-runtime.js";
-import { ResourceService } from "../js/domain/resource-service.js";
-import { InventoryService } from "../js/domain/inventory-service.js";
-import { BuyerService } from "../js/domain/buyer-service.js";
-import { BuyerUI } from "../js/ui/buyer-ui.js";
+import { ContractService } from "js/domain/contract-service.js";
+import { createGameState } from "js/domain/game-state-runtime.js";
+import { ResourceService } from "js/domain/resource-service.js";
+import { InventoryService } from "js/domain/inventory-service.js";
+import { BuyerService } from "js/domain/buyer-service.js";
+import { BuyerUI } from "js/ui/buyer-ui.js";
 
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const result=document.querySelector("#result"),modal=document.querySelector("#modal"),toast=document.querySelector("#toast"),fail=[];
