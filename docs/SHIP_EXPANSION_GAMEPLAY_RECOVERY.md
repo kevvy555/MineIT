@@ -9,16 +9,17 @@ The original ShipExpansion gameplay batch is complete. The **Engineering Ship / 
 
 Stage 8 itself remains **In Progress** because specialised player-designed freight ships, scalable ore transport and the wider logistics network are still future work.
 
-Latest validated gameplay commit: `0fd0613293e7ad384f2489efe6615a0180127978`  
-Passing GitHub Actions run: `33274594553`  
-Passing job: `99158988423`
+Latest validated gameplay commit: `15c9a10d61174b941cd1a890f96fe04886f3b7c5`  
+Passing GitHub Actions run: `33293193025`  
+Passing job: `99208299634`
 
 That exact-head run passed:
 
 - full unit / regression / domain coverage suite;
 - Engineering Ship / Spaceport / Mining-Scanning delivery regression;
 - Scanning resurvey / buried-resource regression;
-- save-v11 migration and realistic save round-trip;
+- save-v11 migration and realistic save round-trip, including extraction-site coverage repair;
+- production-collapse game-log diagnostics regression;
 - long simulation soak;
 - browser startup and presentation interaction probes;
 - mobile/coarse-pointer ship and Corporate Ship touch-target regression guards;
@@ -254,10 +255,63 @@ Migration preserves existing games by:
 - converting old unresolved-anomaly tiles into ordinary completed clear scans at the colony's deployed Scanning level so old saves do not leak hidden-resource locations;
 - removing obsolete per-tile legacy hidden-deep/anomaly fields;
 - preserving known resources beneath normal buildings;
+- marking a known resource as `resourceCovered` only when the occupying development is a non-extraction building;
+- explicitly clearing `resourceCovered` from `development.kind === "extract"` sites, which also repairs already-affected v11 saves on load;
 - preserving active survey Scanning level through save/load;
 - retaining Engineering Deployment and Basic Spaceport state.
 
 Primary coverage is in `tests/technology-delivery.test.js`, `tests/save-roundtrip.test.js`, and `tests/map-first-ux.test.js`.
+
+---
+
+## Scanning v11 extraction-coverage production regression — fixed
+
+A real game log exported at Y3 D225 exposed a severe regression introduced with the buried-resource Scanning/save-v11 work.
+
+Observed failure chain:
+
+- the colony still had healthy Food/Fuel/Ore production and large stocks near the end of Year 2;
+- after the affected state was normalized, all developed extraction sites remained present but production fell to zero;
+- Food then reached zero, which correctly removed normal workforce under the survival rules;
+- with extraction already disabled, the colony could not recover Food and the 30-day starvation mortality sequence began;
+- population eventually reached zero and the colony was lost.
+
+Root cause was in `normalizeSurveyHistory()` in `js/domain/game-state-runtime.js`. The migration previously treated **any** tile with both `resourceId` and `development` as a resource covered by another development. Extraction facilities themselves are represented by `development.kind === "extract"`, so working farms/mines/quarries/fuel sites were incorrectly changed to `resourceCovered=true`. `ResourceService.collectionRate()` intentionally returns zero for a covered resource, so this disabled the entire extraction economy.
+
+Canonical invariant now preserved:
+
+- `development.kind === "extract"` => `resourceCovered=false`;
+- a known resource beneath Housing/Industry/Power => `resourceCovered=true`;
+- no development => stale coverage is cleared.
+
+The normalization fix is deliberately reparative: loading an existing v11 save that contains the erroneous flag clears it from extraction sites automatically. It does **not** resurrect a colony whose population has already reached zero; a pre-collapse save can recover when loaded under the fixed build.
+
+Fix/regression commits:
+
+- `4106815300c56ff265e8786254db6e1cd8d3baf3` — `Fix scanning migration covering extraction sites`
+- `1bd49141de0d3a4e27b60c80c454b157e3dafbd0` — `Protect extraction sites from scanning coverage migration`
+- `0eaf1500b8321a12ea05159d594a42bca5efdaa8` — `Add production-collapse diagnostics to game logs`
+- `15c9a10d61174b941cd1a890f96fe04886f3b7c5` — `Protect game-log production-collapse diagnostics`
+
+Game-log colony snapshots now also include:
+
+- `extractionSites`;
+- `coveredExtractionSites`;
+- `coveredResourceSites`;
+- `productionStoppedSites`;
+- `foodStarvationDays`;
+- `emergencyMode`;
+- `tradeReserve`.
+
+Those fields make a future “sites exist but production is zero” report directly distinguish resource coverage, manual production stops and starvation state without relying on inference from aggregate production values.
+
+Exact fixed gameplay-head validation:
+
+- Commit: `15c9a10d61174b941cd1a890f96fe04886f3b7c5`
+- Workflow run: `33293193025`
+- Job: `99208299634`
+- Unit / regression / domain coverage: **SUCCESS**
+- Browser startup / presentation interaction: **SUCCESS**
 
 ---
 
@@ -356,9 +410,9 @@ Exact gameplay-head validation:
 
 Passing exact gameplay head before this documentation refresh:
 
-- Commit: `0fd0613293e7ad384f2489efe6615a0180127978`
-- Workflow run: `33274594553`
-- Job: `99158988423`
+- Commit: `15c9a10d61174b941cd1a890f96fe04886f3b7c5`
+- Workflow run: `33293193025`
+- Job: `99208299634`
 - Result: **SUCCESS**
 
 Validated:
@@ -383,6 +437,9 @@ Validated:
 - [x] Housing/Industry/Power resurvey while operating;
 - [x] buried known resource remains blocked under development until normal demolition;
 - [x] known resources can deliberately be built over without erasing resource truth;
+- [x] extraction developments can never be normalized into `resourceCovered` state;
+- [x] already-affected v11 extraction coverage flags repair automatically on load;
+- [x] game logs expose extraction/coverage/starvation/trade-reserve production-collapse diagnostics;
 - [x] Spaceport excluded from buried-resource/resurvey decisions;
 - [x] save-v11 migration and realistic save round-trip;
 - [x] legacy unresolved anomalies migrate without information leakage;
@@ -417,7 +474,6 @@ The next major gameplay loop is the actual logistics bottleneck solution:
 6. routes between colonies, buyers and future logistics hubs;
 7. later planets/moons/stations as refuelling/storage/transfer hubs;
 8. eventual buyer/contract/refining systems described in Progression Stages 9–12.
-
 The intended economic pressure remains:
 
 **Production Rate → Transport Capacity → Buyer Demand**
@@ -445,9 +501,11 @@ If another chat/session resumes this work:
 13. preserve `lastScannedAtLevel` as canonical scan-history input and derive resurvey eligibility rather than storing a UI flag;
 14. never make the yellow resurvey marker conditional on hidden resource presence;
 15. preserve deterministic resource truth across scans, building coverage and demolition;
-16. preserve standard `click` activation for buttons and the coarse-pointer target policy;
-17. preserve Corporate Trade Ship as a full-screen workflow with scrollable resource rows;
-18. keep Stage 8 **In Progress** until specialised freight/logistics is playable end-to-end;
-19. update this recovery file and progression tracker whenever meaningful Stage 8 progress is committed.
+16. preserve the coverage invariant: extraction developments are never `resourceCovered`; only a separate non-extraction development may cover a known resource;
+17. keep the production-collapse diagnostic fields in exported game logs so future site/production failures remain diagnosable from a single export;
+18. preserve standard `click` activation for buttons and the coarse-pointer target policy;
+19. preserve Corporate Trade Ship as a full-screen workflow with scrollable resource rows;
+20. keep Stage 8 **In Progress** until specialised freight/logistics is playable end-to-end;
+21. update this recovery file and progression tracker whenever meaningful Stage 8 progress is committed.
 
 No PR or merge should be created automatically without an explicit user request.
