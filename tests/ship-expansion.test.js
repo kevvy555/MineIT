@@ -16,7 +16,7 @@ const stock=(state)=>{inventory.store(state,"food","fungal","Fungal Shelf",20000
 const stockedKey=(type,resourceId)=>inventory.key(type,resourceId);
 
 const {state,portfolio,expansion}=fresh();
-assert.equal(state.version,11);assert.equal(state.company.expansion.version,EXPANSION_VERSION);assert.equal(EXPANSION_VERSION,2);assert.equal(expansion.ship(state).status,"docked");assert.equal(expansion.capacityRemaining(state),PLAYER_SHIP_CAPACITY);assert.equal(PLAYER_SHIP_CAPACITY,12000);assert.equal(PLAYER_SHIP_CARGO_CAPACITY,8000);assert.equal(PLAYER_SHIP_FOOD_CAPACITY,2000);assert.equal(PLAYER_SHIP_FUEL_CAPACITY,2000);assert.equal(PLAYER_SHIP_MIN_PASSENGERS,10);
+assert.equal(state.version,12);assert.equal(state.company.expansion.version,EXPANSION_VERSION);assert.equal(EXPANSION_VERSION,2);assert.equal(expansion.ship(state).status,"docked");assert.equal(expansion.capacityRemaining(state),PLAYER_SHIP_CAPACITY);assert.equal(PLAYER_SHIP_CAPACITY,12000);assert.equal(PLAYER_SHIP_CARGO_CAPACITY,8000);assert.equal(PLAYER_SHIP_FOOD_CAPACITY,2000);assert.equal(PLAYER_SHIP_FUEL_CAPACITY,2000);assert.equal(PLAYER_SHIP_MIN_PASSENGERS,10);
 const nearby=state.company.expansion.systems.filter(system=>!system.home&&system.id!==state.contract.systemId&&expansion.distanceFromHome(state,system.id)<=CORPORATE_SERVICE_RADIUS_LY);assert.ok(nearby.length>=MIN_NEARBY_FRONTIER_SYSTEMS,`Galaxy must guarantee at least ${MIN_NEARBY_FRONTIER_SYSTEMS} reachable frontier systems`);
 
 // Probe progression remains the gate for unknown systems.
