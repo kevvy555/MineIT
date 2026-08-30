@@ -104,6 +104,19 @@ Descriptions serve three purposes:
 
 Image generation must be reproducible from authored facts rather than re-inventing style on every prompt.
 
+## 7. The universe is a graph, not one rigid hierarchy
+
+Many universe relationships are naturally hierarchical, but the complete universe is a graph.
+
+Examples:
+
+- a company may operate on several planets;
+- a person belongs to one department but may manage several operations;
+- a ship can serve multiple facilities;
+- a facility belongs to a company but also exists at a geographical location.
+
+The viewer therefore presents multiple useful hierarchy perspectives over the same canonical records instead of forcing every entity into one permanent parent-child tree.
+
 ---
 
 # Phase 1 scope
@@ -127,6 +140,32 @@ Create a small but complete vertical slice containing approximately:
 The proof should demonstrate relationships between all major entity types rather than maximise row count.
 
 No existing buyer gameplay should depend on these records during Phase 1.
+
+---
+
+# Phase 1 mock delivery architecture
+
+The first viewer mock must use the **real canonical JSON structure**, not embedded sample objects inside the HTML.
+
+This means the mock is also the first working implementation of the future content architecture rather than a disposable visual prototype.
+
+Benefits:
+
+- establishes the final source-of-truth pattern immediately;
+- proves cross-file references and stable IDs;
+- proves manifest-driven loading;
+- exposes schema weaknesses before large-scale authoring begins;
+- allows validation to operate against the same data the viewer renders;
+- allows the sample universe to grow without rewriting the viewer;
+- prevents the mock from becoming a second shadow dataset.
+
+The viewer should load `manifest.json`, then load the collections declared by that manifest.
+
+The mock should therefore be delivered as a small static site/folder containing the HTML viewer plus its JSON files and any available assets.
+
+Because normal browsers restrict `fetch()` from local `file://` pages, the canonical mock is expected to run through GitHub Pages or a simple local static HTTP server. We should not solve this by embedding a duplicate copy of the universe data in the HTML.
+
+If a self-contained distributable viewer is ever needed later, it may be created as generated output from the canonical JSON. It must never become an independently authored source of truth.
 
 ---
 
@@ -160,20 +199,18 @@ assets/
       settlements/
       facilities/
 
- docs/
+docs/
   Progression Stages/
     Stage 8/
       UniverseDatabase/
         MineitUniverseDatabase.md
         MineitUniverseDatabaseIntegration.md
-        MineitUniverseDirectory.html        # future Phase 1 viewer
+        MineitUniverseDirectory.html
 ```
 
 The JSON under `data/universe/` is the canonical authored source.
 
 The viewer must consume the JSON rather than containing its own duplicate data generator.
-
-If browser/file-loading constraints require a generated aggregate for deployment, that aggregate must be built from the canonical JSON and treated as generated output, never as a second source of truth.
 
 ---
 
@@ -208,7 +245,7 @@ Purpose:
 - schema/content version;
 - universe name;
 - content release metadata;
-- list of data collections;
+- list of data collections and their file paths;
 - optional validation/build metadata.
 
 Example:
@@ -218,17 +255,17 @@ Example:
   "schemaVersion": 1,
   "contentVersion": "0.1.0",
   "name": "MineIT Universe",
-  "collections": [
-    "star-systems",
-    "planets",
-    "settlements",
-    "companies",
-    "organisation-units",
-    "facilities",
-    "operations",
-    "people",
-    "ships"
-  ]
+  "collections": {
+    "starSystems": "star-systems.json",
+    "planets": "planets.json",
+    "settlements": "settlements.json",
+    "companies": "companies.json",
+    "organisationUnits": "organisation-units.json",
+    "facilities": "facilities.json",
+    "operations": "operations.json",
+    "people": "people.json",
+    "ships": "ships.json"
+  }
 }
 ```
 
@@ -236,130 +273,93 @@ Example:
 
 Canonical inhabited/authored systems.
 
-Suggested fields:
+Suggested fields include:
 
-```json
-{
-  "id": "system-solace",
-  "name": "Solace",
-  "region": "Koplin Commercial Sphere",
-  "coordinates": { "x": 4.2, "y": -1.8 },
-  "starType": "G-type yellow",
-  "description": "...",
-  "history": "...",
-  "economicProfile": "...",
-  "visualDescription": "...",
-  "image": {
-    "key": "assets/art/universe/systems/system-solace.webp",
-    "promptDescription": "..."
-  }
-}
-```
+- stable ID;
+- name;
+- region;
+- coordinates;
+- star type;
+- description;
+- history;
+- economic profile;
+- visual description;
+- image asset and prompt information.
 
 ## `planets.json`
 
-Suggested fields:
+Suggested fields include:
 
-```json
-{
-  "id": "planet-solace-ii",
-  "systemId": "system-solace",
-  "name": "Solace II",
-  "type": "temperate industrial world",
-  "environment": "...",
-  "populationSummary": "...",
-  "economicProfile": "...",
-  "description": "...",
-  "visualDescription": "...",
-  "image": {
-    "key": "assets/art/universe/planets/planet-solace-ii.webp",
-    "promptDescription": "..."
-  }
-}
-```
+- stable ID;
+- parent system ID;
+- name;
+- type;
+- environment;
+- population summary;
+- economic profile;
+- description;
+- visual description;
+- image information.
 
 ## `settlements.json`
 
 Used for cities, colonies, ports, orbital stations and similar inhabited locations.
 
-Suggested fields:
+Suggested fields include:
 
-```json
-{
-  "id": "station-solace-commercial-ring",
-  "name": "Solace Commercial Ring",
-  "locationType": "orbital station",
-  "planetId": "planet-solace-ii",
-  "systemId": "system-solace",
-  "populationSummary": "...",
-  "purpose": "...",
-  "description": "...",
-  "visualDescription": "...",
-  "image": {
-    "key": "assets/art/universe/settlements/station-solace-commercial-ring.webp",
-    "promptDescription": "..."
-  }
-}
-```
+- stable ID;
+- name;
+- location type;
+- planet/system reference;
+- optional parent location reference;
+- population summary;
+- purpose;
+- description;
+- visual description;
+- image information.
 
 ## `companies.json`
 
 Companies are independent entities. A single company can employ many people and operate many facilities across many locations.
 
-Suggested fields:
+Suggested fields include:
 
-```json
-{
-  "id": "company-helix-industrial-group",
-  "name": "Helix Industrial Group",
-  "legalName": "Helix Industrial Group PLC",
-  "organisationType": "industrial conglomerate",
-  "scale": "major",
-  "headquartersLocationId": "station-solace-commercial-ring",
-  "founded": "...",
-  "industries": [
-    "heavy-engineering",
-    "aerospace",
-    "advanced-materials"
-  ],
-  "description": "...",
-  "history": "...",
-  "culture": "...",
-  "reputation": "...",
-  "visualIdentity": {
-    "primaryPalette": "graphite and bronze",
-    "logoDescription": "...",
-    "uniformDescription": "...",
-    "architectureDescription": "...",
-    "shipLiveryDescription": "..."
-  },
-  "logo": {
-    "key": "assets/art/universe/companies/logos/company-helix-industrial-group.webp",
-    "promptDescription": "..."
-  }
-}
-```
+- stable ID;
+- display/legal name;
+- organisation type and scale;
+- headquarters location;
+- founding/history information;
+- industries;
+- description;
+- culture and reputation;
+- visual identity;
+- logo information.
+
+Company visual identity may define:
+
+- primary palette;
+- logo design;
+- uniform design;
+- architecture;
+- ship livery;
+- signage/container style.
 
 ## `organisation-units.json`
 
 Represents divisions, subsidiaries, departments and teams without hardcoding a fixed hierarchy depth.
 
-Suggested fields:
+Important fields:
 
-```json
-{
-  "id": "division-helix-propulsion",
-  "companyId": "company-helix-industrial-group",
-  "parentUnitId": null,
-  "unitType": "division",
-  "name": "Propulsion Systems Division",
-  "locationId": "facility-helix-solace-driveworks",
-  "purpose": "...",
-  "description": "..."
-}
-```
+- stable ID;
+- company ID;
+- optional parent unit ID;
+- unit type;
+- name;
+- optional primary location;
+- purpose;
+- description.
 
-A Procurement Department could reference the division as its `parentUnitId`.
+A Procurement Department can therefore reference a Division, while a small business can use a much flatter structure.
 
 ## `facilities.json`
 
@@ -377,30 +377,13 @@ Examples:
 - agricultural complex;
 - orbital dock.
 
-Suggested fields:
-
-```json
-{
-  "id": "facility-helix-solace-driveworks",
-  "name": "Solace Driveworks",
-  "companyId": "company-helix-industrial-group",
-  "locationId": "planet-solace-ii",
-  "facilityType": "propulsion manufacturing complex",
-  "status": "operational",
-  "description": "...",
-  "visualDescription": "...",
-  "image": {
-    "key": "assets/art/universe/facilities/facility-helix-solace-driveworks.webp",
-    "promptDescription": "..."
-  }
-}
-```
+Suggested fields include owner/company, physical location, facility type, status, description, visual description and image information.
 
 ## `operations.json`
 
 An operation explains what a facility/company is doing and why it consumes or produces resources.
 
-Suggested fields:
+Example:
 
 ```json
 {
@@ -420,14 +403,6 @@ Suggested fields:
       "demandScale": "high",
       "qualityPreference": "excellent",
       "reason": "Used in high-density field assemblies."
-    },
-    {
-      "resourceType": "ore",
-      "resourceId": "platinum",
-      "importance": "important",
-      "demandScale": "moderate",
-      "qualityPreference": "excellent",
-      "reason": "Used in high-temperature catalyst and control assemblies."
     }
   ]
 }
@@ -439,34 +414,21 @@ At Phase 1, demand can be descriptive/relative rather than a fully simulated eco
 
 A person is a persistent named character.
 
-Suggested fields:
+Suggested fields include:
 
-```json
-{
-  "id": "person-talia-chen",
-  "name": "Talia Chen",
-  "age": 42,
-  "gender": "woman",
-  "companyId": "company-helix-industrial-group",
-  "organisationUnitId": "department-helix-driveworks-procurement",
-  "role": "Strategic Metals Buyer",
-  "workLocationId": "facility-helix-solace-driveworks",
-  "homeLocationId": "station-solace-commercial-ring",
-  "responsibilities": [
-    "Strategic metals procurement",
-    "Supplier qualification",
-    "Long-term supply agreements"
-  ],
-  "biography": "...",
-  "personality": "...",
-  "appearance": "...",
-  "visualDescription": "...",
-  "portrait": {
-    "key": "assets/art/universe/people/person-talia-chen.webp",
-    "promptDescription": "..."
-  }
-}
-```
+- stable ID;
+- name;
+- age/gender where relevant;
+- company;
+- organisation unit;
+- role;
+- work/home locations;
+- responsibilities;
+- biography;
+- personality;
+- appearance;
+- visual description;
+- portrait information.
 
 The schema must allow people who are not buyers.
 
@@ -474,26 +436,19 @@ The schema must allow people who are not buyers.
 
 Ships are persistent named universe assets rather than being inseparable from buyer rows.
 
-Suggested fields:
+Suggested fields include:
 
-```json
-{
-  "id": "ship-csv-halcyon-reach",
-  "name": "CSV Halcyon Reach",
-  "companyId": "company-helix-industrial-group",
-  "shipClassId": "ship-class-dart-courier",
-  "homePortLocationId": "station-solace-commercial-ring",
-  "assignedOperationId": "operation-helix-driveworks-propulsion",
-  "role": "priority materials courier",
-  "description": "...",
-  "visualDescription": "...",
-  "liveryDescription": "...",
-  "image": {
-    "key": "assets/art/universe/ships/ship-csv-halcyon-reach.webp",
-    "promptDescription": "..."
-  }
-}
-```
+- stable ID;
+- name;
+- owner/company;
+- ship class;
+- home port;
+- assigned operation(s) where relevant;
+- role;
+- description;
+- visual description;
+- livery description;
+- image information.
 
 Ship classes may remain shared definitions where appropriate; named ships are universe entities.
 
@@ -512,11 +467,7 @@ Preferred form:
 }
 ```
 
-Avoid storing only:
-
-```json
-"Copper Ore"
-```
+Avoid storing only a presentation string such as `Copper Ore`.
 
 This keeps universe content stable if a presentation name changes and enables future validation against `js/data/resources.js`.
 
@@ -564,36 +515,182 @@ This avoids manually repeating the same corporate style in hundreds of records w
 
 # MineIT Universe Directory viewer
 
-The standalone viewer should be a development/world-building tool first.
+The standalone viewer is primarily a **Universe Explorer** and development/world-building tool.
 
-Proposed tabs:
+The primary interaction model is **hierarchical tree navigation on the left + selected entity detail on the right** rather than a collection of disconnected database tables.
+
+## Desktop layout
 
 ```text
-OVERVIEW
-SYSTEMS
-PLANETS
-LOCATIONS
-COMPANIES
-OPERATIONS
-FACILITIES
-PEOPLE
-SHIPS
++-----------------------------+-------------------------------------------+
+| UNIVERSE EXPLORER           | SELECTED ENTITY                           |
+|                             |                                           |
+| Search...                   | Name / image / summary                    |
+|                             |                                           |
+| [Geography] [Organisation]  | Description                               |
+| [Directory]                 | Relationships                             |
+|                             | Operations / people / ships / resources   |
+| expandable tree             | Image-generation information              |
+|                             | Development details                       |
++-----------------------------+-------------------------------------------+
 ```
+
+Selecting an item in the tree updates the right-hand panel without losing the wider hierarchy context.
+
+## Mobile layout
+
+On mobile the tree should not permanently consume half the display.
+
+Use a full-screen or slide-over Universe Explorer which closes after a selection, leaving the detail panel full-width. A clear control reopens the explorer at the currently selected entity.
+
+## Explorer perspectives
+
+The same canonical records should be viewable through several hierarchy perspectives.
+
+### Geography
+
+Answers: **What exists here?**
+
+Example:
+
+```text
+Universe
+  Solace System
+    Solace II
+      Solace Commercial Ring
+        Companies
+          Helix Industrial Group
+          Meridian Logistics
+        Facilities
+        Ships
+```
+
+Geography is the default perspective.
+
+### Organisations
+
+Answers: **How is this organisation structured?**
+
+Example:
+
+```text
+Companies
+  Helix Industrial Group
+    Propulsion Systems Division
+      Procurement Department
+        Talia Chen
+        Marcus Vale
+      Solace Driveworks
+      Operations
+        Commercial Drive Assembly Programme
+    Advanced Materials Division
+    Ships
+```
+
+This perspective is particularly useful while authoring companies.
+
+### Directory
+
+Answers: **Find a particular entity regardless of hierarchy.**
+
+Directory categories may include:
+
+- people;
+- companies;
+- ships;
+- facilities;
+- operations;
+- planets;
+- systems;
+- settlements/stations.
+
+Directory mode can use compact searchable/filterable lists or tables because lookup, rather than understanding hierarchy, is its purpose.
+
+## Search
+
+A global **Search universe...** control should search across major entity collections.
+
+Selecting a search result should:
+
+1. open the entity in the right-hand detail panel;
+2. switch to an appropriate explorer perspective where useful;
+3. expand the relevant tree branch;
+4. highlight the selected entity.
+
+## Breadcrumbs
+
+Every detail page should expose a contextual breadcrumb/path where a useful hierarchy exists.
+
+Example geography path:
+
+`Solace System -> Solace II -> Solace Commercial Ring -> Helix Industrial Group`
+
+Example organisation path:
+
+`Helix Industrial Group -> Propulsion Systems Division -> Procurement Department -> Talia Chen`
+
+Breadcrumb nodes are clickable.
+
+Because an entity may have several valid contexts, breadcrumbs represent the current navigation path rather than pretending the universe has one universal parent chain.
+
+## Relationship navigation
+
+The right panel should expose explicit related entities because not every relationship naturally fits the currently selected tree.
+
+For a person, this may include:
+
+- company;
+- organisation unit;
+- work location;
+- home location;
+- associated operations;
+- managed/procured resources;
+- associated ships.
+
+All relationships are clickable and navigate to the corresponding entity.
+
+## Mini hierarchy context
+
+Where useful, detail pages should show compact hierarchy chains such as:
+
+```text
+ORGANISATION
+Helix Industrial Group
+  -> Propulsion Systems Division
+    -> Procurement Department
+      -> Talia Chen
+```
+
+or:
+
+```text
+LOCATION
+Solace System
+  -> Solace II
+    -> Driveworks Industrial Zone
+      -> Solace Driveworks
+```
+
+This reinforces context without requiring a graph visualisation.
 
 ## Global viewer behaviour
 
-- load canonical JSON;
-- searchable from all major tabs;
-- filter by relevant entity type/company/location;
-- click references to navigate between linked entities;
+The viewer should:
+
+- load the canonical manifest and JSON collections;
+- support tree expansion/collapse;
+- support global search;
+- support relevant directory filters;
+- cross-navigate between linked entities;
+- reveal the current entity in the appropriate tree;
 - show missing/broken references clearly;
-- show image if available;
-- show image-generation information if artwork is missing;
+- show artwork when available;
+- show image-generation information when artwork is missing;
 - provide **COPY IMAGE PROMPT** for image-bearing entities;
 - provide raw IDs/references in a development-details section;
-- mobile usable, while allowing richer desktop inspection.
+- remain mobile usable while allowing richer desktop inspection.
 
-## Company view
+## Company detail
 
 Should show at minimum:
 
@@ -610,7 +707,7 @@ Should show at minimum:
 - locations;
 - resources required by its operations.
 
-## Person view
+## Person detail
 
 Should show:
 
@@ -625,7 +722,7 @@ Should show:
 - visual description;
 - copyable portrait prompt.
 
-## Operation view
+## Operation detail
 
 Should answer:
 
@@ -637,9 +734,9 @@ Should answer:
 - why those resources are required;
 - which people are responsible for procurement/management.
 
-## Location view
+## Location detail
 
-Should show entities located there:
+Should show relevant entities located there:
 
 - companies;
 - facilities;
@@ -712,7 +809,7 @@ Before the database grows beyond proof-of-concept size, add automated validation
 
 Minimum checks:
 
-1. Every entity ID is globally unique within its collection and follows naming conventions.
+1. Every entity ID is unique within its collection and follows naming conventions.
 2. Every referenced company exists.
 3. Every parent organisation unit exists and belongs to the expected company.
 4. Every referenced system/planet/location exists.
@@ -724,6 +821,7 @@ Minimum checks:
 10. Every declared asset key follows the canonical asset structure.
 11. No viewer-side data generator silently invents missing authoritative fields.
 12. Broken references are validation errors rather than silently ignored content.
+13. Every collection declared by the manifest exists and contains valid JSON.
 
 Validation should run in normal repository tests/CI once implementation begins.
 
@@ -750,6 +848,7 @@ Validation should run in normal repository tests/CI once implementation begins.
 - place gameplay-mutating state in the universe JSON;
 - bake per-save buyer prices/quantities into canonical universe data;
 - duplicate the existing buyer generator inside the new viewer;
+- embed a second authored copy of Phase 1 data inside the viewer HTML;
 - require artwork to exist before content can exist.
 
 ---
@@ -775,36 +874,47 @@ Those integration topics belong in `MineitUniverseDatabaseIntegration.md`.
 # Phase 1 implementation sequence
 
 1. Finalise entity model and naming conventions.
-2. Create canonical JSON skeleton and manifest.
-3. Author the two example companies and their linked universe content.
-4. Add validation for IDs, references, resources and asset paths.
-5. Build the standalone `MineitUniverseDirectory.html` viewer.
-6. Add cross-navigation between all implemented entity types.
-7. Add image placeholders and prompt-generation/copy support.
-8. Review the sample universe for clarity, usefulness and image-generation quality.
-9. Refine schema before bulk content is authored.
-10. Only after the schema proves stable, begin expanding the universe at scale.
+2. Create the canonical JSON folder, manifest and collection skeletons.
+3. Author the two example companies and their linked universe content directly in the canonical JSON.
+4. Add validation for JSON loading, IDs, references, resources and asset paths.
+5. Build the standalone `MineitUniverseDirectory.html` viewer against those real JSON files.
+6. Implement Geography, Organisations and Directory explorer perspectives.
+7. Add expandable tree navigation, right-hand entity details, breadcrumbs and relationship links.
+8. Add global search which reveals selected entities in the appropriate tree.
+9. Add image placeholders and prompt-generation/copy support.
+10. Review the sample universe for hierarchy clarity, relationship visibility, usefulness and image-generation quality.
+11. Refine schema before bulk content is authored.
+12. Only after the schema proves stable, begin expanding the universe at scale.
 
 ---
 
 # Definition of Phase 1 success
 
-Phase 1 is successful when we can open one standalone viewer and navigate a coherent chain such as:
+Phase 1 is successful when the mock uses the same canonical multi-file JSON structure intended for the long-term universe and we can open the Universe Explorer and navigate coherent chains such as:
 
 ```text
+GEOGRAPHY
 Star System
   -> Planet
-    -> Facility
-      -> Operation
-        -> Resource Requirement
-          -> Company
-            -> Department
-              -> Person
-                -> Named Ship
+    -> Settlement / Station
+      -> Company / Facility
+        -> Operation
 ```
 
-and every page is driven from the same canonical JSON dataset.
+and:
+
+```text
+ORGANISATION
+Company
+  -> Division
+    -> Department
+      -> Person
+```
+
+while cross-links connect related operations, facilities, resources, ships and locations that do not fit the current tree perspective.
+
+Every detail page must be driven from the same canonical JSON dataset.
 
 We should also be able to select a person, ship, company, facility or location and obtain an image-generation-ready description that is consistent with all linked universe facts.
 
-At that point the universe model is proven and can be populated gradually without touching the existing gameplay feature until the separate integration design is approved.
+At that point the universe model, navigation model and authoring workflow are proven and can be populated gradually without touching the existing gameplay feature until the separate integration design is approved.
