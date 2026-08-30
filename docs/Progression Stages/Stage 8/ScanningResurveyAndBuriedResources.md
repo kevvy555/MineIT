@@ -242,6 +242,10 @@ If a resource is known beneath a building:
 - a secondary resource badge/indicator communicates that a known resource is beneath it and blocked;
 - the tile details explain which development blocks exploitation without implying demolition is mandatory.
 
+The full-screen Technology package must also make the detection progression explicit to the player. Every Scanning L1–L10 entry names the **new natural resources that become discoverable at that exact level**. The existing capability effect still communicates that a scanner at level Lx can detect resources requiring Lx or lower. Manufactured resources are excluded from the discovery list.
+
+The player-facing discovery lists are guarded against `js/data/resources.js`: if a natural resource's canonical `scanningLevel` changes, regression coverage requires the corresponding Technology description to be updated rather than allowing the UI and gameplay rules to drift apart.
+
 ---
 
 ## State / save behaviour
@@ -259,6 +263,7 @@ Legacy unresolved-anomaly tiles migrate to ordinary completed clear scans at the
 Canonical implementation lives in:
 
 - `js/data/resources.js` — explicit L1–L10 detection requirements;
+- `js/data/technologies.js` — player-facing exact-resource discovery descriptions for each Scanning level;
 - `js/domain/world-service.js` — deterministic hidden-resource truth and scanner-dependent reveal;
 - `js/domain/survey-service.js` — resurvey eligibility, queueing and 50% duration;
 - `js/domain/development-service.js` — building-over-resource preservation and normal demolition exposure;
@@ -270,13 +275,14 @@ Primary regression coverage:
 - `tests/technology-delivery.test.js`;
 - `tests/save-roundtrip.test.js`;
 - `tests/map-first-ux.test.js`;
+- `tests/tech-visibility.test.js` — verifies every natural resource is listed at its canonical Scanning level and not at another level;
 - existing startup/survival/expansion regression suite.
 
-Validated gameplay head:
+Latest validated gameplay head before this documentation update:
 
-- Commit: `8bcbf927ea7b691602aca76850f6ca1ee69f4b5b`
-- Workflow run: `33266200034`
-- Job: `99136585382`
+- Commit: `ce2cde8091fc4143faea48dc17a5a8d6e7dfabb9`
+- Workflow run: `33292612697`
+- Job: `99206778148`
 - Unit / regression / domain coverage: **SUCCESS**
 - Browser startup / presentation interaction: **SUCCESS**
 
