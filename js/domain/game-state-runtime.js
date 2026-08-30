@@ -24,6 +24,12 @@ function normalizeTechnologyAcrossPortfolio(state){
 function clearLegacyUnresolved(tile,scanLevel){
   Object.assign(tile,{revealed:true,lastScannedAtLevel:scanLevel,unresolved:false,unresolvedScanningLevel:0,requiredScanningLevel:0,empty:true,type:null,family:null,resourceId:null,name:"Clear Land",quality:null,resourceRarity:null,resourceMult:null,requiredMiningLevel:0,requiredMiningTech:null,sustainability:null,reserve:null,initialReserve:null,renewableOriginalRank:null,renewableHealth:null,renewableWiped:false,harvestIntensity:null,depleted:false,resourceCovered:false});
 }
+function normalizeResourceCoverage(tile){
+  const kind=tile?.development?.kind;
+  if(kind==="extract"){tile.resourceCovered=false;return;}
+  if(tile?.resourceId&&tile?.development){tile.resourceCovered=true;return;}
+  if(!tile?.development)tile.resourceCovered=false;
+}
 function normalizeSurveyHistory(data){
   if(!data)return data;const scanLevel=Math.max(1,Number(data.colony?.tech?.scanning)||1);
   for(const tile of Object.values(data.tiles||{})){
@@ -31,7 +37,7 @@ function normalizeSurveyHistory(data){
     if(tile.unresolved)clearLegacyUnresolved(tile,scanLevel);
     else tile.lastScannedAtLevel=wasScanned?Math.max(1,Number(tile.lastScannedAtLevel)||scanLevel):Math.max(0,Number(tile.lastScannedAtLevel)||0);
     delete tile.deepResource;delete tile.deepRevealed;
-    if(tile.resourceId&&tile.development)tile.resourceCovered=true;
+    normalizeResourceCoverage(tile);
   }
   for(const scan of data.scans||[]){if(!Number.isFinite(Number(scan.scanningLevel)))scan.scanningLevel=scanLevel;scan.resurvey=!!scan.resurvey;}
   return data;
