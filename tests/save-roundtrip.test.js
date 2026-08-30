@@ -5,8 +5,9 @@ import { ResourceService } from "../js/domain/resource-service.js";
 import { InventoryService } from "../js/domain/inventory-service.js";
 import { PortfolioService } from "../js/domain/portfolio-service.js";
 import { ExpansionService, HOME_SYSTEM_ID } from "../js/domain/expansion-service.js";
+import { GameLogService } from "../js/domain/game-log-service.js";
 
-const contracts=new ContractService(),resources=new ResourceService(),inventory=new InventoryService(resources),portfolio=new PortfolioService(),expansion=new ExpansionService(inventory,resources,contracts);
+const contracts=new ContractService(),resources=new ResourceService(),inventory=new InventoryService(resources),portfolio=new PortfolioService(),expansion=new ExpansionService(inventory,resources,contracts),gameLog=new GameLogService();
 const state=createGameState(contracts.first());portfolio.ensure(state);expansion.ensure(state);
 const firstId=state.colonyId;
 
@@ -68,6 +69,12 @@ assert.equal(loaded.tiles["1,1"].lastScannedAtLevel,expected.lastScannedAtLevel,
 assert.equal(loaded.tiles["2,2"].resourceCovered,false,"Scanning v11 normalization must repair extraction sites incorrectly marked as resource-covered");
 assert.ok(resources.sitePotentialRate(loaded.tiles["2,2"])>0,"repaired extraction sites must retain non-zero production potential after save/load");
 assert.equal(loaded.tiles["3,3"].resourceCovered,true,"a non-extraction building over a known resource must remain resource-covered");
+const diagnostics=gameLog.colonySnapshot({id:loaded.colonyId,data:loaded});
+assert.equal(diagnostics.extractionSites,1,"game logs must report developed extraction-site count");
+assert.equal(diagnostics.coveredExtractionSites,0,"game logs must expose corrupted covered extraction sites directly");
+assert.ok(diagnostics.coveredResourceSites>=1,"game logs must report resources genuinely covered by buildings");
+assert.equal(diagnostics.foodStarvationDays,0,"game logs must expose starvation duration");
+assert.equal(diagnostics.tradeReserve,Math.max(0,Number(loaded.colony.tradeReserve)||0),"game logs must expose colony trade reserve");
 assert.equal(expansion.ship(loaded).status,expected.ship.status);
 assert.equal(expansion.ship(loaded).systemId,expected.ship.systemId);
 assert.equal(expansion.ship(loaded).targetSystemId,expected.ship.targetSystemId);
