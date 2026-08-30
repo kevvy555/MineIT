@@ -4,7 +4,7 @@ const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),"utf8");
 
 const index=read("index.html"),adaptiveView=read("views/adaptive-building.html"),resourceView=read("views/undeveloped-resource.html"),adaptiveCss=read("css/adaptive-building-details.css"),resourceCss=read("css/resource-details.css");
 const linkedCss=[...index.matchAll(/href="\.\/css\/([^"?]+\.css)(?:\?[^\"]*)?"/g)].map(match=>match[1]);
-const canonicalCss=["app.css","world.css","panels.css","portfolio.css","trade-quality.css","trade-quick.css","ui-enhancements.css","land.css","map-first.css","resource-details.css","adaptive-building-details.css","ship-expansion.css"];
+const canonicalCss=["app.css","world.css","panels.css","portfolio.css","trade-quality.css","trade-quick.css","ui-enhancements.css","land.css","map-first.css","resource-details.css","adaptive-building-details.css","ship-expansion.css","conglomerate-buyers.css"];
 const diskCss=fs.readdirSync(new URL("../css/",import.meta.url)).filter(name=>name.endsWith(".css")).sort();
 
 assert.deepEqual(linkedCss,canonicalCss,"index.html must load exactly the canonical CSS ownership set in cascade order");

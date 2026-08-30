@@ -1,0 +1,62 @@
+<section class="buyers-service-screen" data-buyers-screen>
+  <header class="buyers-topbar">
+    <div class="buyers-title"><small>CONGLOMERATE COMMERCIAL NETWORK</small><strong>CONGLOMERATE BUYERS SERVICE</strong></div>
+    <div class="buyers-reputation"><small>GLOBAL REP</small><strong data-buyers-rep>0.00</strong><span data-buyers-rep-level>UNKNOWN</span></div>
+    <button class="buyers-close" data-buyers-close aria-label="Close Conglomerate Buyers Service">✕</button>
+  </header>
+  <section class="buyers-filters" aria-label="Buyer catalogue filters">
+    <label class="buyers-filter"><small>STATUS</small><select data-buyer-filter="status"><option value="all">All</option><option value="available">Available</option><option value="current">Current</option><option value="locked">Locked</option></select></label>
+    <label class="buyers-filter"><small>RESOURCE</small><select data-buyer-filter="resource"><option value="">All</option></select></label>
+    <label class="buyers-filter"><small>QUALITY</small><select data-buyer-filter="quality"><option value="">All</option><option value="common">Common</option><option value="good">Good</option><option value="excellent">Excellent</option><option value="exceptional">Exceptional</option><option value="rare">Rare</option><option value="extraordinary">Extraordinary</option></select></label>
+    <label class="buyers-filter"><small>LOAD</small><select data-buyer-filter="load"><option value="">All</option><option value="small">≤25k</option><option value="mid">25–75k</option><option value="large">75k+</option></select></label>
+    <label class="buyers-filter"><small>PRICE</small><select data-buyer-filter="price"><option value="">All</option><option value="low">&lt;£0.25</option><option value="mid">£0.25–1</option><option value="high">£1+</option></select></label>
+    <label class="buyers-filter"><small>EVERY</small><select data-buyer-filter="frequency"><option value="">All</option><option value="fast">≤35d</option><option value="mid">36–60d</option><option value="slow">60d+</option></select></label>
+    <label class="buyers-filter"><small>REP</small><select data-buyer-filter="reputation"><option value="">All</option><option value="eligible">Eligible</option><option value="0">0–9</option><option value="10">10–24</option><option value="25">25+</option></select></label>
+    <label class="buyers-filter"><small>SORT</small><select data-buyer-filter="sort"><option value="rep">Rep low</option><option value="repDesc">Rep high</option><option value="priceDesc">Price high</option><option value="price">Price low</option><option value="load">Load low</option><option value="loadDesc">Load high</option><option value="freq">Frequency</option><option value="freqDesc">Frequency longest</option><option value="quality">Quality</option><option value="resource">Resource</option></select></label>
+  </section>
+  <section class="buyers-table-shell">
+    <div class="buyers-head-row"><span>Action</span><span>Buyer / Company</span><span>Resource</span><span>Q</span><span class="buyers-num">Load</span><span class="buyers-num">£/u</span><span class="buyers-num">Every</span><span class="buyers-num">Rep</span></div>
+    <div class="buyers-rows" data-buyer-rows></div>
+    <template data-buyer-row-template>
+      <div class="buyers-row">
+        <button class="buyers-row-action" data-buyer-action></button>
+        <div class="buyers-company"><strong data-buyer-name></strong><small data-buyer-company></small></div>
+        <div class="buyers-resource" data-buyer-resource></div>
+        <div class="buyers-quality" data-buyer-quality></div>
+        <div class="buyers-num" data-buyer-load></div>
+        <div class="buyers-num" data-buyer-price></div>
+        <div class="buyers-num" data-buyer-every></div>
+        <div class="buyers-num" data-buyer-requirement></div>
+      </div>
+    </template>
+  </section>
+  <div class="buyers-legend"><span>CONTACT = available • VIEW = current contract • REP LOCKED remains visible</span><span data-buyer-count></span></div>
+
+  <div class="buyers-profile-overlay hidden" data-buyer-profile>
+    <section class="buyers-profile-dialog" role="dialog" aria-modal="true" aria-label="Buyer contract profile">
+      <header class="buyers-profile-top"><strong data-profile-label>BUYER CONTRACT PROFILE</strong><button data-profile-close aria-label="Close buyer profile">✕</button></header>
+      <div class="buyers-profile-body">
+        <div class="buyers-profile-left">
+          <div class="buyers-portrait-frame"><img data-profile-portrait alt="Buyer portrait"><div class="buyers-art-fallback" data-profile-portrait-fallback></div></div>
+          <button class="buyers-primary-action" data-profile-primary></button>
+        </div>
+        <div class="buyers-profile-right">
+          <div class="buyers-profile-identity"><h2 data-profile-name></h2><div class="buyers-profile-role" data-profile-role></div><div class="buyers-profile-company" data-profile-company></div><div class="buyers-profile-business" data-profile-business></div></div>
+          <section class="buyers-profile-section"><h3>COLLECTION SHIP</h3><div class="buyers-ship-card"><strong data-profile-ship></strong><small data-profile-ship-description></small></div></section>
+          <section class="buyers-profile-section"><h3>CONTRACT</h3><div class="buyers-terms">
+            <span>Resource</span><b data-profile-resource></b><span>Minimum quality</span><b data-profile-quality></b><span>Shipment</span><b data-profile-load></b><span>Price / unit</span><b data-profile-price></b><span>Full value</span><b data-profile-value></b><span>Collection</span><b data-profile-every></b><span>Reputation</span><b data-profile-rep></b><span>Home market</span><b data-profile-home></b>
+          </div><div class="buyers-broker-note">The conglomerate brokers the relationship and retains its commercial margin. Buyer collection capacity is independent of the normal Corporate Ship.</div></section>
+          <section class="buyers-profile-section hidden" data-profile-current><h3>CURRENT RELATIONSHIP</h3>
+            <div class="buyers-relationship"><div class="buyers-score" data-profile-happiness></div><div><strong data-profile-happiness-band></strong><small data-profile-next></small></div></div>
+            <div class="buyers-current-stats">
+              <span>Qualifying stock</span><b data-profile-stock></b><span>Full / partial / late / missed</span><b data-profile-counts></b><span>Total delivered</span><b data-profile-units></b><span>Total earned</span><b data-profile-earned></b><span>Contract started</span><b data-profile-started></b><span>Current collection ship</span><b data-profile-current-ship></b>
+            </div>
+            <div class="buyers-history" data-profile-history></div>
+            <template data-profile-history-template><div><span data-history-date></span><span data-history-result></span><b data-history-change></b></div></template>
+            <button class="buyers-cancel" data-profile-cancel>CANCEL CONTRACT</button>
+          </section>
+        </div>
+      </div>
+    </section>
+  </div>
+</section>

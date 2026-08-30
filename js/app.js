@@ -3,6 +3,7 @@ import { Diagnostics } from "./core/diagnostics.js";
 import { GameStore } from "./core/game-store.js";
 import { ContractService } from "./domain/contract-service.js";
 import { CorporateEventService } from "./domain/corporate-event-service.js";
+import { BuyerService } from "./domain/buyer-service.js";
 import { createGameState, normalizeState } from "./domain/game-state-runtime.js";
 import { PortfolioService } from "./domain/portfolio-service.js";
 import { ResourceService } from "./domain/resource-service.js";
@@ -25,6 +26,7 @@ import { ResourceIcons } from "./ui/resource-icons.js";
 import { WorldView } from "./ui/world-view-runtime.js";
 import { UIController } from "./ui/ship-preparation-ui.js";
 import { TradeUI } from "./ui/corporate-trade-ui.js";
+import { BuyerUI } from "./ui/buyer-ui.js";
 
 let bootApp=null;
 
@@ -51,7 +53,8 @@ class MineITApp {
     this.collection=new CollectionService(this.resources,this.inventory,this.technology);
     this.colony=new ColonyService(this.inventory,this.technology);
     this.trade=new TradeService(this.resources,this.inventory);
-    this.events=new CorporateEventService(this.contracts,this.trade);
+    this.buyers=new BuyerService(this.resources,this.inventory);
+    this.events=new CorporateEventService(this.contracts,this.trade,this.buyers);
     this.land=new LandService();
     this.development=new DevelopmentService(this.inventory,this.land);
     this.world=new WorldService(this.resources,this.contracts,this.land);
@@ -65,6 +68,7 @@ class MineITApp {
 
     const saved=this.repo.load();
     this.store=new GameStore(normalizeState(saved||createGameState(this.contracts.first())));
+    this.buyers.ensure(this.state);
     this.events.ensure(this.state.company);
     this.portfolio.ensure(this.state);
     this.land.ensure(this.state);
@@ -95,6 +99,7 @@ class MineITApp {
       onDevelopmentTasksOpenChange:open=>{this.developmentTasksOpen=!!open;}
     });
     this.tradeUI=new TradeUI({state:this.state,trade:this.trade,repo:this.repo,ui:this.ui,gameLog:this.gameLog,onDepart:()=>this.onShipDepart()});
+    this.buyerUI=new BuyerUI({state:this.state,buyers:this.buyers,ui:this.ui,diagnostics:this.diagnostics,onEnterContract:id=>this.enterBuyerContract(id),onCancelContract:id=>this.cancelBuyerContract(id),onTransfer:id=>this.resolveBuyerCollection(id,"transfer"),onWait:id=>this.resolveBuyerCollection(id,"wait"),onMiss:id=>this.resolveBuyerCollection(id,"miss")});
     this.view=new WorldView({state:this.state,world:this.world,survey:this.survey,resources:this.resources,technology:this.technology,icons:this.icons,diagnostics:this.diagnostics,land:this.land,onTap:(x,y)=>this.tap(x,y),onMulti:cells=>this.multi(cells),onInspect:(x,y)=>this.inspect(x,y),onSelect:(x,y)=>this.ui.selectMapTile(x,y),onPlayerShipClick:()=>this.ui.playerShipPanel()});
 
     this.accumulator=0;
@@ -188,9 +193,10 @@ class MineITApp {
     return true;
   }
 
+  pendingEventLabel(event){return event?.type==="ship"?"corporate ship":event?.type==="buyer"?"buyer collection":"contract decision";}
   switchColony(id,force=false){
     const pending=this.events.sort(this.state.company)[0];
-    if(pending&&!force&&id!==pending.colonyId){this.ui.toast(`Resolve the pending ${pending.type==="ship"?"corporate ship":"contract decision"} for ${pending.colonyName||"the current colony"} first.`);return false;}
+    if(pending&&!force&&id!==pending.colonyId){this.ui.toast(`Resolve the pending ${this.pendingEventLabel(pending)} for ${pending.colonyName||"the current colony"} first.`);return false;}
     if(!this.portfolio.switchTo(this.state,id)){this.ui.toast("Colony could not be loaded.");return false;}
     this.prepareActive();this.ui.modal.classList.add("hidden");this.ui.tilePanel.classList.add("hidden");this.renderAll();this.repo.save(this.state);
     if(!force){
@@ -205,14 +211,19 @@ class MineITApp {
 
   clearEventsForColony(colonyId){this.events.removeForColony(this.state.company,colonyId);}
   eventQueueActive(){return this.state.company.eventReturnColonyId!==null&&this.state.company.eventReturnColonyId!==undefined||!!this.state.company.pendingEvents?.length;}
+  buyerContractsForColony(colonyId){return this.buyers.activeContractsForColony(this.state,colonyId);}
+  buyerShipBlocksColonyClosure(colonyId){return this.buyers.waitingShipsForColony(this.state,colonyId).length>0;}
+  cancelBuyerContractsForClosedColony(colonyId){const results=[];for(const contract of this.buyerContractsForColony(colonyId)){const result=this.buyers.cancelContract(this.state,contract.id);if(result.ok)results.push(result);}return results;}
 
   removeColony(mode="corporate-return"){
     const oldName=this.state.contract.colonyName,oldId=this.state.colonyId;
+    if(this.buyerShipBlocksColonyClosure(oldId)){this.ui.toast("Resolve the waiting buyer collection ship before closing this colony.");return false;}
     this.clearEventsForColony(oldId);
     delete this.state.contract.pendingDecision;delete this.state.contract.pendingDecisionPreviousStatus;
     const result=this.portfolio.removeActive(this.state);
     if(!result.ok){this.ui.toast(result.reason);return false;}
-    this.gameLog.event(this.state,mode==="abandon-dead"?"dead-colony-abandoned":"colony-returned",mode==="abandon-dead"?`${oldName} dead-colony record abandoned.`:`${oldName} returned to the corporation.`,{removedColonyId:oldId},oldId,oldName);
+    const cancelled=this.cancelBuyerContractsForClosedColony(oldId);
+    this.gameLog.event(this.state,mode==="abandon-dead"?"dead-colony-abandoned":"colony-returned",mode==="abandon-dead"?`${oldName} dead-colony record abandoned.`:`${oldName} returned to the corporation.`,{removedColonyId:oldId,buyerContractsCancelled:cancelled.length},oldId,oldName);
     this.prepareActive();this.ui.modal.classList.add("hidden");this.ui.tilePanel.classList.add("hidden");this.renderAll();this.repo.save(this.state);
     this.ui.toast(mode==="abandon-dead"?"Dead colony record abandoned.":"Colony returned to the corporation.");
     if(this.eventQueueActive())this.continueCorporateEventQueue();else this.ui.coloniesPanel();
@@ -232,11 +243,13 @@ class MineITApp {
     if(this.state.portfolio.colonies.length<=1){this.ui.toast("Open another colony before disposing of your final colony.");return false;}
     if(this.state.company.cash<cost){this.ui.toast(`Relocation requires £${Math.round(cost).toLocaleString()}.`);return false;}
     const oldName=this.state.contract.colonyName,oldId=this.state.colonyId,pop=this.state.pop;
+    if(this.buyerShipBlocksColonyClosure(oldId)){this.ui.toast("Resolve the waiting buyer collection ship before relocating this colony.");return false;}
     this.events.removeForColony(this.state.company,oldId);delete this.state.contract.pendingDecision;delete this.state.contract.pendingDecisionPreviousStatus;
     this.state.company.cash-=cost;
     const result=this.portfolio.removeActive(this.state);
     if(!result.ok){this.state.company.cash+=cost;this.ui.toast(result.reason);return false;}
-    this.gameLog.event(this.state,"colony-relocated",`${formatNumberSafe(pop)} colonists relocated from ${oldName}; colony closed.`,{removedColonyId:oldId,population:pop,cost},oldId,oldName);
+    const cancelled=this.cancelBuyerContractsForClosedColony(oldId);
+    this.gameLog.event(this.state,"colony-relocated",`${formatNumberSafe(pop)} colonists relocated from ${oldName}; colony closed.`,{removedColonyId:oldId,population:pop,cost,buyerContractsCancelled:cancelled.length},oldId,oldName);
     this.prepareActive();this.renderAll();this.repo.save(this.state);this.ui.toast("Population relocated and colony closed.");
     if(this.eventQueueActive())this.continueCorporateEventQueue();else this.ui.coloniesPanel();
     return true;
@@ -244,7 +257,7 @@ class MineITApp {
 
   hardReset(){
     if(!confirm("Erase all MineIT saves on this browser?"))return;
-    this.repo.clearAll();this.store.replaceState(createGameState(this.contracts.first()),{label:"hard-reset",notify:false});this.events.ensure(this.state.company);this.afterEventQueueAction=null;
+    this.repo.clearAll();this.store.replaceState(createGameState(this.contracts.first()),{label:"hard-reset",notify:false});this.buyers.ensure(this.state);this.events.ensure(this.state.company);this.afterEventQueueAction=null;
     this.portfolio.ensure(this.state);this.land.ensure(this.state);this.development.sync(this.state);this.portfolio.captureActive(this.state,true);this.gameLog.ensure(this.state);
     this.gameLog.event(this.state,"corporation-founded","Mining corporation reset and Contract 01 established.",{build:"5.8.1"});
     this.prepareActive();this.ui.modal.classList.add("hidden");this.ui.tilePanel.classList.add("hidden");this.renderAll();this.repo.save(this.state);this.ui.landSelection();
@@ -290,6 +303,10 @@ class MineITApp {
       this.events.queueShip(local,entryName,{recovered:false});
       this.gameLog.event(local,"ship-arrived",`Corporate trade ship arrived at ${entryName}.`,{visit:local.trade.visits,importCapacity:this.trade.cargoCapacity(local),exportCapacity:this.trade.exportCapacity(local)},local.colonyId,entryName);
     }
+    if(this.contracts.isOperating(local))for(const buyerEvent of this.buyers.processDay(local)){
+      this.events.queueBuyer(local,entryName,buyerEvent,{recovered:false});const snapshot=this.buyers.snapshotContract(local,buyerEvent.contractId),shipState=snapshot?.contract?.ship?.status||"waiting";
+      this.gameLog.event(local,"buyer-collection-due",`${snapshot?.buyer?.company||"Buyer"} collection is due at ${entryName}; ${snapshot?.contract?.shipName||"collection ship"} is ${shipState==="docked"?"docked":"waiting in orbit"}.`,{contractId:buyerEvent.contractId,buyerId:buyerEvent.buyerId,attemptIndex:buyerEvent.attemptIndex,dueAbsoluteDay:buyerEvent.dueAbsoluteDay,shipStatus:shipState},local.colonyId,entryName);
+    }
   }
 
   collectShipEventsAndScheduled(){
@@ -302,10 +319,10 @@ class MineITApp {
 
   reconcileCorporateEvents(){
     const company=this.state.company,originalSpeed=this.state.speed;
-    this.events.ensure(company);this.portfolio.captureActive(this.state,true);
+    this.buyers.ensure(this.state);this.events.ensure(company);this.portfolio.captureActive(this.state,true);
     const ids=this.state.portfolio.colonies.map(entry=>entry.id);
     this.events.sanitize(company,ids);
-    for(const event of company.pendingEvents)if(event.type==="ship")event.recovered=true;
+    for(const event of company.pendingEvents)if(event.type==="ship"||event.type==="buyer")event.recovered=true;
 
     const recover=(local,name)=>{
       const beforeShip=!!local.trade?.active,beforeDecision=local.contract?.pendingDecision||null;
@@ -347,6 +364,10 @@ class MineITApp {
     if(this.state.portfolio.activeColonyId!==event.colonyId&&!this.switchColony(event.colonyId,true)){
       this.events.remove(this.state.company,event);return this.processPendingCorporateEvent();
     }
+    if(event.type==="buyer"){
+      const contract=this.buyers.contract(this.state,event.contractId);if(!contract||contract.status!=="active"||!this.buyers.shipWaiting(contract)){this.events.remove(this.state.company,event);return this.processPendingCorporateEvent();}
+      this.renderAll();this.buyerUI.openCollection(event.contractId);return true;
+    }
     if(event.type==="ship"){
       if(!this.state.trade.active){this.events.remove(this.state.company,event);return this.processPendingCorporateEvent();}
       this.renderAll();this.tradeUI.open();return true;
@@ -359,6 +380,16 @@ class MineITApp {
     this.events.remove(this.state.company,event);return this.processPendingCorporateEvent();
   }
   processPendingShipEvent(){return this.processPendingCorporateEvent();}
+
+  enterBuyerContract(offerId){const result=this.buyers.enterContract(this.state,offerId,this.state.colonyId);if(!result.ok)return result;this.gameLog.event(this.state,"buyer-contract-entered",`${result.buyer.company} recurring contract established for ${formatNumberSafe(result.contract.quantity)} ${result.contract.resourceName} every ${result.contract.intervalDays} days.`,{contractId:result.contract.id,offerId,result:result.contract,buyerId:result.buyer.id});this.portfolio.captureActive(this.state,true);this.repo.save(this.state);return result;}
+  cancelBuyerContract(contractId){const before=this.buyers.snapshotContract(this.state,contractId),result=this.buyers.cancelContract(this.state,contractId);if(!result.ok)return result;this.gameLog.event(this.state,"buyer-contract-cancelled",`${before?.buyer?.company||"Buyer"} contract cancelled by the player.`,{contractId,buyerId:before?.buyer?.id,cooldownUntilAbsoluteDay:result.cooldownUntilAbsoluteDay,happiness:result.relationship.happiness});this.portfolio.captureActive(this.state,true);this.repo.save(this.state);return result;}
+  resolveBuyerCollection(contractId,action){
+    const event=this.events.sort(this.state.company).find(e=>e.type==="buyer"&&e.contractId===contractId&&e.colonyId===this.state.colonyId);if(!event)return{ok:false,reason:"Buyer collection event is no longer pending."};const before=this.buyers.snapshotContract(this.state,contractId);let result;if(action==="transfer")result=this.buyers.transfer(this.state,contractId);else if(action==="wait")result=this.buyers.continueWaiting(this.state,contractId);else result=this.buyers.resolveMiss(this.state,contractId);if(!result?.ok)return result||{ok:false,reason:"Buyer collection could not be resolved."};this.events.remove(this.state.company,event);const company=before?.buyer?.company||"Buyer",ship=before?.contract?.shipName||"collection ship";
+    if(action==="transfer")this.gameLog.event(this.state,"buyer-shipment",`${company} accepted ${formatNumberSafe(result.record.quantity)} ${before.contract.resourceName} from ${ship} for £${Math.round(result.revenue).toLocaleString()}.`,{contractId,result:result.record.result,quantity:result.record.quantity,revenue:result.revenue,daysLate:result.record.daysLate,happinessChange:result.record.happinessChange,terminated:!!result.terminated});
+    else if(action==="wait")this.gameLog.event(this.state,"buyer-collection-wait",`${company} collection continues waiting until the next attempt.`,{contractId,attemptIndex:result.attemptIndex,nextAttemptAbsoluteDay:result.nextAttemptAbsoluteDay});
+    else this.gameLog.event(this.state,"buyer-shipment-missed",`${company} shipment was missed; ${ship} departed.`,{contractId,missNumber:result.record.missNumber,happinessChange:result.record.happinessChange,terminated:!!result.terminated});
+    this.portfolio.captureActive(this.state,true);this.repo.save(this.state);this.continueCorporateEventQueue();return result;
+  }
 
   resolveContractDecision(action="resolved"){
     const event=this.events.sort(this.state.company).find(e=>e.type==="contract"&&e.colonyId===this.state.colonyId);
@@ -445,6 +476,7 @@ class MineITApp {
     removeEventListener("error",this.onWindowError);
     removeEventListener("unhandledrejection",this.onUnhandledRejection);
     document.removeEventListener("visibilitychange",this.onVisibilityChange);
+    this.buyerUI?.dispose?.();
     this.ui?.dispose?.();
     this.tradeUI?.dispose?.();
     this.view?.dispose?.();
