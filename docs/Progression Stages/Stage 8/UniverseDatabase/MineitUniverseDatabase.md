@@ -44,20 +44,9 @@ IDs are references, not presentation labels.
 
 The Universe Database represents persistent inhabited/commercial civilisation.
 
-It may contain authored:
+It may contain authored star systems, planets/moons, settlements/stations, companies, organisation units, facilities, operations, people, ships, commercial relationships, resource requirements, visual identities, histories and lore.
 
-- important star systems;
-- relevant planets and moons;
-- settlements, cities, ports and orbital stations;
-- companies;
-- divisions, subsidiaries, departments and teams;
-- facilities and industrial operations;
-- named people;
-- named ships;
-- commercial relationships and resource requirements;
-- visual identities, descriptions, histories and lore.
-
-Procedural frontier systems, player colonies and colony resource deposits remain separate concepts. Their eventual relationship to the authored universe is defined in `MineitUniverseDatabaseIntegration.md`.
+Procedural frontier systems, player colonies and colony deposits remain separate concepts. Their eventual relationship to the authored universe is defined in `MineitUniverseDatabaseIntegration.md`.
 
 ## 4. People belong to organisations and places
 
@@ -91,12 +80,7 @@ Image generation should be reproducible from authored facts rather than recreati
 
 Many relationships look hierarchical, but the overall universe is a graph.
 
-For example:
-
-- one company may operate on several planets;
-- one person may belong to one department but be associated with several operations;
-- one ship may serve several facilities;
-- a facility belongs to an organisation while also existing in a geographical hierarchy.
+For example, one company may operate on several planets, one person may belong to one department but support several operations, a ship may serve several facilities, and a facility simultaneously belongs to an organisation and a geographical location.
 
 The viewer therefore presents several useful hierarchy perspectives over the same records instead of forcing every entity into one permanent parent-child tree.
 
@@ -104,55 +88,294 @@ The viewer therefore presents several useful hierarchy perspectives over the sam
 
 # Concept Mock 0 — navigation proof
 
-Before building the real JSON-backed Phase 1 viewer, create a deliberately tiny **embedded-data concept mock** to answer one question:
-
-> Is the proposed Universe Explorer navigation model easy to understand and use?
+Before building the real JSON-backed Phase 1 viewer, maintain a deliberately small **embedded-data concept mock** whose purpose is to prove the navigation and information architecture.
 
 This is an explicit design-prototyping exception to the canonical JSON rule.
 
 The concept mock:
 
-- may contain its sample entities directly in the HTML/JavaScript;
+- may contain its sample entities directly in HTML/JavaScript;
 - is not canonical universe content;
 - is not used by gameplay;
-- must be clearly labelled as a concept mock;
-- should contain only the minimum entities needed to prove navigation;
-- should not attempt schema validation, image generation or production data loading;
-- must not evolve into the production Universe Explorer by gradually adding embedded content.
+- is clearly labelled as a concept mock;
+- contains only enough entities to expose navigation strengths/weaknesses;
+- does not become the production viewer by gradually accumulating embedded canon;
+- is frozen as a design reference once the interaction model is approved.
 
-Recommended minimum sample:
+The current mock should contain enough data to prove multiple systems/companies, scrolling, cross-branch navigation and several entity types.
 
-- 1 star system;
-- 1 planet;
-- 1 settlement/station;
-- 1 company;
-- 1 division;
-- 1 department;
-- 1 facility;
-- 1 operation;
-- 2 people;
-- 1 named ship.
+## Concept Mock 0 interaction requirements
 
-The mock should prove:
+The mock must prove:
 
-1. left-side tree navigation;
-2. right-side selected-entity detail;
-3. switching between Geography, Organisations and Directory perspectives;
-4. expanding/collapsing branches;
-5. contextual breadcrumbs;
-6. relationship links between entities that do not fit the current tree;
-7. selection/highlighting;
-8. a usable mobile explorer pattern.
+1. Geography, Organisations and Directory perspectives;
+2. expandable/collapsible tree branches;
+3. selected entity highlighting;
+4. global search;
+5. a permanently visible hierarchy while reading details;
+6. independently scrollable detail and tree regions;
+7. a draggable divider between detail and tree;
+8. direct navigation through linked fields in the detail view;
+9. automatic reveal/highlight of the selected entity in the active tree where possible;
+10. useful entity-specific detail rather than a generic relationship dump.
 
-If this navigation approach is approved, Phase 1 begins with canonical JSON and the real viewer is implemented against it. The embedded mock remains only a design reference.
+---
+
+# Approved mobile-first navigation model
+
+The viewer uses a **vertical split** rather than side-by-side panels.
+
+The selected entity occupies the **top panel** and the Universe Explorer tree occupies the **bottom panel**.
+
+Both remain visible at the same time because retaining hierarchy context is a core purpose of the tool.
+
+```text
++---------------------------------------------------+
+| SELECTED ENTITY                                   |
+| breadcrumbs / type / name / image                 |
+| description                                       |
+|                                                    |
+| Company: Helix Industrial Group ->                |
+| Facility: Solace Driveworks ->                    |
+| Operation: Commercial Drive Assembly ->           |
+| Work location: Solace Commercial Ring ->          |
+| ...                                               |
+|                                                    |
+| independently scrollable                          |
++================ DRAGGABLE DIVIDER =================+
+| UNIVERSE EXPLORER                                 |
+| [Geography] [Organisations] [Directory]            |
+| Search universe...                                |
+|                                                    |
+| expandable hierarchy tree                         |
+| current entity highlighted                        |
+| independently scrollable                          |
++---------------------------------------------------+
+```
+
+## Draggable divider
+
+The horizontal divider is touch-friendly and draggable.
+
+Recommended behaviour:
+
+- default approximately 60% detail / 40% explorer;
+- user may expand either region;
+- enforce sensible minimum sizes, approximately 25% each;
+- remember the split for the current browser/session where practical.
+
+This supports two natural modes:
+
+- **Browsing:** larger tree, smaller detail area.
+- **Reading/world-building:** larger detail area while the tree remains visible.
+
+## Independent scrolling
+
+The detail and tree panels scroll independently.
+
+A long biography or company history must not scroll the hierarchy off screen. Likewise, navigating a large tree must not move the current detail content.
+
+## Context-aware expansion
+
+The tree should not require the entire universe to remain expanded.
+
+When an entity is selected:
+
+- its relevant branch should expand automatically where possible;
+- the selected row should be highlighted;
+- the tree should scroll the selected row into view where practical;
+- unrelated branches may remain collapsed.
+
+This preserves context without turning a large universe into an unreadable wall of rows.
+
+---
+
+# Explorer perspectives
+
+The same canonical entities are projected into three useful navigation structures.
+
+## Geography
+
+Answers: **What exists here?**
+
+Example:
+
+```text
+MineIT Universe
+  Solace System
+    Solace II
+      Solace Commercial Ring
+        Companies
+          Helix Industrial Group
+        People
+        Ships
+      Surface Facilities
+        Solace Driveworks
+```
+
+Geography is the default perspective.
+
+## Organisations
+
+Answers: **How is this organisation structured?**
+
+Example:
+
+```text
+Companies
+  Helix Industrial Group
+    Propulsion Systems Division
+      Strategic Materials Procurement
+        Talia Chen
+      Operations Management
+        Marcus Vale
+      Facilities
+        Solace Driveworks
+      Operations
+        Commercial Drive Assembly Programme
+    Ships
+      CSV Halcyon Reach
+```
+
+## Directory
+
+Answers: **Find a particular entity regardless of hierarchy.**
+
+Directory groups searchable records by type, for example systems, planets, locations, companies, organisation units, facilities, operations, people and ships.
+
+Compact lists are appropriate here because lookup rather than hierarchy comprehension is the goal.
+
+---
+
+# Detail navigation model
+
+The detail panel does **not** use a generic `Related Entities` section as its primary linking mechanism.
+
+Instead, the entity shows its actual fields and any field whose value references another universe entity is itself clickable.
+
+Example person detail:
+
+```text
+TALIA CHEN
+Strategic Metals Buyer
+
+Company
+Helix Industrial Group ->
+
+Division
+Propulsion Systems Division ->
+
+Department
+Strategic Materials Procurement ->
+
+Works At
+Solace Commercial Ring ->
+
+Supports Operation
+Commercial Drive Assembly Programme ->
+
+Assigned Ship
+CSV Halcyon Reach ->
+
+Responsibilities
+- Strategic metals procurement
+- Supplier qualification
+- Long-term supply agreements
+```
+
+Example operation detail:
+
+```text
+COMMERCIAL DRIVE ASSEMBLY PROGRAMME
+
+Company
+Helix Industrial Group ->
+
+Division
+Propulsion Systems Division ->
+
+Facility
+Solace Driveworks ->
+
+Operations Director
+Marcus Vale ->
+
+Procurement Contact
+Talia Chen ->
+
+RESOURCE REQUIREMENTS
+Magnetic Ore — critical / high demand / excellent quality
+Copper Ore — high demand / good quality
+Platinum — moderate demand / excellent quality
+```
+
+This makes the database relationships visible as part of the entity itself rather than through an artificial generic link list.
+
+## Breadcrumbs
+
+Breadcrumbs show the current useful context/path rather than pretending every entity has one universal parent chain.
+
+Examples:
+
+`Solace System -> Solace II -> Solace Commercial Ring -> Helix Industrial Group`
+
+`Helix Industrial Group -> Propulsion Systems Division -> Strategic Materials Procurement -> Talia Chen`
+
+## Cross-navigation behaviour
+
+Selecting any linked field should:
+
+1. change the selected entity in the top detail panel;
+2. preserve the current explorer perspective unless there is a strong reason to change it;
+3. expand the relevant branch in that perspective where the entity exists;
+4. highlight the selected entity;
+5. scroll it into view in the tree where practical.
+
+---
+
+# Entity detail expectations
+
+## Star system
+
+Show system type, region, key worlds/locations, economy, description, visual description and image information. Planet/location references are navigable.
+
+## Planet / moon
+
+Show parent system, environment, population/economy, settlements, facilities and relevant companies/operations. Entity references are navigable.
+
+## Settlement / station
+
+Show parent planet/system, location type, purpose, population, companies, facilities, people and home-ported ships.
+
+## Company
+
+Show logo, organisation type/scale, description/history/culture, headquarters, industries, visual identity, organisation units, employees, facilities, operations, ships, locations and aggregated resource requirements.
+
+## Organisation unit
+
+Show company, parent unit, purpose, primary location, child units, people, facilities/operations where relevant.
+
+## Facility
+
+Show company/owner, physical location, type/status, responsible people, operations, description and visual/image data.
+
+## Operation
+
+Show company/division, facility, responsible people, resource requirements, reasons for requirements, status and description.
+
+## Person
+
+Show portrait, role, company/unit, work/home location, responsibilities, biography/personality, linked operations/ships and visual/image-generation information.
+
+## Ship
+
+Show owner/company, ship class, home port, role, assigned operation(s), responsible/associated people, description, livery and image information.
 
 ---
 
 # Phase 1 scope — real vertical slice
 
-After Concept Mock 0 is approved, Phase 1 proves the actual content architecture.
-
-Target approximately:
+After the navigation concept is approved, Phase 1 proves the actual content architecture with approximately:
 
 - 2 star systems;
 - 3–5 planets/moons;
@@ -174,23 +397,15 @@ No existing buyer gameplay depends on these records during Phase 1.
 
 # Real Phase 1 delivery architecture
 
-The real Phase 1 viewer uses the **canonical multi-file JSON structure**. It does not embed its authored data in the HTML.
-
-Benefits:
-
-- establishes the permanent source-of-truth pattern;
-- proves cross-file references and stable IDs;
-- proves manifest-driven loading;
-- exposes schema weaknesses before large-scale authoring;
-- allows validation against exactly what the viewer renders;
-- lets the universe expand without rewriting the viewer;
-- prevents a second shadow dataset.
+The real Phase 1 viewer uses the **canonical multi-file JSON structure**. It does not embed authored universe data in the HTML.
 
 The viewer loads `manifest.json` and then the collections declared by that manifest.
 
+Benefits include stable source-of-truth ownership, cross-file reference validation, manifest-driven loading, schema testing before bulk authoring, and the ability to grow the universe without rewriting the viewer.
+
 Because browser security normally prevents `fetch()` from working reliably from `file://`, the real viewer is expected to run through GitHub Pages or a simple static HTTP server.
 
-A future self-contained distributable viewer may be generated from canonical JSON if ever required, but that generated output must never become independently authored universe data.
+A future self-contained distributable viewer may be generated from canonical JSON if required, but generated output must never become independently authored universe data.
 
 ---
 
@@ -240,14 +455,7 @@ docs/
 
 ## `manifest.json`
 
-Contains:
-
-- schema version;
-- content version;
-- universe name;
-- release metadata;
-- collection names and file paths;
-- optional validation/build metadata.
+Contains schema/content version, universe metadata and collection file paths.
 
 Example:
 
@@ -272,40 +480,23 @@ Example:
 
 ## `star-systems.json`
 
-Persistent authored systems. Suggested information: stable ID, name, region, coordinates, star type, history, economic profile, description, visual description and image data.
+Persistent authored systems: ID, name, region, coordinates, star type, history, economic profile, description, visual description and image information.
 
 ## `planets.json`
 
-Suggested information: stable ID, parent system, type, environment, population summary, economy, description, visual description and image data.
+Persistent worlds: ID, system, type, environment, population/economic profile, description, visual description and image information.
 
 ## `settlements.json`
 
-Cities, colonies, ports, orbital stations and similar inhabited locations. Supports parent location where useful.
+Cities, colonies, ports, orbital stations and similar inhabited locations, including optional parent-location relationships.
 
 ## `companies.json`
 
-Independent organisations capable of employing many people and operating across many locations.
-
-Suggested information:
-
-- stable ID and names;
-- organisation type/scale;
-- headquarters;
-- industries;
-- description/history;
-- culture/reputation;
-- visual identity;
-- logo information.
-
-Company visual identity can define palette, logo style, uniforms, architecture, ship livery and signage/container style.
+Independent organisations capable of employing many people and operating across many locations. Includes headquarters, industries, description/history, culture/reputation, visual identity and logo information.
 
 ## `organisation-units.json`
 
-Flexible hierarchy for subsidiaries, divisions, departments and teams.
-
-Important fields include company ID, optional parent unit ID, unit type, primary location, purpose and description.
-
-This allows both deep corporate hierarchies and flat small-company structures.
+Flexible hierarchy for subsidiaries, divisions, departments and teams using company ID plus optional parent-unit ID.
 
 ## `facilities.json`
 
@@ -313,9 +504,9 @@ Physical places owned, leased or operated by organisations, including shipyards,
 
 ## `operations.json`
 
-Explains what a company/facility is actually doing and why it consumes or produces resources.
+Explains what a company/facility is doing and why it consumes/produces resources.
 
-Example requirement:
+Example resource requirement:
 
 ```json
 {
@@ -328,19 +519,15 @@ Example requirement:
 }
 ```
 
-At Phase 1, demand can remain descriptive/relative rather than simulating the full economy.
+At Phase 1, demand remains descriptive/relative rather than simulating the entire economy.
 
 ## `people.json`
 
-Persistent named characters. Suggested information includes organisation membership, role, work/home locations, responsibilities, biography, personality, appearance, visual description and portrait information.
-
-People are not required to be buyers.
+Persistent named characters with organisation membership, role, work/home locations, responsibilities, biography, personality, appearance, visual description and portrait information.
 
 ## `ships.json`
 
-Persistent named ships independent of buyer rows. Suggested information includes owner, ship class, home port, assigned operation(s), role, description, visual description, livery and image data.
-
-Shared ship classes may remain reusable definitions.
+Persistent named ships independent of buyer rows, including owner, class, home port, assigned operation(s), role, description, livery and image data.
 
 ---
 
@@ -357,7 +544,7 @@ Preferred:
 }
 ```
 
-This enables validation against the game's canonical resource definitions and remains stable if display names change.
+This remains stable if presentation names change and enables validation against the game's resource definitions.
 
 ---
 
@@ -373,9 +560,9 @@ assets/art/universe/planets/planet-solace-ii.webp
 assets/art/universe/facilities/facility-helix-solace-driveworks.webp
 ```
 
-Missing artwork does not invalidate an entity. The viewer shows a placeholder and exposes enough image-generation information to create the asset later.
+Missing artwork does not invalidate an entity. The viewer shows a placeholder and exposes image-generation information so the asset can be created later.
 
-Image-bearing entities should distinguish:
+Image-bearing entities distinguish:
 
 - `description` — what the entity is;
 - `visualDescription` — persistent visual facts;
@@ -384,135 +571,7 @@ Image-bearing entities should distinguish:
 - optional `image.status` — `missing`, `draft`, `approved`;
 - optional `image.notes` — framing/composition requirements.
 
-Prompt descriptions should be model-independent.
-
-A final copyable prompt may be assembled from:
-
-```text
-MineIT universe visual direction
-+ entity visual description
-+ company visual identity
-+ location visual identity
-+ entity prompt description
-+ composition / aspect ratio
-```
-
-This allows company style to cascade into uniforms, interiors, factories, ships, logos, containers and signage without duplicating the same text across every record.
-
----
-
-# MineIT Universe Explorer navigation
-
-The primary viewer is **not a set of disconnected tables**. It is a hierarchy explorer on the left with the selected entity on the right.
-
-## Desktop
-
-```text
-+-----------------------------+-------------------------------------------+
-| UNIVERSE EXPLORER           | SELECTED ENTITY                           |
-| Search...                   | Breadcrumbs                               |
-|                             | Name / type / image                       |
-| [Geography] [Organisation]  | Description                               |
-| [Directory]                 | Relationships                             |
-|                             | Operations / people / ships / resources   |
-| expandable tree             | Image-generation information              |
-|                             | Development details                       |
-+-----------------------------+-------------------------------------------+
-```
-
-Selecting a tree item updates the right panel while preserving wider context.
-
-## Mobile
-
-The tree becomes a full-screen or slide-over explorer. Selecting an entity closes the explorer and gives the detail view the full screen. A clear control reopens the explorer at the current selection.
-
-## Perspective 1 — Geography
-
-Answers **What exists here?**
-
-```text
-Universe
-  Solace System
-    Solace II
-      Solace Commercial Ring
-        Companies
-          Helix Industrial Group
-        Facilities
-        Ships
-```
-
-Geography is the default perspective.
-
-## Perspective 2 — Organisations
-
-Answers **How is this organisation structured?**
-
-```text
-Companies
-  Helix Industrial Group
-    Propulsion Systems Division
-      Procurement Department
-        Talia Chen
-        Marcus Vale
-      Solace Driveworks
-      Operations
-        Commercial Drive Assembly Programme
-    Ships
-```
-
-## Perspective 3 — Directory
-
-Answers **Find a particular thing regardless of hierarchy.**
-
-Directory categories may include people, companies, ships, facilities, operations, planets, systems and settlements/stations. Compact lists/tables are appropriate here because lookup is the goal.
-
-## Search
-
-Global **Search universe...** searches major collections.
-
-Selecting a result should open it, reveal/highlight it in an appropriate tree where practical and preserve context.
-
-## Breadcrumbs
-
-Breadcrumbs represent the current navigation context, not a fake universal parent chain.
-
-Examples:
-
-`Solace System -> Solace II -> Solace Commercial Ring -> Helix Industrial Group`
-
-`Helix Industrial Group -> Propulsion Systems Division -> Procurement Department -> Talia Chen`
-
-Breadcrumb nodes are clickable.
-
-## Relationship links
-
-The detail panel exposes relationships that do not naturally fit the active tree, for example a person's company, department, workplace, home, operations, resources and ships.
-
-All related entities are clickable.
-
-## Mini hierarchy context
-
-Detail pages may show compact organisation/location chains to reinforce context without requiring a graph visualisation.
-
----
-
-# Entity details
-
-## Company
-
-At minimum: logo, description/history/culture, headquarters, industries, visual identity, organisation hierarchy, employees, facilities, operations, ships, locations and aggregated resource requirements.
-
-## Person
-
-At minimum: portrait, name/role, company/unit, work/home location, responsibilities, biography/personality, related operations/ships, visual description and copyable portrait prompt.
-
-## Operation
-
-At minimum: what is being done, where, company/division, facility, resource requirements, reasons for those requirements and responsible management/procurement people.
-
-## Location
-
-At minimum: related companies, facilities, operations, people, ships/home ports and child locations where appropriate.
+A final prompt may combine MineIT visual direction, entity description, company visual identity, location identity, entity prompt description and composition/aspect ratio.
 
 ---
 
@@ -520,19 +579,15 @@ At minimum: related companies, facilities, operations, people, ships/home ports 
 
 ## Helix Industrial Group
 
-Large engineering/aerospace organisation suitable for proving multiple divisions, procurement, large facilities, resource requirements, ships, visual branding and several employees.
+Large engineering/aerospace organisation suitable for proving multiple divisions, procurement, facilities, resource requirements, ships, visual branding and several employees.
 
 Possible operations include propulsion manufacturing, advanced alloy fabrication and commercial ship component production.
-
-Likely demands include Iron Ore, Copper Ore, Reactive Metal Ore, Conductive Ore, Magnetic Ore and Platinum.
 
 ## Verdant Horizon Biotech
 
 Smaller specialist life-science/agricultural organisation to ensure the model is not biased toward heavy industry.
 
 Possible operations include closed-habitat food research, medical biochemistry and protein culture processing.
-
-Likely demands include Protein Bloom, Thermal Algae, Synthetic Nutrient and Hydrogen-rich Brine.
 
 These names/details remain working examples until reviewed.
 
@@ -556,7 +611,7 @@ Before significant content growth, automated validation should check:
 12. viewer code does not silently invent missing authoritative content;
 13. broken references fail validation rather than disappearing silently.
 
-Validation should become part of repository tests/CI once the real implementation begins.
+Validation becomes part of repository tests/CI once the real implementation begins.
 
 ---
 
@@ -608,11 +663,14 @@ Those topics belong in `MineitUniverseDatabaseIntegration.md`.
 
 ## Concept Mock 0
 
-1. Create the minimal embedded-data Universe Explorer mock.
-2. Review Geography / Organisations / Directory navigation.
-3. Review desktop and mobile interaction.
-4. Refine the navigation design only.
-5. Freeze the concept mock as a design reference once approved.
+1. Maintain the embedded-data concept mock as the disposable navigation prototype.
+2. Prove the vertical top-detail/bottom-tree layout.
+3. Prove independently scrollable panels and draggable divider.
+4. Prove Geography / Organisations / Directory perspectives.
+5. Prove direct field-link navigation and automatic tree reveal/highlight.
+6. Add only enough sample data to expose realistic scrolling and cross-branch navigation.
+7. Refine the navigation design only.
+8. Freeze the concept mock as a design reference once approved.
 
 ## Real Phase 1
 
@@ -621,11 +679,11 @@ Those topics belong in `MineitUniverseDatabaseIntegration.md`.
 3. Author the two example companies and linked content in JSON.
 4. Add validation for loading, IDs, references, resources and assets.
 5. Build `MineitUniverseDirectory.html` against canonical JSON.
-6. Implement the approved explorer perspectives and tree/detail interaction.
-7. Add breadcrumbs, cross-navigation and global search.
+6. Implement the approved vertical explorer and three perspectives.
+7. Implement entity-specific linked fields, breadcrumbs, search and automatic tree reveal.
 8. Add image placeholders and prompt-generation/copy support.
-9. Review hierarchy clarity, relationship visibility and image-generation quality.
-10. Refine the schema before bulk authoring.
+9. Review hierarchy clarity, information usefulness and image-generation quality.
+10. Refine schema before bulk authoring.
 11. Expand the universe only after the structure proves stable.
 
 ---
@@ -653,7 +711,7 @@ Company
       -> Person
 ```
 
-Cross-links connect facilities, operations, resources, ships and locations that do not belong naturally in the active hierarchy.
+The selected entity remains visible above the explorer tree; real entity-reference fields are clickable; the selected record is revealed/highlighted in the active hierarchy where possible; and both regions remain independently scrollable.
 
 Every real viewer detail comes from the same canonical JSON dataset, and image-bearing entities can provide an image-generation-ready description consistent with linked universe facts.
 
