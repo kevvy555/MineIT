@@ -2,12 +2,12 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),"utf8");
 
-const index=read("index.html"),app=read("js/app.js");
+const index=read("index.html"),app=read("js/app.js"),pkg=JSON.parse(read("package.json"));
 
 // Startup shell and presentation assets must remain wired regardless of internal module layout.
 for(const css of["app","world","panels","portfolio","trade-quality","trade-quick","ui-enhancements","land","map-first","resource-details","adaptive-building-details","ship-expansion","conglomerate-buyers"])assert.match(index,new RegExp(`css/${css}(?:-v\\d+)?\\.css`),`missing ${css} stylesheet`);
 assert.ok(!index.includes("./css/building-details.css"),"obsolete building-details stylesheet must stay absent");
-assert.match(index,/resource-atlas-256\.webp/);assert.match(index,/ui-enhancements\.css\?v=5\.13\.0/);assert.match(index,/js\/app\.js\?v=5\.13\.0/);
+assert.match(index,/resource-atlas-256\.webp/);assert.match(index,/ui-enhancements\.css\?v=5\.13\.0/);assert.match(index,new RegExp(`js/app\\.js\\?v=${pkg.version.replaceAll(".","\\.")}`),"startup app cache version must match package.json");
 for(const id of["overlayRoot","contextBar","attentionStrip","colonyNavStrip","world","mapViewHost","tradeBtn","menuBtn"])assert.match(index,new RegExp(`id="${id}"`),`startup shell missing #${id}`);
 assert.doesNotMatch(index,/mapFilterHost/);assert.doesNotMatch(index,/world-view-hotfix/);
 
