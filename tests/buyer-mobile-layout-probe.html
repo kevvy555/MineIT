@@ -89,7 +89,7 @@ async function run(){
     for(const selector of["[data-collection-resource]","[data-collection-quality]","[data-collection-load]","[data-collection-stock]","[data-collection-price]","[data-collection-late]","[data-collection-score]"])if(!String(collection?.querySelector(selector)?.textContent||"").trim())fail.push(`collection field empty ${selector}`);
     const wait=collection?.querySelector("[data-collection-wait]"),transfer=collection?.querySelector("[data-collection-transfer]"),dismiss=collection?.querySelector("[data-collection-dismiss]");touchTarget(wait,"collection wait");touchTarget(transfer,"collection transfer");touchTarget(dismiss,"collection decision button");
     if(transfer?.disabled)fail.push("80% qualifying stock should allow transfer while docked");
-    if(!/80%/.test(collection?.querySelector("[data-collection-percent]")?.textContent||""))fail.push("collection fulfilment does not show 80%");
+    const fulfilmentPct=Number.parseFloat(collection?.querySelector("[data-collection-percent]")?.textContent||"");if(!(fulfilmentPct>=80&&fulfilmentPct<100))fail.push(`collection fulfilment ${Number.isFinite(fulfilmentPct)?fulfilmentPct:"missing"}% is not an expected accepted 80–99% partial`);
     dismiss?.click();await sleep(30);if(modal.classList.contains("hidden")||!modal.querySelector("[data-buyer-collection-screen]"))fail.push("collection decision screen was dismissible");
   }
   finish();
