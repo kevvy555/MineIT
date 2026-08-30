@@ -26,11 +26,17 @@ export function playerShipOccupiesBerth(state){
   return !!ship&&ship.status==="docked"&&ship.colonyId===state.colonyId;
 }
 
+export function buyerShipOccupants(state){
+  const contracts=Object.values(state.company?.buyers?.contracts||{});
+  return contracts.filter(contract=>contract?.status==="active"&&contract.colonyId===state.colonyId&&contract.ship?.status==="docked").map(contract=>({id:`buyer-ship:${contract.id}`,type:"buyer-collection-ship",owner:"buyer",label:contract.shipName||"Buyer Collection Ship",contractId:contract.id,offerId:contract.offerId,buyerId:contract.buyerId}));
+}
+
 export function berthOccupants(state){
   const port=ensureSpaceport(state),occupants=[];
   if(playerShipOccupiesBerth(state))occupants.push({id:"player-colony-ship",type:"player-ship",owner:"player",label:"Colony Ship"});
   if(state.trade?.active)occupants.push({id:"corporate-trade-ship",type:"corporate-ship",owner:"conglomerate",label:"Corporate Ship"});
   for(const deployment of engineeringDeployments(state))if(ENGINEERING_BERTH_STATUSES.has(deployment.status))occupants.push({id:deployment.id,type:"engineering-ship",owner:"conglomerate",label:"Engineering Ship",deployment});
+  occupants.push(...buyerShipOccupants(state));
   return occupants.slice(0,Math.max(port.berthCapacity,occupants.length));
 }
 

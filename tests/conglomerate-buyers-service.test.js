@@ -1,0 +1,19 @@
+import assert from "node:assert/strict";
+import { BUYER_IDENTITIES,BUYER_SHIP_CLASSES,buyerShipClass } from "../js/data/buyer-content.js";
+import { rangeFor,marketPhase } from "../js/data/buyer-market-balance.js";
+import { BuyerService } from "../js/domain/buyer-service.js";
+import { InventoryService } from "../js/domain/inventory-service.js";
+import { ResourceService } from "../js/domain/resource-service.js";
+import { REPUTATION_LEVELS,changeReputation,reputationLevel } from "../js/domain/reputation-service.js";
+
+const resources=new ResourceService(),inventory=new InventoryService(resources),buyers=new BuyerService(resources,inventory);
+const state=(seed=12345)=>({year:1,day:1,seed,company:{rep:0,cash:0,earn:0,expansion:{seed},buyers:null},contract:{localRevenue:0},inventory:{},trade:{active:false},colonyId:"colony-a",colony:{spaceport:{level:1,berthCapacity:2,providedBy:"conglomerate",tile:{x:0,y:0}},engineeringDeployments:[]}});
+
+assert.equal(BUYER_IDENTITIES.length,1000);assert.equal(BUYER_SHIP_CLASSES.length,30);assert.equal(new Set(BUYER_IDENTITIES.map(x=>x.name)).size,1000);assert.equal(new Set(BUYER_IDENTITIES.map(x=>x.company)).size,1000);assert.equal(new Set(BUYER_IDENTITIES.map(x=>x.shipName)).size,1000);assert.deepEqual(BUYER_IDENTITIES[0],BUYER_IDENTITIES[0]);
+assert.deepEqual(REPUTATION_LEVELS.map(x=>x.name),["Disgraced","Distrusted","Questionable","Unknown","Emerging","Recognised","Established","Trusted","Preferred","Elite"]);for(const [value,name] of [[-100,"Disgraced"],[-24.99,"Distrusted"],[-.01,"Questionable"],[0,"Unknown"],[5,"Emerging"],[15,"Recognised"],[30,"Established"],[50,"Trusted"],[70,"Preferred"],[90,"Elite"],[100,"Elite"]])assert.equal(reputationLevel(value).name,name);const clampState={company:{rep:99.99}};changeReputation(clampState,.1);assert.equal(clampState.company.rep,100);changeReputation(clampState,-250);assert.equal(clampState.company.rep,-100);
+
+const a=state(8302026),b=state(8302026),c=state(8302027);buyers.ensure(a);buyers.ensure(b);buyers.ensure(c);assert.equal(a.company.buyers.offers.length,1000);assert.deepEqual(a.company.buyers.offers,b.company.buyers.offers);assert.notDeepEqual(a.company.buyers.offers.slice(0,10),c.company.buyers.offers.slice(0,10));
+for(const offer of a.company.buyers.offers){const identity=BUYER_IDENTITIES.find(x=>x.id===offer.buyerId),ship=buyerShipClass(identity.shipClassId),direct=resources.sellPrice(offer.resourceType,offer.resourceId,offer.minQuality),range=rangeFor(offer.resourceName,marketPhase(offer.minRep));assert.ok(offer.unitRate<direct,`${offer.id} must stay below direct price`);assert.ok(offer.quantity<=ship.capacity,`${offer.id} exceeds ${ship.name}`);assert.ok(range&&offer.quantity>=range[0]&&offer.quantity<=range[1],`${offer.id} quantity outside approved range`);}
+const locked=a.company.buyers.offers.find(o=>o.minRep>0);assert.ok(locked);assert.equal(buyers.catalog(a).some(o=>o.id===locked.id),true);assert.equal(buyers.canEnter(a,locked.id).ok,false);const first=a.company.buyers.offers.find(o=>o.minRep===0);const entered=buyers.enterContract(a,first.id);assert.equal(entered.ok,true);assert.equal(entered.contract.colonyId,"colony-a");assert.equal(entered.contract.quantity,first.quantity);assert.equal(entered.contract.unitRate,first.unitRate);assert.equal(buyers.canEnter(a,first.id,"colony-b").ok,false);
+inventory.store(a,first.resourceType,first.resourceId,first.resourceName,100,60);inventory.store(a,first.resourceType,first.resourceId,first.resourceName,100,300);const removed=inventory.removeWeighted(a,first.resourceType,first.resourceId,150,{minimumQualityKey:"good",lowestFirst:true});assert.equal(removed.removed,150);assert.equal(removed.bands.good?.amount,100);assert.equal(removed.bands.excellent?.amount,50);
+console.log("MineIT Stage 8 conglomerate buyer catalogue, reputation, pricing and contract-entry test passed");
