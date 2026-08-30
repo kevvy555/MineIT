@@ -4,6 +4,7 @@ This document captures the current options discussed for the **Logistics Bottlen
 
 ## Current options
 
+- **Conglomerate Buyers Service** — before the player has enough independent freight capacity, the conglomerate can broker recurring contracts with multiple outside buyers. Buyers request specific resources, minimum quality, fixed shipment quantities and regular collection intervals. Their own ships collect from the colony, providing additional export throughput beyond the normal Corporate Ship, but at worse unit prices because the conglomerate takes a cut. Buyer access, shipment scale and resource sophistication increase with global reputation. Detailed design: `ConglomerateBuyersService.md`.
 - **Dedicated Freight Ships** — keep the colony establishment ship small and specialised, while introducing proper cargo/freight vessels for moving large resource volumes.
 - **Player-Designed Ships** — let the player choose ship size and design, trading off cargo capacity, range, speed, Fuel use and cost.
 - **Multiple Freight Ships** — logistics capacity scales by building a fleet rather than relying on one vessel.
@@ -24,7 +25,7 @@ This document captures the current options discussed for the **Logistics Bottlen
 - **Storage Bottlenecks** — warehouses become part of the logistics chain so excess production can accumulate safely while waiting for transport.
 - **Corporate Ship Role** — the Corporate Ship remains useful for supported colonies but should not be the permanent answer to large-scale logistics.
 - **Corporate Service Zone** — colonies inside the zone retain easy access to conglomerate logistics, while colonies outside it increasingly require player-built infrastructure.
-- **Buyer Collection Ships** — some future contracts may involve the buyer collecting goods, although usually at different economics than player-delivered cargo.
+- **Buyer Collection Ships** — Stage 8 now has a defined first implementation through the Conglomerate Buyers Service: contracted buyers send their own collection ships on recurring schedules, subject to quality, quantity, reputation and reliability rules.
 - **Contracted Hauliers** — external freight companies could potentially move cargo for a fee, providing an expensive alternative to owning enough ships.
 - **Emergency Freight Option** — there should probably always be some costly fallback transport method so a remote colony can never become permanently economically trapped.
 - **Unlimited Scaling Principle** — freight capacity must never have a fixed final ceiling; more ships, larger ships, better infrastructure and technology should always allow further growth.
@@ -32,12 +33,13 @@ This document captures the current options discussed for the **Logistics Bottlen
 
 ## Core gameplay loop
 
-**Produce → Store → Refine or ship raw → Move through hubs → Deliver to buyer → Reinvest in larger/better logistics → Produce even more.**
+**Produce → Store → Sell direct or fulfil brokered buyer contracts → Refine or ship raw → Move through hubs → Deliver to wider markets → Reinvest in larger/better logistics → Produce even more.**
 
 ## Immediate design areas
 
-The main Stage 8 areas still requiring detailed design are:
+The main Stage 8 areas still requiring detailed design/implementation are:
 
+- Conglomerate Buyers Service implementation and final review of its small set of open rules.
 - Ship construction and player-designed ship configuration.
 - Hub mechanics for planets, moons and space stations.
 - Freight route operation and automation.
