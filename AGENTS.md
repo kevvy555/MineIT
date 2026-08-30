@@ -155,6 +155,12 @@ Minimise unnecessary DOM work, layout thrashing, repeated queries, and allocatio
 
 Keep canvas/render work controlled and avoid unnecessary redraws. Preserve existing performance guards and asset constraints.
 
+### App version
+
+`package.json` owns the canonical user-visible MineIT game version. Every completed development change must increment that version; use a patch increment by default unless a minor or major increment is deliberately appropriate.
+
+The `MINEIT` header in `index.html` must display the same version immediately after the brand text. Keep regression coverage that fails if the visible header version and `package.json` version diverge.
+
 ## Testing rules — tests are required
 
 Tests are part of the implementation, not optional follow-up work.
