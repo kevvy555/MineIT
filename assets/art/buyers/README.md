@@ -13,6 +13,16 @@ Use sequential WEBP filenames:
 
 WEBP is preferred for mobile download size. PNG may be used temporarily while artwork is being prepared, but production integration should favour the WEBP copy.
 
+## Canonical generation reference
+
+Use:
+
+`docs/Progression Stages/Stage 8/BuyerAndShipImageDirectory.html`
+
+The BUYERS tab defines all 1,000 stable contact identities and provides the role, company, business type, commercial tier, home market, reputation level, resource interests, assigned ship and portrait-generation description for every buyer.
+
+Buyer N uses `buyer-NNNN.webp` and is paired with Buyer Ship N.
+
 ## Assignment rules
 
 Buyer identities do not depend on portraits. The game will assign available portraits deterministically when a new game's buyer pool is seeded.
@@ -22,6 +32,6 @@ Buyer identities do not depend on portraits. The game will assign available port
 - Existing saves must preserve their assigned portrait key when more artwork is added later.
 - If an assigned image is missing, the UI must show the buyer's name/initials instead; a missing portrait must never break buyer/contact or ship-event screens.
 
-The full design is documented in:
+The gameplay design is documented in:
 
 `docs/Progression Stages/Stage 8/ConglomerateBuyersService.md`
