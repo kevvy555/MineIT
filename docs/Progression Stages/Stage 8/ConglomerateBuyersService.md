@@ -1,213 +1,195 @@
 # Stage 8 — Conglomerate Buyers Service
 
 Status: **Not Started**  
-Design state: **Core gameplay rules approved; UI mockups pending review**
+Design state: **Core gameplay rules approved; revised mobile UI mockups pending review**
 
 ## Purpose
 
 The **Conglomerate Buyers Service** solves the mid-game commercial bottleneck where a productive colony has more saleable output than the ordinary Corporate Ship can absorb.
 
-The conglomerate already deals with a large network of outside industrial customers. As the player's global reputation improves, the conglomerate exposes more of those customers to the colony and brokers recurring supply contracts on the player's behalf.
+The conglomerate exposes selected customers from its own commercial network and brokers recurring supply contracts on the player's behalf. These remain conglomerate-controlled relationships rather than independent player-owned customers.
 
-These remain **conglomerate-brokered contracts**:
+Key distinction:
 
-- the conglomerate owns/brokers the commercial relationship;
-- the outside buyer sends its own collection ship;
-- buyer collection capacity is independent of ordinary Corporate Ship export capacity;
-- the buyer pays less per unit than the conglomerate's own direct purchase rate because the conglomerate takes a margin and the outside buyer is price-sensitive;
-- later progression can still introduce direct player-owned commercial relationships.
+- direct conglomerate sales remain the best equivalent unit price because the conglomerate consumes those materials itself;
+- brokered buyers pay less because the conglomerate takes a cut and outside customers are price-sensitive;
+- buyer collection ships provide **separate physical collection capacity** and do not consume ordinary Corporate Ship export capacity;
+- later stages can still introduce broader/direct commercial relationships and player freight.
 
-The Stage 8 pressure becomes:
+The intended Stage 8 pressure is:
 
 **Production Rate → Corporate Export Capacity → Brokered Buyer Capacity / Reliability → Player Freight Capacity**
 
-The system must create meaningful extra demand without simply increasing the Corporate Ship's cargo number.
-
 ---
 
-## Core player loop
+# Core player loop
 
 1. Open **CONGLOMERATE BUYERS SERVICE** from the current colony ship/colony-management panel.
-2. Browse the complete buyer catalogue.
-3. Sort and filter by buyer, company, resource, quality, shipment amount, unit price, frequency and reputation requirement.
-4. Inspect opportunities that match the colony's production.
-5. Reputation-eligible offers show **CONTACT**; locked offers remain visible but cannot be contacted.
-6. CONTACT opens the full buyer/company/contract profile.
-7. Press **ENTER CONTRACT** to establish the recurring contract for the current colony.
-8. Produce and hold enough qualifying stock before the buyer's collection cycle.
-9. The buyer sends its own named collection ship.
-10. The ship must obtain a Spaceport berth before stock can be transferred.
-11. When actionable, the game pauses and shows the buyer-ship collection popup.
-12. Transfer a full or permitted partial shipment, or make the buyer wait for the next collection attempt.
-13. Reliable service slowly improves the buyer relationship and global reputation; late, partial and missed deliveries damage them.
-14. Poor service can terminate the contract.
+2. Browse the complete seeded buyer catalogue.
+3. Use compact dropdown filters and sorting to identify a suitable opportunity.
+4. Reputation-eligible offers show **CONTACT**; locked offers remain visible as **REP LOCKED**.
+5. CONTACT opens the buyer/company/contract profile.
+6. Press **ENTER CONTRACT** to establish the recurring contract for the current colony.
+7. Produce and hold enough qualifying stock before the collection cycle.
+8. The buyer sends its own explicitly named collection ship.
+9. The ship must obtain a Spaceport berth before transfer can occur.
+10. The game pauses for the collection event.
+11. Transfer a full or permitted partial shipment, or make the ship wait until the next attempt.
+12. Reliable service slowly improves the relationship; late, partial and missed deliveries damage buyer happiness and global reputation.
+13. Persistent poor service can terminate the contract.
 
-The arrival remains a visible player event. Initial implementation does **not** auto-fulfil buyer contracts.
+Initial implementation does **not** auto-fulfil contracts.
 
 ---
 
 # Buyer identity and commercial world
 
-The player should feel they are dealing with a real commercial organisation and a real contact, not a generic demand row.
+The player should feel they are dealing with a real organisation and a real person rather than a generic demand row.
 
 ## 1,000-buyer pool
 
-The game will have a static content pool of **1,000 unique buyers**. Each buyer record has a stable ID and, at minimum:
+The game will use a static content pool of **1,000 unique buyers**. Each buyer has a stable identity containing at minimum:
 
+- buyer/contact ID;
 - unique contact name;
 - job title / commercial role;
 - unique company name;
 - company business type;
 - company size tier;
-- home system/region flavour text where useful;
+- optional home-system/region flavour text;
 - preferred/eligible resource families;
 - reputation range appropriate to that buyer;
-- a unique primary collection ship name;
+- unique primary collection ship name;
 - one of the 30 collection-ship classes below;
-- portrait/image assignment key;
-- stable buyer ID.
+- portrait assignment key.
 
-The 1,000 records should be generated once during development and committed as static game data. They must **not** reroll names or company identities on reload.
+The 1,000 records are generated once during development and committed as static game data. Names, companies and ship identities must not reroll on reload.
 
-A new game uses the game/world seed to select and order opportunities from this pool. The same save therefore retains the same commercial world.
+A new game uses the game/world seed to select/order opportunities from this pool. The same save therefore retains the same commercial world.
 
-Company business types may repeat across the pool, but contact name + company name + primary ship name should be unique.
+Company business types may repeat, but **contact name + company name + primary ship name** should be unique across the pool.
 
-Suggested business-type families include mining supply, heavy engineering, shipbuilding, electronics, energy generation, fuel processing, construction, habitat fabrication, agriculture, food processing, medical manufacturing, precision instruments, jewellery/luxury goods, research laboratories, reactor engineering, advanced materials, aerospace, infrastructure and interstellar logistics.
+Suggested business families include heavy engineering, shipbuilding, electronics, energy generation, fuel processing, construction, habitat fabrication, agriculture, food processing, medical manufacturing, precision instruments, jewellery/luxury goods, research laboratories, reactor engineering, advanced materials, aerospace, infrastructure and interstellar logistics.
 
-## Buyer/company scale
+## Buyer scale
 
-Buyer size should broadly increase with reputation requirement:
+Buyer scale broadly increases with reputation requirement:
 
-- small/local buyers: smaller loads and smaller ships;
+- small/local buyers: smaller loads and small collection vessels;
 - regional buyers: moderate recurring loads;
-- major industrial buyers: large recurring loads and stronger quality requirements;
-- strategic/premier buyers: very large or highly specialised loads, advanced resources and high reliability expectations.
+- major industrial buyers: large loads and stronger quality expectations;
+- strategic/premier buyers: very large or highly specialised requirements and high service expectations.
 
-A high-reputation buyer does not automatically offer the best unit price. Quantity, cadence, quality requirement and price should still create meaningful comparison.
+Higher reputation does not automatically mean higher unit price. Quantity, cadence, quality and price should remain meaningful trade-offs.
 
 ---
 
-# Buyer portrait assets
+# Buyer portraits
 
-Buyer portraits are presentation assets, not gameplay state.
-
-Canonical image folder:
+Canonical folder:
 
 `assets/art/buyers/`
 
-Preferred filename convention:
+Preferred filenames:
 
 `buyer-0001.webp` through `buyer-1000.webp`
 
-The portrait pool can grow gradually. The game must work with only a small subset present.
+Rules:
 
-## Seeded assignment rules
-
-- buyer identities are stable independently of images;
-- at new-game buyer seeding, available portrait assets are assigned deterministically;
-- the assignment should use portraits **without replacement first**, especially for low-reputation/early-game buyers, so the buyers the player sees first are as visually distinct as possible;
-- when available portraits are exhausted, reuse is allowed;
-- adding more portraits later may improve newly generated games but must not reshuffle portraits already persisted in an existing save;
-- the buyer portrait is only required in CONTACT / VIEW / ship-event detail presentation, not in the dense catalogue table.
-
-## Missing-image fallback
-
-Until a buyer has a usable portrait, the portrait area shows a strong text fallback using the buyer's name/initials. A missing image must never prevent the popup from opening.
+- buyer identity exists independently of portrait availability;
+- new games assign available portraits deterministically;
+- assign without replacement first, especially for low-reputation/early buyers, so early contacts are visually distinct;
+- duplicates are allowed after the available portrait pool is exhausted;
+- adding more portraits later must not reshuffle assignments already persisted in an existing save;
+- portraits are required only in CONTACT / VIEW / collection-event detail presentation, not the dense catalogue table;
+- missing portraits fall back to buyer name/initials and never block the UI.
 
 ---
 
-# Thirty collection-ship classes
+# Thirty buyer collection-ship classes
 
-Every buyer has an explicitly named primary collection ship, for example **CSV Halcyon Reach**, and that ship has one of these 30 classes.
+Every buyer has an explicitly named primary collection vessel, for example **CSV Halcyon Reach**. The named vessel belongs to one of 30 classes.
 
-The company/buyer scale should bias toward larger classes. Contract shipment quantity must never exceed the assigned ship's cargo capacity.
+The ship-class description is **flavour and identity only** in this feature. Gameplay differences are intentionally limited to cargo capacity; no extra speed, fuel, armour or ship-design system is introduced here.
 
-| # | Ship class | Cargo capacity |
-|---:|---|---:|
-| 1 | Dart Courier | 2,500 |
-| 2 | Wren Shuttle | 4,000 |
-| 3 | Kestrel Light Freighter | 6,000 |
-| 4 | Skipper Packet | 8,000 |
-| 5 | Nomad Utility Freighter | 12,000 |
-| 6 | Ranger Cargo Cutter | 18,000 |
-| 7 | Wayfarer Freighter | 25,000 |
-| 8 | Merchant Lifter | 35,000 |
-| 9 | Caravan Freighter | 50,000 |
-| 10 | Atlas Hauler | 70,000 |
-| 11 | Meridian Bulk Carrier | 90,000 |
-| 12 | Vanguard Hauler | 120,000 |
-| 13 | Longreach Freighter | 160,000 |
-| 14 | Foundry Carrier | 210,000 |
-| 15 | Reliant Bulkship | 270,000 |
-| 16 | Leviathan Freighter | 350,000 |
-| 17 | Mammoth Carrier | 450,000 |
-| 18 | Colossus Bulkship | 575,000 |
-| 19 | Goliath Heavy Freighter | 725,000 |
-| 20 | Citadel Carrier | 900,000 |
-| 21 | Bastion Superfreighter | 1,100,000 |
-| 22 | Monolith Bulk Carrier | 1,350,000 |
-| 23 | Horizon Superfreighter | 1,600,000 |
-| 24 | Dominion Carrier | 1,900,000 |
-| 25 | Titan Logistics Carrier | 2,200,000 |
-| 26 | Continental Bulkship | 2,500,000 |
-| 27 | Hyperion Supercarrier | 2,800,000 |
-| 28 | Keystone Megafreighter | 3,200,000 |
-| 29 | Panstellar Megacarrier | 3,600,000 |
-| 30 | Worldline Mass Freighter | 4,000,000 |
+Buyer/company scale biases toward larger ship classes. A generated contract quantity must never exceed the assigned ship's cargo capacity.
 
-The class is a logistics/capacity identity only for this feature; no player ship-design system is being added here.
+| # | Ship class | Capacity | Description |
+|---:|---|---:|---|
+| 1 | Dart Courier | 2,500 | Compact, fast courier built for small high-value consignments and specialist cargo. |
+| 2 | Wren Shuttle | 4,000 | Short-range commercial shuttle used by small buyers for frequent light collections. |
+| 3 | Kestrel Light Freighter | 6,000 | Nimble light freighter with modest modular holds for mixed industrial cargo. |
+| 4 | Skipper Packet | 8,000 | Scheduled packet freighter designed around reliable recurring merchant runs. |
+| 5 | Nomad Utility Freighter | 12,000 | Rugged frontier utility ship able to handle varied cargo at remote colonies. |
+| 6 | Ranger Cargo Cutter | 18,000 | Compact medium freighter balancing useful capacity with easy Spaceport handling. |
+| 7 | Wayfarer Freighter | 25,000 | Common long-haul merchant vessel used by established regional companies. |
+| 8 | Merchant Lifter | 35,000 | Reinforced commercial lifter for heavier contract lots and containerised materials. |
+| 9 | Caravan Freighter | 50,000 | Modular multi-hold ship used for sustained regional commodity movement. |
+| 10 | Atlas Hauler | 70,000 | Heavy-frame hauler designed to move substantial industrial loads reliably. |
+| 11 | Meridian Bulk Carrier | 90,000 | Dedicated bulk-material carrier optimised for regular commodity collections. |
+| 12 | Vanguard Hauler | 120,000 | High-reliability heavy industrial hauler favoured by major manufacturers. |
+| 13 | Longreach Freighter | 160,000 | Endurance-oriented heavy freighter for large recurring intersystem contracts. |
+| 14 | Foundry Carrier | 210,000 | Industrial carrier built around dense raw-material and foundry-feedstock loads. |
+| 15 | Reliant Bulkship | 270,000 | Redundant commercial bulkship intended for dependable high-volume schedules. |
+| 16 | Leviathan Freighter | 350,000 | Very large freight platform for corporations moving serious commodity tonnage. |
+| 17 | Mammoth Carrier | 450,000 | Slow, enormous carrier whose huge holds suit sustained bulk purchasing. |
+| 18 | Colossus Bulkship | 575,000 | Major bulk transport vessel for large industrial groups and infrastructure firms. |
+| 19 | Goliath Heavy Freighter | 725,000 | Massive heavy freighter used when contract volume becomes a strategic supply-chain concern. |
+| 20 | Citadel Carrier | 900,000 | Robust strategic carrier with multiple segregated holds for major corporate contracts. |
+| 21 | Bastion Superfreighter | 1,100,000 | Self-contained superfreighter supporting very large recurring buyer operations. |
+| 22 | Monolith Bulk Carrier | 1,350,000 | Deep-hold megacarrier focused on enormous single-resource commodity loads. |
+| 23 | Horizon Superfreighter | 1,600,000 | Long-range superfreighter used by intersystem commercial networks. |
+| 24 | Dominion Carrier | 1,900,000 | Fleet-grade strategic carrier owned by major multi-system corporations. |
+| 25 | Titan Logistics Carrier | 2,200,000 | Integrated logistics carrier for buyers operating at industrial-network scale. |
+| 26 | Continental Bulkship | 2,500,000 | Planetary-scale bulk mover able to absorb output from mature mining colonies. |
+| 27 | Hyperion Supercarrier | 2,800,000 | Premium megacarrier with multiple enormous cargo sections for demanding strategic buyers. |
+| 28 | Keystone Megafreighter | 3,200,000 | Backbone vessel for corporations whose supply chains depend on continuous massive inflow. |
+| 29 | Panstellar Megacarrier | 3,600,000 | Interstellar megacarrier serving the largest commercial organisations in the network. |
+| 30 | Worldline Mass Freighter | 4,000,000 | The largest buyer vessel in this service, reserved for exceptional late-game bulk contracts. |
 
 ---
 
 # Buyer offer definition
 
-Every buyer offer defines:
+Every seeded offer defines:
 
 - buyer/contact ID;
 - company ID/name/business type;
 - offer ID;
-- current colony eligibility;
 - required resource;
 - minimum accepted quality;
 - target quantity per shipment;
 - unit rate;
-- total full-shipment value;
-- collection interval in days;
-- global reputation requirement;
-- primary ship name and class;
-- contract state;
-- persisted relationship/happiness state.
+- full-shipment value;
+- collection interval;
+- minimum global reputation;
+- named collection ship and class;
+- persisted offer/contract state;
+- persisted buyer relationship state.
 
-All buyer offers remain visible. Reputation only controls whether CONTACT is actionable.
+All offers remain visible. Reputation controls whether CONTACT is actionable.
 
 ---
 
 # Buyer pricing
 
-## Price invariant
+Brokered buyer unit rates must always remain **below the ordinary direct conglomerate selling rate for equivalent qualifying material**.
 
-Brokered buyer unit rates must always remain **below the ordinary direct conglomerate selling rate for the equivalent quality material**.
-
-The strategic value is extra demand/collection capacity, not a better base sale price.
-
-Recommended generated buyer-rate envelope:
+Recommended generation envelope:
 
 - early buyers: roughly **65–88%** of equivalent direct conglomerate rate;
 - mid buyers: roughly **60–90%**;
 - late/premier buyers: roughly **55–92%**.
 
-The ranges deliberately overlap. A prestigious contract may pay worse than a smaller buyer if it compensates through volume or cadence.
+The ranges overlap intentionally. A prestigious contract may have a worse unit rate but compensate through volume or cadence.
 
-Exact seeded offer values are balance data, but once an offer is generated and entered its price is locked for that contract.
+Once a contract is entered, its seeded price is locked.
 
 ---
 
 # Contract cadence by market tier
 
-Recommended generation bands:
-
-| Buyer tier | Typical global rep | Typical collection interval | Typical ship classes |
+| Buyer tier | Typical global rep | Collection interval | Typical ship classes |
 |---|---:|---:|---:|
 | Local / Entry | 0–9.99 | 45–90 days | 1–8 |
 | Regional | 10–24.99 | 35–75 days | 4–12 |
@@ -215,21 +197,17 @@ Recommended generation bands:
 | Strategic | 50–74.99 | 20–45 days | 13–24 |
 | Premier | 75–100 | 15–40 days | 18–30 |
 
-Larger/reputation-gated customers therefore tend to demand more regular and larger shipments without every buyer becoming identical.
-
 ---
 
-# Contract shipment amount ranges by resource
+# Contract shipment ranges by resource
 
-These are the **design generation ranges per shipment**. Individual buyers seed a fixed quantity inside the appropriate band and retain it for the contract.
+Individual buyer offers seed one fixed shipment amount inside the applicable band. `—` means that resource normally does not generate buyer contracts in that phase.
 
 Market phases:
 
 - **Early:** global reputation 0–19.99;
 - **Mid:** 20–59.99;
 - **Late:** 60–100.
-
-`—` means that resource should normally not generate buyer contracts in that phase.
 
 ## Food
 
@@ -243,7 +221,7 @@ Market phases:
 | Thermal Algae | 300–2,500 | 2,500–15,000 | 15,000–70,000 |
 | Synthetic Nutrient | 500–4,000 | 4,000–25,000 | 25,000–120,000 |
 
-## Build materials
+## Build
 
 | Resource | Early | Mid | Late |
 |---|---:|---:|---:|
@@ -291,123 +269,135 @@ Market phases:
 | Exotic Crystal | — | — | 100–1,500 |
 | Advanced Element Deposit | — | — | 50–500 |
 
-These ranges are intentionally broad. Common bulk materials create large logistics contracts while rare/high-value materials create much smaller but valuable loads.
-
-Offer generation must also respect the buyer ship's physical capacity.
+These ranges are intentionally broad. Common bulk materials create very large logistics contracts; rare/high-value materials create much smaller high-value loads. Offer generation must also respect the assigned collection ship's capacity.
 
 ---
 
 # Resource quality and partial fulfilment
 
-Buyer quality is a **minimum quality requirement** and reuses the game's existing canonical inventory quality bands.
+Buyer quality is a **minimum quality requirement** and reuses the existing inventory quality bands.
 
 Qualifying stock is consumed from the **lowest acceptable quality first**.
 
 ## Fulfilment bands
 
-A buyer will accept a simple partial shipment only when at least **50%** of the contracted quantity can be supplied.
-
 | Delivered proportion | Result | Additional buyer-happiness effect |
 |---|---|---:|
-| 100% or more available | Full shipment | 0 partial penalty |
-| 75%–99.99% | Minor partial | -1 |
-| 50%–74.99% | Major partial | -2 |
-| Below 50% | Not accepted | shipment remains unresolved / eventually missed |
+| 100% | Full shipment | 0 partial penalty |
+| 75–99.99% | Minor partial | -1 |
+| 50–74.99% | Major partial | -2 |
+| Below 50% | Not accepted | unresolved / eventually missed |
 
 Rules:
 
-- partial penalty is applied **on top of any lateness penalty**;
-- payment is only for units actually transferred;
-- an accepted partial transfer resolves that shipment cycle and the ship leaves;
-- the undelivered remainder does **not** carry into the next cycle;
-- the next cycle still requires the original contracted quantity;
-- below 50%, TRANSFER is unavailable and the player can only continue waiting before the final attempt;
-- a partial accepted shipment is recorded distinctly in delivery history.
-
-The colony stock reserve protects generic Corporate Ship exports but does not block an explicit player-confirmed buyer transfer. The popup must show projected remaining stock.
+- partial penalties stack on top of lateness;
+- payment is only for actual units transferred;
+- an accepted partial shipment resolves that shipment cycle and the ship leaves;
+- the missing remainder does **not** carry forward;
+- the next cycle still requires the full contracted amount;
+- below 50%, TRANSFER is unavailable;
+- accepted partials are recorded distinctly in history;
+- colony trade reserve protects generic Corporate Ship exports but does not block an explicit player-confirmed buyer transfer;
+- the collection popup shows projected remaining stock before confirmation.
 
 ---
 
 # Contract ownership and duration
 
-Approved Stage 8 rules:
-
-- a buyer contract belongs to the **colony that enters it**;
-- a specific buyer offer may have only one active contract across the player's corporation;
+- contract belongs to the colony that enters it;
+- a specific buyer offer can have only one active contract across the player's corporation;
 - contracts are recurring/open-ended until player cancellation or buyer termination;
-- no second fixed-duration contract system is added;
-- resource, minimum quality, target quantity, unit price and cadence are locked when the player enters the contract.
+- no second fixed-duration contract system is introduced;
+- resource, minimum quality, quantity, price and cadence are locked on entry.
 
 ---
 
 # Conglomerate Buyers Service UI
 
-The service is launched from the current colony ship/colony-management panel using:
+The service is persistently accessible from the current colony ship/colony-management panel. The ordinary Corporate Trade Ship does **not** need to be docked.
 
-**CONGLOMERATE BUYERS SERVICE**
+The catalogue itself is a full-screen **portrait-mobile-first** workflow.
 
-It is persistently accessible; the ordinary Corporate Trade Ship does **not** need to be docked.
+## Portrait-width catalogue
 
-The Buyers Service should be a full-screen mobile workflow.
+The main buyer list should fit within the phone width without requiring horizontal scrolling at the target portrait viewport.
 
-## Catalogue / contract table
+### Column order
 
-The same screen handles available and established buyer relationships.
+Action is always the leftmost column:
 
-Core columns:
+1. **Action** — CONTACT / VIEW / REP LOCKED
+2. **Buyer / Company** — buyer name on first line, company name beneath it
+3. **Resource**
+4. **Q** — minimum quality
+5. **Load**
+6. **£/u**
+7. **Every**
+8. **Rep**
 
-- Buyer
-- Company
-- Resource
-- Min Quality
-- Shipment Amount
-- Price / Unit
-- Frequency
-- Reputation Required
-- Status
-- Action
+There is no separate Status column because Action already communicates AVAILABLE / CURRENT / LOCKED state.
 
-Top-level filter:
+Column widths should be only as wide as their content requires. Buyer / Company gets the remaining width and may wrap to two short lines. Numeric values should use compact number formatting where needed.
 
-- **ALL**
-- **AVAILABLE**
-- **CURRENT CONTRACTS**
+### Filters
 
-Appropriate sortable columns:
+Do **not** use buyer/company text filters in the compact catalogue.
 
-- buyer/company;
-- resource;
-- minimum quality;
-- shipment amount;
-- price/unit;
-- frequency;
-- reputation requirement;
-- status.
+Use compact dropdown filters above the table:
 
-Per-column filters above the relevant columns:
+- Status: All / Available / Current / Locked;
+- Resource;
+- Minimum Quality;
+- Load band;
+- Price band;
+- Collection frequency band;
+- Reputation / Eligible only.
 
-- Buyer/company: text search;
-- Resource: dropdown;
-- Quality: dropdown;
-- Shipment amount: compact min/max;
-- Price: minimum;
-- Frequency: maximum interval;
-- Reputation: maximum requirement / eligible-only.
+Filters may wrap into two compact rows on narrow portrait screens.
 
-All buyers remain visible when reputation-locked. Locked rows show their requirement but no actionable CONTACT.
+### Sorting
 
-## CONTACT — available offer
+Buyer/company does not need sorting.
 
-CONTACT opens a detailed buyer profile with:
+Use one compact **SORT** dropdown rather than wide interactive table headers. Useful choices:
 
-- buyer portrait or name fallback;
-- buyer/contact full name;
+- Load low/high;
+- Price low/high;
+- Frequency shortest/longest;
+- Reputation low/high;
+- Quality low/high;
+- Resource.
+
+All buyers remain visible when reputation-locked unless excluded by the chosen Status filter.
+
+## CONTACT / VIEW popup
+
+The buyer/contract profile is **not full-screen**.
+
+On portrait mobile it appears as a centred modal occupying roughly **50% of the viewport height**, with the catalogue dimmed behind it.
+
+Layout:
+
+### Left side
+
+- large buyer portrait, using the seeded buyer image or name/initial fallback;
+- portrait should be the dominant visual element in the popup;
+- **ENTER CONTRACT** directly underneath the portrait for an available offer;
+- for an established contract, the corresponding primary left-side action becomes VIEW-state information rather than another entry action.
+
+### Right side
+
+A compact scrollable information area containing:
+
+- buyer full name;
 - job title;
 - company name;
 - company business type;
 - company scale;
-- primary collection ship name;
-- collection ship class and capacity;
+- named collection ship;
+- ship class;
+- ship-class description;
+- cargo capacity;
 - required resource;
 - minimum quality;
 - quantity per shipment;
@@ -415,193 +405,163 @@ CONTACT opens a detailed buyer profile with:
 - full-shipment value;
 - collection frequency;
 - reputation requirement;
-- first scheduled collection date if entered;
-- explanation that the conglomerate brokers the relationship and keeps a margin.
+- first collection date if entered;
+- conglomerate-broker explanation.
 
-Primary action:
+### Established VIEW state
 
-**ENTER CONTRACT**
+The same 50%-height profile additionally exposes:
 
-## VIEW — established contract
-
-Once established, CONTACT becomes **VIEW**.
-
-The same profile additionally shows:
-
-- current buyer happiness 1–100;
-- green / amber / red relationship state;
-- global reputation impact guidance;
+- buyer happiness 1–100 and Green/Amber/Red state;
 - next collection date;
-- next required shipment;
 - current qualifying stock;
-- successful full deliveries;
-- accepted partial deliveries;
-- late deliveries;
-- missed shipments;
+- full / partial / late / missed delivery counts;
 - delivery history;
 - total units delivered;
 - total money earned;
 - contract start date;
-- current assigned collection ship;
+- current collection ship;
 - **CANCEL CONTRACT**.
+
+The right side may scroll internally if necessary; the modal itself remains centred rather than becoming a full-screen page.
 
 ---
 
-# Buyer relationship / happiness
+# Buyer happiness
 
-Each buyer has a persistent relationship score from **1 to 100**.
+Buyer relationship score is persistent from **1 to 100**.
 
-First-ever relationship with a buyer starts at:
+Starting value for the first relationship with that buyer:
 
 **75**
 
-Relationship state:
+Bands:
 
-- **1–33: Red**
-- **34–66: Amber**
-- **67–100: Green**
+- **1–33 Red**
+- **34–66 Amber**
+- **67–100 Green**
 
-Relationship belongs to the buyer, not merely one contract instance. If the player cancels and later re-enters an allowed offer from the same buyer, the relationship does not magically reset to 75.
+Relationship belongs to the buyer rather than one disposable contract instance.
 
-## Delivery timing
+## Timing result
 
-One shipment cycle gets one timing result:
+- on due date: **+1**;
+- Due +5: **-1**;
+- Due +10: **-2**;
+- Due +15: **-3**.
 
-- on scheduled due date: **+1 happiness**;
-- fulfilled at Due +5: **-1 happiness**;
-- fulfilled at Due +10: **-2 happiness**;
-- fulfilled at Due +15: **-3 happiness**.
-
-The timing result then stacks with any partial-fulfilment penalty.
+Timing stacks with partial penalties.
 
 Examples:
 
-- 100% on time: +1;
-- 80% on time: -1 partial, no lateness;
-- 80% at +10: -2 lateness and -1 partial = **-3**;
-- 60% at +15: -3 lateness and -2 partial = **-5**.
+- 100% on time = +1;
+- 80% on time = -1;
+- 80% at +10 = -2 lateness + -1 partial = **-3**;
+- 60% at +15 = -3 lateness + -2 partial = **-5**.
 
-An accepted late shipment does not also receive the +1 on-time reward.
+## Miss escalation
 
-## Missed shipment escalation
+If the +15 opportunity ends without at least 50% being transferred:
 
-If the +15 opportunity finishes without at least 50% qualifying stock being transferred, the ship leaves and the shipment is missed.
+- first miss: **-10**;
+- second miss: **-20**;
+- third miss: **-30 and immediate buyer termination**.
 
-Lifetime missed shipments during the active buyer relationship:
+Miss penalty replaces the normal +15 lateness result rather than stacking with it.
 
-- first miss: **-10 happiness**;
-- second miss: **-20 happiness**;
-- third miss: **-30 happiness and immediate buyer termination**.
+## Red cancellation
 
-The missed penalty replaces the normal +15 lateness result; it is not double-counted with -3.
+Two consecutive resolved shipment cycles finishing in Red cause immediate buyer cancellation. Returning to Amber/Green resets the consecutive-Red counter.
 
-## Red-state cancellation
-
-If **two consecutive resolved shipment cycles finish in Red**, the buyer immediately cancels the contract.
-
-Returning to Amber/Green resets the consecutive-Red counter.
-
-Buyer-terminated offers are considered lost for the current game. They remain visible in history but cannot simply be re-entered to reset the relationship.
+Buyer-terminated offers remain visible in history and cannot be immediately re-entered.
 
 ---
 
 # Player cancellation
 
-Approved rule:
-
-- cancellation is blocked while that buyer's ship is actively waiting for the shipment;
-- otherwise player cancellation ends the contract immediately;
-- cancellation applies **-5 buyer happiness**;
-- the normal global-reputation coupling therefore applies **-0.5 global reputation**;
-- the offer cannot be re-entered until one normal contract collection interval has passed;
+- blocked while that buyer's ship is actively waiting;
+- otherwise immediately ends the contract;
+- applies **-5 buyer happiness**;
+- therefore applies **-0.5 global reputation** through normal coupling;
+- offer is unavailable for one normal collection interval;
 - buyer happiness persists when the offer later becomes available again.
-
-This prevents consequence-free cancellation just before a known failure.
 
 ---
 
 # Collection ship lifecycle and Spaceport integration
 
-Buyer ships are real physical arrivals and reuse the canonical Spaceport berth system.
+Buyer ships are real arrivals and reuse the canonical Spaceport berth model.
 
 Rules:
 
-- buyer collection capacity is completely independent of ordinary Corporate Ship export capacity;
-- a docked buyer collection ship consumes one Spaceport berth;
-- if no berth is free, the ship enters **Orbital Holding**;
-- contractual timing continues while the ship waits for a berth;
-- buyer events use the existing cross-colony pending-event / pause model;
-- a buyer ship cannot receive stock until docked.
+- buyer collection capacity is independent of Corporate Ship export capacity;
+- docked buyer ship consumes one Spaceport berth;
+- no berth → **Orbital Holding**;
+- contractual lateness continues while waiting for a berth;
+- buyer events use the existing cross-colony pause/attention model;
+- no cargo transfer is possible until the vessel is docked.
 
-## Arrival sequence
+## Collection attempts
 
-For a scheduled shipment:
+- Due;
+- Due +5;
+- Due +10;
+- Due +15 final attempt.
 
-- **Due:** first collection event;
-- **Due +5:** second collection event if unresolved;
-- **Due +10:** third collection event;
-- **Due +15:** final collection event.
+## Collection popup presentation
 
-## No-berth presentation
+The collection popup includes a **large image of the named buyer collection ship** as a visual header/hero image. If a class-specific ship image is not yet available, use the best matching generic buyer-freighter asset or a text/class fallback; missing art must not block the event.
 
-The popup must still appear when the ship reaches the colony but cannot dock.
-
-It explicitly shows:
-
-- **WAITING IN ORBIT — NO SPACEPORT BERTH AVAILABLE**;
-- buyer and ship identity;
-- required cargo;
-- current qualifying colony stock;
-- whether enough stock exists;
-- current lateness stage;
-- the fact that TRANSFER is unavailable until a berth is free.
-
-This is important: even if the colony has perfect stock ready, the player can fail the contract through inadequate docking capacity.
-
-## Docked collection popup
-
-When docked, show:
+The popup also shows:
 
 - buyer portrait/fallback;
 - buyer/company;
 - ship name;
-- ship class/capacity;
+- ship class, description and capacity;
+- docked or orbital state;
 - resource;
 - minimum quality;
-- contracted quantity;
+- contracted amount;
 - qualifying stock;
-- maximum transferable quantity;
-- full/75%/50% fulfilment band;
+- maximum transferable amount;
+- 100% / 75% / 50% fulfilment band;
 - projected payment;
-- projected buyer-happiness change, including lateness + partial penalties;
+- projected buyer-happiness change including lateness + partial penalties;
+- projected global reputation change;
 - projected stock remaining;
 - days late;
 - current buyer happiness.
 
-Actions:
+### No berth
 
-- **TRANSFER STOCK** when at least 50% of the requirement can be supplied;
+Even if enough stock is ready, the popup explicitly shows:
+
+**WAITING IN ORBIT — NO SPACEPORT BERTH AVAILABLE**
+
+TRANSFER is disabled until the ship docks. The lateness clock continues.
+
+### Actions
+
+- **TRANSFER STOCK** when at least 50% can be supplied and the ship is docked;
 - **NOT READY / CONTINUE WAITING** before the final opportunity;
-- at +15, either transfer an accepted amount or resolve a missed shipment and departure.
+- at +15, either transfer an accepted amount or resolve the missed shipment and departure.
 
-Closing the popup must not bypass the decision.
+Closing/dismissing the popup must not bypass the required decision.
 
 ---
 
-# Canonical global reputation system
+# Canonical global reputation
 
-This feature adopts one global reputation scale for the whole corporation rather than adding a second buyer-only reputation currency.
+One corporation-wide scale is used.
 
-## Stored scale
+Stored range:
 
 - starts at **0.00**;
-- stored with at least two decimal places of practical precision;
 - minimum **-100.00**;
 - maximum **100.00**;
-- buyer requirements use the raw numeric score;
-- the UI also shows a named reputation level.
+- retain at least two decimal places of practical precision.
 
-## Ten reputation levels
+## Ten named levels
 
 | Level | Name | Global reputation |
 |---:|---|---:|
@@ -616,97 +576,91 @@ This feature adopts one global reputation scale for the whole corporation rather
 | 9 | Preferred | 70.00–89.99 |
 | 10 | Elite | 90.00–100.00 |
 
-The negative names are deliberately visible. A corporation that repeatedly fails buyers should feel commercially damaged rather than merely “below zero”.
+Negative names are deliberately visible so repeated commercial failure feels damaging.
 
-## Positive reputation gains
+## Positive gains
 
-Reputation grows slowly:
+- successful buyer shipment transaction: **+0.01**;
+- successful Corporate Ship trading visit with at least one export: **+0.01 maximum per visit**;
+- successful 10-year colony contract: **+0.10**.
 
-- successful buyer shipment transaction: **+0.01 global reputation**;
-- successful ordinary Corporate Ship trading visit with at least one export: **+0.01**, awarded at most once per Corporate Ship visit so the player cannot farm reputation by splitting one sale into many button presses;
-- successful completion of a 10-year colony contract: **+0.10 global reputation**.
+Bronze/Silver/Gold/Platinum ratings must no longer award the old integer +1/+2/+4/+7 reputation values when this system is implemented.
 
-Contract medal/rating can remain separate from this slow reputation gain. Bronze/Silver/Gold/Platinum must no longer award the old integer-scale +1/+2/+4/+7 reputation values when this system is implemented.
+## Negative buyer coupling
 
-## Negative buyer relationship coupling
-
-Every **negative** buyer-happiness change damages global reputation by **10% of the happiness loss**.
+Every negative buyer-happiness change damages global reputation by **10% of the buyer loss**.
 
 Examples:
 
-- -1 buyer happiness → **-0.10 global**;
-- -2 → **-0.20 global**;
-- -5 → **-0.50 global**;
-- -10 → **-1.00 global**;
-- -20 → **-2.00 global**;
-- -30 → **-3.00 global**.
+- -1 buyer → -0.10 global;
+- -2 → -0.20;
+- -5 → -0.50;
+- -10 → -1.00;
+- -20 → -2.00;
+- -30 → -3.00.
 
-Positive buyer happiness does **not** feed 10% back into global reputation; accepted shipment transactions use the normal +0.01 gain. This keeps reputation slow to build but easy to damage through unreliability.
+Positive buyer happiness does not feed 10% upward; a successful paid shipment simply receives the normal +0.01 transaction gain.
 
-Partial and lateness penalties stack before calculating the global loss.
+Example: 80% supplied at +10 = -3 buyer happiness → -0.30 global, plus +0.01 successful transaction = **-0.29 net global reputation**.
 
-Example: an 80% shipment delivered at +10 causes -3 buyer happiness and therefore **-0.30 global reputation**. Because a paid shipment transaction still occurred, it also earns +0.01 transaction reputation, giving net **-0.29** for that event.
-
-## Existing reputation migration
-
-Current code uses a different integer-scale reputation model. Implementation of this feature must migrate to this canonical -100..100 fractional model rather than maintain parallel reputation values.
-
-Existing systems that read `company.rep` must be reviewed so buyer gating, Corporate Ship capacity and existing penalties still make sense on the new scale.
-
-The existing severe colony-loss penalty may remain a direct global reputation loss, but its value must be reviewed against this new slow scale during implementation rather than silently preserving an incompatible integer-era assumption.
+Existing uses of `company.rep`, Corporate Ship capacity scaling and existing penalties must be reviewed against this slower fractional scale during implementation.
 
 ---
 
 # Determinism and persistence
 
-The following must survive save/load exactly:
+Save/load must preserve exactly:
 
-- selected buyer identities and companies;
-- buyer portrait assignment key;
-- buyer ship name/class;
-- offer resource/quality/quantity/price/cadence/rep requirement;
-- active colony contract owner;
-- buyer relationship score;
+- buyer identities/companies;
+- portrait assignment key;
+- named ship and ship class;
+- generated resource/quality/quantity/price/cadence/rep requirement;
+- active colony owner;
+- buyer happiness;
 - next due date;
-- waiting/orbiting/docked ship state;
-- current retry/lateness stage;
-- lifetime miss count;
-- consecutive Red-cycle count;
-- player cancellation cooldown;
+- orbiting/docked/waiting ship state;
+- retry/lateness stage;
+- miss count;
+- consecutive Red cycles;
+- cancellation cooldown;
 - terminated/lost offers;
 - delivery history;
-- full/partial quantities delivered;
-- total revenue;
-- global reputation to fractional precision.
+- full/partial quantities;
+- total contract revenue;
+- fractional global reputation.
 
-Reloading must never reroll an offer to escape an obligation or change a buyer's price.
+Reloading must never reroll an offer or escape a failing obligation.
 
 ---
 
 # Critical invariants
 
 1. Direct conglomerate selling always pays a better equivalent unit rate.
-2. Buyer collection ships do not consume Corporate Ship export capacity.
-3. Buyers and offers are deterministic/persisted.
+2. Buyer ships do not consume Corporate Ship export capacity.
+3. Buyers/offers are deterministic and persisted.
 4. The 1,000 buyer identities are stable static content.
 5. Every buyer has a real contact, company, business type, named ship and ship class.
-6. Buyer portrait assets are optional presentation; text fallback is mandatory.
-7. A contract belongs to one colony.
-8. One buyer offer cannot be active at multiple colonies.
-9. Contract resource/quality/quantity/price/cadence are locked on entry.
-10. Minimum quality reuses canonical inventory quality bands.
-11. Lowest qualifying quality is consumed first.
-12. 75%+ and 50%+ partial fulfilment rules are the only partial bands.
-13. Below 50% is not accepted as a shipment.
-14. Lateness and accepted-partial penalties stack.
-15. Miss penalties replace, rather than stack with, +15 lateness.
-16. Buyer happiness is persistent per buyer and clamped 1–100.
-17. Negative buyer changes feed 10% into canonical global reputation.
-18. Positive global reputation is deliberately slow and cannot be farmed by splitting transactions.
-19. Buyer ships use the existing canonical Spaceport berth model.
-20. No berth means no transfer, even when qualifying stock is ready.
-21. Buyer events participate in the existing corporation-wide pause/attention flow.
-22. Save/load preserves every active obligation and relationship state.
+6. Buyer portrait art is optional; text fallback is mandatory.
+7. Ship descriptions are presentation identity only; capacity is the only ship-class gameplay difference in this feature.
+8. A contract belongs to one colony.
+9. One offer cannot be active at multiple colonies.
+10. Contract resource/quality/quantity/price/cadence lock on entry.
+11. Minimum quality reuses canonical inventory quality bands.
+12. Lowest qualifying quality is consumed first.
+13. 75%+ and 50%+ are the only accepted partial bands.
+14. Below 50% is not accepted.
+15. Lateness and partial penalties stack.
+16. Miss penalties replace +15 lateness.
+17. Happiness persists per buyer and clamps 1–100.
+18. Negative buyer changes feed 10% into global reputation.
+19. Positive reputation is deliberately slow and cannot be farmed through transaction splitting.
+20. Buyer ships use the canonical Spaceport berth model.
+21. No berth means no transfer even with perfect stock.
+22. Buyer events participate in the corporation-wide pause/attention flow.
+23. Save/load preserves all active obligations.
+24. Catalogue presentation is portrait-width without buyer/company text filters.
+25. CONTACT / VIEW uses a centred ~50%-viewport-height modal rather than a full-screen profile.
+26. Collection event includes the buyer ship image where available.
 
 ---
 
@@ -714,15 +668,15 @@ Reloading must never reroll an offer to escape an obligation or change a buyer's
 
 No production gameplay implementation exists yet.
 
-Likely canonical ownership when implementation starts:
+Likely ownership:
 
-- `js/data/`: static 1,000-buyer pool, business types, 30 ship-class definitions and offer-generation balance data;
-- one canonical `js/domain/` buyer-contract service: offer generation, contract lifecycle, due dates, happiness, partial/lateness/miss scoring, reputation coupling and termination;
-- existing `InventoryService`: quality qualification and stock transfer;
-- existing `spaceport-model.js`: berth/orbital-holding rules;
+- `js/data/`: 1,000 buyer records, business types, 30 ship definitions/descriptions and offer-generation balance data;
+- one canonical `js/domain/` buyer-contract service: offer generation, lifecycle, due dates, happiness, partial/lateness/miss scoring, reputation coupling and termination;
+- existing `InventoryService`: quality qualification and transfer;
+- existing `spaceport-model.js`: berth/orbital holding;
 - existing pending-event/corporate-event flow: pause and cross-colony attention;
-- external `views/`: full-screen Buyers Service table, buyer profile/contract view and ship collection popup;
-- UI code: render/dispatch only;
+- external `views/`: full-screen portrait catalogue, centred buyer profile modal and collection popup;
+- UI code: rendering and dispatch only;
 - `GameStore`: persistent root state.
 
 A save-schema bump is expected when implementation begins.
@@ -731,43 +685,45 @@ A save-schema bump is expected when implementation begins.
 
 # Required regression coverage when implemented
 
-At minimum tests must prove:
+At minimum prove:
 
-1. global reputation starts at 0 and clamps -100..100;
-2. all 10 named reputation bands resolve correctly, including negative bands;
-3. normal positive reputation increments use +0.01 / +0.10 as specified;
-4. one Corporate Ship visit cannot farm reputation through repeated sale clicks;
+1. reputation starts at 0 and clamps -100..100;
+2. all 10 named reputation bands resolve correctly;
+3. +0.01 / +0.10 positive increments are correct;
+4. one Corporate Ship visit cannot farm reputation with split sales;
 5. locked buyers remain visible but cannot CONTACT;
-6. seeded buyers/offers/ship names are deterministic across reload;
-7. portrait assignment persists and missing portrait uses fallback;
-8. one buyer offer cannot be active at two colonies;
-9. contract terms are locked on entry;
-10. buyer prices remain below direct conglomerate equivalent rates;
+6. seeded buyers/offers/ship names are deterministic;
+7. portrait assignment persists and fallback works;
+8. one offer cannot be active at two colonies;
+9. contract terms lock on entry;
+10. buyer prices remain below direct conglomerate rates;
 11. buyer collection does not consume Corporate Ship export capacity;
-12. qualifying stock uses existing quality bands and lowest qualifying quality first;
-13. 100%, 75–99.99%, 50–74.99% and <50% fulfilment bands resolve correctly;
-14. accepted partial payment is proportional to units transferred;
-15. due / +5 / +10 / +15 timing effects are correct;
-16. lateness + partial penalties stack exactly once;
-17. first/second/third misses apply -10/-20/-30 and third miss terminates;
-18. two consecutive resolved Red cycles terminate;
-19. buyer-happiness losses feed 10% into global reputation;
-20. player cancellation applies -5 buyer / -0.5 global and cooldown;
-21. player cannot cancel while the buyer ship is waiting;
-22. buyer ship consumes a Spaceport berth when docked;
+12. quality qualification consumes lowest acceptable bands first;
+13. all fulfilment bands resolve correctly;
+14. accepted partial payment is proportional;
+15. due/+5/+10/+15 timing is correct;
+16. lateness + partial penalties stack once;
+17. first/second/third misses apply -10/-20/-30 and third terminates;
+18. two consecutive Red cycles terminate;
+19. buyer losses feed 10% into global reputation;
+20. cancellation applies -5 buyer / -0.5 global and cooldown;
+21. cancellation is blocked while the ship is waiting;
+22. buyer ship consumes a berth when docked;
 23. no berth causes orbital holding and prevents transfer;
-24. contractual lateness continues while waiting for a berth;
-25. the no-berth popup accurately reports ready stock but disables transfer;
-26. pending buyer events pause/redirect correctly across colonies;
-27. save/load preserves active contracts, waiting ships, retry stage, relationship, history and fractional reputation;
-28. buyer table sorting/filtering never mutates contract data;
-29. mobile full-screen catalogue/profile/arrival flows remain usable at supported viewport sizes.
+24. lateness continues while orbiting;
+25. no-berth popup reports ready stock while disabling transfer;
+26. pending events pause/redirect correctly across colonies;
+27. save/load preserves active obligations, history and fractional reputation;
+28. filters/sorting never mutate buyer/contract state;
+29. portrait catalogue fits supported phone portrait widths without horizontal scrolling;
+30. centred half-height buyer profile remains usable on supported mobile viewports;
+31. collection popup remains usable with ship artwork present.
 
 ---
 
-# Explicit non-goals for this Stage 8 feature
+# Explicit non-goals
 
-Do **not** expand this feature into:
+Do **not** expand this Stage 8 feature into:
 
 - player-negotiated price bargaining;
 - counter-offers;
@@ -779,6 +735,7 @@ Do **not** expand this feature into:
 - dynamic competitor bidding;
 - automatic contract fulfilment;
 - new ship design mechanics;
-- separate quality or reputation systems.
+- a second quality system;
+- a second reputation system.
 
-Those are later systems if ever required. This feature is intentionally the contained **conglomerate-brokered recurring buyer contract + collection ship + reliability/reputation** loop.
+This feature remains the contained **conglomerate-brokered recurring buyer contract + named collection ship + reliability/reputation** loop.
