@@ -128,7 +128,8 @@ jobs:
             "$chrome" --headless --no-sandbox --disable-gpu --window-size="$size" --virtual-time-budget=12000 --dump-dom http://127.0.0.1:8123/tests/buyer-mobile-layout-probe.html >"/tmp/buyers-$size.html" 2>"/tmp/buyers-$size.log"
             if ! grep -Fq '<div id="result">PASS buyer catalogue, profile and collection mobile viewport coverage</div>' "/tmp/buyers-$size.html"; then
               echo "Conglomerate Buyers Service presentation probe failed at $size"
-              cat "/tmp/buyers-$size.html"
+              echo "Rendered buyer probe result:"
+              grep -o '<div id="result">[^<]*</div>' "/tmp/buyers-$size.html" || true
               cat "/tmp/buyers-$size.log"
               cat /tmp/mineit-http.log
               exit 1
