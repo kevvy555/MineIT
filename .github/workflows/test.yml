@@ -126,7 +126,7 @@ jobs:
           for size in 360,640 375,667 390,844 412,915 915,412; do
             echo "Testing Conglomerate Buyers Service viewport $size"
             "$chrome" --headless --no-sandbox --disable-gpu --window-size="$size" --virtual-time-budget=12000 --dump-dom http://127.0.0.1:8123/tests/buyer-mobile-layout-probe.html >"/tmp/buyers-$size.html" 2>"/tmp/buyers-$size.log"
-            if ! grep -q 'PASS buyer catalogue, profile and collection mobile viewport coverage' "/tmp/buyers-$size.html"; then
+            if ! grep -Fq '<div id="result">PASS buyer catalogue, profile and collection mobile viewport coverage</div>' "/tmp/buyers-$size.html"; then
               echo "Conglomerate Buyers Service presentation probe failed at $size"
               cat "/tmp/buyers-$size.html"
               cat "/tmp/buyers-$size.log"
