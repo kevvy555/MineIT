@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<title>MineIT Universe Explorer — Concept Mock</title>
+<style>
+:root{
+  --bg:#05090c;--panel:#0b1217;--panel2:#101a21;--panel3:#16232c;
+  --line:#263944;--text:#edf4f7;--muted:#8fa2ad;--accent:#68c7ff;
+  --accent2:#8ce2bd;--warn:#f4c56d;--selected:#153246;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+.app{height:100vh;height:100dvh;display:grid;grid-template-rows:auto minmax(0,1fr);background:linear-gradient(180deg,#071017,#05090c 45%)}
+.topbar{display:flex;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);background:#081015}
+.title{min-width:0;flex:1}.title small{display:block;color:var(--accent);font-size:10px;letter-spacing:.14em;font-weight:800}.title strong{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mockTag{font-size:10px;color:var(--warn);border:1px solid #6d5529;background:#21190b;padding:5px 7px;border-radius:6px;font-weight:800}
+.explorerButton{display:none;border:1px solid var(--line);background:var(--panel2);border-radius:6px;padding:8px 10px;font-weight:800}
+.workspace{min-height:0;display:grid;grid-template-columns:330px minmax(0,1fr)}
+.explorer{min-height:0;border-right:1px solid var(--line);background:#081015;display:grid;grid-template-rows:auto auto minmax(0,1fr);gap:8px;padding:10px}
+.search{width:100%;border:1px solid var(--line);background:#071015;border-radius:7px;padding:9px 10px;outline:0}.search:focus{border-color:#477a96}
+.perspectives{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.perspective{min-width:0;border:1px solid var(--line);background:var(--panel2);border-radius:6px;padding:8px 4px;font-size:11px;font-weight:800}.perspective.active{background:#163044;border-color:#3e87ad;color:#dff4ff}
+.tree{min-height:0;overflow:auto;padding:2px 0 20px}.tree ul{list-style:none;margin:0;padding-left:16px}.tree>.treeRoot{padding-left:0}.tree li{margin:1px 0}.treeRow{display:grid;grid-template-columns:20px minmax(0,1fr);align-items:center;border-radius:5px;min-height:30px}.treeRow.selected{background:var(--selected);outline:1px solid #35637d}.twisty{border:0;background:transparent;color:#7f9ca9;padding:0;width:20px;height:28px}.twisty.empty{visibility:hidden}.node{border:0;background:transparent;text-align:left;padding:6px 5px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#dbe6ea}.node:hover{color:white}.node .kind{color:var(--muted);font-size:9px;margin-left:5px;text-transform:uppercase}
+.detail{min-height:0;overflow:auto;padding:18px clamp(14px,3vw,34px) 30px;background:radial-gradient(circle at 90% 0,#0c1a22 0,transparent 34%)}
+.breadcrumbs{display:flex;flex-wrap:wrap;gap:5px;align-items:center;color:var(--muted);font-size:11px;margin-bottom:15px}.crumb{border:0;background:transparent;color:#a9bdc7;padding:0}.crumb:hover{color:var(--accent)}
+.hero{display:grid;grid-template-columns:100px minmax(0,1fr);gap:18px;align-items:center;margin-bottom:18px}.placeholder{width:100px;height:100px;border-radius:12px;border:1px solid #36505f;background:linear-gradient(135deg,#12232d,#0b1217);display:grid;place-items:center;color:#6fb9df;font-size:34px;font-weight:900}.eyebrow{font-size:10px;color:var(--accent2);letter-spacing:.12em;text-transform:uppercase;font-weight:900}.hero h1{font-size:26px;margin:4px 0 5px;line-height:1.05}.subtitle{color:#aabac2;font-size:13px}.description{font-size:15px;line-height:1.6;color:#d7e2e7;max-width:920px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}.card{border:1px solid var(--line);background:rgba(12,20,26,.9);border-radius:9px;padding:13px}.card h2{font-size:11px;letter-spacing:.12em;color:#9eb5c0;text-transform:uppercase;margin:0 0 10px}.links{display:flex;flex-wrap:wrap;gap:7px}.link{border:1px solid #35566a;background:#102633;border-radius:999px;padding:6px 9px;font-size:11px}.link:hover{border-color:#5f9cbd}.context{display:grid;gap:6px}.contextStep{display:flex;gap:7px;align-items:center;font-size:12px}.contextStep:not(:last-child)::after{content:"→";color:#56717f;margin-left:auto}.dev{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;font-size:11px}.dev span:nth-child(odd){color:var(--muted)}.dev code{overflow-wrap:anywhere;color:#d9e8ef}.note{margin-top:16px;padding:10px 12px;border:1px solid #594824;background:#1b160b;color:#e9cb8f;border-radius:8px;font-size:11px;line-height:1.45}
+.emptyState{color:var(--muted);padding:16px 8px;font-size:12px}
+@media(max-width:780px){
+  .topbar{padding:8px}.title small{font-size:8px}.title strong{font-size:13px}.mockTag{display:none}.explorerButton{display:block}
+  .workspace{grid-template-columns:1fr}.explorer{position:fixed;z-index:20;inset:55px 0 0 0;border-right:0;transform:translateX(-103%);transition:transform .18s ease;padding:10px 8px 18px}.explorer.open{transform:translateX(0)}
+  .detail{padding:14px 12px 26px}.hero{grid-template-columns:70px minmax(0,1fr);gap:12px}.placeholder{width:70px;height:70px;border-radius:9px;font-size:24px}.hero h1{font-size:20px}.grid{grid-template-columns:1fr}.description{font-size:14px}.breadcrumbs{font-size:10px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <button class="explorerButton" id="openExplorer">☰ Explorer</button>
+    <div class="title"><small>MINEIT UNIVERSE DATABASE</small><strong>Universe Explorer</strong></div>
+    <div class="mockTag">CONCEPT MOCK • EMBEDDED SAMPLE DATA</div>
+  </header>
+
+  <main class="workspace">
+    <aside class="explorer" id="explorer">
+      <input class="search" id="search" placeholder="Search universe..." autocomplete="off">
+      <div class="perspectives">
+        <button class="perspective active" data-view="geography">Geography</button>
+        <button class="perspective" data-view="organisation">Organisation</button>
+        <button class="perspective" data-view="directory">Directory</button>
+      </div>
+      <div class="tree" id="tree"></div>
+    </aside>
+
+    <section class="detail" id="detail"></section>
+  </main>
+</div>
+
+<script>
+const entities={
+  "system-solace":{type:"Star System",icon:"✦",name:"Solace System",subtitle:"G-type commercial core system",description:"A mature trade system in the Koplin Commercial Sphere, centred on Solace II and its orbital industrial infrastructure.",related:["planet-solace-ii"],context:["Solace System"]},
+  "planet-solace-ii":{type:"Planet",icon:"●",name:"Solace II",subtitle:"Temperate industrial world",description:"A densely developed temperate world whose equatorial industrial belt supplies propulsion, fabrication and logistics businesses across the region.",related:["system-solace","station-solace-commercial-ring","facility-helix-solace-driveworks"],context:["Solace System","Solace II"]},
+  "station-solace-commercial-ring":{type:"Station",icon:"⬡",name:"Solace Commercial Ring",subtitle:"Orbital trade and administration station",description:"A major orbital commercial hub containing corporate offices, procurement departments, berths and high-value freight handling infrastructure.",related:["planet-solace-ii","company-helix-industrial-group","ship-csv-halcyon-reach","person-talia-chen"],context:["Solace System","Solace II","Solace Commercial Ring"]},
+  "company-helix-industrial-group":{type:"Company",icon:"H",name:"Helix Industrial Group",subtitle:"Major aerospace and heavy-engineering conglomerate",description:"Helix designs and manufactures propulsion systems, advanced alloys and commercial spacecraft components. Its visual identity uses graphite structures with restrained bronze detailing.",related:["station-solace-commercial-ring","division-helix-propulsion","facility-helix-solace-driveworks","operation-helix-driveworks-propulsion","person-talia-chen","person-marcus-vale","ship-csv-halcyon-reach"],context:["Helix Industrial Group"]},
+  "division-helix-propulsion":{type:"Division",icon:"▦",name:"Propulsion Systems Division",subtitle:"Helix Industrial Group",description:"The division responsible for commercial drive assemblies, field-control hardware and high-temperature propulsion components.",related:["company-helix-industrial-group","department-helix-procurement","facility-helix-solace-driveworks","operation-helix-driveworks-propulsion"],context:["Helix Industrial Group","Propulsion Systems Division"]},
+  "department-helix-procurement":{type:"Department",icon:"▤",name:"Strategic Materials Procurement",subtitle:"Propulsion Systems Division",description:"Qualifies suppliers and secures long-term contracts for critical metals and specialist ores used by Helix propulsion manufacturing.",related:["division-helix-propulsion","person-talia-chen","person-marcus-vale","operation-helix-driveworks-propulsion"],context:["Helix Industrial Group","Propulsion Systems Division","Strategic Materials Procurement"]},
+  "facility-helix-solace-driveworks":{type:"Facility",icon:"⌂",name:"Solace Driveworks",subtitle:"Propulsion manufacturing complex",description:"A large automated industrial complex on Solace II assembling commercial drives and precision field-control systems for Helix customers.",related:["planet-solace-ii","company-helix-industrial-group","division-helix-propulsion","operation-helix-driveworks-propulsion","person-marcus-vale"],context:["Solace System","Solace II","Solace Driveworks"]},
+  "operation-helix-driveworks-propulsion":{type:"Operation",icon:"⚙",name:"Commercial Drive Assembly Programme",subtitle:"Active manufacturing operation",description:"Produces medium and heavy commercial propulsion assemblies. The programme consumes high-quality Magnetic Ore, Copper Ore and Platinum for field assemblies, power routing and catalyst systems.",related:["company-helix-industrial-group","division-helix-propulsion","facility-helix-solace-driveworks","department-helix-procurement","person-talia-chen","person-marcus-vale"],context:["Helix Industrial Group","Propulsion Systems Division","Commercial Drive Assembly Programme"]},
+  "person-talia-chen":{type:"Person",icon:"TC",name:"Talia Chen",subtitle:"Strategic Metals Buyer",description:"A senior procurement specialist responsible for supplier qualification and long-term acquisition of critical propulsion materials. Talia works from the Solace Commercial Ring but supports the Driveworks operation below.",related:["company-helix-industrial-group","department-helix-procurement","station-solace-commercial-ring","operation-helix-driveworks-propulsion","ship-csv-halcyon-reach"],context:["Helix Industrial Group","Propulsion Systems Division","Strategic Materials Procurement","Talia Chen"]},
+  "person-marcus-vale":{type:"Person",icon:"MV",name:"Marcus Vale",subtitle:"Driveworks Operations Director",description:"The operational director responsible for output, production quality and delivery performance at Solace Driveworks.",related:["company-helix-industrial-group","division-helix-propulsion","facility-helix-solace-driveworks","operation-helix-driveworks-propulsion"],context:["Helix Industrial Group","Propulsion Systems Division","Solace Driveworks","Marcus Vale"]},
+  "ship-csv-halcyon-reach":{type:"Ship",icon:"▲",name:"CSV Halcyon Reach",subtitle:"Priority materials courier",description:"A compact high-value cargo vessel operated by Helix for urgent movement of specialist metals and precision components between Solace Commercial Ring and regional suppliers.",related:["company-helix-industrial-group","station-solace-commercial-ring","person-talia-chen","operation-helix-driveworks-propulsion"],context:["Helix Industrial Group","CSV Halcyon Reach"]}
+};
+
+const geography={label:"MineIT Universe",children:[
+  {id:"system-solace",children:[
+    {id:"planet-solace-ii",children:[
+      {id:"station-solace-commercial-ring",children:[
+        {label:"Companies",children:[{id:"company-helix-industrial-group"}]},
+        {label:"People",children:[{id:"person-talia-chen"}]},
+        {label:"Ships",children:[{id:"ship-csv-halcyon-reach"}]}
+      ]},
+      {label:"Surface Facilities",children:[{id:"facility-helix-solace-driveworks"}]}
+    ]}
+  ]}
+]};
+
+const organisation={label:"Companies",children:[
+  {id:"company-helix-industrial-group",children:[
+    {id:"division-helix-propulsion",children:[
+      {id:"department-helix-procurement",children:[{id:"person-talia-chen"},{id:"person-marcus-vale"}]},
+      {label:"Facilities",children:[{id:"facility-helix-solace-driveworks"}]},
+      {label:"Operations",children:[{id:"operation-helix-driveworks-propulsion"}]}
+    ]},
+    {label:"Ships",children:[{id:"ship-csv-halcyon-reach"}]}
+  ]}
+]};
+
+const directory={label:"Directory",children:[
+  {label:"Systems",children:[{id:"system-solace"}]},
+  {label:"Planets",children:[{id:"planet-solace-ii"}]},
+  {label:"Locations",children:[{id:"station-solace-commercial-ring"}]},
+  {label:"Companies",children:[{id:"company-helix-industrial-group"}]},
+  {label:"Organisation Units",children:[{id:"division-helix-propulsion"},{id:"department-helix-procurement"}]},
+  {label:"Facilities",children:[{id:"facility-helix-solace-driveworks"}]},
+  {label:"Operations",children:[{id:"operation-helix-driveworks-propulsion"}]},
+  {label:"People",children:[{id:"person-talia-chen"},{id:"person-marcus-vale"}]},
+  {label:"Ships",children:[{id:"ship-csv-halcyon-reach"}]}
+]};
+
+const trees={geography,organisation,directory};
+let activeView="geography";
+let selectedId="company-helix-industrial-group";
+const collapsed=new Set();
+let activePath=[];
+
+const treeEl=document.getElementById("tree");
+const detailEl=document.getElementById("detail");
+const explorer=document.getElementById("explorer");
+
+function nodeLabel(node){return node.id?entities[node.id].name:node.label}
+function nodeKey(node,path){return node.id||path.join("/")}
+
+function findPath(node,target,path=[]){
+  const next=[...path,nodeLabel(node)];
+  if(node.id===target)return next.filter(Boolean);
+  for(const child of node.children||[]){const found=findPath(child,target,next);if(found)return found}
+  return null;
+}
+
+function renderTree(){
+  const search=document.getElementById("search").value.trim().toLowerCase();
+  if(search){renderSearch(search);return}
+  const root=trees[activeView];
+  const ul=document.createElement("ul");ul.className="treeRoot";
+  ul.appendChild(renderNode(root,[]));
+  treeEl.replaceChildren(ul);
+  activePath=findPath(root,selectedId,[])||entities[selectedId].context||[];
+  renderDetail();
+}
+
+function renderNode(node,path){
+  const li=document.createElement("li");
+  const key=nodeKey(node,[...path,nodeLabel(node)]);
+  const hasChildren=Boolean(node.children?.length);
+  const row=document.createElement("div");row.className="treeRow"+(node.id===selectedId?" selected":"");
+  const twist=document.createElement("button");twist.className="twisty"+(hasChildren?"":" empty");twist.textContent=collapsed.has(key)?"▸":"▾";
+  twist.onclick=()=>{collapsed.has(key)?collapsed.delete(key):collapsed.add(key);renderTree()};
+  const button=document.createElement("button");button.className="node";
+  if(node.id){const e=entities[node.id];button.innerHTML=`${escapeHtml(e.icon)} ${escapeHtml(e.name)} <span class="kind">${escapeHtml(e.type)}</span>`;button.onclick=()=>selectEntity(node.id,[...path,nodeLabel(node)])}
+  else{button.textContent=node.label;button.onclick=()=>{if(hasChildren){collapsed.has(key)?collapsed.delete(key):collapsed.add(key);renderTree()}}}
+  row.append(twist,button);li.appendChild(row);
+  if(hasChildren&&!collapsed.has(key)){
+    const ul=document.createElement("ul");
+    node.children.forEach(child=>ul.appendChild(renderNode(child,[...path,nodeLabel(node)])));
+    li.appendChild(ul);
+  }
+  return li;
+}
+
+function renderSearch(query){
+  const matches=Object.entries(entities).filter(([,e])=>`${e.name} ${e.type} ${e.subtitle} ${e.description}`.toLowerCase().includes(query));
+  const root=document.createElement("ul");root.className="treeRoot";
+  if(!matches.length){treeEl.innerHTML='<div class="emptyState">No matching universe entities.</div>';return}
+  matches.forEach(([id,e])=>{
+    const li=document.createElement("li");const row=document.createElement("div");row.className="treeRow"+(id===selectedId?" selected":"");
+    const spacer=document.createElement("span");
+    const b=document.createElement("button");b.className="node";b.innerHTML=`${escapeHtml(e.icon)} ${escapeHtml(e.name)} <span class="kind">${escapeHtml(e.type)}</span>`;b.onclick=()=>selectEntity(id,e.context);
+    row.append(spacer,b);li.append(row);root.append(li);
+  });
+  treeEl.replaceChildren(root);activePath=entities[selectedId].context||[];renderDetail();
+}
+
+function selectEntity(id,path){
+  selectedId=id;activePath=path||entities[id].context||[];renderTree();
+  if(window.matchMedia("(max-width:780px)").matches)explorer.classList.remove("open");
+}
+
+function renderDetail(){
+  const e=entities[selectedId];
+  const crumbs=(activePath?.length?activePath:e.context)||[];
+  const breadcrumbHtml=crumbs.map((name,i)=>`<button class="crumb" data-crumb="${i}">${escapeHtml(name)}</button>${i<crumbs.length-1?'<span>›</span>':''}`).join("");
+  const related=e.related.map(id=>`<button class="link" data-id="${id}">${escapeHtml(entities[id].name)}</button>`).join("");
+  const context=(e.context||[]).map(name=>`<div class="contextStep"><span>${escapeHtml(name)}</span></div>`).join("");
+  detailEl.innerHTML=`
+    <div class="breadcrumbs">${breadcrumbHtml}</div>
+    <div class="hero">
+      <div class="placeholder">${escapeHtml(e.icon)}</div>
+      <div><div class="eyebrow">${escapeHtml(e.type)}</div><h1>${escapeHtml(e.name)}</h1><div class="subtitle">${escapeHtml(e.subtitle)}</div></div>
+    </div>
+    <div class="description">${escapeHtml(e.description)}</div>
+    <div class="grid">
+      <section class="card"><h2>Related entities</h2><div class="links">${related||'<span class="emptyState">None</span>'}</div></section>
+      <section class="card"><h2>Context</h2><div class="context">${context}</div></section>
+      <section class="card"><h2>Development details</h2><div class="dev"><span>Stable ID</span><code>${escapeHtml(selectedId)}</code><span>Perspective</span><code>${escapeHtml(activeView)}</code><span>Data source</span><code>Embedded concept data</code></div></section>
+      <section class="card"><h2>What this mock proves</h2><div class="description" style="font-size:12px">Tree context, alternate perspectives, entity selection, relationship navigation and mobile explorer behaviour. The real viewer will replace this embedded data with canonical JSON.</div></section>
+    </div>
+    <div class="note">Concept only: this embedded dataset is intentionally disposable. If the navigation is approved, the production Universe Directory will be built against the multi-file JSON universe database.</div>`;
+  detailEl.querySelectorAll(".link").forEach(b=>b.onclick=()=>selectEntity(b.dataset.id,entities[b.dataset.id].context));
+  detailEl.querySelectorAll(".crumb").forEach((b,i)=>b.onclick=()=>selectByName(crumbs[i]));
+}
+
+function selectByName(name){
+  const hit=Object.entries(entities).find(([,e])=>e.name===name);
+  if(hit)selectEntity(hit[0],entities[hit[0]].context);
+}
+
+function escapeHtml(value){return String(value).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+document.querySelectorAll(".perspective").forEach(button=>button.onclick=()=>{
+  activeView=button.dataset.view;
+  document.querySelectorAll(".perspective").forEach(b=>b.classList.toggle("active",b===button));
+  document.getElementById("search").value="";
+  renderTree();
+});
+document.getElementById("search").addEventListener("input",renderTree);
+document.getElementById("openExplorer").onclick=()=>explorer.classList.toggle("open");
+renderTree();
+</script>
+</body>
+</html>
