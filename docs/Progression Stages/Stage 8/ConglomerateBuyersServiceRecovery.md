@@ -1,7 +1,7 @@
 # Conglomerate Buyers Service — Recovery Plan
 
 Branch: `feature/conglomerate-buyers-service`  
-Base: latest `develop` at branch creation: `eb0977dc0069bcd5cb1eba1d5a08c2183b066d2e`
+Base at branch creation: `develop` commit `eb0977dc0069bcd5cb1eba1d5a08c2183b066d2e`
 
 Authoritative gameplay/UI design:
 
@@ -15,7 +15,24 @@ Authoritative gameplay/UI design:
 - `docs/PLAYER_PROGRESSION_STAGES.md`
 - `docs/SHIP_EXPANSION_GAMEPLAY_RECOVERY.md`
 
-The two approved UI mockups were added to this feature branch after Milestone 1 began and are authoritative together with the gameplay specification. Existing correct domain work is retained; implementation is adjusted only where the mockups expose a genuine mismatch.
+The two approved UI mockups added directly to this feature branch are authoritative together with `ConglomerateBuyersService.md`. Correct earlier domain work was retained and only genuine mismatches were changed.
+
+---
+
+## Current status
+
+**Conglomerate Buyers Service subfeature: Complete and validated.**
+
+Latest validated functional/browser head: `25e67df8f8cae9bebc632000605284fd88b2c173`  
+Passing GitHub Actions workflow: `33304609012`  
+Passing job: `99238803630`
+
+That exact-head workflow passed both:
+
+- full unit / regression / domain coverage suite; and
+- browser startup / interaction suite, including the dedicated buyer catalogue/profile/collection probe at `360×640`, `375×667`, `390×844`, `412×915`, and `915×412`.
+
+No PR or merge to `develop` is authorised yet.
 
 ---
 
@@ -23,79 +40,162 @@ The two approved UI mockups were added to this feature branch after Milestone 1 
 
 Status: **Complete**
 
-Implementation commit: `6bbb1115213995322e3e2622011d95147c6874aa`
+Foundation commit: `6bbb1115213995322e3e2622011d95147c6874aa`
 
-Complete:
+Implemented:
 
-- fixed 1,000-buyer commercial identity catalogue derived only from the approved directory seed `8302026`;
+- fixed 1,000-buyer commercial identity catalogue derived from the approved directory seed `8302026`;
 - stable contact/company/named-ship pairings and all 30 approved collection-ship classes/capacities;
-- approved per-resource Early/Mid/Late shipment bands, tier cadence bands and broker price envelopes;
-- deterministic per-corporation offer generation from the persisted expansion/world seed;
-- buyer rates constrained below the equivalent direct conglomerate quality-adjusted selling rate;
-- contract quantities constrained by both the approved resource band and assigned ship capacity;
-- one canonical `BuyerService` for offer entry, buyer relationship state, recurring collection obligations, partial/lateness/miss scoring, cancellation and termination;
-- canonical fractional reputation service with the ten approved named bands and -100..100 clamping;
-- `InventoryService.removeWeighted()` for lowest-acceptable-quality-first explicit buyer transfer;
-- buyer collection ships participate in canonical Spaceport berth occupancy;
-- runtime save schema bumped to v12 with buyer/reputation normalization entry point;
-- initial buyer regression added to the normal `npm test` chain covering catalogue size/uniqueness, deterministic offers, price/range/capacity invariants, reputation bands/clamping, eligibility/one-active-offer rules and quality-band removal.
+- approved Early/Mid/Late shipment bands, tier cadence bands and broker price envelopes;
+- deterministic per-corporation offer generation from persisted expansion/world seed;
+- brokered buyer rates constrained below equivalent direct-conglomerate quality-adjusted selling rates;
+- contract quantities constrained by both approved resource bands and assigned buyer-ship capacity;
+- one canonical `BuyerService` for offer entry, relationships, recurring obligations, partial/lateness/miss scoring, cancellation and termination;
+- canonical fractional global reputation model with the ten approved bands and `-100..100` clamping;
+- lowest-acceptable-quality-first explicit buyer transfer through `InventoryService.removeWeighted()`;
+- buyer collection ships integrated into canonical Spaceport berth accounting;
+- runtime save schema v12 with buyer/reputation normalization and save-roundtrip coverage.
 
 ---
 
-## Approved mockup alignment checkpoint
+## Milestone 2 — Approved mockup alignment
 
 Status: **Complete**
 
-Implementation commit: `13216c860795853f441b95cb08d2acc2c0d5f470`
+Mockup-alignment checkpoint: `13216c860795853f441b95cb08d2acc2c0d5f470`
 
-Complete:
+Confirmed/implemented:
 
-- feature branch synced through the two user-added approved mockups (`ff25222`, `9ccb8c1`);
-- confirmed the mockups preserve the written gameplay model rather than redesigning it;
-- confirmed catalogue UI target: portrait full-screen service, eight compact columns, compact filter/sort controls, no horizontal scrolling;
-- confirmed buyer profile target: centred approximately half-height modal with portrait/action left and scrollable identity/ship/contract/relationship details right;
-- confirmed collection target: non-dismissible full-screen paused event, large ship hero art, buyer identity, berth/orbit state, fulfilment bands, projected payment/happiness/global reputation/remaining stock and explicit wait/transfer actions;
-- corrected the one gameplay mismatch exposed by the collection mockup: the +1 on-time happiness bonus applies to a **full** on-time shipment only; an on-time partial receives only its -1 or -2 partial penalty;
-- added regression assertions for full on-time, 80% on-time, 60% on-time and 80% at +10 days.
+- full-screen portrait-first catalogue with eight compact filters/sort controls and eight compact columns;
+- all 1,000 offers remain visible unless filtered, including reputation-locked offers;
+- CONTACT / VIEW profile is a centred approximately half-height presentation with portrait, company, ship, contract terms, relationship details and history;
+- collection is a non-dismissible full-screen paused event with large ship art, buyer identity, berth/orbit state, fulfilment bands, projected outcome and explicit wait/transfer/final-miss actions;
+- production contains none of the mockups' scenario-test controls;
+- missing buyer/ship art falls back safely and does not block the workflow.
+
+Gameplay mismatch found by comparing the implementation to the approved collection mockup:
+
+- the `+1` on-time buyer-happiness bonus applies only to a **full** on-time shipment;
+- an on-time partial receives only its partial penalty.
+
+Protected results:
+
+- 100% on time: `+1`;
+- 80% on time: `-1`;
+- 60% on time: `-2`;
+- 80% at +10 days: `-3`.
 
 ---
 
-## Milestone 2 — Runtime, event queue and production UI
+## Milestone 3 — Runtime/event integration and production UI
 
-Status: **Implementation complete; validation in progress**
+Status: **Complete**
 
-Implementation commit: `a31e08642f78719210d8e5609b784bae47690c17`
+Primary runtime/UI commit: `a31e08642f78719210d8e5609b784bae47690c17`
 
-Complete:
+Implemented:
 
-- `BuyerService` is instantiated in the canonical `MineITApp` composition root and persisted buyer state is ensured on startup/reset;
-- Due / Due+5 / Due+10 / Due+15 buyer collection attempts are processed for active and background colonies;
-- buyer collections use the existing corporation-wide pending-event pause, colony-switch and recovery model;
-- recovered saves restore unresolved buyer collection obligations rather than escaping them;
-- buyer collection ships continue to use the canonical Spaceport berth model, including orbital holding and transfer blocking when no berth is free;
-- Player Colony Ship now exposes **BUYERS SERVICE** alongside Spaceport, Technology, Star Map, cargo and colony-management actions;
-- production catalogue is full-screen portrait-first with the approved eight compact filters and eight columns, while all 1,000 offers remain visible unless filtered;
-- CONTACT / VIEW uses the approved centred approximately half-height profile with portrait fallback, buyer/company/ship identity, locked terms, relationship statistics, delivery history and cancellation;
-- production collection event is full-screen and non-dismissible, uses buyer/ship art with fallbacks, shows berth/orbit state, fulfilment bands and projected payment/happiness/reputation/stock, and exposes wait/transfer/final-miss decisions;
-- no mockup-only scenario controls are included in production;
-- Corporate Ship export reputation is +0.01 maximum per visit even when sales are split across rows/bands;
-- successful 10-year colony completion now awards the canonical +0.10 rather than legacy Bronze/Silver/Gold/Platinum integer reputation awards;
-- colony-loss reputation uses the canonical fractional/clamped reputation owner and can fall below zero;
-- closing/relocating a colony is blocked while its buyer ship is actively waiting; otherwise its buyer contracts are ended through normal player-cancellation semantics rather than orphaned;
-- v12 buyer save regression covers persisted offers, fractional reputation, active obligation, retry/orbital state, history, portrait/ship assignment and pending buyer attention;
-- domain regression covers deterministic offers, pricing/capacity, quality removal, fulfilment, lateness, misses, Red termination, cancellation/cooldown, berth blocking and Corporate Ship export independence;
-- presentation ownership/CSS/lifecycle guards were extended for the new buyer controller/views.
+- `BuyerService` instantiated in the canonical `MineITApp` composition root;
+- Due / Due+5 / Due+10 / Due+15 collection attempts processed for active and background colonies;
+- buyer collections use the existing corporation-wide pending-event pause, colony-switch and save-recovery model;
+- unresolved buyer collection obligations recover after reload instead of escaping the event queue;
+- buyer vessels use canonical Spaceport berth/orbital-holding rules and cannot transfer while waiting in orbit;
+- Player Colony Ship exposes **BUYERS SERVICE** alongside existing ship/colony actions;
+- UI uses external production `views/` and a dedicated presentation controller while authoritative mutation remains in `BuyerService`;
+- cancellation is blocked while the buyer ship is actively waiting;
+- otherwise colony closure/relocation resolves buyer contracts through normal cancellation semantics instead of orphaning them;
+- Corporate Ship exports award at most `+0.01` global reputation per visit even when sales are split;
+- successful 10-year colony completion awards canonical `+0.10` global reputation;
+- buyer penalties and colony-loss reputation changes use the fractional/clamped reputation owner;
+- save v12 preserves offers, fractional reputation, active obligations, retry/orbit state, history and stable buyer/ship identity.
 
-Still remaining:
+---
 
-- run/fix the full unit/regression/domain suite at the exact feature head;
-- add and run real Chrome mobile-browser probes for 360×640, 375×667, 390×844, 412×915 and landscape coverage of catalogue/profile/collection presentation;
-- confirm coarse-pointer 44px decision controls and zero horizontal catalogue overflow in browser layout;
-- update `docs/PLAYER_PROGRESSION_STAGES.md` and `docs/SHIP_EXPANSION_GAMEPLAY_RECOVERY.md` with the validated Stage 8 buyer-service state;
-- final recovery checkpoint with passing workflow run/job IDs and exact next step.
+## Validation regression discovered and fixed
 
-Exact next step:
+The full regression suite exposed a real interaction between the new fractional reputation award and the existing Corporate Ship capacity formula.
 
-**Run the branch CI against `a31e086`, repair any unit/architecture failures, then add the dedicated buyer mobile-browser probe and workflow coverage before final documentation.**
+### Failure
 
-No PR or merge to `develop` is authorised yet.
+The first export during a Corporate Ship visit correctly awarded `+0.01` reputation. However, import/export capacity was being recalculated directly from live reputation on every query, so the already-docked ship could gain extra capacity during the same visit. A nominal `100,000` export-capacity visit became `100,100` after its first sale.
+
+### Canonical fix
+
+`TradeService` now snapshots Corporate Ship import and export capacity when that ship arrives. Reputation changes during the visit affect **future visits**, never the physical capacity of the ship already docked.
+
+Fix commit: `d38b1c6acf8dcc16587c007cbf96adfc5084bcbc`
+
+The existing global-expansion behavioural regression was intentionally retained rather than weakened; it now protects this invariant.
+
+---
+
+## Save-v12 migration cleanup
+
+The buyer state/reputation work intentionally moved runtime saves from v11 to v12. Several legacy regressions correctly exercised migration but still asserted the old final schema number. Those assertions were updated only where the underlying behaviour remained unchanged:
+
+- Technology migration assertion: `18df8e649acf09e3c0e4a871430b56974df6bb1f`
+- Survival migration assertion: `275f62d896a929b98c9e58a2d99a3becefcb7067`
+- Industry migration assertion was already present at later branch head `31ea65be2b9213db12614404d10b0c885025ac03`
+- Global expansion migration assertion: `3b531b30b17ed4adb5b77a08054c1a7b51685b27`
+- ShipExpansion save assertion: `f75f1d455dc3b9084c5b872b77ffbdbdf1619b3a`
+
+No gameplay/architecture guard was weakened to obtain a green run.
+
+---
+
+## Browser/mobile validation
+
+Dedicated production browser probe:
+
+`tests/buyer-mobile-layout-probe.html`
+
+Probe commit: `c11ee7e033226f8b8107ab4aaf3deb4902b077be`  
+Workflow integration commit: `25e67df8f8cae9bebc632000605284fd88b2c173`
+
+The probe uses the real `BuyerUI`, `BuyerService`, production templates and production CSS. It verifies:
+
+- catalogue opens and renders the 1,000-buyer commercial network;
+- eight compact catalogue filter/sort controls remain present;
+- catalogue stays within the supported viewport with no horizontal overflow;
+- an eligible CONTACT action opens the approved profile;
+- profile identity, company, ship and contract details are populated;
+- ENTER CONTRACT creates the real buyer obligation through `BuyerService`;
+- current relationship state appears after entry;
+- 80% qualifying stock is seeded and a real docked collection state is opened;
+- collection screen remains inside the viewport and contains buyer/ship presentation plus contract metrics;
+- 80% qualifying stock enables an accepted transfer;
+- the collection decision screen cannot be dismissed without resolving the event.
+
+Validated viewport matrix:
+
+- `360×640`
+- `375×667`
+- `390×844`
+- `412×915`
+- `915×412` landscape
+
+Existing ownership tests also retain the coarse-pointer `44px` buyer decision/action rules.
+
+---
+
+## Progression impact
+
+This completes the **Conglomerate Buyers Service** subfeature within Progression Stage 8 and adds a meaningful intermediate solution to the logistics bottleneck:
+
+**Production Rate → Corporate Export Capacity → Brokered Buyer Collection Capacity / Reliability → future Player Freight Capacity**
+
+Progression Stage 8 itself remains **In Progress**. The buyer service deliberately does not implement player-designed freight ships, scalable player-owned ore transport, freight routing or the wider logistics network required to finish that stage.
+
+The brokered buyers also remain conglomerate-controlled commercial relationships. They do not prematurely implement later independent/direct-buyer progression.
+
+---
+
+## Exact next step
+
+The Conglomerate Buyers Service implementation is ready for review/PR when explicitly authorised.
+
+Until then:
+
+- keep `feature/conglomerate-buyers-service` separate from `develop`;
+- do not create or merge a PR without user authorisation;
+- any further Stage 8 work should build on the validated buyer/Spaceport/reputation owners rather than creating parallel systems.
