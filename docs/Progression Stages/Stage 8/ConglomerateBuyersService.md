@@ -1,7 +1,9 @@
 # Stage 8 — Conglomerate Buyers Service
 
-Status: **Not Started**  
-Design state: **Core gameplay rules approved; revised mobile UI mockups pending review**
+Status: **Complete**  
+Design state: **Implemented and validated against the approved gameplay specification and both approved mobile UI mockups**
+
+Validated functional/browser checkpoint: `25e67df8f8cae9bebc632000605284fd88b2c173` — GitHub Actions workflow `33304609012`, job `99238803630`.
 
 ## Purpose
 
@@ -664,28 +666,26 @@ Reloading must never reroll an offer or escape a failing obligation.
 
 ---
 
-# Intended implementation ownership
+# Implemented ownership
 
-No production gameplay implementation exists yet.
+Production ownership is now:
 
-Likely ownership:
-
-- `js/data/`: 1,000 buyer records, business types, 30 ship definitions/descriptions and offer-generation balance data;
-- one canonical `js/domain/` buyer-contract service: offer generation, lifecycle, due dates, happiness, partial/lateness/miss scoring, reputation coupling and termination;
+- `js/data/buyer-content.js` and `js/data/buyer-market-balance.js`: static buyer/company/ship identities and offer-generation balance data;
+- `js/domain/buyer-service.js`: canonical buyer offer generation, contract lifecycle, due dates, happiness, partial/lateness/miss scoring, reputation coupling and termination;
 - existing `InventoryService`: quality qualification and transfer;
 - existing `spaceport-model.js`: berth/orbital holding;
-- existing pending-event/corporate-event flow: pause and cross-colony attention;
-- external `views/`: full-screen portrait catalogue, centred buyer profile modal and collection popup;
-- UI code: rendering and dispatch only;
-- `GameStore`: persistent root state.
+- existing `CorporateEventService` plus `MineITApp`: corporation-wide pause, cross-colony attention, scheduling and save recovery;
+- external `views/`: full-screen portrait catalogue, centred buyer profile and full-screen collection event;
+- `BuyerUI`: rendering, local filter/sort view state and dispatch only;
+- `GameStore`: persistent mutable root state.
 
-A save-schema bump is expected when implementation begins.
+Runtime save schema is v12 and includes buyer/reputation normalization plus save-roundtrip coverage.
 
 ---
 
-# Required regression coverage when implemented
+# Required regression coverage
 
-At minimum prove:
+The implemented feature is protected by regression/browser coverage proving at minimum:
 
 1. reputation starts at 0 and clamps -100..100;
 2. all 10 named reputation bands resolve correctly;
@@ -718,6 +718,8 @@ At minimum prove:
 29. portrait catalogue fits supported phone portrait widths without horizontal scrolling;
 30. centred half-height buyer profile remains usable on supported mobile viewports;
 31. collection popup remains usable with ship artwork present.
+
+The dedicated production browser probe runs the real buyer service/UI/templates across `360×640`, `375×667`, `390×844`, `412×915`, and `915×412` landscape.
 
 ---
 
