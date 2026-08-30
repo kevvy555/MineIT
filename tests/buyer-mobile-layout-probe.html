@@ -77,7 +77,8 @@ async function run(){
   if(!activeContract)fail.push("profile action did not establish contract");
   if(activeContract){
     const current=overlay.querySelector("[data-profile-current]");if(current?.classList.contains("hidden"))fail.push("profile did not switch to current relationship after entry");
-    const amount=Math.ceil(activeContract.quantity*.8);inventory.store(state,activeContract.resourceType,activeContract.resourceId,activeContract.resourceName,amount,10000);
+    inventory.removeWeighted(state,activeContract.resourceType,activeContract.resourceId,Number.MAX_SAFE_INTEGER,{minimumQualityKey:activeContract.minQuality});
+    const amount=activeContract.quantity*.8;inventory.store(state,activeContract.resourceType,activeContract.resourceId,activeContract.resourceName,amount,10000);
     const now=buyers.absoluteDay(state);activeContract.ship={status:"docked",dueAbsoluteDay:now,attemptIndex:0,nextEventAbsoluteDay:now,eventPending:true};
     if(!await buyerUI.openCollection(activeContract.id))fail.push("collection screen did not open");
     await sleep(120);
