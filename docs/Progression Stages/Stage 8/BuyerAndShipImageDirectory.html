@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MineIT — 1000 Buyers & Ships Image Directory</title>
+<style>
+:root{--b:#06090b;--p:#0d1419;--l:#293943;--t:#eef5f7;--m:#90a1aa;--a:#75c8ff;--g:#83dda1}
+*{box-sizing:border-box}body{margin:0;background:var(--b);color:var(--t);font:14px system-ui,sans-serif}
+header{position:sticky;top:0;z-index:3;background:#081015;padding:10px;border-bottom:1px solid var(--l)}
+h1{font-size:18px;margin:0 0 6px}.tools{display:flex;gap:5px;flex-wrap:wrap}
+button,input,select{background:var(--p);color:var(--t);border:1px solid var(--l);border-radius:6px;padding:7px}
+button{cursor:pointer}.active{border-color:var(--a);color:var(--a)}main{padding:8px}
+.note{color:var(--m);font-size:12px;margin:6px 0}.cards{display:grid;gap:6px}
+.card{background:var(--p);border:1px solid var(--l);border-radius:8px;padding:8px}
+.card h2{font-size:14px;margin:0 0 5px}.meta{font-size:11px;line-height:1.45;color:#c5d1d6}.prompt{margin-top:5px;padding:6px;background:#071015;border-left:2px solid var(--a);font-size:11px;line-height:1.4}
+.pager{display:flex;justify-content:center;align-items:center;gap:8px;padding:10px}.tag{color:var(--g)}
+@media(min-width:800px){.cards{grid-template-columns:1fr 1fr}}
+</style></head><body>
+<header><h1>MineIT — 1,000 Buyers & Collection Ships</h1>
+<div class="tools"><button id="buyersBtn" class="active">BUYERS</button><button id="shipsBtn">SHIPS</button>
+<input id="search" placeholder="Search name/company/resource"><select id="tier"><option value="">All tiers</option><option>Entry</option><option>Regional</option><option>Major</option><option>Strategic</option><option>Premier</option></select>
+<button id="exportBtn">EXPORT CURRENT CSV</button></div>
+<div class="note">Deterministic design directory. Buyer N is permanently paired with Ship N. Portraits: buyer-0001.webp…buyer-1000.webp. Ships: buyer-ship-0001.webp…buyer-ship-1000.webp.</div></header>
+<main><div id="cards" class="cards"></div><div class="pager"><button id="prev">←</button><span id="page"></span><button id="next">→</button></div></main>
+<script>
+const SEED=8302026;
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const R=rng(SEED), pick=a=>a[Math.floor(R()*a.length)], shuffle=a=>{a=[...a];for(let i=a.length-1;i;i--){let j=Math.floor(R()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const first="Ada Aiko Alina Amara Anika Aria Asha Avery Bea Cai Camila Carmen Cassia Celeste Dahlia Dara Devin Elias Elin Emi Esra Farah Felix Freya Hana Hugo Idris Imani Iris Jalen Jia Jonah Kael Kara Kian Lena Leona Lian Lucia Mara Mateo Mei Mira Nadia Niko Noa Nora Oren Priya Rafi Rhea Rin Rosa Sami Selene Sora Talia Tomas Vale Vera Yara Zane Zuri".split(" ");
+const last="Akari Alvarez Arden Baines Batra Bell Cade Chen Corin Dane Duarte Elian Fenn Foster Grey Haddad Hale Ibarra Ilyin Jin Kade Kaur Kessler Khan Kim Kovac Laghari Lennox Li Mercer Mori Nadir Nolan Okafor Osei Park Quinn Rahman Reyes Rook Sato Silva Singh Sol Tanaka Vale Varga Vey Voss Wren Yun Zoric".split(" ");
+const cp="Meridian Helix Torren Axiom Redshift Orison Kestrel Pallas Crownline Nacre Solari Frontier Terranova Voltari PetroCore Aurelia Novaris Keystone Parallax Northstar Blueforge Cinder Vertex Arcadia Lattice Promethean Vector Polaris Everlight Tangent Ironveil Silverline Radiant Strata Argent Nimbus Deepwell Horizon Continuum Beacon Cobalt Granite Ember Halcyon Nova Pioneer Summit Atlas Vanguard Longreach".split(" ");
+const cs="Resources Industries Systems Fabrication Holdings Cooperative Works Dynamics Consortium Combine Logistics Engineering Materials Energy Aerospace Infrastructure Biotech Processing Manufacturing Research".split(" ");
+const sa="Halcyon Quiet Long Blue Silver Golden Iron Amber Cobalt Radiant Far High Deep Bright Silent Swift Grey Red White Black Northern Southern Eastern Western Solar Lunar Stellar Distant Burning Frozen Verdant Obsidian Crimson Azure Copper Ivory Emerald Violet Pale Rising".split(" ");
+const sn="Reach Meridian Horizon Lantern Crown Passage Ember Star Vector Prospector Voyager Anchor Compass Venture Pilgrim Current Forge Foundry Atlas Beacon Comet Arrow Bridge Gate Spire Citadel Summit Frontier Path Harbor Relay Trail Resolve Endeavor Fortune Motive Accord Promise Legacy Witness".split(" ");
+const sectors=[
+["Mining equipment & geological services","Procurement Director","Stone,Structural Mineral,Iron Ore,Copper Ore,Reactive Metal Ore"],
+["Heavy engineering & industrial fabrication","Industrial Sourcing Manager","Iron Ore,Copper Ore,Structural Mineral,Conductive Ore"],
+["Shipbuilding & propulsion systems","Shipyard Supply Lead","Reactive Metal Ore,Conductive Ore,Magnetic Ore,Platinum,Palladium"],
+["Electronics & sensor manufacturing","Sensor Supply Manager","Copper Ore,Conductive Ore,Silica,Silver,Gold"],
+["Energy generation & grid infrastructure","Energy Contracts Manager","Coal Seam,Natural Gas,Fissile Mineral,Hydrogen-rich Brine"],
+["Fuel refining & propellant processing","Fuel Procurement Controller","Biomass,Peat Bed,Crude Oil,Natural Gas,Exotic Fuel Crystal"],
+["Construction & civil infrastructure","Infrastructure Procurement Lead","Stone,Clay,Silica,Limestone,Construction Fibre"],
+["Habitat fabrication & life-support systems","Habitat Materials Director","Construction Fibre,Structural Mineral,Silica,Advanced Ceramic Feedstock"],
+["Agriculture & food processing","Food Supply Director","Fungal Shelf,Edible Flora,Nutrient Crop,Protein Bloom,Thermal Algae"],
+["Medical & biochemical manufacturing","Medical Materials Buyer","Protein Bloom,Thermal Algae,Synthetic Nutrient,Hydrogen-rich Brine"],
+["Precision instruments & metrology","Precision Materials Director","Conductive Ore,Silver,Gold,Platinum,Sapphire"],
+["Jewellery & luxury materials","Precious Materials Director","Silver,Gold,Gemstone Deposit,Sapphire,Ruby,Emerald,Diamond"],
+["Research laboratories & advanced materials","Research Procurement Director","Advanced Ceramic Feedstock,Fissile Mineral,Exotic Industrial Mineral,Exotic Crystal"],
+["Reactor engineering & nuclear systems","Reactor Materials Buyer","Fissile Mineral,Hydrogen-rich Brine,Magnetic Ore,Advanced Element Deposit"],
+["Aerospace manufacturing","Aerospace Materials Director","Reactive Metal Ore,Magnetic Ore,Advanced Ceramic Feedstock,Platinum"],
+["Planetary infrastructure & utilities","Utilities Procurement Director","Stone,Limestone,Structural Mineral,Coal Seam,Natural Gas"],
+["Interstellar logistics & warehousing","Logistics Supply Director","Construction Fibre,Iron Ore,Copper Ore"],
+["Advanced optics & photonics","Photonics Materials Director","Silica,Conductive Ore,Sapphire,Exotic Crystal"],
+["High-pressure industrial chemistry","Process Chemistry Buyer","Natural Gas,Hydrogen-rich Brine,Reactive Metal Ore,Diamond"],
+["Strategic reserve & commodity finance","Commodity Acquisition Director","Silver,Gold,Platinum,Palladium,Diamond"]];
+const classes=[
+["Dart Courier",2500,"compact fast courier; narrow cockpit-forward hull, secure detachable cargo pods, oversized engines"],
+["Wren Shuttle",4000,"small rounded short-haul shuttle with compact box cargo bay"],
+["Kestrel Light Freighter",6000,"lean twin-engine light freighter with two modular side holds"],
+["Skipper Packet",8000,"fast packet freighter with long central hull and clustered aft engines"],
+["Nomad Utility Freighter",12000,"rugged frontier utility freighter with external racks and reinforced landing frame"],
+["Ranger Cargo Cutter",18000,"wedge-bow medium freighter with four modular holds"],
+["Wayfarer Freighter",25000,"long-haul merchant vessel with broad spine and container mounts"],
+["Merchant Lifter",35000,"reinforced commercial lifter with paired cargo decks and heavy landing gear"],
+["Caravan Freighter",50000,"segmented multi-hold commodity freighter"],
+["Atlas Hauler",70000,"broad heavy hauler with central engine block and enclosed cargo compartments"],
+["Meridian Bulk Carrier",90000,"deep-hold bulk carrier with heavy engines and loading gantries"],
+["Vanguard Hauler",120000,"armoured high-reliability industrial hauler with redundant drives"],
+["Longreach Freighter",160000,"extended endurance freighter with multiple drive clusters and cargo sections"],
+["Foundry Carrier",210000,"blocky heat-shielded ore and metal carrier"],
+["Reliant Bulkship",270000,"large dependable bulkship with six internal holds and dorsal service spine"],
+["Leviathan Freighter",350000,"very large deep-bodied freighter with multiple engine banks"],
+["Mammoth Carrier",450000,"massive slab-sided carrier with command tower and auxiliary tugs"],
+["Colossus Bulkship",575000,"huge bulk transport dominated by cavernous cargo compartments"],
+["Goliath Heavy Freighter",725000,"armoured longitudinal heavy freighter with multiple reactor nacelles"],
+["Citadel Carrier",900000,"fortress-like carrier with enclosed freight decks and tall command block"],
+["Bastion Superfreighter",1100000,"million-unit mobile industrial complex with distributed engines"],
+["Monolith Bulk Carrier",1350000,"long rectangular carrier dominated by continuous holds"],
+["Horizon Superfreighter",1600000,"wide deep-space freighter with layered cargo decks and distant bridge"],
+["Dominion Carrier",1900000,"prestige strategic carrier with multiple independent freight zones"],
+["Titan Logistics Carrier",2200000,"vast carrier with container decks, hangars and automated loaders"],
+["Continental Bulkship",2500000,"planetary-scale bulk hauler with immense central hull"],
+["Hyperion Supercarrier",2800000,"advanced supercarrier with high-output drives and massive cargo spines"],
+["Keystone Megafreighter",3200000,"truss-built megafreighter around interchangeable freight blocks"],
+["Panstellar Megacarrier",3600000,"enormous prestige logistics vessel with cargo districts and docking bays"],
+["Worldline Mass Freighter",4000000,"city-scale freight machine with colossal holds and many engine clusters"]];
+const skin="very fair,fair,light olive,warm beige,golden tan,medium brown,deep brown,rich dark brown,copper-brown,cool brown".split(",");
+const hair="black,dark brown,chestnut,auburn,salt-and-pepper,silver,platinum blond,dark blond,blue-black,copper".split(",");
+const style="short textured crop,neat side-parted cut,close-cropped hair,shoulder-length waves,tight curls swept back,high undercut,braided crown,loose natural curls,sleek bob,long hair tied back,asymmetrical swept style,soft layered cut,coiled updo,braided undercut,wavy chin-length cut".split(",");
+const eyes="dark brown,brown,hazel,green,grey,blue,amber".split(",");
+const mood="calm analytical,confident demanding,warm businesslike,reserved precise,experienced pragmatic,ambitious energetic,stern fair,quietly authoritative,friendly observant,focused intense".split(",");
+const outfit="graphite utility jacket,charcoal executive uniform,industrial procurement coat,slate corporate jacket,navy commercial uniform,black technical blazer,premium field-procurement coat,dark logistics uniform,high-status colony suit,structured operations jacket".split(",");
+const rooms=["ore-terminal procurement office","foundry purchasing desk","shipyard acquisition office","sensor-market procurement room","power purchasing desk","refinery contracts room","construction procurement office","habitat systems room","hydroponic procurement office","biochemical lab-office","precision instrument contracts room","secure precious-materials office","advanced research acquisition room","reactor procurement office","aerospace purchasing room","utility-network procurement office","cargo logistics hub","photonics procurement room","pressure-process procurement suite","commodity reserve trading office"];
+const liv="graphite/bronze,white/graphite,navy/teal,gunmetal/amber,matte black/silver,pale grey/cobalt,industrial olive/cream,charcoal/copper,white/orange,steel blue/white,sand-grey/burgundy,black alloy/blue".split(",");
+const names=shuffle(first.flatMap(f=>last.map(l=>f+" "+l))).slice(0,1000), companies=shuffle(cp.flatMap(a=>cs.map(b=>a+" "+b))).slice(0,1000), ships=shuffle(sa.flatMap(a=>sn.map(b=>"CSV "+a+" "+b))).slice(0,1000);
+function tier(rep){return rep<10?["Entry",1,8]:rep<25?["Regional",4,12]:rep<50?["Major",8,18]:rep<75?["Strategic",13,24]:["Premier",18,30]}
+const data=Array.from({length:1000},(_,i)=>{let rep=+(100*Math.pow(i/999,1.35)).toFixed(2),t=tier(rep),sec=sectors[Math.floor(R()*sectors.length)],ci=t[1]-1+Math.floor(R()*(t[2]-t[1]+1)),cl=classes[ci],age=27+Math.floor(R()*41),gender=pick(["woman","man","androgynous person"]),res=shuffle(sec[2].split(",")).slice(0,3);let buyer={id:i+1,name:names[i],company:companies[i],sector:sec[0],role:sec[1],rep,tier:t[0],resources:res,quality:pick(t[0]=="Entry"?["Common","Good"]:t[0]=="Regional"?["Good","Good","Excellent"]:["Good","Excellent","Exceptional"]),ship:ships[i],class:cl[0],capacity:cl[1]};buyer.portrait=`${age}yo ${gender}; ${pick(skin)} skin; ${pick(hair)} ${pick(style)}; ${pick(eyes)} eyes; ${pick(mood)} expression; ${pick(outfit)}; ${rooms[sectors.indexOf(sec)]} backdrop; cinematic MineIT head-and-shoulders corporate realism.`;buyer.shipPrompt=`${ships[i]}, ${cl[0]}, ${cl[2]}; capacity ${cl[1].toLocaleString()}; ${pick(liv)} commercial livery; practical cargo hardware; whole-vessel 3/4 landscape view in space; grounded MineIT industrial realism.`;return buyer});
+let mode="buyers",page=0,per=40;
+function filtered(){let q=document.querySelector("#search").value.toLowerCase(),t=document.querySelector("#tier").value;return data.filter(x=>(!t||x.tier==t)&&(!q||[x.name,x.company,x.sector,x.resources.join(" "),x.ship,x.class].join(" ").toLowerCase().includes(q)))}
+function render(){let a=filtered(),pages=Math.max(1,Math.ceil(a.length/per));page=Math.min(page,pages-1);let slice=a.slice(page*per,(page+1)*per);cards.innerHTML=slice.map(x=>mode=="buyers"?`<article class=card><h2>${String(x.id).padStart(4,"0")} — ${x.name}</h2><div class=meta><span class=tag>buyer-${String(x.id).padStart(4,"0")}.webp</span> • ${x.role} • ${x.company}<br>${x.sector} • ${x.tier} • Rep ${x.rep.toFixed(2)} • Q ${x.quality}<br>Resources: ${x.resources.join(", ")}<br>Ship: ${x.ship} — ${x.class} (${x.capacity.toLocaleString()})</div><div class=prompt>${x.portrait}</div><button onclick='navigator.clipboard.writeText(data[${x.id-1}].portrait)'>COPY PROMPT</button></article>`:`<article class=card><h2>${String(x.id).padStart(4,"0")} — ${x.ship}</h2><div class=meta><span class=tag>buyer-ship-${String(x.id).padStart(4,"0")}.webp</span> • ${x.class} • ${x.capacity.toLocaleString()} cargo<br>Owner: ${x.company} • Contact: ${x.name}<br>${x.sector}</div><div class=prompt>${x.shipPrompt}</div><button onclick='navigator.clipboard.writeText(data[${x.id-1}].shipPrompt)'>COPY PROMPT</button></article>`).join("");document.querySelector("#page").textContent=`${page+1}/${pages} • ${a.length} records`}
+function csv(){let a=filtered(),head=mode=="buyers"?["id","asset","name","role","company","business","tier","rep","resources","quality","ship","class","capacity","image_prompt"]:["id","asset","ship","class","capacity","owner","contact","business","image_prompt"];let rows=a.map(x=>mode=="buyers"?[x.id,`buyer-${String(x.id).padStart(4,"0")}.webp`,x.name,x.role,x.company,x.sector,x.tier,x.rep,x.resources.join(";"),x.quality,x.ship,x.class,x.capacity,x.portrait]:[x.id,`buyer-ship-${String(x.id).padStart(4,"0")}.webp`,x.ship,x.class,x.capacity,x.company,x.name,x.sector,x.shipPrompt]);let esc=v=>`"${String(v).replaceAll('"','""')}"`,txt=[head,...rows].map(r=>r.map(esc).join(",")).join("\n"),u=URL.createObjectURL(new Blob([txt],{type:"text/csv"})),ael=document.createElement("a");ael.href=u;ael.download=mode=="buyers"?"MineIT_1000_buyers.csv":"MineIT_1000_buyer_ships.csv";ael.click();URL.revokeObjectURL(u)}
+buyersBtn.onclick=()=>{mode="buyers";page=0;buyersBtn.classList.add("active");shipsBtn.classList.remove("active");render()};shipsBtn.onclick=()=>{mode="ships";page=0;shipsBtn.classList.add("active");buyersBtn.classList.remove("active");render()};search.oninput=()=>{page=0;render()};tier.onchange=()=>{page=0;render()};prev.onclick=()=>{page=Math.max(0,page-1);render()};next.onclick=()=>{page++;render()};exportBtn.onclick=csv;render();
+</script></body></html>
