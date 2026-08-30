@@ -44,16 +44,16 @@ const mining=[
   ["Quantum Bore Systems","Top-tier extraction systems for the most extreme element deposits."]
 ];
 const scanning=[
-  ["Surface Survey Suite","Basic scanners for obvious surface resources and strong geological signatures."],
-  ["Shallow Geophysical Survey","Improved instruments for shallow beds and weaker near-surface signatures."],
-  ["Subsurface Tomography","Tomographic survey equipment for common subsurface mineral and fuel deposits."],
-  ["Deep Spectral Survey","Deep-spectrum sensing for advanced metals, precious ores and gemstone signatures."],
-  ["Seismic Prospecting Array","Seismic and gravimetric equipment for deep fluid reservoirs and drilling targets."],
-  ["Precision Mineral Spectrometry","High-resolution spectrometry for weak high-value, fissile and specialist mineral signatures."],
-  ["High-Pressure Geochemistry","Advanced geochemical sensing for extreme-pressure deposits, deep brines and diamonds."],
-  ["Deep-Core Imaging","High-energy imaging systems capable of resolving high-temperature deep-core deposits."],
-  ["Exotic Matter Detection","Specialist sensor arrays for exotic crystals and unusual matter signatures."],
-  ["Quantum Resonance Survey","Quantum-resonance prospecting capable of resolving the weakest advanced-element signatures."]
+  ["Surface Survey Suite","Basic scanners for obvious surface resources and strong geological signatures. New discoveries at L1: Fungal Shelf, Edible Flora, Grazing Herd, Nutrient Crop, Protein Bloom, Construction Fibre, Stone, Biomass and Surface Iron Nodules."],
+  ["Shallow Geophysical Survey","Improved instruments for shallow beds and weaker near-surface signatures. New discoveries at L2: Thermal Algae, Clay, Silica, Limestone and Peat Bed."],
+  ["Subsurface Tomography","Tomographic survey equipment for common subsurface mineral and fuel deposits. New discoveries at L3: Structural Mineral, Coal Seam, Iron Ore and Copper Ore."],
+  ["Deep Spectral Survey","Deep-spectrum sensing for advanced metals, precious ores and gemstone signatures. New discoveries at L4: Reactive Metal Ore, Conductive Ore, Silver, Gold, Gemstone Deposit and Magnetic Ore."],
+  ["Seismic Prospecting Array","Seismic and gravimetric equipment for deep fluid reservoirs and drilling targets. New discoveries at L5: Crude Oil and Natural Gas."],
+  ["Precision Mineral Spectrometry","High-resolution spectrometry for weak high-value, fissile and specialist mineral signatures. New discoveries at L6: Advanced Ceramic Feedstock, Fissile Mineral, Platinum, Palladium, Sapphire, Ruby and Emerald."],
+  ["High-Pressure Geochemistry","Advanced geochemical sensing for extreme-pressure deposits, deep brines and diamonds. New discoveries at L7: Hydrogen-rich Brine and Diamond."],
+  ["Deep-Core Imaging","High-energy imaging systems capable of resolving high-temperature deep-core deposits. New discoveries at L8: Exotic Industrial Mineral."],
+  ["Exotic Matter Detection","Specialist sensor arrays for exotic crystals and unusual matter signatures. New discoveries at L9: Exotic Fuel Crystal and Exotic Crystal."],
+  ["Quantum Resonance Survey","Quantum-resonance prospecting capable of resolving the weakest advanced-element signatures. New discoveries at L10: Advanced Element Deposit."]
 ];
 
 const powerFuel=[.10,.085,.070,.050,.035];
