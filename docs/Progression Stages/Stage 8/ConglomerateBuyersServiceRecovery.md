@@ -15,7 +15,7 @@ Authoritative gameplay/UI design:
 - `docs/PLAYER_PROGRESSION_STAGES.md`
 - `docs/SHIP_EXPANSION_GAMEPLAY_RECOVERY.md`
 
-The two approved UI mockups were added to this feature branch after Milestone 1 began and are now authoritative together with the gameplay specification. Existing correct domain work is retained; implementation is adjusted only where the mockups expose a genuine mismatch.
+The two approved UI mockups were added to this feature branch after Milestone 1 began and are authoritative together with the gameplay specification. Existing correct domain work is retained; implementation is adjusted only where the mockups expose a genuine mismatch.
 
 ---
 
@@ -46,7 +46,7 @@ Complete:
 
 Status: **Complete**
 
-Current implementation commit: `13216c860795853f441b95cb08d2acc2c0d5f470`
+Implementation commit: `13216c860795853f441b95cb08d2acc2c0d5f470`
 
 Complete:
 
@@ -58,19 +58,44 @@ Complete:
 - corrected the one gameplay mismatch exposed by the collection mockup: the +1 on-time happiness bonus applies to a **full** on-time shipment only; an on-time partial receives only its -1 or -2 partial penalty;
 - added regression assertions for full on-time, 80% on-time, 60% on-time and 80% at +10 days.
 
+---
+
+## Milestone 2 — Runtime, event queue and production UI
+
+Status: **Implementation complete; validation in progress**
+
+Implementation commit: `a31e08642f78719210d8e5609b784bae47690c17`
+
+Complete:
+
+- `BuyerService` is instantiated in the canonical `MineITApp` composition root and persisted buyer state is ensured on startup/reset;
+- Due / Due+5 / Due+10 / Due+15 buyer collection attempts are processed for active and background colonies;
+- buyer collections use the existing corporation-wide pending-event pause, colony-switch and recovery model;
+- recovered saves restore unresolved buyer collection obligations rather than escaping them;
+- buyer collection ships continue to use the canonical Spaceport berth model, including orbital holding and transfer blocking when no berth is free;
+- Player Colony Ship now exposes **BUYERS SERVICE** alongside Spaceport, Technology, Star Map, cargo and colony-management actions;
+- production catalogue is full-screen portrait-first with the approved eight compact filters and eight columns, while all 1,000 offers remain visible unless filtered;
+- CONTACT / VIEW uses the approved centred approximately half-height profile with portrait fallback, buyer/company/ship identity, locked terms, relationship statistics, delivery history and cancellation;
+- production collection event is full-screen and non-dismissible, uses buyer/ship art with fallbacks, shows berth/orbit state, fulfilment bands and projected payment/happiness/reputation/stock, and exposes wait/transfer/final-miss decisions;
+- no mockup-only scenario controls are included in production;
+- Corporate Ship export reputation is +0.01 maximum per visit even when sales are split across rows/bands;
+- successful 10-year colony completion now awards the canonical +0.10 rather than legacy Bronze/Silver/Gold/Platinum integer reputation awards;
+- colony-loss reputation uses the canonical fractional/clamped reputation owner and can fall below zero;
+- closing/relocating a colony is blocked while its buyer ship is actively waiting; otherwise its buyer contracts are ended through normal player-cancellation semantics rather than orphaned;
+- v12 buyer save regression covers persisted offers, fractional reputation, active obligation, retry/orbital state, history, portrait/ship assignment and pending buyer attention;
+- domain regression covers deterministic offers, pricing/capacity, quality removal, fulfilment, lateness, misses, Red termination, cancellation/cooldown, berth blocking and Corporate Ship export independence;
+- presentation ownership/CSS/lifecycle guards were extended for the new buyer controller/views.
+
 Still remaining:
 
-- instantiate/process `BuyerService` in the live app/runtime;
-- extend the corporation-wide pending-event queue with buyer collection events and recovery;
-- process Due / Due+5 / Due+10 / Due+15 across active and background colonies;
-- route Corporate Ship export-visit reputation, 10-year colony success reputation and existing reputation penalties through the canonical fractional owner;
-- save/reload regression for active buyer obligations and fractional reputation;
-- buyer catalogue/profile/collection production UI and colony/ship-panel entry point matching the approved mockups;
-- browser/coarse-pointer/mobile viewport probes;
-- progression/recovery final documentation and full regression validation.
+- run/fix the full unit/regression/domain suite at the exact feature head;
+- add and run real Chrome mobile-browser probes for 360×640, 375×667, 390×844, 412×915 and landscape coverage of catalogue/profile/collection presentation;
+- confirm coarse-pointer 44px decision controls and zero horizontal catalogue overflow in browser layout;
+- update `docs/PLAYER_PROGRESSION_STAGES.md` and `docs/SHIP_EXPANSION_GAMEPLAY_RECOVERY.md` with the validated Stage 8 buyer-service state;
+- final recovery checkpoint with passing workflow run/job IDs and exact next step.
 
 Exact next step:
 
-**Wire `BuyerService` into `MineITApp` and `CorporateEventService`, migrate existing `company.rep` award/penalty paths to the canonical fractional reputation service, then add resolvable buyer collection events before exposing the production buyer UI.**
+**Run the branch CI against `a31e086`, repair any unit/architecture failures, then add the dedicated buyer mobile-browser probe and workflow coverage before final documentation.**
 
 No PR or merge to `develop` is authorised yet.
