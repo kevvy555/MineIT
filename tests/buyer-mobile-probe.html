@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<base href="../">
+<title>MineIT Stage 8 buyer mobile probe</title>
+<link rel="stylesheet" href="./css/app.css">
+<link rel="stylesheet" href="./css/panels.css">
+<link rel="stylesheet" href="./css/conglomerate-buyers.css">
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050708}#result{position:fixed;z-index:10000;top:0;left:0;max-width:100%;padding:2px 4px;background:#fff;color:#000;font:10px/1.2 monospace;white-space:normal}#frame{position:fixed;inset:0;width:100%;height:100%;border:0;background:#050708}#harnessModal{position:fixed}
+</style>
+</head>
+<body>
+<div id="result">RUNNING</div>
+<iframe id="frame" src="./index.html" title="MineIT application"></iframe>
+<section id="harnessModal" class="panel modal hidden" aria-label="Buyer collection harness"></section>
+<script type="module">
+import { BuyerUI } from './js/ui/buyer-ui.js';
+import { BuyerService } from './js/domain/buyer-service.js';
+import { ContractService } from './js/domain/contract-service.js';
+import { createGameState } from './js/domain/game-state-runtime.js';
+import { ResourceService } from './js/domain/resource-service.js';
+import { InventoryService } from './js/domain/inventory-service.js';
+
+const result=document.querySelector('#result'),frame=document.querySelector('#frame'),sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms)),fail=[];
+const near=(a,b,t=2)=>Math.abs(a-b)<=t;
+const clickCanvas=(w,d)=>{const canvas=d.querySelector('#world');if(!canvas)throw new Error('Missing world canvas');const r=canvas.getBoundingClientRect(),x=r.left+r.width/16,y=r.top+r.height/16;canvas.dispatchEvent(new w.MouseEvent('click',{bubbles:true,cancelable:true,clientX:x,clientY:y,detail:1}));};
+const checkFullHeight=(screen,w,label)=>{const r=screen.getBoundingClientRect();if(!near(r.top,0)||!near(r.bottom,w.innerHeight))fail.push(`${label}: not full height ${r.top}/${r.bottom}/${w.innerHeight}`);if(screen.scrollWidth>screen.clientWidth+2)fail.push(`${label}: outer horizontal overflow ${screen.scrollWidth}>${screen.clientWidth}`);if(w.innerWidth<=430&&!near(r.width,w.innerWidth,3))fail.push(`${label}: phone width ${r.width}/${w.innerWidth}`);if(w.innerWidth>430&&(r.width>432||!near(r.left,(w.innerWidth-r.width)/2,3)))fail.push(`${label}: wide viewport not centred/max430 ${JSON.stringify({left:r.left,width:r.width,viewport:w.innerWidth})}`);};
+
+async function checkRealCatalogue(){
+  await new Promise(resolve=>frame.addEventListener('load',resolve,{once:true}));await sleep(2500);const w=frame.contentWindow,d=w.document;
+  const landing=d.querySelector('.landing-choice-grid button');if(landing){landing.click();await sleep(350);}
+  clickCanvas(w,d);await sleep(80);const buyersAction=d.querySelector('[data-player-ship-action="buyers"]');if(!buyersAction)throw new Error('Player Colony Ship has no Buyers Service action');buyersAction.click();await sleep(800);
+  const screen=d.querySelector('[data-buyers-screen]');if(!screen)throw new Error('Buyers Service did not open from Player Colony Ship');checkFullHeight(screen,w,'catalogue');
+  if(screen.querySelectorAll('[data-buyer-filter]').length!==8)fail.push('catalogue: expected eight compact filters');
+  const rows=screen.querySelectorAll('.buyers-row');if(rows.length!==1000)fail.push(`catalogue: expected 1000 rows, got ${rows.length}`);
+  if(!screen.querySelector('.buyers-row.locked [data-buyer-action][disabled]'))fail.push('catalogue: reputation-locked buyers are not visible');
+  const table=screen.querySelector('.buyers-table-shell'),head=screen.querySelector('.buyers-head-row');if(table&&table.scrollWidth>table.clientWidth+2)fail.push('catalogue: table shell horizontally scrolls');if(head&&head.scrollWidth>head.clientWidth+2)fail.push('catalogue: header exceeds table width');
+  const status=screen.querySelector('[data-buyer-filter="status"]');status.value='locked';status.dispatchEvent(new w.Event('change',{bubbles:true}));await sleep(60);if(!screen.querySelector('.buyers-row.locked'))fail.push('catalogue: locked filter produced no locked rows');status.value='all';status.dispatchEvent(new w.Event('change',{bubbles:true}));await sleep(60);
+  const contact=[...screen.querySelectorAll('[data-buyer-action]')].find(button=>button.textContent.trim()==='CONTACT');if(!contact)fail.push('catalogue: no eligible CONTACT action at starting reputation');else{const actionRect=contact.getBoundingClientRect();if(actionRect.height<29)fail.push(`catalogue: action target too short ${actionRect.height}`);contact.click();await sleep(80);const overlay=screen.querySelector('[data-buyer-profile]'),dialog=screen.querySelector('.buyers-profile-dialog');if(!overlay||overlay.classList.contains('hidden')||!dialog)fail.push('profile: CONTACT did not open buyer profile');else{const r=dialog.getBoundingClientRect();if(r.top<3||r.bottom>w.innerHeight-3)fail.push(`profile: dialog outside viewport ${r.top}/${r.bottom}/${w.innerHeight}`);if(r.height<320||r.height>482)fail.push(`profile: approved half-height bounds lost ${r.height}`);if(dialog.scrollWidth>dialog.clientWidth+2)fail.push('profile: horizontal overflow');if(!overlay.querySelector('[data-profile-portrait]')||!overlay.querySelector('[data-profile-primary]'))fail.push('profile: portrait/action missing');if(!overlay.querySelector('[data-profile-ship]')?.textContent.trim())fail.push('profile: collection ship identity missing');if(!overlay.querySelector('[data-profile-resource]')?.textContent.trim())fail.push('profile: contract resource missing');overlay.querySelector('[data-profile-close]')?.click();await sleep(20);if(!overlay.classList.contains('hidden'))fail.push('profile: close did not return to catalogue');}}
+  if(w.__probeErrors?.length)fail.push('catalogue runtime errors: '+w.__probeErrors.join(' | '));
+  frame.remove();
+}
+
+async function checkRealCollection(){
+  const modal=document.querySelector('#harnessModal'),toasts=[];const ui={modal,buyerUI:null,toast:message=>toasts.push(String(message)),open(title,body){modal.innerHTML=`<div class="panel-title"><strong>${title}</strong></div><div class="modal-body">${body}</div>`;modal.classList.remove('hidden');}};
+  const contracts=new ContractService(),state=createGameState(contracts.first()),resources=new ResourceService(),inventory=new InventoryService(resources),buyers=new BuyerService(resources,inventory);state.company.rep=100;buyers.ensure(state);const offer=buyers.catalog(state).find(row=>row.status==='available');if(!offer)throw new Error('No deterministic buyer offer available');const entered=buyers.enterContract(state,offer.id);if(!entered.ok)throw new Error(entered.reason||'Unable to establish buyer contract');const contract=entered.contract,now=buyers.absoluteDay(state),qty=contract.quantity*.8;inventory.store(state,contract.resourceType,contract.resourceId,contract.resourceName,qty,10000);contract.ship={status:'docked',dueAbsoluteDay:now-10,attemptIndex:2,nextEventAbsoluteDay:now,eventPending:true};
+  const buyerUI=new BuyerUI({state,buyers,ui,diagnostics:{error:(label,error)=>fail.push(`${label}: ${error}`)},onEnterContract:id=>buyers.enterContract(state,id),onCancelContract:id=>buyers.cancelContract(state,id),onTransfer:id=>buyers.transfer(state,id),onWait:id=>buyers.continueWaiting(state,id),onMiss:id=>buyers.resolveMiss(state,id)});const opened=await buyerUI.openCollection(contract.id);if(!opened)throw new Error('Real BuyerUI did not open collection event');await sleep(50);let screen=modal.querySelector('[data-buyer-collection-screen]');if(!screen)throw new Error('Collection screen missing');checkFullHeight(screen,window,'collection');
+  if(screen.querySelector('[data-collection-percent]')?.textContent.trim()!=='80%')fail.push('collection: expected 80% fulfilment');if(screen.querySelector('[data-collection-late]')?.textContent.trim()!=='10')fail.push('collection: expected +10 day lateness');if(!screen.querySelector('[data-collection-score]')?.textContent.includes('-3'))fail.push('collection: expected -3 projected buyer impact');const transfer=screen.querySelector('[data-collection-transfer]'),wait=screen.querySelector('[data-collection-wait]');if(!transfer||transfer.disabled)fail.push('collection: docked accepted partial transfer is not enabled');for(const button of [transfer,wait,screen.querySelector('[data-collection-dismiss]')])if(button&&button.getBoundingClientRect().height<42)fail.push(`collection: touch target too short ${button.getBoundingClientRect().height}`);
+  screen.querySelector('[data-collection-dismiss]')?.click();await sleep(10);if(modal.classList.contains('hidden'))fail.push('collection: dismiss button closed required event');if(!toasts.some(message=>/decision is required/i.test(message)))fail.push('collection: dismiss did not explain required decision');
+  contract.ship.status='orbital-holding';buyerUI.renderCollection(screen,contract.id);if(!screen.querySelector('[data-collection-transfer]')?.disabled)fail.push('collection: orbit state does not block transfer');if(!/WAITING IN ORBIT/.test(screen.querySelector('[data-collection-alert]')?.textContent||''))fail.push('collection: orbit alert missing');
+  contract.ship.status='docked';buyerUI.renderCollection(screen,contract.id);const cashBefore=state.company.cash;screen.querySelector('[data-collection-transfer]')?.click();await sleep(10);if(contract.ship.status!=='idle')fail.push('collection: transfer did not resolve through BuyerService');if(!(state.company.cash>cashBefore))fail.push('collection: accepted transfer did not pay corporation');if(!modal.classList.contains('hidden'))fail.push('collection: resolved transfer did not close event');buyerUI.dispose();
+}
+
+try{await checkRealCatalogue();await checkRealCollection();result.textContent=fail.length?'FAIL '+fail.join(' | '):'PASS conglomerate buyers catalogue, profile and collection mobile presentation';}catch(error){result.textContent='FAIL buyer mobile probe • '+(error?.stack||error);}
+</script>
+</body>
+</html>
