@@ -35,9 +35,11 @@ const expansion=new ExpansionService();
 const root=expansion.ensure(state);
 assert.equal(root.version,EXPANSION_VERSION);
 assert.equal(EXPANSION_VERSION,3);
+assert.equal(STARTER_SHIP_CLASS_ID,"ship-class-asterion-pioneer-colony-transport");
 assert.equal(root.ships.length,1);
 assert.equal(root.activeShipId,STARTER_SHIP_ID);
 assert.equal(expansion.ship(state).shipClassId,STARTER_SHIP_CLASS_ID);
+assert.equal(expansion.ship(state).name,"Pioneer Colony Transport");
 assert.equal(expansion.ship(state).cargoCapacity,PLAYER_SHIP_CARGO_CAPACITY);
 assert.equal(expansion.ship(state).fuelCapacity,PLAYER_SHIP_FUEL_CAPACITY);
 assert.equal(expansion.ship(state).foodCapacity,PLAYER_SHIP_FOOD_CAPACITY);
@@ -96,6 +98,14 @@ assert.equal(second.systemId,target.id);
 assert.equal(second.status,"orbiting","full destination Spaceport should put the ship into orbital holding");
 assert.equal(second.targetColonyId,"colony-b");
 
+// Orbital holding is operationally inert in the first fleet implementation: no transit food or interstellar fuel is consumed.
+const holdingFuel=expansion.fuelAmount(state,second.id),holdingFood=expansion.transitFoodAmount(state,second.id);
+setAbsolute(state,expansion.absoluteDay(state)+1);
+expansion.processDay(state);
+assert.equal(second.status,"orbiting");
+assert.equal(expansion.fuelAmount(state,second.id),holdingFuel,"orbital holding must not consume interstellar fuel");
+assert.equal(expansion.transitFoodAmount(state,second.id),holdingFood,"orbital holding must not consume transit food");
+
 // Free the berth; orbital holding should automatically dock on the following day.
 starter.status="home";starter.colonyId=null;starter.systemId="corporate-home";
 setAbsolute(state,expansion.absoluteDay(state)+1);
@@ -109,5 +119,11 @@ const lost=expansion.loseShip(state,"Test loss",second.id);
 assert.equal(lost.shipLost,true);
 assert.equal(second.status,"lost");
 assert.equal(state.company.gameOver,false);
+
+// Explicit legacy starter identifiers must normalize onto the canonical Universe class without creating duplicate save truth.
+const legacyState=JSON.parse(JSON.stringify(state));legacyState.company.expansion.version=3;legacyState.company.expansion.ships=[{...legacyState.company.expansion.ships[0],id:STARTER_SHIP_ID,shipClassId:"ship-class-koplin-colony-ship",name:"Colony Ship"}];legacyState.company.expansion.activeShipId=STARTER_SHIP_ID;
+const migratedStarter=expansion.ensure(legacyState).ships[0];
+assert.equal(migratedStarter.shipClassId,STARTER_SHIP_CLASS_ID);
+assert.equal(migratedStarter.name,"Pioneer Colony Transport");
 
 console.log("MineIT fleet foundation test passed");
