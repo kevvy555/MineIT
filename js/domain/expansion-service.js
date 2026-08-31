@@ -24,7 +24,7 @@ export const SHIP_SPEED_LY_PER_YEAR=5;
 export const SHIP_FUEL_PER_LY=260;
 export const PROBE_DAYS_PER_LY=32;
 
-export const STARTER_SHIP_CLASS_ID="ship-class-koplin-colony-ship";
+export const STARTER_SHIP_CLASS_ID="ship-class-asterion-pioneer-colony-transport";
 export const STARTER_SHIP_ID="player-ship-1";
 
 const clone=value=>JSON.parse(JSON.stringify(value));
@@ -79,8 +79,8 @@ export class ExpansionService{
   starterShipSpec(){
     return{
       shipClassId:STARTER_SHIP_CLASS_ID,
-      name:"Colony Ship",
-      source:"starter",
+      name:"Pioneer Colony Transport",
+      source:"charter-issued",
       cargoCapacity:PLAYER_SHIP_CARGO_CAPACITY,
       foodCapacity:PLAYER_SHIP_FOOD_CAPACITY,
       fuelCapacity:PLAYER_SHIP_FUEL_CAPACITY,
@@ -94,11 +94,11 @@ export class ExpansionService{
   }
 
   normalizeShip(ship,state,index=0){
-    const starter=this.starterShipSpec(),current=ship||this.initialShip(state,index);
+    const starter=this.starterShipSpec(),current=ship||this.initialShip(state,index),legacyStarter=current.shipClassId==="ship-class-koplin-colony-ship";
     current.id=current.id||`player-ship-${index+1}`;
-    current.shipClassId=current.shipClassId||starter.shipClassId;
-    current.name=current.name||starter.name;
-    current.source=current.source||"starter";
+    current.shipClassId=!current.shipClassId||legacyStarter?starter.shipClassId:current.shipClassId;
+    if(!current.name||(legacyStarter&&current.name==="Colony Ship"))current.name=starter.name;
+    current.source=current.source||starter.source;
     current.cargo||={};current.fuelLots||={};current.foodLots||={};
     current.crew=Math.max(0,Math.floor(Number(current.crew)||0));
     current.passengers=Math.max(0,Math.floor(Number(current.passengers)||0));
@@ -355,9 +355,7 @@ export class ExpansionService{
 
     for(const ship of ex.ships){
       if(ship.status==="orbiting"){
-        if(this.tryAutoDock(state,ship)){shipArrivals.push({shipId:ship.id,type:"docked",systemId:ship.systemId,colonyId:ship.colonyId});continue;}
-        const people=this.shipPeople(ship);
-        if(people>0){const food=this.consumeTransitFood(state,people*CONFIG.FOOD_PER_COLONIST,ship.id);if(food.ratio<.999){const lost=this.loseShip(state,"Food stores exhausted while holding in orbit.",ship.id);shipLosses.push({shipId:ship.id,...lost});}}
+        if(this.tryAutoDock(state,ship))shipArrivals.push({shipId:ship.id,type:"docked",systemId:ship.systemId,colonyId:ship.colonyId});
         continue;
       }
       if(ship.status!=="travelling")continue;
