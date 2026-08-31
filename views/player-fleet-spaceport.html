@@ -1,0 +1,12 @@
+<article class="card player-fleet-spaceport" data-player-fleet-card>
+  <div class="player-fleet-spaceport-head"><div><h3>PLAYER FLEET</h3><p>Select a vessel to make it the active ship for navigation, loading and launch preparation.</p></div><button data-open-fleet-procurement>FLEET PROCUREMENT</button></div>
+  <div data-player-fleet-list></div>
+  <div class="effect" data-player-fleet-empty>No player vessels are docked here or assigned to this colony's orbital holding.</div>
+  <template data-player-fleet-row-template>
+    <button class="player-fleet-row" data-player-fleet-ship>
+      <span><strong data-fleet-name></strong><small data-fleet-class></small></span>
+      <span class="player-fleet-status" data-fleet-status></span>
+      <span class="player-fleet-metrics" data-fleet-metrics></span>
+    </button>
+  </template>
+</article>
