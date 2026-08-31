@@ -54,14 +54,14 @@ function normalizeBuyerRoot(state){
   buyers.version=Math.max(0,Math.floor(Number(buyers.version)||0));buyers.seed=Math.max(0,Number(buyers.seed)||0);buyers.offers=Array.isArray(buyers.offers)?buyers.offers:[];buyers.relationships=buyers.relationships&&typeof buyers.relationships==="object"?buyers.relationships:{};buyers.contracts=buyers.contracts&&typeof buyers.contracts==="object"?buyers.contracts:{};buyers.nextContractSequence=Math.max(1,Math.floor(Number(buyers.nextContractSequence)||1));return state;
 }
 
-/** Runtime state factory: base schema/migrations plus persisted interstellar expansion, deployed capability, scan-history and Stage 8 buyer state. */
+/** Runtime state factory: base schema/migrations plus persisted interstellar expansion, deployed capability, scan-history and Stage 8 buyer/fleet state. */
 export function createGameState(contract){
   const state=Base.createGameState(contract);
   expansion.ensure(state);
   normalizeTechnologyAcrossPortfolio(state);
   normalizeSurveyHistoryAcrossPortfolio(state);
   normalizeBuyerRoot(state);
-  state.version=12;
+  state.version=13;
   return state;
 }
 
@@ -71,6 +71,6 @@ export function normalizeState(state){
   normalizeTechnologyAcrossPortfolio(normalized);
   normalizeSurveyHistoryAcrossPortfolio(normalized);
   normalizeBuyerRoot(normalized);
-  normalized.version=12;
+  normalized.version=13;
   return normalized;
 }
