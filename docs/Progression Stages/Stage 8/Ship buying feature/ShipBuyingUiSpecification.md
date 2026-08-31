@@ -1,535 +1,421 @@
 # Stage 8 — Ship Buying UI Specification
 
-Status: **Working UI specification**  
+Status: **Approved mock direction — production implementation not started**  
+Date: **2026-08-31**  
 Companion feature spec: `ShipBuyingFeatureSpec.md`  
+Operational fleet spec: `ShipOperationalUseSpecification.md`  
 Shared corporate language: `ConglomerateProcurementUiLanguage.md`  
-Proof mock: `ShipBuyingMock.html`
+Approved proof mock: `ShipBuyingMock.html` (V14 layout)
 
 ## 1. UI Goal
 
-Ship acquisition is a major progression feature and must feel like access to a powerful interstellar corporate procurement network, not an inventory table.
+Ship acquisition is a major progression feature and must feel like access to Koplin Deep Reach's powerful internal procurement network, not a generic store or spreadsheet.
 
-The player is not browsing a generic public shop. While operating under the charter, they are entering **Koplin Deep Reach Corporation's internal commercial network** and using Deep Reach's established shipbuilder relationships and fleet procurement agreements.
+The player is buying a major capital asset through Deep Reach's manufacturer relationships and framework discount. The interface therefore combines:
 
-The UI must communicate four things immediately:
+- strong ship imagery;
+- manufacturer identity;
+- dense but readable technical data;
+- visible corporate discount;
+- long factory lead times;
+- formal contract execution;
+- an order/production queue.
 
-1. **Deep Reach is the channel.**
-2. **The five shipbuilders are real separate manufacturers with distinct identities.**
-3. **The charter gives the player's operation exceptional purchasing terms.**
-4. **Ships are major capital assets with long production lead times, not instant consumables.**
-
-The screen should feel desirable even when the player cannot afford a ship.
-
----
-
-## 2. Relationship to Existing Conglomerate UI
-
-The current Conglomerate Buyers Service already establishes useful ideas:
-
-- full-screen mobile terminal presentation;
-- network/status strip;
-- compact information density;
-- corporate/terminal labels;
-- profile overlay for deeper detail;
-- explicit broker wording.
-
-The ship market should retain those strengths but push the visual language further toward the canonical Deep Reach identity from `MineIT-Universe`:
-
-- palette: **black, amber, steel**;
-- style: **practical corporate mining and logistics design**;
-- tone: powerful industrial network, not consumer retail;
-- secondary data/network accents may use restrained cyan/blue where useful.
-
-The eventual goal is to bring the Corporate Ship UI, resource buying, buyer service and fleet procurement onto the same shared shell.
+The approved direction is **image-led, mobile-first and single-screen for the main market view**.
 
 ---
 
-## 3. Screen Name and Fiction
+## 2. Corporate Fiction and Terminology
 
 Primary title:
 
 **DEEP REACH FLEET PROCUREMENT**
 
-System line examples:
+Preferred language:
 
-```text
-KDR CORPORATE NETWORK // FLEET ACQUISITION NODE
-CHARTER PROCUREMENT ACCESS // ACTIVE
-```
-
-Useful terminology:
-
+- Approved Supplier / Approved Shipbuilder
+- Shipyard / Manufacturer
 - Fleet Procurement
-- Approved Shipbuilders
-- Manufacturer Catalogue
-- Charter Fleet Rate
-- Corporate Framework Discount
-- Factory Lead Time
-- Delivery Assignment
+- Framework Rate
+- Negotiated Procurement
+- Factory Lead
+- Delivery Colony
 - Capital Order
-- Production Queue
+- Purchase Contract
+- Production & Delivery Queue
 - Fleet Asset
 
-Avoid generic retail wording such as:
+Avoid consumer-retail language such as cart, checkout, bargain or sale.
 
-- shop;
-- cart;
-- checkout;
-- sale;
-- bargain.
+The screen must make clear:
 
-`BUY` may appear on compact buttons where clarity matters, but primary formal actions should prefer **PLACE ORDER**, **REVIEW PROCUREMENT**, or **AUTHORISE CAPITAL ORDER**.
-
----
-
-## 4. Mobile-First Information Architecture
-
-The main screen uses a full-height mobile shell with three persistent areas:
-
-### Header
-
-Shows:
-
-- Deep Reach procurement identity;
-- current `cc` balance;
-- charter discount status;
-- close/back action.
-
-### Main content
-
-Changes between:
-
-- Market;
-- Compare;
-- Orders.
-
-### Bottom navigation / action area
-
-A compact three-way navigation is preferred:
-
-**MARKET | COMPARE | ORDERS**
-
-When a ship detail panel is open, the bottom area can become the context-specific procurement action while retaining an obvious close/back path.
+- Deep Reach is the procurement channel;
+- the manufacturer remains the canonical builder;
+- the player company owns the purchased ship;
+- the Deep Reach framework gives the player a substantial discount while under charter.
 
 ---
 
-## 5. Market View
+## 3. Approved Main-Screen Layout
 
-### 5.1 Corporate status strip
+The main Fleet Procurement screen should target **one phone screen with no vertical scrolling** at the reference mobile viewport wherever practical.
 
-Directly under the header:
+The approved hierarchy is:
 
-```text
-NETWORK ONLINE • CHARTER FLEET RATE ACTIVE • 35% FRAMEWORK DISCOUNT
-```
+1. Deep Reach header + `cc` operating cash.
+2. Network / charter status strip.
+3. Horizontally scrolling manufacturer selector.
+4. Ship selector header with custom Role control.
+5. Horizontally scrolling ship selector strip.
+6. One selected-ship dossier/purchase panel.
 
-This communicates the charter benefit before the player sees a price.
+Do not add a redundant second "selected shipyard" row: the selected manufacturer card and ship-selector heading already communicate the active shipyard.
 
-### 5.2 Manufacturer gallery
+---
 
-Manufacturers are the first major browsing decision and should be represented by horizontally scrollable or compact selectable cards, not a dropdown.
+## 4. Manufacturer Selector
 
-Each manufacturer card shows:
+Manufacturers are horizontally scrollable cards across the top of the market.
+
+Each shows:
 
 - manufacturer name;
 - speciality;
-- short corporate positioning line;
 - model count;
-- manufacturer visual identity accent.
+- manufacturer accent.
 
-Canonical identities:
+Canonical manufacturer identities:
 
-#### Asterion Shipworks
+- Asterion Shipworks — versatile specialist/frontier vessels;
+- Kestrel Aerospace Systems — speed and rapid turnaround;
+- Keystone Modular Fabrication — modular cargo/logistics;
+- Longreach Engineering — range, efficiency and reliability;
+- Crownline Heavy Works — extreme bulk freight.
 
-**Versatile specialist / frontier**  
-Charcoal, copper and white. Practical modular specialist craft.
-
-#### Kestrel Aerospace Systems
-
-**Speed / rapid turnaround**  
-Deep navy, silver and electric cyan. Engine-forward high-performance forms.
-
-#### Keystone Modular Fabrication
-
-**Modular cargo / logistics**  
-Steel grey, white and signal orange. Visible modular blocks and standard interfaces.
-
-#### Longreach Engineering
-
-**Range / efficiency / reliability**  
-Dark green, cream and gunmetal. Long protected frontier forms.
-
-#### Crownline Heavy Works
-
-**Extreme bulk capacity**  
-Black alloy, industrial yellow and oxide red. Massive exposed industrial structures.
-
-Selection should visibly recolour/accent the manufacturer card and update the model gallery.
-
-An **ALL BUILDERS** selection remains useful.
+Selecting a manufacturer updates the ship selector strip immediately.
 
 ---
 
-## 6. Filters
+## 5. Ship Selector Strip
 
-Filters should be useful but secondary to visual browsing.
+Immediately below the manufacturer selector, show a compact horizontal strip of model cards.
 
-Initial compact filters:
+The strip must feel useful with a large manufacturer catalogue, not like a decorative carousel.
 
-- Role
-- Size / capacity class
-- Max charter price
-- Cargo minimum
-- Vector Exchange: Any / Interstellar / In-system
-- Sort
+Each selector card contains only what fits cleanly:
 
-Useful sort options:
-
-- Charter price low/high
-- Cargo high
-- Speed high
-- Efficiency high
-- Reliability high
-- Lead time short
-
-Avoid starting with a dense spreadsheet-like filter bar.
-
----
-
-## 7. Model Gallery
-
-Ship models appear as strong visual cards.
-
-Each card should contain:
-
-- large ship image / canonical image fallback;
-- manufacturer line;
+- image/thumbnail;
 - model name;
-- role;
-- compact key statistics;
+- role/size;
+- charter price.
+
+Tapping a model replaces the selected-ship dossier below without opening another page/modal.
+
+The selected card receives the manufacturer accent treatment.
+
+### Role filter
+
+The Role control lives in the ship-selector header.
+
+It must use a **custom MineIT/Deep Reach popup**, not the generic browser `<select>` visual.
+
+Initial role options:
+
+- All roles
+- Courier
+- Freighter
+- Survey
+- Passenger
+- Heavy Freight
+- Utility
+
+---
+
+## 6. Selected Ship Panel
+
+The selected ship remains the single primary dossier/purchase surface.
+
+### Above-image header
+
+Show compactly:
+
+- manufacturer;
+- vessel model;
+- short role/positioning description;
+- model count/index;
+- technical chips such as manufacturer, size, role, factory-new state.
+
+The **+ Compare** action sits on the **right immediately above the hero image**, sharing existing vertical space rather than creating another full-width action row.
+
+### Hero image
+
+The ship artwork is the dominant visual element.
+
+Canonical class artwork should be used when generated. The proof mock may use a local reference image; the repository mock intentionally does not need to persist that review image as a separate asset.
+
+### Technical summary
+
+Use a compact grid for the minimum useful values:
+
+- cargo;
+- fuel tank;
+- food;
+- crew;
+- passengers;
+- transit weeks/LY;
+- fuel/LY;
+- lead time where useful in technical context.
+
+Keep padding tight: this section must not consume enough space to force the main screen to scroll unnecessarily.
+
+---
+
+## 7. Negotiated Procurement
+
+The approved layout places the key commercial data on **one compact line**:
+
+```text
+LIST | RATE | PRICE | LEAD | STATUS
+```
+
+Values:
+
 - manufacturer list price;
-- Deep Reach charter price;
+- Deep Reach framework discount (`-35%` initial balance value);
+- final player price;
 - factory lead time;
-- affordability state;
-- compare toggle;
-- details action.
+- affordability/procurement status.
 
-### 7.1 Price treatment
+The visual priority is:
 
-The discount should be visually unmistakable.
+1. final player price;
+2. corporate discount;
+3. list price;
+4. lead time/status.
+
+A short trait line may sit below this compact commercial row.
+
+---
+
+## 8. Delivery Colony Picker
+
+The delivery-colony control must be a **custom popup**, not a generic browser select.
+
+The main panel shows the currently chosen colony and free-berth summary.
+
+Opening the picker displays each owned operational colony with at minimum:
+
+- colony name;
+- free Spaceport berths;
+- short location/status note where useful.
 
 Example:
 
 ```text
-LIST            cc 12.5m
-DEEP REACH      -35%
-YOUR RATE        cc 8.1m
+Haven Ridge
+2 free berths
+Frontier surface docking available
 ```
 
-The list price should not be visually dominant over the final rate, but it must remain readable.
+Berth type/size does not block selection in this release.
 
-### 7.2 Lead time treatment
-
-Lead time should be treated as a major purchasing statistic alongside price.
-
-Examples:
-
-```text
-FACTORY LEAD TIME  7 MONTHS
-FACTORY LEAD TIME  1.8 YEARS
-FACTORY LEAD TIME  4.2 YEARS
-```
-
-The longest ships should feel materially different from small craft.
-
-### 7.3 Affordability
-
-All ships remain visible.
-
-Affordable:
-
-```text
-ORDER AVAILABLE
-```
-
-Unaffordable:
-
-```text
-INSUFFICIENT FUNDS
-Need cc 2.4m more
-```
-
-Do not blur/hide the specs of unaffordable ships.
+The selected colony must remain visibly confirmed before contract review.
 
 ---
 
-## 8. Ship Detail View
+## 9. Main Bottom Actions
 
-Opening a ship should feel closer to reviewing an asset dossier than opening a product row.
+The bottom action row is fixed conceptually to:
 
-### Hero area
+**COMPARE | REVIEW PURCHASE CONTRACT | ORDERS**
 
-- large canonical class artwork;
+Width proportions:
+
+```text
+25% | 50% | 25%
+```
+
+- Compare opens the dedicated comparison screen.
+- Review Purchase Contract opens the formal contract sheet.
+- Orders opens the production/delivery queue.
+
+The separate `+ Compare` button above the image only adds/removes the currently selected vessel from the comparison set.
+
+---
+
+## 10. Comparison Screen
+
+Comparison is a **dedicated full-page view below the common Deep Reach header**.
+
+It is a real side-by-side comparison, not vertically stacked cards.
+
+Mobile behaviour:
+
+- two ship columns should be comfortably readable at once where possible;
+- additional selected ships can extend horizontally;
+- the metric label column stays readable;
+- horizontal scrolling is acceptable inside the comparison table;
+- the comparison page itself remains a full-screen functional view.
+
+Useful rows:
+
+- supplier;
+- role/size;
+- charter price;
+- lead time;
+- cargo;
+- fuel;
+- food;
+- crew;
+- passengers;
+- transit;
+- fuel use;
+- traits/notes.
+
+Support a small comparison set initially (2–3 ideal; implementation may allow a few more if the horizontal table remains usable).
+
+---
+
+## 11. Purchase Contract
+
+The final purchase confirmation is intentionally immersive.
+
+It should look like a **single-page white commercial/legal document**, not another dark game panel.
+
+Requirements:
+
+- white background throughout;
+- no black data boxes;
+- one-page presentation is essential;
+- text-led purchase detail;
+- no unnecessary ship technical specification table;
+- formal but concise wording;
+- cancellation terms;
+- actual signature pad;
+- Sign & Place Order action.
+
+The document should include:
+
+- purchaser;
+- supplier/manufacturer;
+- selected vessel;
+- delivery colony;
+- manufacturer list price;
+- Deep Reach discount;
+- final contract value;
+- estimated factory lead time;
+- ownership on delivery;
+- payment source;
+- concise purchase statement;
+- key cancellation/production terms.
+
+### Signature
+
+The player must physically draw/sign in the signature area before the mock allows order execution.
+
+For the first production implementation the signature **does not need to be persisted**.
+
+The architecture should leave room for future persistence/audit history without making it a requirement now.
+
+---
+
+## 12. Orders Screen
+
+The Orders screen is a **dedicated full-page functional view below the common header**.
+
+It does not need the visual theatre of the market screen; clarity matters more.
+
+Each order shows:
+
+- order/reference ID;
+- vessel model;
 - manufacturer;
-- ship line;
-- class/model;
-- role;
-- specialisation/traits.
+- delivery colony;
+- contract value;
+- factory lead / estimated arrival;
+- current state;
+- time/progress indicator.
 
-### Performance summary
-
-Prominent tiles:
-
-- Cargo
-- Fuel
-- Food
-- Crew min/max
-- Passenger capacity
-- Transit weeks / LY
-- Fuel / LY
-- Speed rating
-- Efficiency rating
-- Reliability rating
-
-Secondary/reference fields:
-
-- atmospheric capability;
-- berth class;
-- range class;
-- Vector Exchange capability.
-
-Berth and atmospheric restrictions are informational only in this release.
-
-### Procurement summary
-
-The lower fixed section displays:
-
-```text
-Manufacturer list price
-Deep Reach framework discount
-Your charter price
-Factory lead time
-Delivery colony
-```
-
-The player must select/confirm a delivery colony before the order action becomes available.
-
-### Ownership wording
-
-Use:
-
-```text
-ASSET OWNERSHIP
-Your Operating Company
-
-PROCUREMENT CHANNEL
-Koplin Deep Reach Corporation
-```
-
-This makes it clear the corporation brokers the transaction but does not own the purchased asset.
-
----
-
-## 9. Comparison Experience
-
-Comparison is a first-class interaction because ships trade price, capacity, speed, efficiency, reliability and lead time against each other.
-
-Support **up to three ships**.
-
-The compare tray should remain visible when one or more ships are selected.
-
-Comparison view should visually highlight winners for useful fields:
-
-- lowest charter price;
-- shortest lead time;
-- highest cargo;
-- largest fuel tank;
-- largest passenger capacity;
-- fastest transit;
-- best efficiency;
-- best reliability.
-
-Do not reduce comparison to a large 30-column table. Use 2–3 vertical ship columns/cards and a concise shared metric stack.
-
----
-
-## 10. Delivery Colony Selection
-
-Every order must name its destination colony.
-
-The detail/order panel contains a highly visible selector:
-
-```text
-DELIVERY ASSIGNMENT
-Koplin Frontier I — Colony 01
-```
-
-The active colony may be preselected but must never be silently assumed.
-
-If multiple colonies exist, the selector displays:
-
-- colony name;
-- system name;
-- current Spaceport free/used berth summary where helpful.
-
-For this release, berth type does not block selection.
-
----
-
-## 11. Order Confirmation
-
-The final order review should feel consequential.
-
-Show:
-
-- model;
-- manufacturer;
-- selected colony;
-- list price;
-- Deep Reach discount amount and percentage;
-- final paid price;
-- current company balance;
-- balance after purchase;
-- factory lead time;
-- estimated arrival date;
-- ownership statement.
-
-Primary action:
-
-**AUTHORISE CAPITAL ORDER**
-
-The mock may use **PLACE ORDER** for compactness, but production UI should use the more immersive action where space allows.
-
-Successful result:
-
-```text
-CAPITAL ORDER ACCEPTED
-Manufacturer allocation confirmed through Deep Reach Fleet Procurement.
-Estimated arrival: Y8 D114
-```
-
----
-
-## 12. Orders View
-
-The market needs an integrated production/delivery queue because lead times can range from months to years.
-
-Each active order card shows:
-
-- ship model;
-- generated vessel name if assigned yet;
-- manufacturer;
-- destination colony;
-- paid charter price;
-- order date;
-- estimated arrival;
-- time remaining;
-- state.
-
-Initial states:
+Initial states may include:
 
 - ORDER ACCEPTED
 - FACTORY QUEUE
 - IN PRODUCTION
 - DELIVERY TRANSIT
-- ARRIVED
+- ARRIVED / COMMISSIONED
 
-A visual horizontal progress rail is useful but should not imply false manufacturing precision. It can represent time progress between order and expected arrival.
-
----
-
-## 13. Shared Conglomerate Shell
-
-The ship screen should prove reusable components for later corporate interfaces:
-
-- Corporate network header
-- Network status strip
-- Account / relationship benefit badge
-- Section label / command-path typography
-- Profile/detail overlay
-- Transaction summary
-- Corporate broker/benefit note
-- Confirmation panel
-- Status chips
-- Full-screen mobile layout
-
-These should eventually be extracted into shared production CSS/view patterns rather than copied between Buyer, Corporate Ship and Procurement screens.
-
-The proof mock may remain self-contained; production implementation must obey normal view ownership and canonical CSS rules.
+The progress rail represents elapsed order time and must not imply unavailable real-time manufacturer telemetry.
 
 ---
 
-## 14. Visual Style
+## 13. Shared Conglomerate UI Direction
 
-### Primary Deep Reach colours
+This procurement UI should push the existing buyer/corporate visual language into a reusable Deep Reach corporate system.
 
-- near-black / graphite background;
-- steel-grey structures;
-- amber/gold operational accent;
-- muted copper for pricing/procurement emphasis;
-- restrained cool cyan for data/network status where useful;
-- green only for positive/online/affordable confirmation;
-- red only for genuine risk/error.
+Reusable concepts:
 
-### Surface treatment
-
-- industrial panel borders;
-- subtle grid/scan texture;
+- Deep Reach corporate header;
+- network status strip;
+- black/graphite/steel base;
+- amber/copper procurement accents;
+- restrained cyan data accent;
+- green only for success/available;
 - compact technical labels;
-- large clean ship artwork;
-- minimal glow;
-- strong contrast;
-- no excessive neon arcade styling.
+- custom popup selectors rather than browser-default controls;
+- full-page functional subviews;
+- strong difference between immersive transaction surfaces and operational list screens.
 
-### Typography
-
-Use the existing compact monospace/technical language for small labels, while ship names and major headings can use a stronger normal UI font for readability.
-
-The experience should feel like a sophisticated corporate logistics terminal, not a retro DOS simulation.
+Future Conglomerate resource procurement and Corporate Ship surfaces should converge toward this language rather than each inventing a new shell.
 
 ---
 
-## 15. Interaction Requirements
+## 14. Interaction Requirements
 
-The proof mock should demonstrate:
+The approved proof mock demonstrates or establishes the required interaction direction for:
 
 1. changing manufacturer;
-2. model browsing;
-3. simple filtering/sorting;
-4. selecting up to three ships for comparison;
-5. opening a ship dossier;
-6. displaying list price vs 35% charter price;
-7. displaying different lead times;
-8. selecting a delivery colony;
-9. placing a mock order;
-10. seeing that order in the Orders view.
+2. horizontal model browsing;
+3. custom role filtering;
+4. selected-ship dossier on the same market screen;
+5. add/remove comparison selection;
+6. full-page side-by-side comparison;
+7. one-line negotiated procurement summary;
+8. custom delivery-colony picker with free berth information;
+9. white single-page purchase contract;
+10. drawable signature requirement;
+11. placing a mock order;
+12. full-page order queue.
 
-The mock does not need save persistence or production services.
-
----
-
-## 16. Accessibility and Mobile Rules
-
-- usable from approximately 360px phone width upward;
-- primary buttons at least normal touch-target size;
-- no hover-only essential interaction;
-- horizontal manufacturer/model scrolling must remain touch friendly;
-- text remains readable without relying purely on colour;
-- selected comparison state has text/icon indication as well as colour;
-- detail/order surface must have obvious close/back action;
-- long ship names must wrap rather than overflow.
+The proof mock does not need save persistence or production services.
 
 ---
 
-## 17. Production Separation of Concerns
+## 15. Production Separation of Concerns
 
-The eventual production UI:
+The production UI:
 
-- loads static/repeated markup from view templates;
-- renders read-only market/catalogue data;
-- holds only transient UI state such as selected filters and comparison IDs;
-- dispatches purchase intent to `ShipMarketService`;
-- never owns cash, discount rules, order truth or ship-instance creation;
-- rejects stale async view writes when the user changes/ closes context.
+- loads repeated/static markup from view templates where appropriate;
+- renders read-only Universe catalogue data;
+- owns only transient filter/selection/comparison UI state;
+- dispatches quote/order intent to `ShipMarketService`;
+- uses `ExpansionService`/fleet domain for operational ship state after delivery;
+- never mutates cash, order truth, ship capacity or fleet state directly;
+- uses bounded listener ownership/cleanup;
+- rejects stale async writes when manufacturer/model context changes.
 
-The proof HTML is deliberately self-contained and is **not** a production architecture template.
+The proof HTML remains self-contained and is **not** a production architecture template.
+
+---
+
+## 16. Mobile Acceptance Targets
+
+- approximately 360px phone width and upward;
+- main Market page should target one-screen/no-vertical-scroll at the reference phone viewport;
+- horizontal manufacturer and ship strips remain touch-friendly;
+- custom popups are finger-friendly and readable;
+- no browser-default select styling for key immersive controls;
+- long names wrap/truncate safely without page-width overflow;
+- no selector/hero overlap;
+- bottom action row remains 25/50/25;
+- contract remains a single white page;
+- compare and order views use the full available screen below the shared header.
