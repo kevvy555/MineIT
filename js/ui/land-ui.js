@@ -29,7 +29,7 @@ export class LandUIMixin{
     this.setLandText(body,"[data-land-selection-copy]",abandon?"The colony keeps its people, corporate technology and 25% of stored material. Buildings, mines, surveys and the rest of the local stock are left behind. The contract clock does not reset.":"Only the land is known before settlement. Resources remain hidden until each tile is surveyed.");
     this.populateLandingCandidates(body,land);
     const close=this.modal.querySelector("[data-close]");if(close&&!abandon)close.style.display="none";
-    const cancel=body.querySelector("[data-land-cancel]");if(cancel){cancel.hidden=!abandon;cancel.onclick=()=>{this.state.speed=this.landReturnSpeed??1;this.syncSpeed();this.modal.classList.add("hidden");};
+    const cancel=body.querySelector("[data-land-cancel]");if(cancel){cancel.hidden=!abandon;cancel.onclick=()=>{this.state.speed=this.landReturnSpeed??1;this.syncSpeed();this.modal.classList.add("hidden");};}
     body.querySelectorAll("[data-land-choice]").forEach(button=>button.onclick=()=>this.onSelectLand?.(+button.dataset.landChoice,{abandon}));
     return true;
   }
