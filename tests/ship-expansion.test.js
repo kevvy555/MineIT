@@ -169,9 +169,10 @@ const prepUi=readFileSync(new URL("../js/ui/ship-preparation-ui.js",import.meta.
   failure=readFileSync(new URL("../views/corporation-contract-failed.html",import.meta.url),"utf8"),
   index=readFileSync(new URL("../index.html",import.meta.url),"utf8"),
   portfolioSource=readFileSync(new URL("../js/domain/portfolio-service.js",import.meta.url),"utf8");
-for(const marker of["PLAYER_SHIP_CARGO_CAPACITY","PLAYER_SHIP_FOOD_CAPACITY","PLAYER_SHIP_FUEL_CAPACITY","loadFood","unloadFood","transitFoodAmount"])assert.ok(prepUi.includes(marker),`missing ship preparation behavior ${marker}`);
+for(const marker of["cargoCapacity","foodCapacity","fuelCapacity","passengerCapacity","minimumCrew","loadCrew","loadPassengers","loadFood","unloadFood","transitFoodAmount"])assert.ok(prepUi.includes(marker),`missing fleet-aware ship preparation behavior ${marker}`);
+for(const obsolete of["PLAYER_SHIP_CARGO_CAPACITY","PLAYER_SHIP_FOOD_CAPACITY","PLAYER_SHIP_FUEL_CAPACITY","PLAYER_SHIP_PASSENGERS"])assert.ok(!prepUi.includes(obsolete),`ship preparation must not use starter-only capacity constant ${obsolete}`);
 for(const marker of["TRANSIT FOOD STORE","GENERAL HOLD","data-ship-food-rows","data-ship-unload-quantity"])assert.ok(prepView.includes(marker),`missing ship preparation view ${marker}`);
-for(const marker of["−10","−50","UNLOAD ALL"])assert.ok(paxView.includes(marker));
+for(const marker of["CREW −1","UNLOAD CREW","−10","−50","UNLOAD ALL"])assert.ok(paxView.includes(marker));
 for(const marker of["SHIP_HIT_ID","shipPosition","REROUTE TO","routeStartX","data-production-toggle"])assert.ok(navUi.includes(marker),`missing live ship navigation marker ${marker}`);
 for(const marker of['["housing","HOUSING"]','["industry","INDUSTRY"]','["power","POWER"]'])assert.ok(mapControls.includes(marker));
 assert.match(worldRuntime,/if\(mode==="power"\)return tile\?\.development\?\.kind==="power"/);
