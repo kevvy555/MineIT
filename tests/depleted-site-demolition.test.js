@@ -27,8 +27,8 @@ state.tiles["1,1"]=finite;
 const exhausted=collection.collectDay(state,finite);
 assert.equal(exhausted.exhausted,true,"finite extraction should report exhaustion");
 assert.equal(finite.depleted,true,"finite deposit should become depleted");
-assert.equal(finite.developed,true,"depletion must leave the physical extraction facility in place");
-assert.equal(finite.development?.kind,"extract","depleted extraction facility must remain demolishable");
+assert.equal(finite.developed,false,"depletion must stop the extraction site operating immediately");
+assert.equal(finite.development?.kind,"extract","depleted physical extraction facility must remain demolishable");
 
 const originalTerrain=finite.terrain,originalResourceId=finite.resourceId,demolished=development.demolish(state,finite);
 assert.equal(demolished.ok,true);
@@ -61,15 +61,16 @@ assert.equal(active.development,null);
 
 const legacy={x:3,y:1,terrain:"mountain",revealed:true,developed:false,level:3,depleted:true,type:"ore",resourceId:"copper",name:"Copper Ore",quality:400,depositScale:"Modest",reserve:0,initialReserve:1000,development:null};
 land.syncExtraction(legacy);
-assert.equal(legacy.developed,true,"legacy depleted saves must restore the still-present extraction facility");
-assert.equal(legacy.development?.kind,"extract");
+assert.equal(legacy.developed,false,"legacy depleted saves must stay operationally stopped");
+assert.equal(legacy.development?.kind,"extract","legacy depleted saves must restore the physical extraction facility for demolition");
 assert.equal(legacy.development?.level,3);
 
 const renewable={x:4,y:1,terrain:"plain",revealed:true,developed:true,level:1,depleted:false,type:"food",resourceId:"flora",name:"Edible Flora",sustainability:"renewable",abundanceLabel:"Limited",renewableOriginalRank:0,renewableHealth:0,harvestIntensity:2,development:{kind:"extract",family:"farm",level:1,investedBuild:50}};
 const wiped=resources.updateRenewable(renewable);
 assert.equal(wiped?.kind,"wiped");
 assert.equal(renewable.depleted,true);
-assert.equal(renewable.developed,true,"wiped renewable resources must also leave their facility for player demolition");
+assert.equal(renewable.developed,false,"wiped renewable resource must stop operating immediately");
+assert.equal(renewable.development?.kind,"extract","wiped renewable facility must remain available for demolition");
 
 const resourceDevelopmentUI=fs.readFileSync(new URL("../js/ui/resource-development-ui.js",import.meta.url),"utf8"),landUI=fs.readFileSync(new URL("../js/ui/land-ui.js",import.meta.url),"utf8");
 assert.match(resourceDevelopmentUI,/DEMOLISH DEPLETED SITE/,"depleted resource details must expose demolition");
