@@ -1,288 +1,162 @@
 # Stage 8 — Ship Buying Feature
 
-Status: **Draft specification / architecture analysis — no production implementation yet**  
+Status: **Working specification — architecture and gameplay decisions approved; production implementation not started**  
 Date: **2026-08-31**  
 Game repository: `kevvy555/MineIT`  
 Canonical universe repository: `kevvy555/MineIT-Universe`
 
 ## 1. Purpose
 
-Add a factory-new ship purchasing system to MineIT Mobile so the player can expand from the original colony ship into a real fleet before reaching the much later ship-construction capability.
+Add a factory-new ship procurement system to MineIT Mobile so the player can expand from the original colony ship into a real fleet before reaching the much later ship-construction capability.
 
-The first player journey is:
+The player journey is:
 
-**Ship Market → Manufacturer → Models → Ship Details / Comparison → Buy → Player Fleet**
+**Conglomerate Procurement → Fleet Acquisition → Manufacturer → Models → Ship Detail / Comparison → Select Delivery Colony → Place Order → Production / Delivery Queue → Fleet**
 
-This feature consumes the canonical Year-5326 factory-new ship catalogue owned by `MineIT-Universe`. MineIT owns the player's cash, purchase transaction, ship instance, operational state, delivery/availability state and all per-save gameplay state.
+The market is visible from **day 1**. The player is not required to have direct relationships with the ship manufacturers because Koplin Deep Reach Corporation acts as the procurement channel while the player operates under the Deep Reach charter.
 
-The initial implementation is **manufacturer-direct factory-new ships only**.
+The first release covers **factory-new ships only**.
 
-Explicitly out of scope for the first implementation:
+Out of scope for this release:
 
 - used ships;
 - auctions;
 - damaged ships;
 - finance / loans;
 - trade-ins;
-- dynamic market pricing;
-- reputation discounts;
-- shortages;
+- dynamic market prices;
+- player-negotiated manufacturer discounts;
+- shortages and bidding wars;
 - insurance;
-- speculative ship-construction gameplay.
-
-For the initial feature:
-
-**player purchase price = canonical manufacturer list price.**
+- direct ship construction by the player;
+- berth-size enforcement;
+- orbital-only docking restrictions.
 
 ---
 
-## 2. Existing Stage 8 Design This Must Extend
+## 2. Ownership and Procurement Model
 
-`EngineeringShipAndSpaceport.md` already establishes the Spaceport as the shared physical arrival/departure point for:
+### 2.1 Player company owns purchased ships
 
-- the player's colony ship;
-- the ordinary Corporate Ship;
-- Engineering Ships;
-- future player cargo/freight ships;
-- future third-party ships.
+Purchased ships are assets of the player's operating company.
 
-It also establishes reusable **Orbital Holding** behaviour when a ship cannot currently obtain a compatible berth.
+Koplin Deep Reach does **not** retain legal ownership of a ship that the player has paid to acquire. This avoids a later independence transition in which the player could lose a fleet they funded.
 
-The document deliberately deferred berth size/capability rules until the wider freight/player-ship design existed. This ship-buying feature is now the feature that makes those deferred decisions relevant.
+While the player is under the Deep Reach charter, Koplin Deep Reach brokers the purchase using its large-scale corporate procurement agreements and established manufacturer relationships.
 
-The new implementation must therefore extend the existing Spaceport model rather than create a separate ship-market docking system.
+The resulting fiction is:
+
+**Manufacturer → Deep Reach corporate procurement framework → player operating company**
+
+The player receives full operational control and owns the resulting ship instance.
+
+### 2.2 Deep Reach procurement discount
+
+The canonical Universe catalogue owns the **manufacturer list price**.
+
+MineIT owns the player's actual transaction price.
+
+While the player is operating under the Deep Reach charter, the procurement UI must visibly show that Koplin Deep Reach receives a substantial negotiated fleet discount and passes that charter purchasing rate to the player's operation.
+
+Initial calculation:
+
+```text
+Manufacturer List Price = canonical Universe price
+Deep Reach Charter Discount = game-owned percentage
+Player Purchase Price = List Price - Charter Discount
+```
+
+A **35% charter fleet discount** is the initial design value for the mock/spec and should be treated as a balance constant rather than canonical Universe data.
+
+Example:
+
+```text
+Manufacturer list price      cc 10,000,000
+Deep Reach charter discount  -cc 3,500,000 (35%)
+Your charter price           cc 6,500,000
+```
+
+When the player later becomes independent and buys directly, the corporate procurement discount disappears unless a future direct relationship or reputation system earns another discount.
+
+This creates a meaningful but understandable charter benefit without modifying the permanent canonical list price.
+
+### 2.3 Future independence consequence
+
+Ships already purchased remain owned by the player's company after independence.
+
+Future independent purchases may use:
+
+- full manufacturer list price;
+- direct-manufacturer relationship discounts;
+- finance;
+- used markets;
+- brokerage;
+- other later commercial systems.
+
+Those systems are out of scope here but the initial design must not prevent them.
 
 ---
 
-## 3. Current MineIT Ship Architecture — Findings
+## 3. Existing Architecture This Feature Must Extend
 
-### 3.1 Canonical state owner
+### 3.1 Canonical player ship owner
 
-The current authoritative player-ship implementation is `js/domain/expansion-service.js`.
+The current authoritative player ship implementation is `js/domain/expansion-service.js`.
 
-`GameStore` remains the mutable root-state owner. `ExpansionService` owns the gameplay rules and mutation for the player ship.
+`GameStore` owns the mutable root state and `ExpansionService` owns the current player ship gameplay rules and mutation.
 
-Current persisted ownership is effectively:
+Current state is effectively:
 
 ```text
 state.company.expansion.ship
 ```
 
-There is currently **one** authoritative player ship, not a fleet collection.
+There is currently one authoritative player ship, not a fleet.
 
-### 3.2 Current ship state
+The new feature must **evolve this owner** rather than create a second ship system.
 
-The current ship instance owns mutable operational state including:
+### 3.2 Existing ship state already models
 
-- status;
-- current system / colony;
-- destination and transit route;
+- location;
 - cargo;
 - dedicated fuel stores;
 - dedicated food stores;
 - passengers;
-- launch/arrival state;
-- loss state.
+- destination;
+- interstellar transit;
+- star-map interaction;
+- launch rules;
+- arrival;
+- docking;
+- ship loss.
 
-This is the correct domain to evolve. A second independent purchased-ship state system must not be added.
+These behaviours remain canonical and must become ship-instance-aware.
 
-### 3.3 Current ship specifications are global constants
+### 3.3 Existing specifications are one-ship constants
 
-The original ship currently uses game constants for:
+The current original ship uses global constants for cargo, fuel, food, passengers, speed and fuel burn.
 
-- cargo capacity;
-- fuel capacity;
-- food capacity;
-- passenger capacity;
-- minimum passengers required to launch;
-- transit speed;
-- fuel consumption.
+Those calculations must resolve from the selected ship's canonical class instead.
 
-All current ship helper methods assume those constants describe the one player ship.
+### 3.4 Existing Spaceport model
 
-A purchased fleet requires these calculations to become **ship-instance/class aware**.
+`EngineeringShipAndSpaceport.md` already establishes the Spaceport as the common arrival/departure point for player, corporate, engineering and third-party vessels.
 
-### 3.4 Existing ship API assumes an implicit single ship
+For this release:
 
-Examples include concepts equivalent to:
+- every landed player ship consumes one berth slot;
+- **any player ship can use any free berth**, regardless of its canonical berth class;
+- canonical berth class remains visible/reference data;
+- canonical atmospheric/orbital capability remains visible/reference data;
+- berth-size compatibility and orbital-only handling are deliberately deferred.
 
-- `ship(state)`;
-- `loadCargo(state, ...)`;
-- `loadFuel(state, ...)`;
-- `loadFood(state, ...)`;
-- `loadPassengers(state, ...)`;
-- `setTarget(state, ...)`;
-- `launch(state)`;
-- `processDay(state)`.
-
-There is no `shipId` because there has never been more than one player ship.
-
-The fleet conversion should change authoritative mutations to identify the target ship explicitly rather than rely on global implicit selection.
-
-### 3.5 Existing loss behaviour assumes the ship is irreplaceable
-
-The current implementation makes loss of the player ship set company game-over state.
-
-That made sense while the company had exactly one irreplaceable colony ship. Once multiple player-owned ships exist, the intended game-over rule must be explicitly re-decided.
-
-### 3.6 Spaceport currently knows only one player ship
-
-`js/domain/spaceport-model.js` currently checks `state.company.expansion.ship` and creates one `player-ship` berth occupant.
-
-A fleet requires berth occupancy to enumerate all player ships currently docked at the active colony and eventually apply berth compatibility by class.
-
-### 3.7 Cash ownership
-
-Player money is currently `state.company.cash`.
-
-There is no independent Wallet/Cash service. Existing domain services validate a transaction and then mutate `state.company.cash` inside the owning domain operation.
-
-The ship purchase should follow the same domain rule: the UI must never deduct cash itself.
-
-### 3.8 Current economic scale
-
-Current game starting cash is `32,000`.
-
-The cheapest current factory-new retail ship in the Universe catalogue is the Asterion **Dart Courier** at **CC 3,600,000**. Large late-game catalogue ships reach hundreds of millions of CC.
-
-This is probably appropriate for a Stage 8 fleet-expansion feature, but the market needs an intentional unlock/visibility rule so it does not appear uselessly early.
+This means the existing Spaceport berth count matters, but berth **type** does not yet.
 
 ---
 
-## 4. MineIT-Universe Catalogue — Findings
+## 4. Fleet State Evolution
 
-### 4.1 Canonical ownership
-
-`MineIT-Universe` owns:
-
-- manufacturer identity;
-- model/class identity;
-- ship line;
-- physical/base specifications;
-- manufacturer list price;
-- persistent canonical identity;
-- canonical image metadata.
-
-MineIT owns:
-
-- player funds;
-- purchase/order state;
-- actual player-owned ship instances;
-- current operational state;
-- delivery/availability;
-- game-specific balance rules;
-- future quote modifiers.
-
-MineIT must not manually recreate the 30-model catalogue in `js/data` or another authored game-side dataset.
-
-### 4.2 Current Universe publication contract
-
-At analysis time, `MineIT-Universe/data/manifest.json` publishes:
-
-- `schemaVersion: 5`;
-- `contentVersion: 0.5.0`;
-- Year 5326 canonical content;
-- manifest collection mappings for organisations, facilities, ship lines, ship classes, currencies and other shared-universe data.
-
-The integration contract is stable IDs plus manifest-driven JSON.
-
-### 4.3 Important manifest-loader issue found
-
-The current manifest now supports collection entries that may be **arrays of JSON files**, not only one filename.
-
-For example, `organisations` is currently an array containing the core and commercial organisation files.
-
-The standalone `ship-catalogue-app.js` currently assumes every manifest collection value is a single filename:
-
-```js
-fetch(`./data/${manifest.collections[key]}`)
-```
-
-That assumption is no longer safe for a general MineIT consumer.
-
-**Requirement:** the MineIT Universe loader must support both:
-
-- a single manifest path string;
-- an array of manifest path strings, loaded and flattened in manifest order.
-
-This should be fixed in the reusable integration layer rather than copied from the standalone catalogue implementation.
-
-### 4.4 Retail catalogue
-
-The Year-5326 retail set contains exactly:
-
-- 5 manufacturers;
-- 10 ship lines;
-- 30 `factory-new` purchasable ship classes.
-
-The source-canonical Pathfinder and Prospector classes are present as reference classes but have `retailStatus: not-listed` and must not appear as purchasable factory-new models.
-
-### 4.5 Manufacturer positioning
-
-The market should explain these differences rather than presenting 30 undifferentiated rows:
-
-**Asterion Shipworks** — versatile specialist/frontier vessels.  
-**Kestrel Aerospace Systems** — speed, acceleration and rapid turnaround.  
-**Keystone Modular Fabrication** — modular cargo and network logistics.  
-**Longreach Engineering** — range, fuel efficiency and reliability.  
-**Crownline Heavy Works** — enormous bulk capacity and strong capacity-per-credit, at lower speed.
-
-### 4.6 Canonical class fields relevant to gameplay
-
-Retail classes already expose:
-
-- cargo capacity;
-- separate fuel capacity;
-- separate food capacity;
-- colonist/passenger capacity;
-- minimum crew;
-- maximum crew;
-- Vector Exchange capability;
-- transit weeks per light-year;
-- range class;
-- speed rating;
-- fuel-efficiency rating;
-- reliability rating;
-- atmospheric capability;
-- berth class;
-- special traits;
-- CC manufacturer list price;
-- image key/status/prompt.
-
-### 4.7 Image readiness
-
-The canonical catalogue specification currently describes factory-class images as `not-generated` until artwork is actually committed and approved in the Universe repository.
-
-MineIT must honour canonical image state. It should never pretend a missing image exists.
-
-The market UI therefore needs a clean fallback card/placeholder for any class whose canonical image is unavailable. When the canonical image status becomes usable, the same stable image key can be displayed without changing the game-side class data.
-
----
-
-## 5. Existing Universe Integration Direction
-
-The existing integration architecture already says MineIT should:
-
-1. consume the published Universe manifest;
-2. resolve canonical records by stable ID;
-3. wrap external loading behind a small read-only catalogue/loader;
-4. keep a known-good bundled/cached snapshot so gameplay is not permanently network-dependent;
-5. reject incompatible schema versions deliberately;
-6. persist stable Universe IDs plus game-owned mutable state rather than copies of whole canonical records.
-
-Ship buying should be the first production consumer built to that pattern.
-
----
-
-## 6. Proposed Architecture
-
-### 6.1 Do not create a parallel fleet system
-
-The recommended sequence is to **evolve `ExpansionService` from single-ship ownership to player-fleet ownership first**, then build purchasing on top of that canonical owner.
-
-A separate `FleetService` should not be introduced merely as a wrapper around duplicated ship behaviour. If refactoring later proves `ExpansionService` has become too broad, responsibilities can be separated deliberately, but the first change should preserve one canonical ship/fleet mutation path.
-
-### 6.2 Proposed expansion state evolution
+### 4.1 Required state direction
 
 Conceptually:
 
@@ -294,698 +168,585 @@ becomes:
 
 ```text
 state.company.expansion.ships[]
-state.company.expansion.activeShipId   // UI/navigation convenience, not ownership
+state.company.expansion.activeShipId
 ```
 
-Every ship receives a game-owned instance ID.
+`activeShipId` is selection/navigation state, not a second source of truth.
 
-Purchased ships additionally carry a stable Universe `shipClassId`.
+Every player ship gets a MineIT per-save instance ID.
 
-Suggested player-owned ship instance responsibilities:
+Every canonical ship gets a stable Universe `shipClassId`.
+
+### 4.2 Suggested ship instance data
+
+A player ship instance should own only mutable per-save state and historical transaction facts:
 
 ```text
-id                       MineIT per-save instance ID
-shipClassId              stable Universe class ID, null only for a legacy starter ship until mapped
-name                     player/game-owned vessel name
-source                    starter | manufacturer-direct
-purchase                  game-owned purchase metadata
-status                    docked | travelling | arrived | home | orbital-holding | lost ...
-systemId / colonyId       current location
-route                     current mutable travel state
-cargo                     mutable cargo
-fuelLots                  mutable fuel
-foodLots                  mutable food
-crew                      mutable operational crew count if separate crew is approved
-passengers                mutable colonist/passenger count
-loss / arrival flags      mutable game state
+id
+shipClassId
+name
+source
+status
+systemId
+colonyId
+targetSystemId
+route state
+cargo
+fuelLots
+foodLots
+crew
+passengers
+purchase metadata
+arrival / loss flags
 ```
 
-Do **not** copy canonical manufacturer descriptions, class descriptions, ship-line descriptions, image prompts, or the complete class specification into the save.
+Do not persist copied manufacturer biographies, ship-line descriptions, full class specifications or image prompts in the save.
 
-Store stable IDs and game-owned mutable facts.
+### 4.3 Original starter ship
 
-It is reasonable to retain purchase-time audit facts such as:
+The original MineIT colony ship must no longer remain a permanent game-only anonymous special case.
 
-- paid price;
-- currency ID;
-- purchase day;
-- Universe content version used for the purchase.
+As part of this development, add a canonical starter ship class to `MineIT-Universe` with:
 
-Those are historical game facts, not a replacement canonical catalogue.
+- stable ship-class ID;
+- manufacturer;
+- ship line;
+- canonical name/model;
+- description and role;
+- cargo capacity;
+- fuel capacity;
+- food capacity;
+- colonist capacity;
+- minimum/maximum crew;
+- speed/transit characteristics;
+- fuel-use specification;
+- atmospheric capability;
+- berth class;
+- canonical image metadata;
+- appropriate retail/procurement status.
 
-### 6.3 Starter-ship migration
+The exact manufacturer and model lore should be authored in the Universe repo rather than silently mapped to an unrelated existing class. Asterion is a plausible fit because its canonical specialisation includes frontier and adaptable vessels, but this remains an authoring decision to make when the Universe record is created.
 
-Existing saves must migrate `company.expansion.ship` into the new `ships[]` collection.
+Existing saves migrate their current ship into `ships[]` and point it at the new canonical starter class while preserving all mutable operational state.
 
-Until explicitly decided otherwise, the current starting colony ship should remain a **legacy starter specification** rather than being silently assigned to an unrelated retail Universe class.
+The old singular production path must then be removed rather than retained as a compatibility shadow.
 
-The migration must preserve:
+### 4.4 Ship-specific domain operations
 
-- location;
-- cargo;
-- food;
-- fuel;
-- passengers;
-- transit state;
-- arrival state;
-- loss state;
-- route timing;
-- save/load behaviour.
-
-After migration, the old singular `ship` production path should be removed rather than kept as a shadow compatibility implementation.
-
-### 6.4 Ship-aware domain APIs
-
-Mutation APIs should become ship-specific, conceptually:
+Ship mutations must explicitly identify the ship being acted upon, conceptually:
 
 ```text
 ship(state, shipId)
 loadCargo(state, shipId, ...)
 loadFuel(state, shipId, ...)
 loadFood(state, shipId, ...)
+assignCrew(state, shipId, ...)
 loadPassengers(state, shipId, ...)
 setTarget(state, shipId, systemId)
 canLaunch(state, shipId)
 launch(state, shipId)
 ```
 
-`processDay()` must iterate every travelling player ship and be able to return multiple arrivals/losses/events on the same day.
-
-This is more important than the shop UI: without it, purchased ships would exist only as decorative records and the game would still actually control one ship.
-
-### 6.5 Class specification resolution
-
-Purchased ship behaviour should resolve physical specifications from `shipClassId` through the read-only Universe catalogue.
-
-Recommended rule:
-
-```text
-player ship instance = mutable MineIT state
-ship class = immutable/read-only Universe reference data
-```
-
-The domain needs a synchronous indexed view once Universe data has been initialised. It should not perform random network fetches during cargo loading, launch checks or daily simulation.
-
-For the legacy starter ship, `ExpansionService` can resolve the existing built-in starter specification until a canonical mapping is agreed.
-
-### 6.6 Universe catalogue/loader
-
-Add one reusable read-only integration component, not ship-specific scattered fetch calls.
-
-Responsibilities:
-
-- configurable canonical base URL;
-- fetch `data/manifest.json`;
-- validate supported schema version;
-- understand string and array collection mappings;
-- load/merge requested collections;
-- index records by stable ID;
-- expose synchronous lookup/query after initialisation;
-- cache a compatible online snapshot;
-- fall back to a bundled known-good snapshot when offline or when remote loading fails;
-- expose content/schema version for diagnostics/save metadata;
-- fail clearly if no compatible source is available.
-
-The bundled fallback must be **generated/synchronised from MineIT-Universe**, not manually authored as a second catalogue.
-
-A small sync/update script or documented asset-refresh process should make the provenance explicit.
-
-### 6.7 Ship market domain service
-
-A focused `ShipMarketService` is justified because purchase/quote rules are a different responsibility from travel/cargo simulation.
-
-It should depend on:
-
-- the read-only Universe catalogue;
-- the existing/evolved `ExpansionService` fleet owner.
-
-It should own game-specific purchase rules such as:
-
-- retail availability filtering;
-- current unlock requirements;
-- affordability;
-- purchase validation;
-- game-owned delivery destination/state;
-- purchase transaction;
-- creation of a new player-owned ship instance through `ExpansionService`.
-
-The UI must only request quotes/actions and render results.
-
-### 6.8 Purchase transaction
-
-Initial quote:
-
-```text
-purchasePrice = shipClass.pricing.manufacturerListPrice
-currencyId = currency-commonwealth-credit
-```
-
-Validation should complete before mutation:
-
-- class exists;
-- `retailStatus === factory-new`;
-- manufacturer and line resolve;
-- price/currency are valid;
-- feature is unlocked;
-- model is currently permitted by game infrastructure rules;
-- player has enough cash;
-- delivery target is valid.
-
-Only then should the transaction:
-
-1. deduct player cash;
-2. create the new ship through the canonical fleet owner;
-3. store game-owned purchase metadata;
-4. create any approved delivery/placement state;
-5. surface a single success result to the UI.
-
-A failed creation must not leave the player charged without a ship.
+`processDay()` must process all travelling ships and support multiple arrivals/losses on the same day.
 
 ---
 
-## 7. Important Gameplay Mismatches That Need Decisions
+## 5. Crew and Passenger Model
 
-### 7.1 Crew versus passengers
+Crew and transported colonists are now separate concepts.
 
-Current MineIT tracks one `passengers` count and requires a minimum number of colonists aboard before launch.
-
-Universe classes separately define:
+Canonical ship classes expose:
 
 - `minimumCrew`;
 - `maximumCrew`;
 - `colonistCapacity`.
 
-These are not the same concept.
+MineIT should therefore store per ship:
 
-**Recommended direction:** introduce simple numeric `crew` and `passengers` counts per player ship. Both are drawn from colony population, but crew is operational staff and passengers are transported colonists. Food consumption uses total people aboard. Launch requires at least `minimumCrew`; passenger loading is limited by `colonistCapacity`; crew is limited by `maximumCrew`.
+```text
+crew
+passengers
+```
 
-This preserves the meaning of the canonical catalogue and avoids redefining `minimumCrew` as a passenger rule.
+Rules:
 
-This decision needs approval because it adds a small but real crew-management step to the ship preparation UI.
+- crew are drawn from colony population;
+- passengers are also drawn from colony population but represent transported colonists;
+- launch requires at least the class `minimumCrew`;
+- crew cannot exceed `maximumCrew`;
+- passengers cannot exceed `colonistCapacity`;
+- transit food demand is based on **crew + passengers**;
+- crew return to population when unloaded/reassigned under future crew-management rules;
+- the existing minimum-passenger launch rule is replaced by minimum crew.
 
-### 7.2 Transit speed
-
-Current MineIT uses one global ship speed.
-
-Universe classes expose an actual `transitWeeksPerLightYear` for Vector Exchange capable ships.
-
-**Recommended direction:** use that canonical value directly for interstellar transit duration. `vectorExchangeCapable: false` ships cannot perform interstellar routes.
-
-This gives the catalogue's speed differences immediate gameplay value.
-
-### 7.3 Fuel consumption
-
-Current MineIT uses one global fuel-per-light-year constant.
-
-Universe currently exposes:
-
-- fuel tank capacity;
-- a 1–5 fuel-efficiency rating;
-- range class;
-
-but not an explicit absolute `fuelUsePerLightYear` value.
-
-Because physical/base ship specification ownership belongs to the Universe repository, the cleanest option is to add an explicit canonical fuel-consumption field to the ship class schema rather than invent 30 independent physical fuel rates inside MineIT.
-
-If the design intentionally wants fuel burn to be a game balance formula instead of canon, then MineIT can derive it from the canonical efficiency rating using one documented formula. That ownership choice must be made before implementation.
-
-### 7.4 Atmospheric capability
-
-A large part of the retail catalogue is `orbital only`.
-
-Current MineIT player-ship cargo/passenger interaction is based on being `docked` at a colony Spaceport. There is not yet a full orbital freight transfer/shuttle layer.
-
-Therefore we must not simply allow an orbital-only megafreighter to behave as if it landed on a surface pad.
-
-**Recommended first-release choice:** show the complete 30-model market, but only make ships operationally purchasable when the player's current infrastructure supports their atmospheric/berth requirements. Unsupported models remain visible and explain what infrastructure is missing. This makes the catalogue aspirational without violating its physical specifications.
-
-Alternative: implement orbital cargo/passenger transfer as part of this feature. That is substantially larger and should be an explicit scope decision.
-
-### 7.5 Berth classes
-
-Universe uses berth classes such as:
-
-- small;
-- medium;
-- large;
-- very-large;
-- mega.
-
-Current MineIT Spaceport only has a berth **count**, not berth-size capability.
-
-`EngineeringShipAndSpaceport.md` deliberately deferred size rules until the player freight-ship feature. That time has now arrived.
-
-A compatible berth-capability model should be added to the existing Spaceport owner if we want larger purchased ships to land/dock.
-
-Exact level-to-berth-class progression requires a gameplay decision rather than an arbitrary implementation assumption.
-
-### 7.6 Ship loss and game over
-
-Current rule: loss of the sole player colony ship causes game over.
-
-With a fleet, possible rules include:
-
-- any player ship loss is still game over;
-- only loss of the original colony ship is game over;
-- ship loss is an economic/crew/cargo disaster but not game over while the company still has viable colonies/ships;
-- game over only when no viable colony/fleet recovery path remains.
-
-**Recommended fleet-era rule:** an individual purchased ship loss should not automatically end the company. The special original-ship rule can be retained if desired, but it should be explicit rather than accidentally inherited from the singular implementation.
-
-### 7.7 Manufacturer yard geography versus current star map
-
-Canonical manufacturer yards live in named Universe systems such as Aster Vale, Solace, Meridian, Damaris and Caldera.
-
-The current MineIT expansion star map is procedurally generated and does not yet consume the canonical Universe star-system geography.
-
-Therefore physically simulating a newly purchased ship flying from its exact canonical factory yard would require a larger world-map integration.
-
-**Recommended first release:** keep the manufacturer/factory location as canonical catalogue/lore information, while MineIT owns a simplified delivery rule. Do not invent fake coordinates for canonical yards in the procedural map.
-
-### 7.8 Currency presentation
-
-The canonical ship market uses Commonwealth Credit (`CC`).
-
-Existing MineIT Stage 8 documents and UI conventions have historically used `£` in places while the underlying game state is simply numeric `company.cash`.
-
-Before the market ships, decide whether:
-
-- the entire game currency is now formally CC and existing money presentation should migrate to CC; or
-- ship purchasing is a separate CC-denominated market requiring conversion (not recommended for this initial feature because no exchange system exists).
-
-**Recommended direction:** formally treat existing `company.cash` as CC and migrate presentation consistently, avoiding a second currency/accounting system.
+The first implementation can keep crew as a numeric count rather than individual named specialists.
 
 ---
 
-## 8. Proposed Mobile-First UX
+## 6. Canonical Universe Ship Data
 
-### 8.1 Entry point
+`MineIT-Universe` continues to own:
 
-Recommended entry point: the player-owned **Ships / Fleet** interface gets a clear **Ship Market** action.
+- manufacturer identity;
+- ship line;
+- class/model identity;
+- base physical specification;
+- manufacturer list price;
+- canonical image identity;
+- stable IDs.
 
-This keeps acquisition next to the thing being acquired rather than burying it in general resource trading.
+MineIT owns:
 
-The final navigation placement should match the current mobile shell once the fleet UI is refactored.
+- charter discount;
+- player cash;
+- affordability;
+- actual purchase transaction;
+- destination colony;
+- order date;
+- delivery state;
+- purchased ship instance;
+- future reputation/finance/used-market logic.
 
-### 8.2 Manufacturer screen
+MineIT must not maintain a second hand-authored copy of the 30-model catalogue.
 
-Each manufacturer should be a large touch-friendly card showing:
+### 6.1 Current retail market
 
-- manufacturer name;
-- specialisation summary;
-- product-line summary;
-- approximate price/capacity positioning;
-- flagship yard as flavour/context;
-- View Models action.
+The current Year-5326 Universe catalogue contains:
 
-The purpose of this screen is to make the five brands understandable before the player sees 30 models.
+- 5 manufacturers;
+- 10 ship lines;
+- 30 factory-new retail classes.
 
-### 8.3 Models screen
+Retail manufacturer identities are:
 
-Compact model cards should prioritise information that affects a purchase decision:
+- Asterion Shipworks — versatile specialist/frontier craft;
+- Kestrel Aerospace Systems — speed and rapid turnaround;
+- Keystone Modular Fabrication — modular cargo/logistics;
+- Longreach Engineering — range, efficiency and reliability;
+- Crownline Heavy Works — extreme bulk capacity and low capacity cost.
 
-- image or canonical missing-image fallback;
-- model name;
-- role;
-- CC price;
-- cargo;
-- fuel;
-- food;
-- passengers;
-- minimum crew;
-- transit speed / Vector Exchange capability;
-- landing capability;
-- berth class;
-- speed / efficiency / reliability ratings.
-
-Suggested filters/sorts for the first version:
-
-- manufacturer;
-- affordable only;
-- Vector Exchange capable;
-- atmospheric capability;
-- berth class;
-- role/capacity class;
-- sort by price;
-- sort by cargo;
-- sort by transit speed;
-- sort by efficiency.
-
-Do not overbuild a desktop-style spreadsheet filter panel. Mobile interaction should remain fast and touch friendly.
-
-### 8.4 Comparison
-
-Recommended first version: compare **up to two ships** at once on mobile.
-
-A full-screen comparison view can place model names/prices at the top and show aligned specification rows beneath them.
-
-Difference highlighting should make trade-offs obvious:
-
-- better cargo;
-- lower price;
-- faster transit;
-- better efficiency;
-- larger passenger capacity;
-- lower crew requirement;
-- better landing/berth compatibility.
-
-### 8.5 Ship detail
-
-The detail screen should explain the ship as a gameplay choice, not just dump fields.
-
-Recommended sections:
-
-- hero/image;
-- manufacturer + line;
-- role and description;
-- price and affordability;
-- primary capacities;
-- crew/passengers;
-- performance;
-- landing/berth compatibility;
-- special traits;
-- current infrastructure compatibility;
-- Buy action.
-
-### 8.6 Buy confirmation
-
-Before final purchase, show:
-
-- exact model;
-- manufacturer;
-- list price;
-- current balance;
-- balance after purchase;
-- delivery/location rule;
-- any berth/landing warning;
-- ship name, if naming at purchase is approved.
-
-The confirmation should make it impossible to misunderstand the cash impact.
+The source-canonical Pathfinder and Prospector reference classes are not currently retail listings and should not appear in the factory-new market unless their canonical retail status changes.
 
 ---
 
-## 9. Recommended Initial Delivery Rule
+## 7. New Canonical Fields Required
 
-This remains an open design decision, but the simplest coherent first implementation is:
+### 7.1 Factory production lead time
 
-- manufacturer-direct order;
-- list price only;
-- no freight surcharge;
-- no shortage/production queue;
-- no finance;
-- no used-market state;
-- one game-owned delivery destination selected from eligible player colonies;
-- if a ship can physically use the target Spaceport and a berth is free, it becomes delivered/docked;
-- if compatible but the port is temporarily full, reuse Orbital Holding;
-- if the vessel fundamentally cannot use that colony's infrastructure, purchase/delivery should be blocked with an explanatory requirement rather than silently violating the ship specification.
+Manufacturers do not hold finished ships in stock for this gameplay model. Ordering starts production/allocation and the player waits for completion and delivery.
 
-Whether delivery is immediate or includes a fixed time delay still needs approval.
+Each retail class therefore needs a canonical factory lead-time field in `MineIT-Universe`.
 
-A later feature can replace the simple availability rule with factory production queues, freight charges, yard pickup, reputation modifiers and shortages without changing the canonical `shipClassId` identity.
+Recommended representation:
+
+```json
+"production": {
+  "factoryLeadTimeDays": 180
+}
+```
+
+This value represents normal Year-5326 manufacturer production/allocation lead time, not player-specific market congestion.
+
+Rough target progression:
+
+- smallest craft: several months;
+- small/medium ships: months to around a year;
+- large/very-large ships: around one to several years;
+- largest strategic/mega ships: multiple years.
+
+Exact values should be authored across the catalogue during implementation so larger/more complex ships generally take longer.
+
+MineIT may later add temporary shortages, rush production or reputation modifiers, but the class's normal factory lead time remains canonical.
+
+### 7.2 Fuel consumption
+
+Canonical classes need an absolute fuel-use figure so the game can simulate travel without reverse-engineering consumption from a 1–5 rating.
+
+Recommended canonical field:
+
+```json
+"specifications": {
+  "fuelUsePerLightYear": 260
+}
+```
+
+MineIT then treats fuel consumption proportionally by actual route distance:
+
+```text
+fuelRequired = distanceLy × fuelUsePerLightYear
+```
+
+This naturally supports journeys shorter than one light year because the value is continuous/granular rather than rounded to whole light years.
+
+The 1–5 fuel-efficiency rating remains useful presentation data; absolute burn is the simulation value.
+
+### 7.3 Transit speed
+
+For Vector Exchange capable ships, use canonical `transitWeeksPerLightYear` directly for interstellar transit timing.
+
+For a route:
+
+```text
+travelWeeks = distanceLy × transitWeeksPerLightYear
+```
+
+Shorter routes therefore scale proportionally as well.
+
+In-system movement can later have its own model if needed; this feature does not need to invent a second detailed propulsion simulation.
 
 ---
 
-## 10. Save / Persistence Rules
+## 8. Universe Integration Layer
 
-Save changes are substantial and require migration coverage.
+Ship buying should become the first production consumer of the existing MineIT Universe integration design.
 
-Recommended rules:
+The game should add one reusable read-only Universe loader/catalogue that:
 
-- increment `EXPANSION_VERSION` for the fleet-state schema change;
-- migrate one legacy `expansion.ship` into `expansion.ships[]` once;
-- assign a deterministic/persisted MineIT instance ID during migration;
-- retain all in-flight route state exactly;
-- purchased ships save `shipClassId` plus mutable game state;
-- record Universe schema/content version where useful for diagnostics/reproducibility;
-- never save complete canonical class/organisation/line records;
-- if a referenced class cannot be resolved from current/cached compatible Universe content, fail safely and preserve the save rather than deleting the ship.
+- loads `data/manifest.json`;
+- validates supported `schemaVersion`;
+- understands both single-string and array manifest collection entries;
+- loads and flattens requested collections in manifest order;
+- indexes records by stable ID;
+- exposes synchronous lookups after initialisation;
+- records `schemaVersion` and `contentVersion`;
+- caches a compatible online snapshot;
+- falls back to a bundled known-good snapshot when necessary;
+- never scatters direct Universe fetch calls throughout UI/domain code.
 
-The fallback snapshot makes a missing network connection a recoverable condition rather than a save-breaking condition.
-
----
-
-## 11. Universe Compatibility / Caching Requirements
-
-The loader should support this order:
-
-1. load bundled known-good manifest/catalogue;
-2. initialise an indexed synchronous catalogue from that known-good data;
-3. optionally check the published Universe manifest online without blocking game startup;
-4. if the remote schema is supported and content is newer, fetch/validate/cache the compatible collections;
-5. switch to the validated cached version at a safe boundary;
-6. retain the bundled fallback permanently.
-
-Do not let a GitHub Pages outage prevent a saved game from loading.
-
-Do not use module-scope blocking `await` that delays the entire game bootstrap.
-
-External async loading must also follow the repository stale-write safety rule: a late catalogue response must not repaint a market/detail screen that the user has already closed or changed.
+The bundled fallback must be generated/synchronised from `MineIT-Universe`, not independently authored.
 
 ---
 
-## 12. Proposed Implementation Order
+## 9. Ship Market Domain Service
 
-### Phase A — Fleet foundation
+A focused `ShipMarketService` is appropriate because commercial purchase/order rules differ from ship operation/travel rules.
 
-- convert `ExpansionService` from singular ship to fleet collection;
-- migrate existing saves;
-- make ship operations explicit by `shipId`;
-- update daily processing for multiple simultaneous ships;
-- update star-map/player-ship UI selection;
-- update Spaceport occupants for multiple player ships;
-- settle fleet-era ship-loss/game-over behaviour;
-- add focused domain/save/UI regression tests.
+It should depend on:
 
-### Phase B — Universe consumer foundation
+- the read-only Universe catalogue;
+- the evolved `ExpansionService` fleet owner.
 
-- add reusable manifest loader/catalogue;
-- support string and array manifest collection entries;
-- add schema compatibility checks;
-- add bundled generated fallback;
-- add cache/update behaviour;
-- index manufacturers, lines, classes, facilities and currencies by stable ID;
-- add diagnostics for source/content version;
-- test online/fallback/incompatible-schema behaviour.
+Responsibilities:
 
-### Phase C — Per-class ship behaviour
+- expose factory-new catalogue views;
+- resolve manufacturer and line data;
+- calculate list price;
+- calculate charter discount;
+- calculate final player price;
+- expose factory lead time;
+- validate affordability;
+- validate selected delivery colony;
+- place order;
+- deduct cash atomically with order creation;
+- create/update delivery state;
+- create the actual ship instance through `ExpansionService` when delivery completes.
 
-- resolve class specifications by `shipClassId`;
-- convert capacities from global constants to class-aware values;
-- implement approved crew/passenger model;
-- implement per-class transit duration;
-- implement approved fuel-consumption rule;
-- enforce Vector Exchange capability;
-- integrate atmospheric/berth capability;
-- preserve legacy starter ship behaviour.
+The UI must not directly mutate cash, order state or fleet state.
+
+---
+
+## 10. Purchase Quote and Transaction
+
+Initial charter quote:
+
+```text
+listPrice = shipClass.pricing.manufacturerListPrice
+charterDiscountRate = 0.35
+charterDiscount = listPrice × charterDiscountRate
+purchasePrice = listPrice - charterDiscount
+currency = cc
+```
+
+The UI must show all three monetary figures rather than showing only the discounted price.
+
+This is important to communicate the real value of the Deep Reach corporate relationship.
+
+The order cannot be placed until the player selects an owned delivery colony.
+
+Validation must include:
+
+- class exists;
+- class is factory-new retail;
+- manufacturer and ship line resolve;
+- canonical price is valid;
+- canonical lead time is valid;
+- chosen delivery colony exists and is operational;
+- player has sufficient `company.cash`;
+- no incompatible schema/data condition exists.
+
+For this release, berth class and orbital-only capability do **not** block purchase or delivery.
+
+The transaction should atomically:
+
+1. calculate a fresh authoritative quote;
+2. validate cash and target colony;
+3. deduct the discounted purchase price;
+4. create the order with canonical class ID and immutable purchase audit data;
+5. calculate expected completion/delivery day from class lead time;
+6. return success to the UI.
+
+If order creation fails, cash must not remain deducted.
+
+---
+
+## 11. Order and Delivery Lifecycle
+
+Initial lifecycle:
+
+**AVAILABLE → ORDERED → IN PRODUCTION → DELIVERY TRANSIT → ARRIVED / COMMISSIONED INTO FLEET**
+
+For the first implementation we do not know/track real manufacturer shipyard coordinates, so delivery does not physically travel across the procedural MineIT star map.
+
+The ship instead has a time-until-arrival based primarily on canonical factory lead time.
+
+The order stores:
+
+```text
+orderId
+shipClassId
+manufacturerOrganisationId
+deliveryColonyId
+orderAbsoluteDay
+factoryLeadTimeDays
+expectedArrivalAbsoluteDay
+listPrice
+charterDiscountRate
+charterDiscountAmount
+paidPrice
+currencyId
+status
+universeContentVersion
+```
+
+The delivery queue must survive save/load.
+
+When the due day arrives:
+
+- a player ship instance is created through the canonical fleet domain;
+- it is assigned an automatically generated unique vessel name;
+- it appears at the selected colony;
+- it consumes one Spaceport berth under current simple berth rules;
+- if the physical berth is occupied and later Orbital Holding is reused for player deliveries, it may wait; exact arrival-slot behaviour can be finalised during implementation without adding berth-class restrictions.
+
+Player rename is allowed after acquisition; forced naming during checkout is not required.
+
+---
+
+## 12. Currency Presentation
+
+The game should migrate presentation away from `£` and use Commonwealth Credits consistently.
+
+Initial textual notation:
+
+```text
+cc 3.6m
+cc 18,250
+```
+
+`cc` is deliberately lowercase for the current UI language.
+
+The underlying canonical currency ID remains:
+
+```text
+currency-commonwealth-credit
+```
+
+A bespoke visual credit icon can be introduced later, but logic/data should remain readable without a special font glyph.
+
+Existing money-format helpers and buyer/corporate UI using `£` will eventually need to be updated as part of the wider currency presentation pass.
+
+---
+
+## 13. Market Visibility and Affordability
+
+The market is available from day 1.
+
+All factory-new retail ships remain visible regardless of affordability.
+
+Unaffordable ships should:
+
+- show full manufacturer list price;
+- show Deep Reach discount;
+- show final charter price;
+- show lead time;
+- show full specifications;
+- clearly state `INSUFFICIENT FUNDS` rather than hiding the model.
+
+This makes the market aspirational and teaches the player what future fleet progression looks like.
+
+---
+
+## 14. Delivery Colony Selection
+
+The player must explicitly choose an owned colony for every order.
+
+The order flow therefore contains a required:
+
+**Delivery Assignment → Colony** selector.
+
+The target cannot silently default to whichever colony happens to be active at the moment the final button is pressed.
+
+The UI may preselect the active colony for convenience, but the chosen value must remain visible in the confirmation summary.
+
+Future systems may add delivery eligibility constraints, but the first release only requires that the target is an owned operational colony.
+
+---
+
+## 15. Game Over Rule Revision
+
+Loss of one ship must no longer automatically end the game.
+
+The existing `company.gameOver` coupling to loss of the sole colony ship must be redesigned during the fleet conversion.
+
+New principle:
+
+**A ship loss is a severe operational/economic loss, not automatically company game over while the player still has a credible recovery path.**
+
+A recovery path can include:
+
+- another existing player ship;
+- enough cash and access to order a replacement ship;
+- another colony/operational base capable of continuing the company.
+
+The final total-collapse rules should be reviewed as a dedicated part of the fleet implementation because the old assumption of one irreplaceable colony ship is no longer valid.
+
+---
+
+## 16. UI Direction
+
+This feature is the first major **Conglomerate Procurement** interface and should establish a reusable visual/interaction language for future corporate purchasing systems.
+
+It must not be a plain table of ships.
+
+The intended experience is a premium industrial/corporate procurement terminal operated through Koplin Deep Reach.
+
+Primary flow:
+
+**Fleet Acquisition → Manufacturer Gallery → Model Gallery → Ship Profile → Compare → Procurement Quote → Delivery Colony → Place Order → Order Queue**
+
+The UI must visibly communicate:
+
+- Deep Reach is the procurement channel;
+- the manufacturer is still the canonical builder;
+- Deep Reach has negotiated privileged pricing;
+- the player owns the acquired vessel;
+- production takes significant time;
+- larger ships can take years;
+- all models are browsable from day 1.
+
+Detailed UI rules live in `ShipBuyingUiSpecification.md`.
+
+Shared corporate visual language lives in `ConglomerateProcurementUiLanguage.md`.
+
+The proof-of-concept interaction lives in `ShipBuyingMock.html`.
+
+---
+
+## 17. Initial Implementation Sequence
+
+Recommended implementation order:
+
+### Phase A — Universe catalogue additions
+
+1. author the canonical starter colony ship class;
+2. add canonical factory lead times to factory-new ship classes;
+3. add canonical absolute fuel use per light year;
+4. validate catalogue and manifest;
+5. keep manufacturer list prices canonical and unchanged by Deep Reach discount.
+
+### Phase B — Reusable Universe integration
+
+1. implement manifest loader;
+2. support string/array collection mappings;
+3. add schema-version validation;
+4. add indexed read-only catalogue;
+5. add bundled/cached known-good fallback;
+6. add tests for online/fallback/version cases.
+
+### Phase C — Fleet foundation
+
+1. migrate singular ship to `ships[]`;
+2. migrate starter ship to canonical class ID;
+3. separate crew from passengers;
+4. make capacities/specs class-aware;
+5. make travel speed/fuel class-aware;
+6. make daily processing multi-ship aware;
+7. make Spaceport enumerate all docked player ships;
+8. revise ship-loss/game-over behaviour;
+9. add save/load migration/regression coverage.
 
 ### Phase D — Ship market domain
 
-- add `ShipMarketService`;
-- expose only `factory-new` retail classes;
-- use canonical CC list price directly;
-- validate affordability/unlock/infrastructure;
-- perform atomic cash + fleet purchase;
-- store purchase metadata;
-- implement approved delivery rule;
-- test insufficient funds, duplicate purchases, invalid IDs, delivery and save/load.
+1. implement `ShipMarketService`;
+2. calculate Deep Reach discount;
+3. validate selected delivery colony;
+4. create persistent orders;
+5. process lead-time countdown;
+6. instantiate delivered ships through `ExpansionService`;
+7. add transaction/order/save tests.
 
-### Phase E — Mobile market UI
+### Phase E — UI
 
-- Ship Market entry point;
-- manufacturer browser;
-- models list;
-- filters/sorts;
-- two-ship comparison;
-- model detail;
-- purchase confirmation;
-- success/new-ship handoff to Fleet;
-- touch/mobile/browser coverage.
-
-### Phase F — Final integration
-
-- full regression suite;
-- multi-colony/multi-ship simulation coverage;
-- offline Universe fallback test;
-- version bump and visible header version sync;
-- update this specification/recovery notes with implemented decisions and exact files changed.
+1. implement shared conglomerate procurement shell;
+2. manufacturer gallery;
+3. model gallery and filters;
+4. full ship profile;
+5. 2–3 ship comparison;
+6. list price / discount / charter price presentation;
+7. colony delivery selection;
+8. production/delivery queue;
+9. mobile browser interaction coverage.
 
 ---
 
-## 13. Required Test Coverage
+## 18. Testing Requirements
 
-At minimum, implementation should cover:
+At minimum implementation must cover:
 
-### Fleet migration/domain
-
-- legacy singular ship migrates once with all mutable state preserved;
-- multiple ships can coexist at different colonies/systems;
-- operations target the intended `shipId`;
-- simultaneous ship transit is processed independently;
-- multiple same-day arrivals/losses cannot overwrite one another;
-- save/load preserves all ship instances and routes;
-- approved fleet-era loss/game-over rule is protected by regression tests.
-
-### Capacities and movement
-
-- cargo/fuel/food capacity are resolved per ship class;
-- fuel does not consume cargo capacity;
-- transit food does not consume cargo capacity except explicit food carried as general cargo;
-- crew/passenger limits follow the approved model;
-- non-Vector ships cannot start interstellar travel;
-- transit time uses canonical class performance;
-- fuel burn uses the approved canonical/game formula.
-
-### Spaceport
-
-- every docked player ship consumes a berth;
-- berth status counts multiple player ships plus Corporate/Engineering/Buyer ships;
-- incompatible berth class is rejected or held according to the approved rule;
-- temporary capacity shortage uses Orbital Holding rather than deleting/failing a ship.
-
-### Universe integration
-
-- manifest string collection loads;
-- manifest array collection loads and flattens correctly;
-- only `factory-new` classes are offered;
-- reference `not-listed` classes are excluded;
-- incompatible schema is rejected explicitly;
-- compatible cached/bundled fallback works offline;
-- stable-ID lookup returns the expected canonical record;
-- missing canonical image state uses a safe placeholder.
-
-### Purchase
-
-- list price equals canonical manufacturer list price;
-- insufficient cash cannot mutate fleet or cash;
-- successful purchase deducts exactly once;
-- successful purchase creates exactly one player-owned ship instance;
-- purchase stores stable `shipClassId`, not a copied canonical record;
-- delivery/placement follows the approved rule;
-- save/load retains the purchase and mutable ship state.
-
-### UI/mobile
-
-- manufacturer → model → detail → buy flow works by touch/click;
-- filters do not change domain truth;
-- compare handles two models correctly;
-- stale async catalogue responses cannot overwrite a changed/closed view;
-- unaffordable/incompatible ships explain why Buy is disabled;
-- purchase confirmation shows correct balance impact.
+- old single-ship save migration;
+- starter ship canonical mapping;
+- multiple simultaneous ships;
+- ship-specific cargo/fuel/food capacities;
+- minimum/max crew rules;
+- passenger capacity rules;
+- travel duration from class values;
+- fractional-distance fuel consumption;
+- multiple ships processed on one day;
+- one ship loss not automatically ending a recoverable company;
+- Universe string/array manifest collections;
+- compatible cache fallback;
+- incompatible schema rejection;
+- retail filtering;
+- 35% charter discount calculation;
+- insufficient funds;
+- delivery colony required;
+- lead-time persistence;
+- delivery after save/load;
+- delivered ship routed through canonical fleet creation;
+- all player ships consuming Spaceport slots without berth-class enforcement;
+- mobile manufacturer/model/detail/compare/order interactions.
 
 ---
 
-## 14. Decisions Needed Before Production Coding
+## 19. Locked Decisions
 
-### Decision 1 — When does Ship Market unlock?
-
-Options include:
-
-- automatically at the start of Stage 8;
-- after first Spaceport upgrade;
-- after a specific Industry/Corporate capability level;
-- after the player reaches a cash/reputation milestone.
-
-**Recommendation:** unlock at the point Stage 8 first introduces real fleet/logistics expansion, not based purely on current cash. Keep the market visible once unlocked even if most ships are unaffordable.
-
-### Decision 2 — Delivery timing and destination
-
-Should a purchase be:
-
-- delivered immediately to a selected compatible player colony;
-- delivered after a fixed manufacturer preparation/transit delay;
-- collected from Corporate Home;
-- physically collected from the canonical manufacturer yard later?
-
-**Recommendation for first version:** selected compatible colony, with a simple game-owned delivery rule and no extra fee. Avoid manufacturer-yard travel until canonical star-system geography is integrated with the game map.
-
-### Decision 3 — Separate crew from passengers?
-
-**Recommendation:** yes. Add a simple numeric crew count separate from colonist/passenger cargo. Minimum crew becomes the launch requirement; passengers remain transported colonists.
-
-### Decision 4 — What happens with orbital-only ships?
-
-**Recommendation:** show all 30 ships, but do not let unsupported orbital-only/oversized ships masquerade as surface-landable ships. Either lock purchase/use until suitable infrastructure exists, or explicitly add orbital logistics to this feature.
-
-### Decision 5 — What berth classes can each Spaceport level support?
-
-This was intentionally deferred in the earlier Stage 8 Spaceport design and now needs a concrete progression.
-
-### Decision 6 — What is the fleet-era ship-loss rule?
-
-**Recommendation:** losing a purchased ship is a major economic/crew/cargo loss, not automatic company game over. Decide separately whether the original colony ship retains a special game-over rule.
-
-### Decision 7 — Fuel consumption ownership
-
-Should absolute ship fuel burn be:
-
-- a new canonical Universe physical specification; or
-- a MineIT balancing formula derived from the canonical fuel-efficiency rating?
-
-**Recommendation:** add an explicit canonical `fuelUsePerLightYear` physical specification if the value is intended to be a real property of the class.
-
-### Decision 8 — Is all MineIT money formally Commonwealth Credits?
-
-**Recommendation:** yes. Treat existing numeric `company.cash` as CC and make money presentation consistent rather than introduce currency conversion in this feature.
-
-### Decision 9 — Does the existing starter ship map to a canonical Universe class?
-
-**Recommendation:** preserve it as the existing legacy starter specification for this feature unless a deliberate lore decision identifies its exact canonical class.
-
-### Decision 10 — Ship naming
-
-Should the player name a purchased ship during purchase, or should MineIT generate a default name and allow rename later?
-
-**Recommendation:** generate a sensible default immediately and make naming/renaming optional, so a text-entry step never blocks a fast mobile purchase.
-
----
-
-## 15. Suggested First Approved Scope
-
-If the recommendations above are accepted, the clean first release would be:
-
-- Stage 8 Ship Market unlock;
-- all five manufacturers and all 30 factory-new models visible;
-- manifest-driven canonical catalogue with bundled/cached fallback;
-- two-model mobile comparison;
-- exact canonical CC list price;
-- real multi-ship player fleet in `ExpansionService`;
-- stable `shipClassId` references;
-- separate crew/passenger counts;
-- canonical class cargo/fuel/food/passenger capacities;
-- canonical interstellar transit time;
-- approved fuel-burn model;
-- landing/berth compatibility enforced;
-- selected-colony manufacturer delivery with no added fee;
-- purchased ship enters the normal player fleet and uses existing cargo/star-map/transit mechanics;
-- no used market, finance, dynamic pricing or trade-ins.
-
-This gives the player a meaningful new progression path without pre-building the later second-hand/finance/shipyard economy.
-
----
-
-## 16. Architecture Rules for Implementation
-
-When implementation begins:
-
-1. `GameStore` remains the mutable root-state owner.
-2. `ExpansionService` remains the canonical player ship/fleet mutation owner unless a deliberate refactor proves a cleaner single owner.
-3. Do not create a second ship/fleet implementation for purchased vessels.
-4. `MineIT-Universe` remains the only authored owner of manufacturer/model/line/base-spec/list-price content.
-5. MineIT saves stable IDs and game-owned mutable facts, not copied canonical records.
-6. The market UI performs no authoritative cash, price, delivery or ship-state mutation.
-7. Existing Spaceport and Orbital Holding concepts are extended rather than duplicated.
-8. No version-suffixed/replacement production modules.
-9. Static/repeated market markup belongs in `views/`, not giant JS strings.
-10. Async Universe loading must reject stale UI writes and must not block game startup unnecessarily.
-11. Every fleet/save/domain behaviour change requires regression coverage.
-12. The completed implementation must increment the package/header game version together.
-
----
-
-## 17. Current Recommendation
-
-Do **not** start with the Ship Market screen.
-
-The first production implementation step should be the fleet-domain migration in `ExpansionService` and `spaceport-model.js` with save/regression coverage. Once two player-owned ship instances can genuinely coexist and use the current star-map/cargo/transit mechanics, the Universe catalogue and purchasing UI can be added on a stable foundation.
-
-That sequence avoids building an attractive catalogue which can only create records that the rest of the game cannot actually operate.
+1. Ship market is visible from day 1.
+2. While under charter, purchases are brokered through Koplin Deep Reach.
+3. Purchased ships are owned by the player's operating company.
+4. Deep Reach's negotiated discount is visibly shown; initial design value is 35%.
+5. Independent future purchases do not automatically receive the charter discount.
+6. All 30 factory-new ships remain visible even when unaffordable.
+7. Manufacturers do not keep finished stock for this model; ships have substantial class-specific factory lead times.
+8. Larger ships generally take longer, up to multiple years for the largest vessels.
+9. Player must choose the delivery colony.
+10. Crew and passengers are separate.
+11. Transit speed uses canonical class values.
+12. Absolute fuel burn is stored canonically per light year and scales proportionally for shorter distances.
+13. For now every player ship can use any free Spaceport berth.
+14. Berth-size and orbital-only restrictions remain deferred.
+15. Losing one ship is not automatically game over.
+16. Overall game-over/recovery criteria must be revised for replaceable fleets.
+17. Commonwealth Credits are displayed as lowercase `cc` for now.
+18. The original starter colony ship becomes a proper canonical Universe class with manufacturer/line/specification/image metadata.
+19. Purchased vessels receive an automatic unique name and can be renamed later.
+20. This feature establishes the shared Conglomerate Procurement UI pattern for future corporate purchasing systems.
