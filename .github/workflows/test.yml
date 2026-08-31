@@ -93,6 +93,16 @@ jobs:
             exit 1
           fi
 
+          echo "Testing cold Corporate Ship async tab navigation"
+          "$chrome" --headless --no-sandbox --disable-gpu --window-size=390,844 --virtual-time-budget=14000 --dump-dom http://127.0.0.1:8123/tests/quick-trade-cold-load-probe.html >/tmp/quick-trade-cold.html 2>/tmp/quick-trade-cold.log
+          if ! grep -q 'PASS cold Corporate Ship tabs acknowledge one tap, dedupe pending renders and keep a stable shell' /tmp/quick-trade-cold.html; then
+            echo "Cold Corporate Ship interaction probe failed"
+            cat /tmp/quick-trade-cold.html
+            cat /tmp/quick-trade-cold.log
+            cat /tmp/mineit-http.log
+            exit 1
+          fi
+
           echo "Testing first-contract renewal and multi-colony event lifecycle"
           "$chrome" --headless --no-sandbox --disable-gpu --window-size=390,844 --virtual-time-budget=12000 --dump-dom http://127.0.0.1:8123/tests/multi-colony-lifecycle-probe.html >/tmp/lifecycle.html 2>/tmp/lifecycle.log
           if ! grep -q 'PASS first contract renewal, second colony, recovered ship queue and colony switching' /tmp/lifecycle.html; then

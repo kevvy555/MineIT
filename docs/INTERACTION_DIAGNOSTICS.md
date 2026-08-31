@@ -1,38 +1,27 @@
 # Mobile Interaction Diagnostics
 
-MineIT v5.13.6 adds bounded, behaviour-neutral interaction tracing to diagnose the intermittent Android/mobile issue where some buttons need repeated taps before they activate.
+MineIT v5.13.6 added bounded, behaviour-neutral interaction tracing to diagnose the intermittent Android/mobile issue where some buttons needed repeated taps before they activated.
 
-## What is recorded
+## Root cause confirmed from Android trace
 
-The shared UI controller records semantic controls only. It does not change activation behaviour and does not act on `pointerdown`.
+The captured Corporate Trade Ship BUY failure showed repeated clean sequences of `pointerdown` → `pointerup` → `click-capture` → `click-bubble`, with zero pointer movement, no `pointercancel`, and the pressed button remaining connected. This ruled out touch-target size, scroll cancellation, overlays, pointer suppression and HUD-driven DOM replacement for the Corporate Ship case.
 
-The rolling trace records:
+The remaining failure was the cold external-view lifecycle introduced when templates moved from embedded JavaScript markup into separately fetched files. A fresh browser/module session had an empty in-memory template cache. The first BUY/SELL/COLONISTS navigation could therefore wait on an asynchronous template fetch. Each repeated tab tap started a new `renderQuick()` revision, invalidating earlier render attempts while giving no immediate visual acknowledgement.
 
-- `pointerdown`;
-- `pointerup`;
-- `pointercancel`;
-- click capture and click bubble;
-- movement distance during the press;
-- whether pointer-up occurred on the same control;
-- whether the original pressed node was still connected;
-- `target-disconnected` when the exact pressed DOM node is removed while the pointer remains down;
-- modal `ui-open-start` and `ui-open-commit` transitions.
+## v5.13.7 fix
 
-The trace is limited to the latest 240 interaction events and lives only in the in-memory `Diagnostics` instance. It is not persisted in the save and is not sent anywhere.
+- Navigation-critical ship templates are now preloaded non-blockingly at startup, including Corporate Ship, Buyers Service, technology, Spaceport, Star Map and ship-preparation views.
+- The Corporate Ship shell is mounted once while the panel is open. SELL / BUY / COLONISTS switch only the view host; the title, metrics, tabs and departure control remain stable DOM nodes.
+- A tab becomes active immediately on the first click and exposes an explicit loading state while a cold template finishes.
+- Repeated taps on the already-selected tab are ignored, so an in-flight render cannot be continuously superseded by duplicate input.
+- Different tab selections still invalidate stale async writes, preserving the existing stale-render safety rule.
+- Corporate Ship metrics are refreshed in place instead of rebuilding the whole modal.
+- A browser regression intentionally delays the cold BUY template for five seconds, then verifies that one click selects BUY immediately, repeated BUY taps do not create extra render revisions, the BUY view eventually mounts, and the Corporate Ship shell node is never replaced.
 
-## How to capture a failed tap
+## Diagnostic tracer retained
 
-1. Reproduce the problem, ideally with one or two failed taps on the Player Colony Ship panel or Corporate Trade Ship SELL / BUY / COLONISTS controls.
-2. Open the game menu.
-3. Open `Diagnostics`.
-4. Copy the `INTERACTION TRACE` section, including a few events before and after the failed tap.
+The shared UI controller still records semantic controls only. It does not change activation behaviour and does not act on `pointerdown`.
 
-## Interpretation
+The rolling trace records `pointerdown`, `pointerup`, `pointercancel`, click capture/bubble, movement, connection state, target disconnection and modal open transitions. The trace remains limited to the latest 240 events, exists only in memory, is not persisted in the save and is not sent anywhere.
 
-- `pointercancel` after `pointerdown` indicates browser gesture cancellation.
-- `target-disconnected` before `pointerup` proves the pressed node was replaced during the physical tap.
-- `pointerup` without a subsequent click indicates the browser did not generate activation.
-- `click-capture` followed by `click-bubble` proves a click crossed the control's target-handler phase.
-- a later `ui-open-start` / `ui-open-commit` shows the action produced a modal transition; absence of one helps isolate handler or async-render lifecycle problems.
-
-The existing Player Ship browser probe now also holds a touch for 180ms across the 125ms HUD refresh interval and verifies that the diagnostic layer can detect a deliberately disconnected pressed node.
+The tracer remains useful if another interaction path later shows a genuinely different mobile failure mode.

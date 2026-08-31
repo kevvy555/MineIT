@@ -1,0 +1,54 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>MineIT cold Corporate Ship view probe</title>
+<body><pre id="result">RUNNING</pre><script type="module">
+const result=document.querySelector('#result');
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const waitFor=async(test,timeout=7000)=>{const started=performance.now();while(performance.now()-started<timeout){const value=test();if(value)return value;await sleep(25);}return null;};
+const html=await fetch('../index.html',{cache:'no-store'}).then(response=>response.text());
+const instrumentation=`<base href="../"><script>
+window.__probeErrors=[];
+window.__quickBuyFetches=0;
+const nativeFetch=window.fetch.bind(window);
+window.fetch=(input,init)=>{
+  const url=typeof input==='string'?input:String(input?.url||'');
+  if(url.includes('quick-trade-buy.html')){
+    window.__quickBuyFetches++;
+    return new Promise(resolve=>setTimeout(resolve,5000)).then(()=>nativeFetch(input,init));
+  }
+  return nativeFetch(input,init);
+};
+window.addEventListener('error',event=>window.__probeErrors.push(String(event.error||event.message)));
+window.addEventListener('unhandledrejection',event=>window.__probeErrors.push(String(event.reason)));
+<\/script>`;
+const iframe=document.createElement('iframe');iframe.style.width='390px';iframe.style.height='844px';iframe.srcdoc=html.replace('<head>','<head>'+instrumentation);document.body.appendChild(iframe);
+await new Promise(resolve=>iframe.addEventListener('load',resolve,{once:true}));
+const w=iframe.contentWindow,d=w.document;
+const app=await waitFor(()=>w.mineIT,2500);
+try{
+  if(!app)throw new Error('App did not start');
+  const landing=d.querySelector('.landing-choice-grid button,[data-land-choice]');if(landing){landing.click();await sleep(120);}
+  app.state.trade.active=true;
+  app.tradeUI.open();
+  const shell=await waitFor(()=>d.querySelector('[data-trade-quick-shell]'),1500);if(!shell)throw new Error('Corporate Ship shell did not open');
+  const originalShell=shell,buy=shell.querySelector('[data-trade-tab="buy"]');if(!buy)throw new Error('BUY tab missing');
+  const revisionBefore=app.tradeUI.quickRenderRevision;
+  buy.click();await sleep(20);
+  if(!buy.classList.contains('active')||buy.getAttribute('aria-pressed')!=='true')throw new Error('BUY did not become active immediately on one click');
+  const loading=shell.querySelector('[data-trade-loading]');if(!loading||!/LOADING BUY/i.test(loading.textContent))throw new Error('Cold BUY click did not show immediate loading acknowledgement');
+  const revisionAfterFirst=app.tradeUI.quickRenderRevision;if(revisionAfterFirst!==revisionBefore+1)throw new Error(`One BUY click started ${revisionAfterFirst-revisionBefore} renders instead of one`);
+  for(let i=0;i<12;i++)buy.click();await sleep(50);
+  if(app.tradeUI.quickRenderRevision!==revisionAfterFirst)throw new Error('Repeated BUY taps restarted the in-flight BUY render');
+  const buyView=await waitFor(()=>d.querySelector('[data-trade-buy-view]'),6500);if(!buyView)throw new Error('BUY view did not complete after delayed cold template fetch');
+  if(d.querySelector('[data-trade-quick-shell]')!==originalShell)throw new Error('BUY navigation replaced the Corporate Ship shell');
+  if(d.querySelector('[data-trade-loading]'))throw new Error('BUY loading acknowledgement did not clear after render');
+  if(w.__quickBuyFetches!==1)throw new Error(`BUY template fetched ${w.__quickBuyFetches} times instead of once`);
+
+  const sell=originalShell.querySelector('[data-trade-tab="sell"]');sell.click();if(!await waitFor(()=>d.querySelector('[data-trade-sell-view]'),1000))throw new Error('Single SELL click did not switch view');
+  if(d.querySelector('[data-trade-quick-shell]')!==originalShell)throw new Error('SELL navigation replaced the Corporate Ship shell');
+  const colonists=originalShell.querySelector('[data-trade-tab="colonists"]');colonists.click();if(!await waitFor(()=>d.querySelector('.colonist-view'),1000))throw new Error('Single COLONISTS click did not switch view');
+  if(d.querySelector('[data-trade-quick-shell]')!==originalShell)throw new Error('COLONISTS navigation replaced the Corporate Ship shell');
+  if(w.__probeErrors.length)throw new Error('Runtime errors: '+w.__probeErrors.join(' | '));
+  result.textContent='PASS cold Corporate Ship tabs acknowledge one tap, dedupe pending renders and keep a stable shell';
+}catch(error){result.textContent='FAIL cold Corporate Ship view probe • '+(error?.stack||error);}
+</script></body>
