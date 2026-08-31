@@ -84,7 +84,7 @@ export class LandService{
   settle(state,index,options={}){return this.applyCandidate(state,index,{preserve:false,abandon:!!options.abandon});}
   syncExtraction(tile,addedBuild=0){
     if(!tile?.developed||!tile.resourceId){if(tile?.development?.kind==="extract")tile.development=null;return;}
-    const family=this.extractionFamily(tile),existing=tile.development?.kind==="extract"?tile.development:{kind:"extract",family,level:tile.level||1,investedBuild:0};existing.family=family;existing.level=Math.max(1,Math.min(5,Number(tile.level)||1));existing.investedBuild=Math.max(0,Number(existing.investedBuild)||0)+Math.max(0,Number(addedBuild)||0);tile.level=existing.level;tile.development=existing;
+    const family=this.extractionFamily(tile),existing=tile.development?.kind==="extract"?tile.development:{kind:"extract",family,level:tile.level||1,investedBuild:0};existing.family=family;existing.level=Math.max(1,Math.min(5,Number(tile.level)||1));existing.investedBuild=Math.max(0,Number(existing.investedBuild)||0)+Math.max(0,Number(addedBuild)||0);tile.level=existing.level;tile.development=existing;tile.resourceCovered=false;
   }
   extractionFamily(tile){
     if(tile.type==="food"){if(tile.resourceId==="herd")return"ranch";if(tile.resourceId==="thermal")return"algae";if(["fungal","protein"].includes(tile.resourceId))return"bio";return"farm";}
