@@ -1,10 +1,14 @@
 <section class="buyers-service-screen" data-buyers-screen>
   <header class="buyers-topbar">
-    <div class="buyers-title"><small>CONGLOMERATE COMMERCIAL NETWORK</small><strong>CONGLOMERATE BUYERS SERVICE</strong></div>
+    <div class="buyers-title"><small>KOPLIN COMMERCIAL OS // EXTERNAL MARKET NODE</small><strong>CONGLOMERATE BUYERS DIRECTORY</strong></div>
     <div class="buyers-reputation"><small>GLOBAL REP</small><strong data-buyers-rep>0.00</strong><span data-buyers-rep-level>UNKNOWN</span></div>
     <button class="buyers-close" data-buyers-close aria-label="Close Conglomerate Buyers Service">✕</button>
   </header>
+  <div class="buyers-terminal-status" data-buyers-terminal-status aria-label="Commercial network status">
+    <span class="buyers-terminal-online"><i aria-hidden="true"></i> NETWORK ONLINE</span><span>NODE KPL-CN08</span><span>SECURE COMMERCIAL INDEX</span>
+  </div>
   <section class="buyers-filters" aria-label="Buyer catalogue filters">
+    <div class="buyers-query-bar" data-buyers-query-bar><span>&gt; DIRECTORY.SEARCH</span><small>FILTER LIVE BUYER RECORDS</small></div>
     <label class="buyers-filter"><small>STATUS</small><select data-buyer-filter="status"><option value="all">All</option><option value="available">Available</option><option value="current">Current</option><option value="locked">Locked</option></select></label>
     <label class="buyers-filter"><small>RESOURCE</small><select data-buyer-filter="resource"><option value="">All</option></select></label>
     <label class="buyers-filter"><small>QUALITY</small><select data-buyer-filter="quality"><option value="">All</option><option value="common">Common</option><option value="good">Good</option><option value="excellent">Excellent</option><option value="exceptional">Exceptional</option><option value="rare">Rare</option><option value="extraordinary">Extraordinary</option></select></label>
@@ -15,7 +19,7 @@
     <label class="buyers-filter"><small>SORT</small><select data-buyer-filter="sort"><option value="rep">Rep low</option><option value="repDesc">Rep high</option><option value="priceDesc">Price high</option><option value="price">Price low</option><option value="load">Load low</option><option value="loadDesc">Load high</option><option value="freq">Frequency</option><option value="freqDesc">Frequency longest</option><option value="quality">Quality</option><option value="resource">Resource</option></select></label>
   </section>
   <section class="buyers-table-shell">
-    <div class="buyers-head-row"><span>Action</span><span>Buyer / Company</span><span>Resource</span><span>Q</span><span class="buyers-num">Load</span><span class="buyers-num">£/u</span><span class="buyers-num">Every</span><span class="buyers-num">Rep</span></div>
+    <div class="buyers-head-row"><span>Action</span><span>Buyer / Co.</span><span>Resource</span><span>Quality</span><span class="buyers-num">Load</span><span class="buyers-num">£/u</span><span class="buyers-num">Every</span><span class="buyers-num">Rep</span></div>
     <div class="buyers-rows" data-buyer-rows></div>
     <template data-buyer-row-template>
       <div class="buyers-row">
@@ -30,7 +34,7 @@
       </div>
     </template>
   </section>
-  <div class="buyers-legend"><span>CONTACT = available • VIEW = current contract • REP LOCKED remains visible</span><span data-buyer-count></span></div>
+  <div class="buyers-legend"><span class="buyers-terminal-prompt">&gt; CONTACT = available • VIEW = current • REP LOCKED = restricted</span><span data-buyer-count></span></div>
 
   <div class="buyers-profile-overlay hidden" data-buyer-profile>
     <section class="buyers-profile-dialog" role="dialog" aria-modal="true" aria-label="Buyer contract profile">

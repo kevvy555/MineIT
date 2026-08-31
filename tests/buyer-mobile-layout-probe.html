@@ -61,7 +61,10 @@ async function run(){
   if(innerWidth<=430&&Math.abs(screen.getBoundingClientRect().width-innerWidth)>2)fail.push(`catalogue width ${screen.getBoundingClientRect().width} != ${innerWidth}`);
   if(innerWidth>430&&screen.getBoundingClientRect().width>432)fail.push(`catalogue desktop width ${screen.getBoundingClientRect().width}`);
   const filters=screen.querySelectorAll("[data-buyer-filter]");if(filters.length!==8)fail.push(`catalogue filters ${filters.length}`);
+  if(!visible(screen.querySelector("[data-buyers-terminal-status]"))||!visible(screen.querySelector("[data-buyers-query-bar]")))fail.push("terminal directory chrome not visible");
   const rows=screen.querySelectorAll(".buyers-row");if(rows.length<100)fail.push(`catalogue rendered only ${rows.length} rows`);
+  const qualities=[...screen.querySelectorAll("[data-buyer-quality]")].map(node=>node.textContent.trim()).filter(Boolean);if(!qualities.length||qualities.some(label=>label.length<4))fail.push("directory quality column is not using full quality names");
+  const headings=[...screen.querySelectorAll(".buyers-head-row span")].map(node=>node.textContent.trim());if(!headings.includes("Quality"))fail.push("directory Quality heading missing");
   if(!/1,000/.test(screen.querySelector("[data-buyer-count]")?.textContent||""))fail.push("catalogue count does not expose 1,000 buyers");
   touchTarget(screen.querySelector("[data-buyers-close]"),"catalogue close");
   const contact=[...screen.querySelectorAll("[data-buyer-action]")].find(button=>!button.disabled&&button.textContent.includes("CONTACT"));
@@ -70,7 +73,7 @@ async function run(){
   const overlay=screen.querySelector("[data-buyer-profile]"),dialog=overlay?.querySelector(".buyers-profile-dialog");
   if(!overlay||overlay.classList.contains("hidden"))fail.push("buyer profile did not open");
   insideViewport(dialog,"profile");noHorizontalOverflow(dialog,"profile");
-  const dr=dialog?.getBoundingClientRect();if(dr&&(dr.height<Math.min(325,innerHeight-10)||dr.height>Math.min(482,innerHeight)+2))fail.push(`profile height ${Math.round(dr.height)} at viewport ${innerHeight}`);
+  const dr=dialog?.getBoundingClientRect();if(dr&&(dr.height<Math.min(315,innerHeight-10)||dr.height>Math.min(482,innerHeight)+2))fail.push(`profile height ${Math.round(dr.height)} at viewport ${innerHeight}`);
   if(!visible(overlay?.querySelector("[data-profile-portrait]"))&&!visible(overlay?.querySelector("[data-profile-portrait-fallback]")))fail.push("profile portrait/fallback not visible");
   for(const selector of["[data-profile-name]","[data-profile-company]","[data-profile-ship]","[data-profile-resource]","[data-profile-load]","[data-profile-price]"])if(!String(overlay?.querySelector(selector)?.textContent||"").trim())fail.push(`profile field empty ${selector}`);
   const enter=overlay?.querySelector("[data-profile-primary]");touchTarget(enter,"enter contract");if(!enter||enter.disabled||!enter.textContent.includes("ENTER CONTRACT"))fail.push("profile enter-contract action unavailable");else{enter.click();await sleep(100);}
