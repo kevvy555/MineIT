@@ -10,12 +10,26 @@ import { TradeService } from "../js/domain/trade-service.js";
 import { SimulationEngine } from "../js/domain/simulation-engine.js";
 import { DevelopmentService } from "../js/domain/development-service.js";
 import { LandService } from "../js/domain/land-service.js";
+import { WorldService } from "../js/domain/world-service.js";
+import { SurveyService } from "../js/domain/survey-service.js";
 
-// This test composes the same canonical domain implementations selected by the browser import map.
-const contracts=new ContractService(),resources=new ResourceService(),inventory=new InventoryService(resources),technology=new TechnologyService(),collection=new CollectionService(resources,inventory,technology),colony=new ColonyService(inventory,technology),trade=new TradeService(resources,inventory),engine=new SimulationEngine(resources,technology,collection,trade,inventory,colony),land=new LandService(),development=new DevelopmentService(inventory,land);
+// This test composes the same canonical domain implementations used by the browser runtime.
+const contracts=new ContractService(),resources=new ResourceService(),inventory=new InventoryService(resources),technology=new TechnologyService(),collection=new CollectionService(resources,inventory,technology),colony=new ColonyService(inventory,technology),trade=new TradeService(resources,inventory),engine=new SimulationEngine(resources,technology,collection,trade,inventory,colony),land=new LandService(),development=new DevelopmentService(inventory,land),world=new WorldService(resources,contracts,land),survey=new SurveyService(world,contracts);
 const state=createGameState(contracts.first());
 state.company.tech={housing:5,power:5,food:5,industry:5,mining:5};
 land.ensure(state);technology.recompute(state);engine.recalculate(state);
+
+// Resurvey regression: a developed extraction site must not become "resource covered" and lose all output.
+const rescanState=createGameState(contracts.first());technology.recompute(rescanState);rescanState.company.tech.scanning=2;rescanState.colony.tech.scanning=2;
+const rescanTile={x:2,y:2,terrain:"plain",terrainYieldFactor:1,revealed:true,lastScannedAtLevel:1,developed:true,depleted:false,resourceCovered:false,type:"ore",family:"ore",resourceId:"surface-iron",name:"Surface Iron Nodules",quality:100,resourceMult:1,requiredScanningLevel:1,requiredMiningLevel:1,requiredMiningTech:"Surface Recovery",sustainability:"finite",reserve:10000,initialReserve:10000,depositScale:"Large",level:1,development:{kind:"extract",family:"mine",level:1,investedBuild:40,investedOre:0}};
+rescanState.tiles["2,2"]=rescanTile;engine.recalculate(rescanState);const rateBeforeRescan=resources.collectionRate(rescanState,rescanTile);assert.ok(rateBeforeRescan>0,"developed extraction must produce before resurvey");
+const queuedRescan=survey.enqueue(rescanState,2,2);assert.equal(queuedRescan.ok,true);assert.equal(queuedRescan.resurvey,true);rescanState.scans[0].remaining=1;const duplicateResults=survey.tick(rescanState);assert.deepEqual(duplicateResults,[],"resurveying the same known resource must not report a new discovery");assert.equal(rescanTile.lastScannedAtLevel,2);assert.equal(rescanTile.resourceCovered,false,"an extraction facility must never cover its own resource");assert.ok(resources.collectionRate(rescanState,rescanTile)>0,"resurvey must preserve extraction production capacity");
+rescanTile.resourceCovered=true;assert.equal(resources.collectionRate(rescanState,rescanTile),0,"corrupted covered flag reproduces the zero-production failure");land.syncExtraction(rescanTile);assert.equal(rescanTile.resourceCovered,false,"land sync must repair already-corrupted extraction saves");assert.ok(resources.collectionRate(rescanState,rescanTile)>0,"repaired extraction must resume production without demolition/rebuild");
+
+// A resurvey that genuinely reveals a previously unknown resource must still be surfaced.
+const newlyFoundTile={x:3,y:3,terrain:"plain",revealed:true,lastScannedAtLevel:1,developed:false,depleted:false,resourceId:null,development:null};
+const discoveryWorld={get:()=>newlyFoundTile,reveal:(local,x,y,level)=>Object.assign(newlyFoundTile,{revealed:true,lastScannedAtLevel:level,type:"fuel",family:"fuel",resourceId:"oil",name:"Crude Oil",quality:500,requiredMiningLevel:5,sustainability:"finite",reserve:10000,initialReserve:10000,depositScale:"Large"})};
+const discoverySurvey=new SurveyService(discoveryWorld,contracts),discoveryState=createGameState(contracts.first());technology.recompute(discoveryState);discoveryState.company.tech.scanning=2;discoveryState.colony.tech.scanning=2;discoveryState.tiles["3,3"]=newlyFoundTile;const queuedDiscovery=discoverySurvey.enqueue(discoveryState,3,3);assert.equal(queuedDiscovery.ok,true);assert.equal(queuedDiscovery.resurvey,true);discoveryState.scans[0].remaining=1;const discoveryResults=discoverySurvey.tick(discoveryState);assert.equal(discoveryResults.length,1,"a genuinely new resource found during resurvey must still be reported");assert.equal(discoveryResults[0].resourceId,"oil");
 
 // Active depletion path: workers must be released in the very tick a finite deposit ends.
 const finite={x:1,y:1,terrain:"plain",terrainYieldFactor:1,revealed:true,developed:true,depleted:false,resourceCovered:false,type:"ore",family:"ore",resourceId:"surface-iron",name:"Surface Iron Nodules",quality:500,resourceMult:1,requiredMiningLevel:1,requiredMiningTech:"Surface Recovery",sustainability:"finite",reserve:.01,initialReserve:100,depositScale:"small",level:1,development:{kind:"extract",family:"mine",level:1,investedBuild:40,investedOre:10}};
