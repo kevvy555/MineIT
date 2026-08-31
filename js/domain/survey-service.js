@@ -15,5 +15,14 @@ export class SurveyService {
   fill(state){if(state.contract?.ended)return;while(state.scans.length<this.slots(state)&&state.scanQueue.length){const next=state.scanQueue.shift();if(!this.surveyable(state,next.x,next.y))continue;const resurvey=this.isResurveyable(state,next.x,next.y),scanningLevel=this.scanningLevel(state),total=this.days(state,next.x,next.y,resurvey);state.scans.push({...next,resurvey,scanningLevel,total,remaining:total});}}
   enqueue(state,x,y){if(!this.surveyable(state,x,y))return{ok:false,active:false,reason:"Sector cannot currently be surveyed."};state.scanQueue.push({x,y});this.fill(state);return{ok:true,active:this.isActive(state,x,y),resurvey:this.isActive(state,x,y)?!!state.scans.find(s=>s.x===x&&s.y===y)?.resurvey:this.isResurveyable(state,x,y)};}
   enqueueMany(state,cells){const seen=new Set();let count=0;for(const cell of cells){const k=`${cell.x},${cell.y}`;if(seen.has(k))continue;seen.add(k);if(this.surveyable(state,cell.x,cell.y)){state.scanQueue.push({x:cell.x,y:cell.y});count++;}}this.fill(state);return count;}
-  tick(state){if(state.contract?.ended)return[];this.fill(state);const completed=[];for(const scan of state.scans)scan.remaining--;for(const scan of state.scans.filter(s=>s.remaining<=0))completed.push(this.world.reveal(state,scan.x,scan.y,scan.scanningLevel||this.scanningLevel(state)));state.scans=state.scans.filter(s=>s.remaining>0);this.fill(state);return completed;}
+  tick(state){
+    if(state.contract?.ended)return[];this.fill(state);const completed=[];for(const scan of state.scans)scan.remaining--;
+    for(const scan of state.scans.filter(s=>s.remaining<=0)){
+      const before=this.world.get(state,scan.x,scan.y),previousResourceId=before?.resourceId||null,tile=this.world.reveal(state,scan.x,scan.y,scan.scanningLevel||this.scanningLevel(state));
+      if(scan.resurvey&&tile?.development?.kind==="extract")tile.resourceCovered=false;
+      const foundNewResource=!!tile?.resourceId&&tile.resourceId!==previousResourceId;
+      if(!scan.resurvey||foundNewResource)completed.push(tile);
+    }
+    state.scans=state.scans.filter(s=>s.remaining>0);this.fill(state);return completed;
+  }
 }
