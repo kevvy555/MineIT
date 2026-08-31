@@ -45,10 +45,16 @@ export class DevelopmentService{
     return{ok:true,...cost,nextLevel,techRequired:nextLevel,currentCapacity:buildingCapacity(kind,level),capacity:buildingCapacity(kind,nextLevel)};
   }
   upgrade(state,tile){const check=this.canUpgrade(state,tile);if(!check.ok)return check;this.inventory.consumeCategory(state,"build",check.build);if(check.ore)this.inventory.consumeCategory(state,"ore",check.ore);tile.development.level=check.nextLevel;tile.development.investedBuild=(tile.development.investedBuild||0)+check.build;tile.development.investedOre=(tile.development.investedOre||0)+(check.ore||0);this.sync(state);return{ok:true,...check};}
+  clearExhaustedResource(tile){
+    if(!tile?.depleted)return false;
+    const exhaustedResourceId=tile.resourceId||null;
+    Object.assign(tile,{resourceExhausted:true,exhaustedResourceId,empty:true,type:null,family:null,resourceId:null,name:"Clear Land",quality:null,resourceRarity:null,resourceMult:null,requiredScanningLevel:0,requiredMiningLevel:0,requiredMiningTech:null,terrainYieldFactor:null,sustainability:null,abundance:null,abundanceLabel:null,depositScale:null,reserve:null,initialReserve:null,renewableOriginalRank:null,renewableHealth:null,renewableWiped:false,harvestIntensity:null,depleted:false,resourceCovered:false});
+    return true;
+  }
   demolish(state,tile){
     const dev=tile?.development;if(!dev)return{ok:false,reason:"Nothing has been constructed on this tile."};
-    const recoverBuild=Math.floor(Math.max(0,Number(dev.investedBuild)||0)*RECOVERY),recoverOre=Math.floor(Math.max(0,Number(dev.investedOre)||0)*RECOVERY);
+    const recoverBuild=Math.floor(Math.max(0,Number(dev.investedBuild)||0)*RECOVERY),recoverOre=Math.floor(Math.max(0,Number(dev.investedOre)||0)*RECOVERY),clearedExhaustedResource=dev.kind==="extract"&&this.clearExhaustedResource(tile);
     if(recoverBuild)this.inventory.store(state,"build","fiber","Construction Fibre",recoverBuild);if(recoverOre)this.inventory.store(state,"ore","surface-iron","Surface Iron Nodules",recoverOre);
-    if(dev.kind==="extract"){tile.developed=false;tile.level=0;}tile.development=null;tile.resourceCovered=false;this.sync(state);return{ok:true,recover:recoverBuild,recoverBuild,recoverOre};
+    if(dev.kind==="extract"){tile.developed=false;tile.level=0;}tile.development=null;tile.resourceCovered=false;this.sync(state);return{ok:true,recover:recoverBuild,recoverBuild,recoverOre,clearedExhaustedResource};
   }
 }
