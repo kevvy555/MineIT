@@ -1,0 +1,20 @@
+<div class="ship-market ship-market-subview" data-market-orders-view>
+  <section class="ship-market-header compact"><div><small>KDR CAPITAL ACQUISITION</small><strong>PRODUCTION & DELIVERY QUEUE</strong></div><button data-market-back>← PROCUREMENT</button></section>
+  <div class="ship-market-status"><span>CAPITAL ORDERS</span><span data-market-order-count></span><span data-market-order-spend></span></div>
+  <div class="ship-market-orders" data-market-order-list></div>
+  <div class="ship-market-empty hidden" data-market-orders-empty>No factory-new vessel orders have been placed.</div>
+
+  <div class="ship-market-popup hidden" data-market-popup>
+    <div class="ship-market-popup-card"><div class="ship-market-popup-head"><strong data-market-popup-title></strong><button data-market-popup-close>×</button></div><div data-market-popup-options></div></div>
+  </div>
+
+  <template data-market-order-template>
+    <article class="ship-market-order">
+      <div class="ship-market-order-head"><div><small data-order-id></small><strong data-order-vessel></strong><span data-order-manufacturer></span></div><b data-order-status></b></div>
+      <div class="ship-market-order-meta"><span><small>DELIVERY</small><strong data-order-colony></strong></span><span><small>VALUE</small><strong data-order-value></strong></span><span><small>FACTORY LEAD</small><strong data-order-lead></strong></span><span><small>ETA</small><strong data-order-eta></strong></span></div>
+      <div class="ship-market-order-progress"><i data-order-progress></i></div>
+      <div class="ship-market-order-foot"><span data-order-progress-copy></span><div><button data-order-cancel>CANCEL ORDER</button><button data-order-retarget>RETARGET DELIVERY</button></div></div>
+    </article>
+  </template>
+  <template data-market-popup-option-template><button class="ship-market-popup-option"><strong></strong><span></span></button></template>
+</div>
