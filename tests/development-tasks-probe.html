@@ -1,0 +1,72 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>MineIT development tasks probe</title>
+<body><pre id="result">RUNNING</pre><script type="module">
+const result=document.querySelector("#result"),sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const html=await fetch("../index.html",{cache:"no-store"}).then(response=>response.text());
+const instrumentation=`<base href="../"><script>
+window.__taskProbe={fileText:'',clipboard:'',failClipboard:false,writeCount:0,runtimeErrors:[],handles:new Map()};
+window.addEventListener('error',event=>window.__taskProbe.runtimeErrors.push(String(event.error||event.message||'window error')));
+window.addEventListener('unhandledrejection',event=>window.__taskProbe.runtimeErrors.push(String(event.reason||'unhandled rejection')));
+window.confirm=()=>true;
+{
+  const probe=window.__taskProbe;
+  const handle={
+    name:'mineit-issues.json',
+    async queryPermission(){return'granted'},
+    async requestPermission(){return'granted'},
+    async getFile(){return{text:async()=>probe.fileText}},
+    async createWritable(){let pending=probe.fileText;return{async write(text){pending=String(text)},async close(){probe.fileText=pending;probe.writeCount++},async abort(){}}}
+  };
+  probe.handle=handle;
+  window.showOpenFilePicker=async()=>[handle];
+  window.showSaveFilePicker=async()=>handle;
+  Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{if(probe.failClipboard)throw new Error('clipboard denied');probe.clipboard=String(text)}}});
+  let created=false;
+  const database={
+    objectStoreNames:{contains:()=>created},
+    createObjectStore(){created=true},
+    close(){},
+    transaction(){
+      const transaction={oncomplete:null,onerror:null,error:null,objectStore(){return{
+        get(key){const request={result:null,error:null,onsuccess:null,onerror:null};setTimeout(()=>{request.result=probe.handles.get(key)||null;request.onsuccess?.()},0);return request},
+        put(value,key){probe.handles.set(key,value);setTimeout(()=>transaction.oncomplete?.(),0)},
+        delete(key){probe.handles.delete(key);setTimeout(()=>transaction.oncomplete?.(),0)}
+      }}};return transaction;
+    }
+  };
+  Object.defineProperty(window,'indexedDB',{configurable:true,value:{open(){const request={result:database,error:null,onupgradeneeded:null,onsuccess:null,onerror:null};setTimeout(()=>{if(!created)request.onupgradeneeded?.();request.onsuccess?.()},0);return request}}});
+}
+<\/script>`;
+const iframe=document.createElement("iframe");iframe.style.width="390px";iframe.style.height="844px";iframe.srcdoc=html.replace("<head>","<head>"+instrumentation);document.body.appendChild(iframe);
+await new Promise(resolve=>iframe.addEventListener("load",resolve,{once:true}));await sleep(2200);
+const w=iframe.contentWindow,d=w.document;
+const waitFor=async(selector,timeout=2500)=>{const until=performance.now()+timeout;while(performance.now()<until){const element=d.querySelector(selector);if(element&&!element.hidden)return element;await sleep(20);}throw new Error("Timed out waiting for "+selector);};
+const waitUntil=async(predicate,message,timeout=2500)=>{const until=performance.now()+timeout;while(performance.now()<until){if(predicate())return;await sleep(20);}throw new Error(message);};
+const click=element=>{if(!element)throw new Error("Missing expected control");element.click();};
+const addTask=async({type="bug",text})=>{
+  click(await waitFor("[data-task-new]"));const editor=await waitFor("[data-task-editor]"),workspace=d.querySelector("[data-task-workspace]"),body=d.querySelector("#modal .modal-body"),editorRect=editor.getBoundingClientRect(),bodyRect=body.getBoundingClientRect();if(w.getComputedStyle(workspace).display!=="none")throw new Error("Task list remained visible behind the editor");if(Math.abs(editorRect.top-bodyRect.top)>1||Math.abs(editorRect.left-bodyRect.left)>1||Math.abs(editorRect.width-bodyRect.width)>2||Math.abs(editorRect.height-bodyRect.height)>2)throw new Error("Task editor does not fill the task screen");if(type==="feature")click(editor.querySelector('[data-task-type="feature"]'));const textarea=editor.querySelector("[data-task-description]");textarea.value=text;textarea.dispatchEvent(new w.Event("input",{bubbles:true}));click(editor.querySelector("[data-task-editor-save]"));await waitFor("[data-task-workspace]");
+};
+try{
+  const landing=d.querySelector(".landing-choice-grid button");if(landing){landing.click();await sleep(250);}
+  click(d.querySelector("#menuBtn"));click(await waitFor("[data-development-tasks]"));const shell=await waitFor("[data-development-tasks-view]");
+  const modal=d.querySelector("#modal"),modalRect=modal.getBoundingClientRect();if(modalRect.top>1||modalRect.left>1||Math.abs(modalRect.width-w.innerWidth)>2||Math.abs(modalRect.height-w.innerHeight)>2)throw new Error("Development Tasks is not full screen on mobile");
+  const pausedDate=d.querySelector("#dateText").textContent;await sleep(800);if(d.querySelector("#dateText").textContent!==pausedDate)throw new Error("Simulation advanced while Development Tasks was open");
+  click(await waitFor("[data-task-create-file]"));await waitFor("[data-task-workspace]");if(w.getComputedStyle(d.querySelector("[data-task-setup]")).display!=="none")throw new Error("Choose Task File remained visible after loading a file");if(!/mineit-issues\.json/.test(shell.textContent))throw new Error("Created task filename is not shown");
+  await addTask({type:"bug",text:"First bug\nwith detail"});await addTask({type:"feature",text:"Second feature"});
+  const rows=()=>[...d.querySelectorAll("[data-task-id]")];if(rows().length!==2)throw new Error("Expected two created tasks");const actionTops=[...rows()[0].querySelectorAll(".development-task-actions button")].map(button=>Math.round(button.getBoundingClientRect().top));if(new Set(actionTops).size!==1)throw new Error("Task action buttons wrapped onto multiple lines");if(rows()[0].querySelectorAll("[data-task-set-status]").length!==3)throw new Error("Compact per-item status controls are missing");
+  const directStatusId=rows()[0].dataset.taskId,readItem=id=>JSON.parse(w.__taskProbe.fileText).items.find(item=>item.id===id);click(rows()[0].querySelector('[data-task-set-status="in-progress"]'));await waitUntil(()=>readItem(directStatusId)?.status==="in-progress"&&!shell.classList.contains("busy"),"Direct In Progress status was not auto-saved");click(rows().find(row=>row.dataset.taskId===directStatusId).querySelector('[data-task-set-status="complete"]'));await waitUntil(()=>readItem(directStatusId)?.status==="complete"&&!shell.classList.contains("busy"),"Direct Complete status was not auto-saved");click(d.querySelector('[data-task-filter="complete"]'));const completedDirect=rows().find(row=>row.dataset.taskId===directStatusId);if(!completedDirect?.querySelector('[data-task-set-status="complete"].active'))throw new Error("Active direct status icon was not rendered");click(completedDirect.querySelector('[data-task-set-status="backlog"]'));await waitUntil(()=>readItem(directStatusId)?.status==="backlog"&&!shell.classList.contains("busy"),"Direct Backlog status was not auto-saved");click(d.querySelector('[data-task-filter="complete"]'));
+  click(d.querySelector('[data-task-filter="bug"]'));if(rows().length!==1||rows()[0].querySelector("[data-task-type-label]").textContent!=="FEATURE")throw new Error("Bug type filter did not hide bug tasks");click(d.querySelector('[data-task-filter="feature"]'));if(rows().length!==0)throw new Error("Combined type filters did not hide all tasks");click(d.querySelector('[data-task-filter="bug"]'));if(rows().length!==1||rows()[0].querySelector("[data-task-type-label]").textContent!=="BUG")throw new Error("Feature type filter did not preserve bug tasks");click(d.querySelector('[data-task-filter="feature"]'));if(rows().length!==2)throw new Error("Type filters did not restore both task types");
+  click(d.querySelector("[data-task-select-visible]"));if(d.querySelector("[data-task-selected-count]").textContent!=="2")throw new Error("Select Visible did not select both tasks");w.__taskProbe.failClipboard=true;click(d.querySelector("[data-task-copy-selected]"));await sleep(80);if(JSON.parse(w.__taskProbe.fileText).items.some(item=>item.status!=="backlog"))throw new Error("Failed clipboard write changed task statuses");w.__taskProbe.failClipboard=false;click(d.querySelector("[data-task-copy-selected]"));
+  const expected="1. [FEATURE] Second feature\n2. [BUG] First bug with detail";for(let i=0;i<80&&w.__taskProbe.clipboard!==expected;i++)await sleep(20);if(w.__taskProbe.clipboard!==expected)throw new Error("Unexpected clipboard output: "+JSON.stringify(w.__taskProbe.clipboard));
+  const savedAfterCopy=JSON.parse(w.__taskProbe.fileText);if(savedAfterCopy.items.some(item=>item.status!=="in-progress"))throw new Error("Copied tasks were not auto-saved as In Progress");
+  if(rows().some(row=>row.querySelector("[data-task-status-label]").textContent!=="IN PROGRESS"))throw new Error("Copied task status was not rerendered");
+  click(rows()[0].querySelector("[data-task-edit]"));const editor=await waitFor("[data-task-editor]");click(editor.querySelector('[data-task-status="complete"]'));click(editor.querySelector("[data-task-editor-save]"));await waitFor("[data-task-workspace]");if(d.querySelector("#modal .panel-title strong").textContent!=="Development Tasks")throw new Error("List title was not restored after editing");if(rows().length!==1)throw new Error("Complete-off default filter did not hide the completed task");
+  click(d.querySelector('[data-task-filter="complete"]'));if(rows().length!==2)throw new Error("Complete multi-filter did not restore the completed task");
+  const completed=rows().find(row=>row.querySelector("[data-task-status-label]").textContent==="COMPLETE");click(completed.querySelector('[data-task-move="bottom"]'));await waitUntil(()=>JSON.parse(w.__taskProbe.fileText).items.at(-1)?.status==="complete"&&!shell.classList.contains("busy"),"Move to bottom was not auto-saved");
+  const writesBeforeImport=w.__taskProbe.writeCount;click(d.querySelector("[data-task-import]"));const importPanel=await waitFor("[data-task-import-panel]"),workspace=d.querySelector("[data-task-workspace]"),body=d.querySelector("#modal .modal-body"),importRect=importPanel.getBoundingClientRect(),bodyRect=body.getBoundingClientRect();if(w.getComputedStyle(workspace).display!=="none")throw new Error("Task list remained visible behind the import screen");if(Math.abs(importRect.top-bodyRect.top)>1||Math.abs(importRect.left-bodyRect.left)>1||Math.abs(importRect.width-bodyRect.width)>2||Math.abs(importRect.height-bodyRect.height)>2)throw new Error("Task import does not fill the task screen");click(importPanel.querySelector('[data-task-import-type="feature"]'));const importText=importPanel.querySelector("[data-task-import-text]");importText.value="1. [BUG] Imported broken control\n- Imported default feature\n3) [FEATURE] Imported explicit feature\n\n";importText.dispatchEvent(new w.Event("input",{bubbles:true}));click(importPanel.querySelector("[data-task-import-save]"));await waitFor("[data-task-workspace]");await waitUntil(()=>JSON.parse(w.__taskProbe.fileText).items.length===5,"Imported tasks were not auto-saved");const imported=JSON.parse(w.__taskProbe.fileText).items.slice(0,3);if(w.__taskProbe.writeCount!==writesBeforeImport+1)throw new Error("Batch import did not use one JSON write");if(JSON.stringify(imported.map(item=>[item.type,item.status,item.text]))!==JSON.stringify([["bug","backlog","Imported broken control"],["feature","backlog","Imported default feature"],["feature","backlog","Imported explicit feature"]]))throw new Error("Imported task parsing, defaults or order are incorrect");
+  click(d.querySelector("#modal [data-close]"));const dateOnClose=d.querySelector("#dateText").textContent;await sleep(800);if(d.querySelector("#dateText").textContent===dateOnClose)throw new Error("Simulation did not resume after Development Tasks closed");
+  if(w.__taskProbe.runtimeErrors.length)throw new Error("Runtime errors: "+w.__taskProbe.runtimeErrors.join(" | "));
+  result.textContent="PASS development task file, type/status filters, import, status icons, editor, numbered multi-copy, autosave and simulation pause";
+}catch(error){result.textContent="FAIL development tasks probe • "+(error?.stack||error);}
+</script></body>

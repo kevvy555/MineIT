@@ -1,298 +1,135 @@
 import { UIController as ShipNavigationUIController } from "./ship-navigation-ui.js";
-import { PLAYER_SHIP_CAPACITY, PLAYER_SHIP_PASSENGERS } from "../domain/expansion-service.js";
+import { universeShipCatalogue } from "../data/universe-ship-catalogue.js";
+import { ShipMarketService,SHIP_ORDER_CANCELLATION_FEE_RATE } from "../domain/ship-market-service.js";
 import { formatNumber } from "../core/utils.js";
 import { renderViewTemplate } from "../core/view-template.js";
 
 const CATEGORIES=["food","build","fuel","ore"];
 const BAND_ORDER={"Very Low":1,"Low":2,"Moderate":3,"High":4,"Very High":5,"Extreme":1,"Hostile":2,"Marginal":3,"Manageable":4,"Favourable":5};
 const PLANET_COLUMNS=[["name","PLANET"],["environment","ENVIRONMENT"],["food","FOOD"],["build","BUILD"],["fuel","FUEL"],["ore","ORE"],["habitability","HABITABILITY"],["confidence","CONF."],["tech","TECH"],["colony","COLONY"]];
+const MARKET_ROLES=["","Courier","Freighter","Survey","Passenger","Heavy Freight","Utility"];
+const FLEET_HIT_PREFIX="__fleet_ship__:";
 const esc=value=>String(value??"").replace(/[&<>\"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;"}[ch]));
 const pct=(value,max)=>max>0?Math.max(0,Math.min(100,(Number(value)||0)/max*100)):0;
+const credits=value=>`cc ${formatNumber(value)}`;
 
-/** Sortable planetary survey data and dense, load-focused player-ship preparation. */
+/** Canonical active controller for fleet preparation, selection and Deep Reach ship procurement. */
 export class UIController extends ShipNavigationUIController{
-  constructor(opts){super(opts);this.planetSort={key:"name",dir:1};this.shipPrepRevision=0;this.prepClickHandler=null;this.planetClickHandler=null;}
-
-  open(title,body){this.releasePrepActions();this.releasePlanetActions();super.open(title,body);}
-
-  dispose(){this.releasePrepActions();this.releasePlanetActions();super.dispose?.();}
-
-  releasePrepActions(){
-    if(!this.prepClickHandler)return;
-    this.modal?.removeEventListener("click",this.prepClickHandler);
-    this.prepClickHandler=null;
+  constructor(opts){
+    super(opts);this.planetSort={key:"name",dir:1};this.shipPrepRevision=0;this.prepClickHandler=null;this.planetClickHandler=null;
+    this.shipCatalogue=universeShipCatalogue;this.shipMarketService=new ShipMarketService(this.shipCatalogue,this.expansion);this.shipMarketService.ensure(this.state);this.shipMarketRevision=0;this.marketClickHandler=null;this.marketPointerCleanup=null;this.shipMarketManufacturerId=null;this.shipMarketShipClassId=null;this.shipMarketRole="";this.shipMarketColonyId=null;this.shipCompareIds=[];this.shipRetargetOrderId=null;this.shipSignatureDirty=false;this.shipContractCanOrder=false;
   }
 
-  releasePlanetActions(){
-    if(!this.planetClickHandler)return;
-    this.modal?.removeEventListener("click",this.planetClickHandler);
-    this.planetClickHandler=null;
-  }
+  bind(){super.bind();this.bindClick?.("#starMapBtn",()=>this.starMap());}
+  open(title,body){this.releasePrepActions();this.releasePlanetActions();this.releaseMarketActions();super.open(title,body);}
+  dispose(){this.releasePrepActions();this.releasePlanetActions();this.releaseMarketActions();super.dispose?.();}
+  releasePrepActions(){if(!this.prepClickHandler)return;this.modal?.removeEventListener("click",this.prepClickHandler);this.prepClickHandler=null;}
+  releasePlanetActions(){if(!this.planetClickHandler)return;this.modal?.removeEventListener("click",this.planetClickHandler);this.planetClickHandler=null;}
+  releaseMarketActions(){if(this.marketClickHandler)this.modal?.removeEventListener("click",this.marketClickHandler);this.marketClickHandler=null;if(this.marketPointerCleanup)this.marketPointerCleanup();this.marketPointerCleanup=null;}
 
   planetSortValue(planet,key,system){
-    if(key==="name")return planet.name||"";
-    if(key==="environment")return planet.environment||"";
+    if(key==="name")return planet.name||"";if(key==="environment")return planet.environment||"";
     if(["food","build","fuel","ore","habitability"].includes(key))return BAND_ORDER[planet.indicators?.[key]]||0;
     if(key==="confidence")return Number(planet.surveyConfidence)||0;
     if(key==="tech"){const t=planet.requiredTech||{};return Math.max(Number(t.power)||0,Number(t.food)||0,Number(t.mining)||0)*100+(Number(t.power)||0)+(Number(t.food)||0)+(Number(t.mining)||0);}
     if(key==="colony")return this.expansion.coloniesInSystem(this.state,system.id).filter(c=>c.planetId===planet.id).map(c=>c.name).join(" ");
     return"";
   }
-
-  sortedPlanets(system){
-    const sort=this.planetSort||{key:"name",dir:1},dir=sort.dir<0?-1:1;
-    return [...(system.planets||[])].sort((a,b)=>{const av=this.planetSortValue(a,sort.key,system),bv=this.planetSortValue(b,sort.key,system);if(typeof av==="number"&&typeof bv==="number")return(av-bv)*dir;return String(av).localeCompare(String(bv),undefined,{numeric:true,sensitivity:"base"})*dir;});
-  }
-
-  planetSortIndicator(key){
-    if(this.planetSort?.key!==key)return"↕";
-    return this.planetSort.dir<0?"▼":"▲";
-  }
-
-  planetTemplate(selector){
-    const template=this.modal.querySelector(selector);
-    if(!template)throw new Error(`Missing planet table template ${selector}`);
-    return template.content.firstElementChild.cloneNode(true);
-  }
-
-  planetSortHeader([key,label]){
-    const cell=this.planetTemplate("[data-planet-sort-template]"),button=cell.querySelector("[data-planet-sort]");
-    button.dataset.planetSort=key;
-    button.classList.toggle("active",this.planetSort?.key===key);
-    button.prepend(document.createTextNode(label));
-    button.querySelector("[data-planet-sort-arrow]").textContent=this.planetSortIndicator(key);
-    return cell;
-  }
-
-  renderPlanetHeaders(){
-    const host=this.modal.querySelector("[data-planet-table-head]"),fragment=document.createDocumentFragment();
-    for(const column of PLANET_COLUMNS)fragment.append(this.planetSortHeader(column));
-    fragment.append(this.planetTemplate("[data-planet-action-header-template]"));
-    host.replaceChildren(fragment);
-  }
-
-  planetFoundState(occupied,passengers,meets){
-    if(occupied)return{enabled:false,label:"COLONY EXISTS"};
-    if(passengers<=0)return{enabled:false,label:"NO COLONISTS"};
-    if(!meets)return{enabled:false,label:"TECH LOCKED"};
-    return{enabled:true,label:"FOUND COLONY"};
-  }
-
-  setPlanetCell(row,selector,value){
-    const cell=row.querySelector(selector);
-    if(cell)cell.textContent=value;
-  }
-
-  renderPlanetColonies(host,colonies){
-    if(!colonies.length){host.textContent="—";return;}
-    const fragment=document.createDocumentFragment();
-    colonies.forEach((colony,index)=>{const name=this.planetTemplate("[data-planet-colony-template]");name.querySelector("[data-planet-colony-name]").textContent=colony.name;fragment.append(name);if(index<colonies.length-1)fragment.append(document.createElement("br"));});
-    host.replaceChildren(fragment);
-  }
-
-  createDockAction(colony){
-    const button=this.planetTemplate("[data-planet-dock-template]");
-    button.dataset.dockColony=colony.id;
-    button.textContent=`DOCK ${colony.name}`;
-    return button;
-  }
-
-  createFoundAction(planet,occupied,passengers,meets){
-    const button=this.planetTemplate("[data-planet-found-template]"),state=this.planetFoundState(occupied,passengers,meets);
-    button.dataset.foundPlanet=planet.id;
-    button.disabled=!state.enabled;
-    button.textContent=state.label;
-    return button;
-  }
-
-  renderPlanetActions(host,{arrived,living,planet,occupied,passengers,meets}){
-    const fragment=document.createDocumentFragment();
-    if(!arrived)fragment.append(document.createTextNode("—"));
-    else if(living.length)for(const colony of living)fragment.append(this.createDockAction(colony));
-    else fragment.append(this.createFoundAction(planet,occupied,passengers,meets));
-    host.replaceChildren(fragment);
-  }
-
-  createPlanetRow(planet,system,arrived,owned,ship){
-    const row=this.planetTemplate("[data-planet-row-template]"),colonies=owned.filter(c=>c.planetId===planet.id),living=colonies.filter(c=>c.status!=="dead"),meets=this.technology.meetsRequirements(this.state,planet.requiredTech),i=planet.indicators||{},t=planet.requiredTech||{};
-    this.setPlanetCell(row,"[data-planet-name]",planet.name);
-    this.setPlanetCell(row,"[data-planet-environment]",planet.environment);
-    for(const key of["food","build","fuel","ore","habitability"])this.setPlanetCell(row,`[data-planet-${key}]`,i[key]||"");
-    this.setPlanetCell(row,"[data-planet-confidence]",`${formatNumber(planet.surveyConfidence)}%`);
-    this.setPlanetCell(row,"[data-planet-tech]",`P${t.power||0} / F${t.food||0} / M${t.mining||0}`);
-    this.renderPlanetColonies(row.querySelector("[data-planet-colonies]"),colonies);
-    this.renderPlanetActions(row.querySelector("[data-planet-actions]"),{arrived,living,planet,occupied:colonies.length>0,passengers:ship.passengers,meets});
-    return row;
-  }
-
-  renderPlanetRows(system,arrived){
-    const host=this.modal.querySelector("[data-planet-table-body]"),owned=this.expansion.coloniesInSystem(this.state,system.id),ship=this.expansion.ship(this.state),fragment=document.createDocumentFragment();
-    for(const planet of this.sortedPlanets(system))fragment.append(this.createPlanetRow(planet,system,arrived,owned,ship));
-    host.replaceChildren(fragment);
-  }
-
-  renderPlanetTable(system){
-    const host=this.modal?.querySelector(".exp-planet-table-wrap[data-planet-table]");
-    if(!host||!system)return false;
-    const ship=this.expansion.ship(this.state),arrived=ship.status==="arrived"&&ship.systemId===system.id;
-    this.renderPlanetHeaders();this.renderPlanetRows(system,arrived);
-    return true;
-  }
-
+  sortedPlanets(system){const sort=this.planetSort||{key:"name",dir:1},dir=sort.dir<0?-1:1;return[...(system.planets||[])].sort((a,b)=>{const av=this.planetSortValue(a,sort.key,system),bv=this.planetSortValue(b,sort.key,system);if(typeof av==="number"&&typeof bv==="number")return(av-bv)*dir;return String(av).localeCompare(String(bv),undefined,{numeric:true,sensitivity:"base"})*dir;});}
+  planetSortIndicator(key){if(this.planetSort?.key!==key)return"↕";return this.planetSort.dir<0?"▼":"▲";}
+  planetTemplate(selector){const template=this.modal.querySelector(selector);if(!template)throw new Error(`Missing planet table template ${selector}`);return template.content.firstElementChild.cloneNode(true);}
+  planetSortHeader([key,label]){const cell=this.planetTemplate("[data-planet-sort-template]"),button=cell.querySelector("[data-planet-sort]");button.dataset.planetSort=key;button.classList.toggle("active",this.planetSort?.key===key);button.prepend(document.createTextNode(label));button.querySelector("[data-planet-sort-arrow]").textContent=this.planetSortIndicator(key);return cell;}
+  renderPlanetHeaders(){const host=this.modal.querySelector("[data-planet-table-head]"),fragment=document.createDocumentFragment();for(const column of PLANET_COLUMNS)fragment.append(this.planetSortHeader(column));fragment.append(this.planetTemplate("[data-planet-action-header-template]"));host.replaceChildren(fragment);}
+  planetFoundState(occupied,passengers,meets){if(occupied)return{enabled:false,label:"COLONY EXISTS"};if(passengers<=0)return{enabled:false,label:"NO COLONISTS"};if(!meets)return{enabled:false,label:"TECH LOCKED"};return{enabled:true,label:"FOUND COLONY"};}
+  setPlanetCell(row,selector,value){const cell=row.querySelector(selector);if(cell)cell.textContent=value;}
+  renderPlanetColonies(host,colonies){if(!colonies.length){host.textContent="—";return;}const fragment=document.createDocumentFragment();colonies.forEach((colony,index)=>{const name=this.planetTemplate("[data-planet-colony-template]");name.querySelector("[data-planet-colony-name]").textContent=colony.name;fragment.append(name);if(index<colonies.length-1)fragment.append(document.createElement("br"));});host.replaceChildren(fragment);}
+  createDockAction(colony){const button=this.planetTemplate("[data-planet-dock-template]");button.dataset.dockColony=colony.id;button.textContent=`DOCK ${colony.name}`;return button;}
+  createFoundAction(planet,occupied,passengers,meets){const button=this.planetTemplate("[data-planet-found-template]"),state=this.planetFoundState(occupied,passengers,meets);button.dataset.foundPlanet=planet.id;button.disabled=!state.enabled;button.textContent=state.label;return button;}
+  renderPlanetActions(host,{arrived,living,planet,occupied,passengers,meets}){const fragment=document.createDocumentFragment();if(!arrived)fragment.append(document.createTextNode("—"));else if(living.length)for(const colony of living)fragment.append(this.createDockAction(colony));else fragment.append(this.createFoundAction(planet,occupied,passengers,meets));host.replaceChildren(fragment);}
+  createPlanetRow(planet,system,arrived,owned,ship){const row=this.planetTemplate("[data-planet-row-template]"),colonies=owned.filter(c=>c.planetId===planet.id),living=colonies.filter(c=>c.status!=="dead"),meets=this.technology.meetsRequirements(this.state,planet.requiredTech),i=planet.indicators||{},t=planet.requiredTech||{};this.setPlanetCell(row,"[data-planet-name]",planet.name);this.setPlanetCell(row,"[data-planet-environment]",planet.environment);for(const key of["food","build","fuel","ore","habitability"])this.setPlanetCell(row,`[data-planet-${key}]`,i[key]||"");this.setPlanetCell(row,"[data-planet-confidence]",`${formatNumber(planet.surveyConfidence)}%`);this.setPlanetCell(row,"[data-planet-tech]",`P${t.power||0} / F${t.food||0} / M${t.mining||0}`);this.renderPlanetColonies(row.querySelector("[data-planet-colonies]"),colonies);this.renderPlanetActions(row.querySelector("[data-planet-actions]"),{arrived,living,planet,occupied:colonies.length>0,passengers:ship.passengers,meets});return row;}
+  renderPlanetRows(system,arrived){const host=this.modal.querySelector("[data-planet-table-body]"),owned=this.expansion.coloniesInSystem(this.state,system.id),ship=this.expansion.ship(this.state),fragment=document.createDocumentFragment();for(const planet of this.sortedPlanets(system))fragment.append(this.createPlanetRow(planet,system,arrived,owned,ship));host.replaceChildren(fragment);}
+  renderPlanetTable(system){const host=this.modal?.querySelector(".exp-planet-table-wrap[data-planet-table]");if(!host||!system)return false;const ship=this.expansion.ship(this.state),arrived=ship.status==="arrived"&&ship.systemId===system.id;this.renderPlanetHeaders();this.renderPlanetRows(system,arrived);return true;}
   planetTable(){return renderViewTemplate("./views/planet-table.html");}
+  changePlanetSort(key){if(this.planetSort?.key===key)this.planetSort.dir*=-1;else this.planetSort={key,dir:1};this.starMap();}
+  bindPlanetActions(){this.releasePlanetActions();this.planetClickHandler=event=>{const button=event.target.closest?.("button[data-planet-sort]");if(!button||!this.modal.contains(button))return;this.changePlanetSort(button.dataset.planetSort);};this.modal.addEventListener("click",this.planetClickHandler);}
+  bindStarMapDetailActions(system){const rendered=this.renderPlanetTable(system);super.bindStarMapDetailActions(system);if(rendered)this.bindPlanetActions();}
 
-  changePlanetSort(key){
-    if(this.planetSort?.key===key)this.planetSort.dir*=-1;
-    else this.planetSort={key,dir:1};
-    this.starMap();
-  }
+  shipLocation(){const ship=this.expansion.ship(this.state),ex=this.state.company.expansion;if(!ship)return"NO ACTIVE SHIP";if(ship.status==="travelling"){const target=this.expansion.system(ex,ship.targetSystemId);return`IN TRANSIT → ${target?.name||"UNKNOWN"}`;}if(ship.status==="lost")return"SHIP LOST";if(ship.status==="home")return"KOPLIN CORPORATE HOME";if(ship.status==="orbiting"){const entry=this.state.portfolio?.colonies?.find(e=>e.id===ship.targetColonyId);return`ORBITAL HOLD • ${entry?.data?.contract?.colonyName||"DESTINATION COLONY"}`;}const system=this.expansion.system(ex,ship.systemId);if(ship.status==="arrived")return`ARRIVED • ${system?.name||"SYSTEM"}`;const entry=this.state.portfolio?.colonies?.find(e=>e.id===ship.colonyId);return`${entry?.data?.contract?.colonyName||"DOCKED"} • ${system?.name||"SYSTEM"}`;}
+  shipStatusMarkup(){const ship=this.expansion.ship(this.state);if(!ship)return"";const used=this.expansion.capacityUsed(this.state,ship.id),total=this.expansion.shipTotalCapacity(ship),fuel=this.expansion.fuelAmount(this.state,ship.id),cargo=this.expansion.cargoAmount(this.state,ship.id),food=this.expansion.foodAmount(this.state,ship.id),target=ship.targetSystemId?this.expansion.system(this.state.company.expansion,ship.targetSystemId):null,days=ship.status==="travelling"?Math.max(0,(Number(ship.arrivalAbsoluteDay)||0)-this.expansion.absoluteDay(this.state)):null;return`<section class="exp-ship-strip"><div><small>${esc(ship.name||"PLAYER SHIP")}</small><strong>${esc(this.shipLocation())}</strong></div><div class="exp-ship-metrics"><span><small>LOAD</small><b>${formatNumber(used)} / ${formatNumber(total)}</b></span><span><small>FUEL</small><b>${formatNumber(fuel)} / ${formatNumber(ship.fuelCapacity)}</b></span><span><small>CARGO</small><b>${formatNumber(cargo)} / ${formatNumber(ship.cargoCapacity)}</b></span><span><small>FOOD</small><b>${formatNumber(food)} / ${formatNumber(ship.foodCapacity)}</b></span><span><small>CREW</small><b>${formatNumber(ship.crew)} / ${formatNumber(ship.minimumCrew)} MIN</b></span><span><small>COLONISTS</small><b>${formatNumber(ship.passengers)} / ${formatNumber(ship.passengerCapacity)}</b></span>${days!==null?`<span><small>ARRIVAL</small><b>${formatNumber(days)}d</b></span>`:""}</div>${target?`<div class="exp-target">TARGET • <strong>${esc(target.name)}</strong></div>`:""}</section>`;}
 
-  bindPlanetActions(){
-    this.releasePlanetActions();
-    this.planetClickHandler=event=>{const button=event.target.closest?.("button[data-planet-sort]");if(!button||!this.modal.contains(button))return;this.changePlanetSort(button.dataset.planetSort);};
-    this.modal.addEventListener("click",this.planetClickHandler);
-  }
-
-  bindStarMapDetailActions(system){
-    const rendered=this.renderPlanetTable(system);
-    super.bindStarMapDetailActions(system);
-    if(rendered)this.bindPlanetActions();
-  }
-
-  availableCargoCategories(){
-    const ship=this.expansion.ship(this.state),has=(container,type)=>Object.values(container||{}).some(entry=>entry?.type===type&&(Number(entry.amount)||0)>0);
-    return CATEGORIES.filter(type=>has(this.state.inventory,type)||has(ship.cargo,type));
-  }
-
-  cargoEntries(){
-    const ship=this.expansion.ship(this.state),keys=new Set([...Object.keys(this.state.inventory||{}),...Object.keys(ship.cargo||{})]);
-    return [...keys].map(key=>({key,colony:this.state.inventory?.[key],aboard:ship.cargo?.[key]})).filter(row=>{const type=row.colony?.type||row.aboard?.type,colony=Math.max(0,Number(row.colony?.amount)||0),aboard=Math.max(0,Number(row.aboard?.amount)||0);return type===this.expeditionCategory&&(colony>0||aboard>0);}).sort((a,b)=>String(a.colony?.name||a.aboard?.name).localeCompare(String(b.colony?.name||b.aboard?.name)));
-  }
-
-  loadBar(label,value,max,detail="",cls=""){
-    return `<div class="exp-load-meter ${cls}"><div class="exp-load-meter-head"><small>${label}</small><strong>${formatNumber(value)}${max>0?` / ${formatNumber(max)}`:""}</strong></div><div class="exp-load-meter-track"><i style="width:${pct(value,max)}%"></i></div>${detail?`<span>${detail}</span>`:""}</div>`;
-  }
-
-  manifestOverview(profile){
-    const used=this.expansion.capacityUsed(this.state),shipFuel=this.expansion.fuelAmount(this.state),foodTotal=this.expansion.cargoCategory(this.state,"food"),transitFuelNeed=Math.max(0,Number(profile?.fuelRequired)||0),transitFoodNeed=Math.max(0,Number(profile?.foodRequired)||0),transitFuel=Math.min(shipFuel,transitFuelNeed),transitFood=Math.min(foodTotal,transitFoodNeed),cargoFood=Math.max(0,foodTotal-transitFood);
-    return `<section class="exp-load-overview"><div class="exp-section-head"><h3>SHIP LOAD</h3><span>Transit reserves are shown separately from usable cargo.</span></div>${this.loadBar("TOTAL CAPACITY",used,PLAYER_SHIP_CAPACITY,`${formatNumber(Math.max(0,PLAYER_SHIP_CAPACITY-used))} free`)}${this.loadBar("SHIP FUEL TANK",shipFuel,PLAYER_SHIP_CAPACITY,"All fuel physically in the dedicated tank")}${profile?this.loadBar("TRANSIT FUEL",transitFuel,transitFuelNeed,transitFuel>=transitFuelNeed?"Journey fuel covered":"More tank fuel required",transitFuel>=transitFuelNeed?"ready":"blocked"):this.loadBar("TRANSIT FUEL",0,0,"Select a destination to calculate requirement")}${profile?this.loadBar("TRANSIT FOOD",transitFood,transitFoodNeed,transitFood>=transitFoodNeed?"Journey food covered":"More food cargo required",transitFood>=transitFoodNeed?"ready":"blocked"):this.loadBar("TRANSIT FOOD",0,0,"Select a destination to calculate requirement")}${this.loadBar("CARGO FOOD",cargoFood,PLAYER_SHIP_CAPACITY,"Food remaining after the transit reserve")}</section>`;
-  }
-
-  visibleCargoEntries(){
-    const start=this.expeditionPage*4;
-    return this.cargoEntries().slice(start,start+4);
-  }
-
-  fuelEntries(){
-    const ship=this.expansion.ship(this.state),inventory=this.state.inventory||{};
-    const keys=new Set([...Object.keys(inventory).filter(key=>inventory[key]?.type==="fuel"),...Object.keys(ship.fuelLots||{})]);
-    return [...keys].map(key=>({key,colony:inventory[key],tank:ship.fuelLots?.[key]}))
-      .filter(row=>(Number(row.colony?.amount)||0)>0||(Number(row.tank?.amount)||0)>0)
-      .sort((a,b)=>String(a.colony?.name||a.tank?.name).localeCompare(String(b.colony?.name||b.tank?.name)));
-  }
-
-  createLoadRow({key,name,stored,loaded,loadedLabel,kind,allowMax}){
-    const template=this.modal.querySelector("[data-ship-load-row-template]");
-    const row=template.content.firstElementChild.cloneNode(true),loadKey=kind==="fuel"?"loadFuel":"loadCargo",unloadKey=kind==="fuel"?"unloadFuel":"unloadCargo";
-    row.querySelector("[data-ship-load-name]").textContent=name;
-    row.querySelector("[data-ship-load-detail]").textContent=`${formatNumber(stored)} colony • ${formatNumber(loaded)} ${loadedLabel}`;
-    row.querySelector("[data-ship-load-progress]").style.width=`${pct(loaded,stored+loaded)}%`;
-    row.querySelectorAll("[data-ship-load-quantity]").forEach(button=>{if(button.dataset.shipLoadQuantity==="max"&&!allowMax){button.remove();return;}button.dataset[loadKey]=key;});
-    const unload=row.querySelector("[data-ship-unload]");unload.dataset[unloadKey]=key;unload.disabled=loaded<=0;
-    return row;
-  }
-
-  createEmptyRow(message){
-    const template=this.modal.querySelector("[data-ship-empty-template]");
-    const row=template.content.firstElementChild.cloneNode(true);
-    row.querySelector("[data-ship-empty-message]").textContent=message;
-    return row;
-  }
-
-  renderLoadRows(host,rows,createRow,emptyMessage){
-    if(!host)return;
-    const fragment=document.createDocumentFragment();
-    if(rows.length)for(const row of rows)fragment.append(createRow(row));
-    else fragment.append(this.createEmptyRow(emptyMessage));
-    host.replaceChildren(fragment);
-  }
-
-  renderCargoRows(){
-    const rows=this.visibleCargoEntries(),host=this.modal.querySelector("[data-ship-cargo-rows]");
-    this.renderLoadRows(host,rows,row=>{const entry=row.colony||row.aboard,stored=Math.max(0,Number(row.colony?.amount)||0),loaded=Math.max(0,Number(row.aboard?.amount)||0);return this.createLoadRow({key:row.key,name:entry.name,stored,loaded,loadedLabel:"aboard",kind:"cargo",allowMax:true});},`No ${this.expeditionCategory.toUpperCase()} stock at this colony or aboard.`);
-  }
-
-  renderFuelRows(){
-    const rows=this.fuelEntries(),host=this.modal.querySelector("[data-ship-fuel-rows]");
-    this.renderLoadRows(host,rows,row=>{const entry=row.colony||row.tank,stored=Math.max(0,Number(row.colony?.amount)||0),loaded=Math.max(0,Number(row.tank?.amount)||0);return this.createLoadRow({key:row.key,name:entry.name,stored,loaded,loadedLabel:"tank",kind:"fuel",allowMax:false});},"No Fuel stock at this colony or in the ship tank.");
-  }
-
-  renderManifestRows(hasCargo){
-    this.renderFuelRows();
-    if(hasCargo)this.renderCargoRows();
-  }
-
-  manifestQuantity(button,available){return button.dataset.qty==="max"?available:Number(button.dataset.qty);}
-
-  handleManifestAction(button){
-    if("loadCargo" in button.dataset){const entry=this.state.inventory?.[button.dataset.loadCargo];this.afterManifestChange(this.expansion.loadCargo(this.state,button.dataset.loadCargo,this.manifestQuantity(button,entry?.amount||0)));return true;}
-    if("unloadCargo" in button.dataset){this.afterManifestChange(this.expansion.unloadCargo(this.state,button.dataset.unloadCargo));return true;}
-    if("loadFuel" in button.dataset){const entry=this.state.inventory?.[button.dataset.loadFuel];this.afterManifestChange(this.expansion.loadFuel(this.state,button.dataset.loadFuel,this.manifestQuantity(button,entry?.amount||0)));return true;}
-    if("unloadFuel" in button.dataset){this.afterManifestChange(this.expansion.unloadFuel(this.state,button.dataset.unloadFuel));return true;}
-    return false;
-  }
-
-  handlePassengerAction(button){
-    if("loadPax" in button.dataset){const amount=button.dataset.loadPax==="max"?Math.min(this.state.pop,this.expansion.passengerRemaining(this.state)):Number(button.dataset.loadPax);this.afterManifestChange(this.expansion.loadPassengers(this.state,amount));return true;}
-    if(button.hasAttribute("data-unload-pax")){this.afterManifestChange(this.expansion.unloadPassengers(this.state));return true;}
-    return false;
-  }
-
-  launchPreparedShip(){
-    const result=this.expansion.launch(this.state);
-    if(!result.ok){this.toast(result.reason);this.shipPrep();return;}
-    this.onCapturePortfolio?.();this.repo.save(this.state);
-    const ship=this.expansion.ship(this.state),profile=result.profile;
-    this.gameLog?.event?.(this.state,"player-ship-launched",`Player colony ship launched for ${profile.target.name}.`,{targetSystemId:profile.target.id,distanceLy:profile.distanceLy,journeyDays:profile.days,passengers:ship.passengers});
-    this.modal.classList.add("hidden");this.toast(`Ship launched • arrival in ${formatNumber(profile.days)} days.`);
-  }
-
-  handlePrepAction(button){
-    if("expCategory" in button.dataset){this.expeditionCategory=button.dataset.expCategory;this.expeditionPage=0;this.shipPrep();return;}
-    if("expPage" in button.dataset){this.expeditionPage=Math.max(0,this.expeditionPage+Number(button.dataset.expPage));this.shipPrep();return;}
-    if(this.handleManifestAction(button)||this.handlePassengerAction(button))return;
-    if(button.hasAttribute("data-back-map")){this.starMap();return;}
-    if(button.hasAttribute("data-launch-player"))this.launchPreparedShip();
-  }
-
-  bindPrep(){
-    this.releasePrepActions();
-    this.prepClickHandler=event=>{const button=event.target.closest?.("button");if(!button||button.disabled||!this.modal.contains(button))return;this.handlePrepAction(button);};
-    this.modal.addEventListener("click",this.prepClickHandler);
-  }
-
-  shipRouteDetails(profile,fuel,food){
-    if(!profile)return Promise.resolve("");
-    return renderViewTemplate("./views/player-ship-route.html",{DISTANCE:profile.distanceLy.toFixed(1),JOURNEY_DAYS:formatNumber(profile.days),FUEL_CLASS:fuel>=profile.fuelRequired?"good":"bad",FUEL_AMOUNT:formatNumber(fuel),FUEL_REQUIRED:formatNumber(profile.fuelRequired),FOOD_CLASS:food>=profile.foodRequired?"good":"bad",FOOD_AMOUNT:formatNumber(food),FOOD_REQUIRED:formatNumber(profile.foodRequired)});
-  }
-
-  passengerLoader(){
-    const ship=this.expansion.ship(this.state);
-    return renderViewTemplate("./views/player-ship-passengers.html",{COLONY_POPULATION:formatNumber(this.state.pop),PASSENGERS:formatNumber(ship.passengers),PASSENGER_CAPACITY:PLAYER_SHIP_PASSENGERS,UNLOAD_DISABLED:ship.passengers<=0?"disabled":""});
-  }
+  availableCargoCategories(){const ship=this.expansion.ship(this.state),has=(container,type)=>Object.values(container||{}).some(entry=>entry?.type===type&&(Number(entry.amount)||0)>0);return CATEGORIES.filter(type=>has(this.state.inventory,type)||has(ship.cargo,type));}
+  cargoEntries(){const ship=this.expansion.ship(this.state),keys=new Set([...Object.keys(this.state.inventory||{}),...Object.keys(ship.cargo||{})]);return[...keys].map(key=>({key,colony:this.state.inventory?.[key],aboard:ship.cargo?.[key]})).filter(row=>{const type=row.colony?.type||row.aboard?.type,colony=Math.max(0,Number(row.colony?.amount)||0),aboard=Math.max(0,Number(row.aboard?.amount)||0);return type===this.expeditionCategory&&(colony>0||aboard>0);}).sort((a,b)=>String(a.colony?.name||a.aboard?.name).localeCompare(String(b.colony?.name||b.aboard?.name)));}
+  loadBar(label,value,max,detail="",cls=""){return`<div class="exp-load-meter ${cls}"><div class="exp-load-meter-head"><small>${label}</small><strong>${formatNumber(value)}${max>0?` / ${formatNumber(max)}`:""}</strong></div><div class="exp-load-meter-track"><i style="width:${pct(value,max)}%"></i></div>${detail?`<span>${detail}</span>`:""}</div>`;}
+  manifestOverview(profile){const ship=this.expansion.ship(this.state),used=this.expansion.capacityUsed(this.state,ship.id),total=this.expansion.shipTotalCapacity(ship),cargo=this.expansion.cargoAmount(this.state,ship.id),foodStore=this.expansion.foodAmount(this.state,ship.id),cargoFood=this.expansion.cargoCategory(this.state,"food",ship.id),fuel=this.expansion.fuelAmount(this.state,ship.id),transitFood=foodStore+cargoFood,fuelNeed=Math.max(0,Number(profile?.fuelRequired)||0),foodNeed=Math.max(0,Number(profile?.foodRequired)||0);return`<section class="exp-load-overview"><div class="exp-section-head"><h3>SHIP LOAD</h3><span>${formatNumber(total)} total • ${formatNumber(ship.cargoCapacity)} general hold • ${formatNumber(ship.foodCapacity)} Food • ${formatNumber(ship.fuelCapacity)} Fuel.</span></div>${this.loadBar("TOTAL PHYSICAL LOAD",used,total,`${formatNumber(Math.max(0,total-used))} physical capacity free`)}${this.loadBar("GENERAL HOLD",cargo,ship.cargoCapacity,`${formatNumber(Math.max(0,ship.cargoCapacity-cargo))} hold free`)}${this.loadBar("TRANSIT FOOD STORE",foodStore,ship.foodCapacity,`${formatNumber(cargoFood)} additional Food in general hold`)}${this.loadBar("FUEL TANK",fuel,ship.fuelCapacity,`${formatNumber(Math.max(0,ship.fuelCapacity-fuel))} tank capacity free`)}${profile?this.loadBar("ROUTE FUEL",Math.min(fuel,fuelNeed),fuelNeed,fuel>=fuelNeed?"Journey fuel covered":"More Fuel required",fuel>=fuelNeed?"ready":"blocked"):this.loadBar("ROUTE FUEL",0,0,"Select a destination to calculate requirement")}${profile?this.loadBar("ROUTE FOOD",Math.min(transitFood,foodNeed),foodNeed,transitFood>=foodNeed?"Journey Food covered — dedicated store is consumed first":"More Food required",transitFood>=foodNeed?"ready":"blocked"):this.loadBar("ROUTE FOOD",0,0,"Select a destination to calculate requirement")}</section>`;}
+  visibleCargoEntries(){const start=this.expeditionPage*4;return this.cargoEntries().slice(start,start+4);}
+  fuelEntries(){const ship=this.expansion.ship(this.state),inventory=this.state.inventory||{},keys=new Set([...Object.keys(inventory).filter(key=>inventory[key]?.type==="fuel"),...Object.keys(ship.fuelLots||{})]);return[...keys].map(key=>({key,colony:inventory[key],tank:ship.fuelLots?.[key]})).filter(row=>(Number(row.colony?.amount)||0)>0||(Number(row.tank?.amount)||0)>0).sort((a,b)=>String(a.colony?.name||a.tank?.name).localeCompare(String(b.colony?.name||b.tank?.name)));}
+  foodEntries(){const ship=this.expansion.ship(this.state),inventory=this.state.inventory||{},keys=new Set([...Object.keys(inventory).filter(key=>inventory[key]?.type==="food"),...Object.keys(ship.foodLots||{})]);return[...keys].map(key=>({key,colony:inventory[key],store:ship.foodLots?.[key]})).filter(row=>(Number(row.colony?.amount)||0)>0||(Number(row.store?.amount)||0)>0).sort((a,b)=>String(a.colony?.name||a.store?.name).localeCompare(String(b.colony?.name||b.store?.name)));}
+  createLoadRow({key,name,stored,loaded,loadedLabel,kind}){const template=this.modal.querySelector("[data-ship-load-row-template]"),row=template.content.firstElementChild.cloneNode(true),loadKey=kind==="fuel"?"loadFuel":kind==="food"?"loadFood":"loadCargo",unloadKey=kind==="fuel"?"unloadFuel":kind==="food"?"unloadFood":"unloadCargo";row.querySelector("[data-ship-load-name]").textContent=name;row.querySelector("[data-ship-load-detail]").textContent=`${formatNumber(stored)} colony • ${formatNumber(loaded)} ${loadedLabel}`;row.querySelector("[data-ship-load-progress]").style.width=`${pct(loaded,stored+loaded)}%`;row.querySelectorAll("[data-ship-load-quantity]").forEach(button=>{button.dataset[loadKey]=key;button.disabled=stored<=0;});row.querySelectorAll("[data-ship-unload-quantity]").forEach(button=>{button.dataset[unloadKey]=key;button.disabled=loaded<=0;});return row;}
+  createEmptyRow(message){const template=this.modal.querySelector("[data-ship-empty-template]"),row=template.content.firstElementChild.cloneNode(true);row.querySelector("[data-ship-empty-message]").textContent=message;return row;}
+  renderLoadRows(host,rows,createRow,emptyMessage){if(!host)return;const fragment=document.createDocumentFragment();if(rows.length)for(const row of rows)fragment.append(createRow(row));else fragment.append(this.createEmptyRow(emptyMessage));host.replaceChildren(fragment);}
+  renderCargoRows(){const rows=this.visibleCargoEntries(),host=this.modal.querySelector("[data-ship-cargo-rows]");this.renderLoadRows(host,rows,row=>{const entry=row.colony||row.aboard,stored=Math.max(0,Number(row.colony?.amount)||0),loaded=Math.max(0,Number(row.aboard?.amount)||0);return this.createLoadRow({key:row.key,name:entry.name,stored,loaded,loadedLabel:"general hold",kind:"cargo"});},`No ${this.expeditionCategory.toUpperCase()} stock at this colony or in the general hold.`);}
+  renderFuelRows(){const rows=this.fuelEntries(),host=this.modal.querySelector("[data-ship-fuel-rows]");this.renderLoadRows(host,rows,row=>{const entry=row.colony||row.tank,stored=Math.max(0,Number(row.colony?.amount)||0),loaded=Math.max(0,Number(row.tank?.amount)||0);return this.createLoadRow({key:row.key,name:entry.name,stored,loaded,loadedLabel:"fuel tank",kind:"fuel"});},"No Fuel stock at this colony or in the ship tank.");}
+  renderFoodRows(){const rows=this.foodEntries(),host=this.modal.querySelector("[data-ship-food-rows]");this.renderLoadRows(host,rows,row=>{const entry=row.colony||row.store,stored=Math.max(0,Number(row.colony?.amount)||0),loaded=Math.max(0,Number(row.store?.amount)||0);return this.createLoadRow({key:row.key,name:entry.name,stored,loaded,loadedLabel:"transit store",kind:"food"});},"No Food stock at this colony or in the transit Food store.");}
+  renderManifestRows(hasCargo){this.renderFuelRows();this.renderFoodRows();if(hasCargo)this.renderCargoRows();}
+  manifestQuantity(button,available){return["max","all"].includes(button.dataset.qty)?Math.max(0,Number(available)||0):Math.max(0,Number(button.dataset.qty)||0);}
+  handleManifestAction(button){const ship=this.expansion.ship(this.state),id=ship?.id;if("loadCargo" in button.dataset){const entry=this.state.inventory?.[button.dataset.loadCargo];this.afterManifestChange(this.expansion.loadCargo(this.state,id,button.dataset.loadCargo,this.manifestQuantity(button,entry?.amount)));return true;}if("unloadCargo" in button.dataset){const entry=ship.cargo?.[button.dataset.unloadCargo];this.afterManifestChange(this.expansion.unloadCargo(this.state,id,button.dataset.unloadCargo,this.manifestQuantity(button,entry?.amount)));return true;}if("loadFood" in button.dataset){const entry=this.state.inventory?.[button.dataset.loadFood];this.afterManifestChange(this.expansion.loadFood(this.state,id,button.dataset.loadFood,this.manifestQuantity(button,entry?.amount)));return true;}if("unloadFood" in button.dataset){const entry=ship.foodLots?.[button.dataset.unloadFood];this.afterManifestChange(this.expansion.unloadFood(this.state,id,button.dataset.unloadFood,this.manifestQuantity(button,entry?.amount)));return true;}if("loadFuel" in button.dataset){const entry=this.state.inventory?.[button.dataset.loadFuel];this.afterManifestChange(this.expansion.loadFuel(this.state,id,button.dataset.loadFuel,this.manifestQuantity(button,entry?.amount)));return true;}if("unloadFuel" in button.dataset){const entry=ship.fuelLots?.[button.dataset.unloadFuel];this.afterManifestChange(this.expansion.unloadFuel(this.state,id,button.dataset.unloadFuel,this.manifestQuantity(button,entry?.amount)));return true;}return false;}
+  handlePassengerAction(button){const ship=this.expansion.ship(this.state),id=ship?.id;if("loadCrew" in button.dataset){let amount;if(button.dataset.loadCrew==="minimum")amount=Math.max(0,ship.minimumCrew-ship.crew);else if(button.dataset.loadCrew==="max")amount=Math.min(this.state.pop,this.expansion.crewRemaining(this.state,id));else amount=Number(button.dataset.loadCrew);this.afterManifestChange(this.expansion.loadCrew(this.state,id,amount));return true;}if("unloadCrewStep" in button.dataset){const amount=button.dataset.unloadCrewStep==="all"?ship.crew:Number(button.dataset.unloadCrewStep);this.afterManifestChange(this.expansion.unloadCrew(this.state,id,amount));return true;}if("loadPax" in button.dataset){const amount=button.dataset.loadPax==="max"?Math.min(this.state.pop,this.expansion.passengerRemaining(this.state,id)):Number(button.dataset.loadPax);this.afterManifestChange(this.expansion.loadPassengers(this.state,id,amount));return true;}if("unloadPaxStep" in button.dataset){const amount=button.dataset.unloadPaxStep==="all"?ship.passengers:Number(button.dataset.unloadPaxStep);this.afterManifestChange(this.expansion.unloadPassengers(this.state,id,amount));return true;}return false;}
+  launchPreparedShip(){const ship=this.expansion.ship(this.state),result=this.expansion.launch(this.state,ship?.id);if(!result.ok){this.toast(result.reason);this.shipPrep();return;}this.onCapturePortfolio?.();this.repo.save(this.state);const profile=result.profile;this.gameLog?.event?.(this.state,"player-ship-launched",`${ship.name} launched for ${profile.target.name}.`,{shipId:ship.id,targetSystemId:profile.target.id,distanceLy:profile.distanceLy,journeyDays:profile.days,crew:ship.crew,passengers:ship.passengers});this.modal.classList.add("hidden");this.toast(`${ship.name} launched • arrival in ${formatNumber(profile.days)} days.`);}
+  handlePrepAction(button){if("expCategory" in button.dataset){this.expeditionCategory=button.dataset.expCategory;this.expeditionPage=0;this.shipPrep();return;}if("expPage" in button.dataset){this.expeditionPage=Math.max(0,this.expeditionPage+Number(button.dataset.expPage));this.shipPrep();return;}if(this.handleManifestAction(button)||this.handlePassengerAction(button))return;if(button.hasAttribute("data-back-map")){this.starMap();return;}if(button.hasAttribute("data-launch-player"))this.launchPreparedShip();}
+  bindPrep(){this.releasePrepActions();this.prepClickHandler=event=>{const button=event.target.closest?.("button");if(!button||button.disabled||!this.modal.contains(button))return;this.handlePrepAction(button);};this.modal.addEventListener("click",this.prepClickHandler);}
+  shipRouteDetails(profile,fuel,food){if(!profile)return Promise.resolve("");return renderViewTemplate("./views/player-ship-route.html",{DISTANCE:profile.distanceLy.toFixed(1),JOURNEY_DAYS:formatNumber(profile.days),FUEL_CLASS:fuel>=profile.fuelRequired?"good":"bad",FUEL_AMOUNT:formatNumber(fuel),FUEL_REQUIRED:formatNumber(profile.fuelRequired),FOOD_CLASS:food>=profile.foodRequired?"good":"bad",FOOD_AMOUNT:formatNumber(food),FOOD_REQUIRED:formatNumber(profile.foodRequired)});}
+  passengerLoader(){const ship=this.expansion.ship(this.state);return renderViewTemplate("./views/player-ship-passengers.html",{COLONY_POPULATION:formatNumber(this.state.pop),CREW:formatNumber(ship.crew),MIN_CREW:formatNumber(ship.minimumCrew),MAX_CREW:formatNumber(ship.maximumCrew),PASSENGERS:formatNumber(ship.passengers),PASSENGER_CAPACITY:formatNumber(ship.passengerCapacity),CREW_UNLOAD_DISABLED:ship.crew<=0?"disabled":"",PAX_UNLOAD_DISABLED:ship.passengers<=0?"disabled":""});}
 
   async shipPrep(){
-    const revision=++this.shipPrepRevision,ship=this.expansion.ship(this.state);if(ship.status==="travelling"){this.starMap();return;}if(ship.status==="arrived"){this.openSystem(ship.systemId);return;}if(ship.status==="home"){this.homeworld();return;}
-    if(!this.expansion.isAtActiveColony(this.state)){const entry=this.state.portfolio?.colonies?.find(e=>e.id===ship.colonyId);this.open("Prepare Player Ship",`<div class="exp-shell">${this.shipStatusMarkup()}<article class="exp-message"><strong>SHIP IS AT ANOTHER COLONY</strong><span>Switch to ${esc(entry?.data?.contract?.colonyName||"the ship colony")} to load or unload resources and people.</span><button data-switch-ship-colony>GO TO SHIP COLONY</button></article><button data-back-map>STAR MAP</button></div>`);this.modal.querySelector("[data-switch-ship-colony]").onclick=()=>{if(this.onSwitchColony?.(ship.colonyId))this.shipPrep();};this.modal.querySelector("[data-back-map]").onclick=()=>this.starMap();return;}
-    const target=ship.targetSystemId?this.expansion.system(this.state.company.expansion,ship.targetSystemId):null,profile=target?this.expansion.travelProfile(this.state,target.id):null,canLaunch=this.expansion.canLaunch(this.state),fuel=this.expansion.fuelAmount(this.state),food=this.expansion.cargoCategory(this.state,"food"),categories=this.availableCargoCategories();
-    if(categories.length&&!categories.includes(this.expeditionCategory)){this.expeditionCategory=categories[0];this.expeditionPage=0;}
-    const pages=this.cargoPages(),page=Math.min(this.expeditionPage,pages-1);this.expeditionPage=page;
-    const tabs=categories.length?`<div class="exp-tabs compact-tabs">${categories.map(c=>`<button data-exp-category="${c}" class="${this.expeditionCategory===c?"active":""}">${c.toUpperCase()}</button>`).join("")}</div>`:`<div class="exp-empty">No cargo resources are currently held by this colony or aboard the ship.</div>`;
-    const cargoPager=categories.length?this.pager("exp",page,pages):"";
-    let body;
-    try{const[routeDetails,passengerLoader]=await Promise.all([this.shipRouteDetails(profile,fuel,food),this.passengerLoader()]);body=await renderViewTemplate("./views/player-ship-prep.html",{SHIP_STATUS:this.shipStatusMarkup(),DESTINATION:target?esc(target.name):"NOT SELECTED",ROUTE_DETAILS:routeDetails,MANIFEST_OVERVIEW:this.manifestOverview(profile),PASSENGER_LOADER:passengerLoader,CARGO_TABS:tabs,CARGO_PAGER:cargoPager,LAUNCH_DISABLED:canLaunch.ok?"":"disabled",LAUNCH_LABEL:canLaunch.ok?`LAUNCH • ${formatNumber(profile?.days||0)} DAYS`:esc(canLaunch.reason)});}catch(error){if(revision!==this.shipPrepRevision)return;this.diagnostics?.error?.("ship preparation template failed",error);this.toast("Unable to open player ship preparation.");return;}
-    if(revision!==this.shipPrepRevision)return;
-    this.open("Prepare Player Ship",body);
-    this.modal.classList.add("ship-prep-modal","full-screen-panel","compact-ship-prep");this.renderManifestRows(categories.length>0);this.bindPrep();
+    const revision=++this.shipPrepRevision,ship=this.expansion.ship(this.state);if(ship.status==="travelling"||ship.status==="orbiting"){this.starMap();return;}if(ship.status==="arrived"){this.openSystem(ship.systemId);return;}if(ship.status==="home"){this.homeworld();return;}
+    if(!this.expansion.isAtActiveColony(this.state,ship.id)){const entry=this.state.portfolio?.colonies?.find(e=>e.id===ship.colonyId);this.open("Prepare Player Ship",`<div class="exp-shell">${this.shipStatusMarkup()}<article class="exp-message"><strong>SHIP IS AT ANOTHER COLONY</strong><span>Switch to ${esc(entry?.data?.contract?.colonyName||"the ship colony")} to load or unload resources and people.</span><button data-switch-ship-colony>GO TO SHIP COLONY</button></article><button data-back-map>STAR MAP</button></div>`);this.modal.querySelector("[data-switch-ship-colony]").onclick=()=>{if(this.onSwitchColony?.(ship.colonyId))this.shipPrep();};this.modal.querySelector("[data-back-map]").onclick=()=>this.starMap();return;}
+    const target=ship.targetSystemId?this.expansion.system(this.state.company.expansion,ship.targetSystemId):null,profile=target?this.expansion.travelProfile(this.state,target.id,null,ship.id):null,canLaunch=this.expansion.canLaunch(this.state,ship.id),fuel=this.expansion.fuelAmount(this.state,ship.id),food=this.expansion.transitFoodAmount(this.state,ship.id),categories=this.availableCargoCategories();
+    if(categories.length&&!categories.includes(this.expeditionCategory)){this.expeditionCategory=categories[0];this.expeditionPage=0;}const pages=this.cargoPages(),page=Math.min(this.expeditionPage,pages-1);this.expeditionPage=page;
+    const tabs=categories.length?`<div class="exp-tabs compact-tabs">${categories.map(c=>`<button data-exp-category="${c}" class="${this.expeditionCategory===c?"active":""}">${c.toUpperCase()}</button>`).join("")}</div>`:`<div class="exp-empty">No general-hold resources are currently held by this colony or aboard the ship.</div>`,cargoPager=categories.length?this.pager("exp",page,pages):"";
+    let body;try{const[routeDetails,passengerLoader]=await Promise.all([this.shipRouteDetails(profile,fuel,food),this.passengerLoader()]);body=await renderViewTemplate("./views/player-ship-prep.html",{SHIP_STATUS:this.shipStatusMarkup(),DESTINATION:target?esc(target.name):"NOT SELECTED",ROUTE_DETAILS:routeDetails,MANIFEST_OVERVIEW:this.manifestOverview(profile),PASSENGER_LOADER:passengerLoader,CARGO_TABS:tabs,CARGO_PAGER:cargoPager,LAUNCH_DISABLED:canLaunch.ok?"":"disabled",LAUNCH_LABEL:canLaunch.ok?`LAUNCH • ${formatNumber(profile?.days||0)} DAYS`:esc(canLaunch.reason)});}catch(error){if(revision!==this.shipPrepRevision)return;this.diagnostics?.error?.("ship preparation template failed",error);this.toast("Unable to open player ship preparation.");return;}
+    if(revision!==this.shipPrepRevision)return;this.open(`Prepare ${ship.name||"Player Ship"}`,body);this.modal.classList.add("ship-prep-modal","full-screen-panel","compact-ship-prep");this.renderManifestRows(categories.length>0);this.bindPrep();
   }
+
+  playerShipPanel(){super.playerShipPanel();const grid=this.modal?.querySelector(".ship-action-grid");if(!grid||grid.querySelector("[data-fleet-procurement]"))return;const button=document.createElement("button");button.className="ship-action-tile";button.dataset.fleetProcurement="1";const title=document.createElement("strong"),sub=document.createElement("small");title.textContent="FLEET PROCUREMENT";sub.textContent="Approved shipbuilders, capital orders and delivery queue";button.append(title,sub);button.onclick=()=>this.shipMarket();grid.insertBefore(button,grid.children[2]||null);}
+
+  marketRole(record){const role=`${record.role||""} ${record.capacityClass||""}`.toLowerCase();if(/courier|packet/.test(role))return"Courier";if(/survey|scientific|science/.test(role))return"Survey";if(/diplomatic|executive|passenger|shuttle|habitat/.test(role))return"Passenger";if(/very large|mega|mass|super|bulk|heavy|carrier/.test(role))return"Heavy Freight";if(/freight|cargo|hauler|lifter|container|merchant/.test(role))return"Freighter";return"Utility";}
+  marketArt(record){return record?.image?.generated&&record.image.key?`https://kevvy555.github.io/MineIT-Universe/${record.image.key}`:"./assets/art/colony-ship.webp";}
+  marketTemplate(selector){const template=this.modal?.querySelector(selector);return template?.content?.firstElementChild?.cloneNode(true)||null;}
+  marketText(root,selector,value){const node=root?.querySelector(selector);if(node)node.textContent=String(value??"");}
+  marketManufacturers(){const retail=this.shipCatalogue.retail();return this.shipCatalogue.manufacturerList().filter(maker=>retail.some(record=>record.manufacturerOrganisationId===maker.id));}
+  marketModels(){return this.shipCatalogue.retail().filter(record=>record.manufacturerOrganisationId===this.shipMarketManufacturerId&&(!this.shipMarketRole||this.marketRole(record)===this.shipMarketRole));}
+  ensureMarketSelection(){const makers=this.marketManufacturers(),retail=this.shipCatalogue.retail();if(!makers.some(maker=>maker.id===this.shipMarketManufacturerId))this.shipMarketManufacturerId=makers[0]?.id||retail[0]?.manufacturerOrganisationId||null;let models=this.marketModels();if(!models.length&&this.shipMarketRole){this.shipMarketRole="";models=this.marketModels();}if(!models.some(record=>record.id===this.shipMarketShipClassId))this.shipMarketShipClassId=models[0]?.id||null;const colonies=this.shipMarketService.deliveryColonies(this.state);if(!colonies.some(colony=>colony.id===this.shipMarketColonyId))this.shipMarketColonyId=colonies.find(colony=>colony.id===this.state.colonyId)?.id||colonies[0]?.id||null;return{makers,models,shipClass:this.shipCatalogue.classById(this.shipMarketShipClassId),colonies};}
+
+  renderMarketManufacturers(root,makers){const host=root.querySelector("[data-market-manufacturers]"),fragment=document.createDocumentFragment(),retail=this.shipCatalogue.retail();for(const maker of makers){const button=this.marketTemplate("[data-market-manufacturer-template]");if(!button)continue;button.dataset.marketManufacturer=maker.id;button.classList.toggle("selected",maker.id===this.shipMarketManufacturerId);this.marketText(button,"[data-maker-name]",maker.name);this.marketText(button,"[data-maker-specialisation]",maker.specialisation);this.marketText(button,"[data-maker-count]",`${retail.filter(record=>record.manufacturerOrganisationId===maker.id).length} MODELS`);fragment.append(button);}host?.replaceChildren(fragment);}
+  renderMarketModels(root,models){const host=root.querySelector("[data-market-models]"),fragment=document.createDocumentFragment();for(const record of models){const button=this.marketTemplate("[data-market-model-template]"),quote=this.shipMarketService.quote(this.state,record.id);if(!button)continue;button.dataset.marketShipClass=record.id;button.classList.toggle("selected",record.id===this.shipMarketShipClassId);const image=button.querySelector("[data-model-image]");if(image){image.src=this.marketArt(record);image.alt=record.name;image.onerror=()=>{image.onerror=null;image.src="./assets/art/colony-ship.webp";};}this.marketText(button,"[data-model-name]",record.name);this.marketText(button,"[data-model-role]",`${this.marketRole(record)} • ${(record.capacityClass||"").toUpperCase()}`);this.marketText(button,"[data-model-price]",quote.ok?credits(quote.price):"UNAVAILABLE");fragment.append(button);}host?.replaceChildren(fragment);}
+  renderMarketTags(root,record){const host=root.querySelector("[data-market-tags]"),maker=this.shipCatalogue.manufacturer(record.manufacturerOrganisationId),values=[maker.shortName||maker.name,(record.capacityClass||"").toUpperCase(),this.marketRole(record),"FACTORY NEW"],fragment=document.createDocumentFragment();for(const value of values){const tag=this.marketTemplate("[data-market-tag-template]");if(tag){tag.textContent=value;fragment.append(tag);}}host?.replaceChildren(fragment);}
+  renderMarketSpecs(root,record){const s=record.specifications||{},values=[["CARGO",formatNumber(s.cargoCapacity)],["FUEL",formatNumber(s.fuelCapacity)],["FOOD",formatNumber(s.foodCapacity)],["CREW",`${formatNumber(s.minimumCrew)}–${formatNumber(s.maximumCrew)}`],["PAX",formatNumber(s.colonistCapacity)],["TRANSIT",s.vectorExchangeCapable?`${s.transitWeeksPerLightYear}w/LY`:"IN-SYSTEM"],["FUEL/LY",s.fuelUsePerLightYear==null?"—":formatNumber(s.fuelUsePerLightYear)],["BERTH",String(s.berthClass||"—").toUpperCase()]],host=root.querySelector("[data-market-specs]"),fragment=document.createDocumentFragment();for(const[label,value]of values){const spec=this.marketTemplate("[data-market-spec-template]");if(!spec)continue;spec.querySelector("small").textContent=label;spec.querySelector("strong").textContent=value;fragment.append(spec);}host?.replaceChildren(fragment);}
+  renderShipMarket(){const root=this.modal?.querySelector("[data-ship-market]");if(!root)return false;const{makers,models,shipClass,colonies}=this.ensureMarketSelection();if(!shipClass)return false;const quote=this.shipMarketService.quote(this.state,shipClass.id),check=this.shipMarketService.canOrder(this.state,shipClass.id,this.shipMarketColonyId),maker=this.shipCatalogue.manufacturer(shipClass.manufacturerOrganisationId),colony=colonies.find(item=>item.id===this.shipMarketColonyId),provenance=this.shipCatalogue.provenance();this.renderMarketManufacturers(root,makers);this.renderMarketModels(root,models);this.marketText(root,"[data-market-cash]",credits(this.state.company.cash));this.marketText(root,"[data-market-source]",`${provenance.source==="remote"?"UNIVERSE LIVE":"UNIVERSE SNAPSHOT"} ${provenance.contentVersion}`);this.marketText(root,"[data-market-selected-manufacturer]",maker.name);this.marketText(root,"[data-market-role-picker]",`${this.shipMarketRole||"ALL ROLES"} ▾`);this.marketText(root,"[data-market-manufacturer]",maker.name);this.marketText(root,"[data-market-name]",shipClass.name);this.marketText(root,"[data-market-description]",shipClass.description||shipClass.role||"");this.renderMarketTags(root,shipClass);this.renderMarketSpecs(root,shipClass);const hero=root.querySelector("[data-market-hero]");if(hero){hero.src=this.marketArt(shipClass);hero.alt=shipClass.name;hero.onerror=()=>{hero.onerror=null;hero.src="./assets/art/colony-ship.webp";};}this.marketText(root,"[data-market-art-status]",shipClass.image?.generated?"CANONICAL CLASS ART":"FLEET VISUAL PLACEHOLDER");this.marketText(root,"[data-market-list]",quote.ok?credits(quote.listPrice):"—");this.marketText(root,"[data-market-rate]",quote.ok?`−${Math.round(quote.discountRate*100)}%`:"—");this.marketText(root,"[data-market-price]",quote.ok?credits(quote.price):"—");this.marketText(root,"[data-market-lead]",quote.ok?`${formatNumber(quote.leadTimeDays)}d`:"—");let status="AVAILABLE";if(!shipClass.specifications?.vectorExchangeCapable)status="IN-SYSTEM";else if(quote.ok&&Number(this.state.company.cash)<quote.price)status="FUNDS";else if(!colony)status="NO COLONY";this.marketText(root,"[data-market-order-status]",status);const statusCell=root.querySelector("[data-market-status-cell]");statusCell?.classList.toggle("available",status==="AVAILABLE");statusCell?.classList.toggle("blocked",status!=="AVAILABLE");this.marketText(root,"[data-market-traits]",(shipClass.specialTraits||[]).join(" • ")||"Manufacturer standard factory-new configuration");this.marketText(root,"[data-market-colony]",colony?.name||"SELECT DELIVERY COLONY");this.marketText(root,"[data-market-colony-detail]",colony?`${colony.berth.free} free berth${colony.berth.free===1?"":"s"} • ${colony.berth.used}/${colony.berth.capacity} occupied`:"No operational delivery colony");const compare=root.querySelector("[data-market-compare-toggle]"),selected=this.shipCompareIds.includes(shipClass.id);if(compare){compare.classList.toggle("selected",selected);compare.textContent=selected?"✓ ADDED":"+ COMPARE";}const review=root.querySelector("[data-market-review]");if(review){review.disabled=!quote.ok||!colony||!shipClass.specifications?.vectorExchangeCapable;review.title=check.ok?"":check.reason||"Order unavailable";}return true;}
+
+  async shipMarket({refresh=true}={}){const revision=++this.shipMarketRevision,source=await this.loadPresentationView("./views/ship-market.html","fleet procurement");if(!source||revision!==this.shipMarketRevision)return false;this.shipMarketService.ensure(this.state);this.open("Deep Reach Fleet Procurement",source);this.modal.classList.add("ship-market-modal","full-screen-panel");this.renderShipMarket();this.bindMarketActions();if(refresh)this.shipCatalogue.refresh().then(()=>{if(revision===this.shipMarketRevision&&this.modal?.querySelector("[data-ship-market]"))this.renderShipMarket();});return true;}
+  showMarketRolePicker(){const root=this.modal.querySelector("[data-market-popup]"),host=root?.querySelector("[data-market-popup-options]");if(!root||!host)return;this.marketText(root,"[data-market-popup-title]","SELECT SHIP ROLE");const fragment=document.createDocumentFragment();for(const role of MARKET_ROLES){const option=this.marketTemplate("[data-market-popup-option-template]");if(!option)continue;option.dataset.marketRoleValue=role;option.querySelector("strong").textContent=role||"All roles";option.querySelector("span").textContent=role?`Show ${role.toLowerCase()} vessels from this shipbuilder.`:"Show every factory-new model from this shipbuilder.";fragment.append(option);}host.replaceChildren(fragment);root.classList.remove("hidden");}
+  showMarketColonyPicker({retargetOrderId=null}={}){const root=this.modal.querySelector("[data-market-popup]"),host=root?.querySelector("[data-market-popup-options]");if(!root||!host)return;this.shipRetargetOrderId=retargetOrderId;this.marketText(root,"[data-market-popup-title]",retargetOrderId?"RETARGET DELIVERY COLONY":"SELECT DELIVERY COLONY");const fragment=document.createDocumentFragment();for(const colony of this.shipMarketService.deliveryColonies(this.state)){const option=this.marketTemplate("[data-market-popup-option-template]");if(!option)continue;option.dataset[retargetOrderId?"marketRetargetColonyValue":"marketColonyValue"]=colony.id;option.querySelector("strong").textContent=colony.name;option.querySelector("span").textContent=`${colony.berth.free} free berth${colony.berth.free===1?"":"s"} • ${colony.berth.used}/${colony.berth.capacity} occupied`;fragment.append(option);}host.replaceChildren(fragment);root.classList.remove("hidden");}
+  hideMarketPopup(){this.modal.querySelector("[data-market-popup]")?.classList.add("hidden");}
+  toggleMarketCompare(){const id=this.shipMarketShipClassId;if(!id)return;if(this.shipCompareIds.includes(id))this.shipCompareIds=this.shipCompareIds.filter(value=>value!==id);else if(this.shipCompareIds.length>=3){this.toast("Compare up to three vessels at a time.");return;}else this.shipCompareIds.push(id);this.renderShipMarket();}
+
+  async shipMarketComparison(){const revision=++this.shipMarketRevision,source=await this.loadPresentationView("./views/ship-market-compare.html","fleet comparison");if(!source||revision!==this.shipMarketRevision)return false;this.open("Fleet Comparison",source);this.modal.classList.add("ship-market-modal","full-screen-panel");this.renderMarketComparison();this.bindMarketActions();return true;}
+  renderMarketComparison(){const host=this.modal.querySelector("[data-market-compare-table]"),empty=this.modal.querySelector("[data-market-compare-empty]"),records=this.shipCompareIds.map(id=>this.shipCatalogue.classById(id)).filter(Boolean);if(empty)empty.classList.toggle("hidden",records.length>0);if(!host)return;host.replaceChildren();if(!records.length)return;const table=document.createElement("table");table.className="ship-market-compare-table";const head=document.createElement("tr"),metric=document.createElement("th");metric.textContent="METRIC";head.append(metric);for(const record of records){const th=document.createElement("th"),name=document.createElement("strong"),remove=document.createElement("button");name.textContent=record.name;remove.textContent="REMOVE";remove.dataset.marketCompareRemove=record.id;th.append(name,remove);head.append(th);}table.append(head);const rows=[
+    ["SUPPLIER",r=>this.shipCatalogue.manufacturer(r.manufacturerOrganisationId).name],["ROLE / SIZE",r=>`${this.marketRole(r)} • ${(r.capacityClass||"").toUpperCase()}`],["CHARTER PRICE",r=>credits(this.shipMarketService.quote(this.state,r.id).price)],["FACTORY LEAD",r=>`${formatNumber(r.production?.factoryLeadTimeDays)} days`],["CARGO",r=>formatNumber(r.specifications?.cargoCapacity)],["FUEL",r=>formatNumber(r.specifications?.fuelCapacity)],["FOOD",r=>formatNumber(r.specifications?.foodCapacity)],["CREW",r=>`${formatNumber(r.specifications?.minimumCrew)}–${formatNumber(r.specifications?.maximumCrew)}`],["PASSENGERS",r=>formatNumber(r.specifications?.colonistCapacity)],["TRANSIT",r=>r.specifications?.vectorExchangeCapable?`${r.specifications.transitWeeksPerLightYear} w/LY`:"In-system only"],["FUEL / LY",r=>r.specifications?.fuelUsePerLightYear==null?"—":formatNumber(r.specifications.fuelUsePerLightYear)],["TRAITS",r=>(r.specialTraits||[]).join(" • ")||"—"]];for(const[label,value]of rows){const tr=document.createElement("tr"),td=document.createElement("td");td.textContent=label;tr.append(td);for(const record of records){const cell=document.createElement("td");cell.textContent=value(record);tr.append(cell);}table.append(tr);}host.append(table);}
+
+  orderStatusLabel(status){return{"production-queued":"FACTORY QUEUE",manufacturing:"IN PRODUCTION","delivery-blocked":"DELIVERY BLOCKED",delivered:"ARRIVED / COMMISSIONED",cancelled:"CANCELLED"}[status]||String(status||"ORDERED").toUpperCase();}
+  async shipMarketOrders(){const revision=++this.shipMarketRevision,source=await this.loadPresentationView("./views/ship-market-orders.html","capital orders");if(!source||revision!==this.shipMarketRevision)return false;this.open("Capital Orders",source);this.modal.classList.add("ship-market-modal","full-screen-panel");this.renderMarketOrders();this.bindMarketActions();return true;}
+  renderMarketOrders(){const root=this.modal.querySelector("[data-market-orders-view]"),host=root?.querySelector("[data-market-order-list]"),empty=root?.querySelector("[data-market-orders-empty]"),orders=[...this.shipMarketService.orders(this.state)].reverse(),today=this.expansion.absoluteDay(this.state);if(!root||!host)return;this.marketText(root,"[data-market-order-count]",`${orders.length} ORDER${orders.length===1?"":"S"}`);this.marketText(root,"[data-market-order-spend]",`${credits(orders.reduce((sum,order)=>sum+Math.max(0,(Number(order.paidPrice)||0)-(Number(order.refundedAmount)||0)),0))} NET COMMITTED`);if(empty)empty.classList.toggle("hidden",orders.length>0);const fragment=document.createDocumentFragment();for(const order of orders){const card=this.marketTemplate("[data-market-order-template]");if(!card)continue;const record=this.shipCatalogue.classById(order.shipClassId),maker=this.shipCatalogue.manufacturer(order.manufacturerOrganisationId||record?.manufacturerOrganisationId),progress=order.status==="delivered"?1:Math.max(0,Math.min(1,Number(order.productionProgress)||0)),eta=order.status==="delivered"?"DELIVERED":order.status==="cancelled"?"CANCELLED":`${Math.max(0,Number(order.dueAbsoluteDay)-today)}d`;this.marketText(card,"[data-order-id]",order.id.toUpperCase());this.marketText(card,"[data-order-vessel]",order.vesselName||order.shipName);this.marketText(card,"[data-order-manufacturer]",maker.name);this.marketText(card,"[data-order-status]",this.orderStatusLabel(order.status));this.marketText(card,"[data-order-colony]",order.colonyName);this.marketText(card,"[data-order-value]",credits(order.paidPrice));this.marketText(card,"[data-order-lead]",`${formatNumber(order.factoryLeadTimeDays)}d`);this.marketText(card,"[data-order-eta]",eta);const rail=card.querySelector("[data-order-progress]");if(rail)rail.style.width=`${Math.round(progress*100)}%`;this.marketText(card,"[data-order-progress-copy]",order.status==="delivery-blocked"?"Factory work complete • select a new living delivery colony.":order.status==="cancelled"?`${credits(order.refundedAmount)} refunded • ${credits(order.cancellationFee)} administration fee.`:order.status==="delivered"?`Commissioned into fleet • ${String(order.deliveryStatus||"").toUpperCase()}`:`${Math.round(progress*100)}% elapsed through normal factory lead period`);const cancel=card.querySelector("[data-order-cancel]"),retarget=card.querySelector("[data-order-retarget]");if(cancel){cancel.dataset.orderCancel=order.id;cancel.hidden=["cancelled","delivered","delivery-blocked"].includes(order.status)||today>=order.productionLockAbsoluteDay;}if(retarget){retarget.dataset.orderRetarget=order.id;retarget.hidden=order.status!=="delivery-blocked";}fragment.append(card);}host.replaceChildren(fragment);}
+
+  async shipPurchaseContract(){const record=this.shipCatalogue.classById(this.shipMarketShipClassId),colonyId=this.shipMarketColonyId;if(!record||!colonyId)return;const quote=this.shipMarketService.quote(this.state,record.id),check=this.shipMarketService.canOrder(this.state,record.id,colonyId),colony=this.shipMarketService.deliveryColonies(this.state).find(item=>item.id===colonyId),maker=this.shipCatalogue.manufacturer(record.manufacturerOrganisationId),revision=++this.shipMarketRevision,source=await this.loadPresentationView("./views/ship-purchase-contract.html","purchase contract");if(!source||revision!==this.shipMarketRevision)return false;this.open("Vessel Purchase Contract",source);this.modal.classList.add("ship-market-modal","full-screen-panel","ship-contract-modal");const root=this.modal.querySelector("[data-market-contract-view]");this.marketText(root,"[data-contract-supplier]",maker.name);this.marketText(root,"[data-contract-vessel]",record.name);this.marketText(root,"[data-contract-colony]",colony?.name||"—");this.marketText(root,"[data-contract-list]",credits(quote.listPrice));this.marketText(root,"[data-contract-discount]",`−${credits(quote.discountAmount)} (${Math.round(quote.discountRate*100)}%)`);this.marketText(root,"[data-contract-value]",credits(quote.price));this.marketText(root,"[data-contract-lead]",`${formatNumber(quote.leadTimeDays)} days`);this.marketText(root,"[data-contract-statement]",`Koplin Deep Reach will place one factory-new ${record.name} with ${maker.name} for delivery to ${colony?.name||"the selected colony"}. The player operating company owns the commissioned vessel.`);const warning=root.querySelector("[data-contract-warning]");if(warning){warning.hidden=check.ok;warning.textContent=check.ok?"":check.reason;}this.shipSignatureDirty=false;this.shipContractCanOrder=check.ok;this.bindMarketActions();this.bindContractSignature();return true;}
+  bindContractSignature(){const canvas=this.modal.querySelector("[data-contract-signature]"),sign=this.modal.querySelector("[data-contract-sign]");if(!canvas||!sign)return;const ctx=canvas.getContext("2d");if(!ctx)return;ctx.lineWidth=3;ctx.lineCap="round";let drawing=false,last=null;const point=event=>{const rect=canvas.getBoundingClientRect();return{x:(event.clientX-rect.left)*canvas.width/Math.max(1,rect.width),y:(event.clientY-rect.top)*canvas.height/Math.max(1,rect.height)};};const down=event=>{drawing=true;last=point(event);canvas.setPointerCapture?.(event.pointerId);this.shipSignatureDirty=true;sign.disabled=!this.shipContractCanOrder;};const move=event=>{if(!drawing)return;const next=point(event);ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(next.x,next.y);ctx.stroke();last=next;};const up=()=>{drawing=false;last=null;};canvas.addEventListener("pointerdown",down);canvas.addEventListener("pointermove",move);canvas.addEventListener("pointerup",up);canvas.addEventListener("pointercancel",up);this.marketPointerCleanup=()=>{canvas.removeEventListener("pointerdown",down);canvas.removeEventListener("pointermove",move);canvas.removeEventListener("pointerup",up);canvas.removeEventListener("pointercancel",up);};}
+  clearContractSignature(){const canvas=this.modal.querySelector("[data-contract-signature]");canvas?.getContext("2d")?.clearRect(0,0,canvas.width,canvas.height);this.shipSignatureDirty=false;const sign=this.modal.querySelector("[data-contract-sign]");if(sign)sign.disabled=true;}
+  placeSignedShipOrder(){const result=this.shipMarketService.placeOrder(this.state,this.shipMarketShipClassId,this.shipMarketColonyId,{signatureAccepted:this.shipSignatureDirty});if(!result.ok){this.toast(result.reason);return;}this.gameLog?.event?.(this.state,"ship-capital-order",`${result.order.vesselName} ordered through Deep Reach Fleet Procurement for ${credits(result.order.paidPrice)}.`,{orderId:result.order.id,shipClassId:result.order.shipClassId,colonyId:result.order.colonyId,paidPrice:result.order.paidPrice,discountRate:result.order.discountRate});this.repo.save(this.state);this.toast(`${result.order.vesselName} ordered • factory lead ${formatNumber(result.order.factoryLeadTimeDays)} days.`);this.shipMarketOrders();}
+
+  bindMarketActions(){this.releaseMarketActions();this.marketClickHandler=event=>{const button=event.target.closest?.("button");if(!button||button.disabled||!this.modal.contains(button))return;if("marketManufacturer" in button.dataset){this.shipMarketManufacturerId=button.dataset.marketManufacturer;this.shipMarketRole="";this.shipMarketShipClassId=null;this.renderShipMarket();return;}if("marketShipClass" in button.dataset){this.shipMarketShipClassId=button.dataset.marketShipClass;this.renderShipMarket();return;}if(button.hasAttribute("data-market-role-picker")){this.showMarketRolePicker();return;}if("marketRoleValue" in button.dataset){this.shipMarketRole=button.dataset.marketRoleValue;this.shipMarketShipClassId=null;this.hideMarketPopup();this.renderShipMarket();return;}if(button.hasAttribute("data-market-colony-picker")){this.showMarketColonyPicker();return;}if("marketColonyValue" in button.dataset){this.shipMarketColonyId=button.dataset.marketColonyValue;this.hideMarketPopup();this.renderShipMarket();return;}if(button.hasAttribute("data-market-popup-close")){this.hideMarketPopup();return;}if(button.hasAttribute("data-market-compare-toggle")){this.toggleMarketCompare();return;}if(button.hasAttribute("data-market-open-compare")){if(this.shipCompareIds.length<2){this.toast("Add at least two vessels to compare.");return;}this.shipMarketComparison();return;}if("marketCompareRemove" in button.dataset){this.shipCompareIds=this.shipCompareIds.filter(id=>id!==button.dataset.marketCompareRemove);this.renderMarketComparison();return;}if(button.hasAttribute("data-market-open-orders")){this.shipMarketOrders();return;}if(button.hasAttribute("data-market-review")){this.shipPurchaseContract();return;}if(button.hasAttribute("data-market-back")){this.shipMarket({refresh:false});return;}if("orderCancel" in button.dataset){const result=this.shipMarketService.cancelOrder(this.state,button.dataset.orderCancel);if(!result.ok){this.toast(result.reason);return;}this.gameLog?.event?.(this.state,"ship-capital-order-cancelled",`${result.order.vesselName} order cancelled; ${credits(result.refund)} refunded.`,{orderId:result.order.id,refund:result.refund,fee:result.fee});this.repo.save(this.state);this.toast(`Order cancelled • ${credits(result.refund)} refunded.`);this.renderMarketOrders();return;}if("orderRetarget" in button.dataset){this.showMarketColonyPicker({retargetOrderId:button.dataset.orderRetarget});return;}if("marketRetargetColonyValue" in button.dataset){const orderId=this.shipRetargetOrderId,result=this.shipMarketService.retargetBlockedOrder(this.state,orderId,button.dataset.marketRetargetColonyValue);if(!result.ok){this.toast(result.reason);return;}this.repo.save(this.state);this.hideMarketPopup();this.toast(`${result.order.vesselName} commissioned into the fleet.`);this.shipMarketOrders();return;}if(button.hasAttribute("data-contract-clear")){this.clearContractSignature();return;}if(button.hasAttribute("data-contract-cancel")){this.shipMarket({refresh:false});return;}if(button.hasAttribute("data-contract-sign")){this.placeSignedShipOrder();}};this.modal.addEventListener("click",this.marketClickHandler);}
+
+  async spaceportPanel(){const rendered=await super.spaceportPanel();if(!rendered)return false;const body=this.modal.querySelector(".modal-body"),source=await this.loadPresentationView("./views/player-fleet-spaceport.html","player fleet");if(!source||!body?.isConnected||body!==this.modal.querySelector(".modal-body"))return rendered;const fragment=document.createRange().createContextualFragment(source),card=fragment.querySelector("[data-player-fleet-card]");if(!card)return rendered;const actions=body.querySelector(":scope > .grid2");if(actions)body.insertBefore(card,actions);else body.append(card);const fleet=this.expansion.ships(this.state).filter(ship=>(ship.status==="docked"&&ship.colonyId===this.state.colonyId)||(ship.status==="orbiting"&&ship.targetColonyId===this.state.colonyId)),dockedNames=new Set(fleet.filter(ship=>ship.status==="docked").map(ship=>ship.name));for(const row of body.querySelectorAll("[data-spaceport-landed] [data-spaceport-ship-row]")){const name=row.querySelector("[data-spaceport-ship-name]")?.textContent;if(dockedNames.has(name))row.remove();}const legacy=body.querySelector("[data-spaceport-player-ship]");if(legacy)legacy.hidden=true;const host=card.querySelector("[data-player-fleet-list]"),empty=card.querySelector("[data-player-fleet-empty]"),rowTemplate=card.querySelector("[data-player-fleet-row-template]"),rows=document.createDocumentFragment();if(empty)empty.hidden=fleet.length>0;for(const ship of fleet){const row=rowTemplate?.content?.firstElementChild?.cloneNode(true);if(!row)continue;const record=this.shipCatalogue.classById(ship.shipClassId);row.dataset.playerFleetShip=ship.id;row.classList.toggle("active",ship.id===this.state.company.expansion.activeShipId);this.marketText(row,"[data-fleet-name]",ship.name);this.marketText(row,"[data-fleet-class]",record?.name||ship.shipClassId||"Player vessel");this.marketText(row,"[data-fleet-status]",ship.status==="orbiting"?"ORBITAL HOLD":"DOCKED");this.marketText(row,"[data-fleet-metrics]",`Cargo ${formatNumber(this.expansion.cargoAmount(this.state,ship.id))}/${formatNumber(ship.cargoCapacity)} • Fuel ${formatNumber(this.expansion.fuelAmount(this.state,ship.id))}/${formatNumber(ship.fuelCapacity)} • Food ${formatNumber(this.expansion.foodAmount(this.state,ship.id))}/${formatNumber(ship.foodCapacity)} • Crew ${formatNumber(ship.crew)}/${formatNumber(ship.minimumCrew)} min`);row.onclick=()=>{const result=this.expansion.selectShip(this.state,ship.id);if(!result.ok){this.toast(result.reason);return;}this.repo.save(this.state);this.playerShipPanel();};rows.append(row);}host?.replaceChildren(rows);card.querySelector("[data-open-fleet-procurement]")?.addEventListener("click",()=>this.shipMarket());return true;}
+
+  openSystem(systemId){if(String(systemId).startsWith(FLEET_HIT_PREFIX)){const shipId=String(systemId).slice(FLEET_HIT_PREFIX.length),selected=this.expansion.selectShip(this.state,shipId);if(selected.ok){this.repo.save(this.state);this.playerShipPanel();}return;}super.openSystem(systemId);}
+  starHit(canvas,pos){const rect=canvas.getBoundingClientRect(),x=pos.x-rect.left,y=pos.y-rect.top;for(const ship of this.expansion.ships(this.state)){if(ship.status==="lost")continue;const position=this.expansion.shipPosition(this.state,ship.id);if(!position)continue;const point=this.starScreen(canvas,position);if(Math.hypot(point.x-x,point.y-y)<18)return{id:`${FLEET_HIT_PREFIX}${ship.id}`};}return super.starHit(canvas,pos);}
+  drawStarMap(canvas,ctx){super.drawStarMap(canvas,ctx);const active=this.state.company?.expansion?.activeShipId;ctx.save();ctx.fillStyle="#f3b45d";for(const ship of this.expansion.ships(this.state)){if(ship.id===active||ship.status==="lost")continue;const position=this.expansion.shipPosition(this.state,ship.id);if(!position)continue;const point=this.starScreen(canvas,position);ctx.beginPath();ctx.moveTo(point.x+6,point.y);ctx.lineTo(point.x-4,point.y-4);ctx.lineTo(point.x-4,point.y+4);ctx.closePath();ctx.fill();}ctx.restore();}
 }

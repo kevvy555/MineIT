@@ -37,6 +37,6 @@ export class UIEnhancementsMixin {
 
   menu(){
     const source=this.enhancementViewSource(ENHANCEMENT_VIEWS.menu,"game menu",()=>this.menu());if(!source)return false;this.open("Game",source);const body=this.modal.querySelector(".modal-body");if(!body)return false;
-    body.querySelector("[data-save]").onclick=()=>this.toast(this.repo.save(this.state)?"Game saved.":"Save failed.");body.querySelector("[data-diagnostics]").onclick=()=>this.diagnosticsPanel();body.querySelector("[data-center]").onclick=()=>{this.state.camera={x:-4,y:-4};this.modal.classList.add("hidden");};body.querySelector("[data-colonies]").onclick=()=>this.coloniesPanel();body.querySelector("[data-help]").onclick=()=>this.help();body.querySelector("[data-reset]").onclick=()=>this.onHardReset();return true;
+    body.querySelector("[data-save]").onclick=()=>this.toast(this.repo.save(this.state)?"Game saved.":"Save failed.");body.querySelector("[data-diagnostics]").onclick=()=>this.diagnosticsPanel();body.querySelector("[data-center]").onclick=()=>{this.state.camera={x:-4,y:-4};this.modal.classList.add("hidden");};body.querySelector("[data-colonies]").onclick=()=>this.coloniesPanel();body.querySelector("[data-help]").onclick=()=>this.help();body.querySelector("[data-development-tasks]").onclick=()=>this.developmentTasks();body.querySelector("[data-reset]").onclick=()=>this.onHardReset();return true;
   }
 }

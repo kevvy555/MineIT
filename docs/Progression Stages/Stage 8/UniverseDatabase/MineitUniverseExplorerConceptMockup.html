@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>MineIT Universe Explorer — Concept Mock</title>
+<style>
+:root{
+  --bg:#05090c;--panel:#091117;--panel2:#101a21;--panel3:#15232c;
+  --line:#273a45;--text:#edf4f7;--muted:#8ea1ac;--accent:#67c8ff;
+  --accent2:#8ce2bd;--warn:#f4c56d;--selected:#153247;--link:#dff4ff
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+.app{height:100vh;height:100dvh;display:grid;grid-template-rows:auto minmax(0,1fr);background:linear-gradient(180deg,#071018,#05090c 42%)}
+.topbar{display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--line);background:#081015}
+.title{min-width:0;flex:1}.title small{display:block;color:var(--accent);font-size:8px;letter-spacing:.14em;font-weight:900}.title strong{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mockTag{font-size:9px;color:var(--warn);border:1px solid #6d5529;background:#21190b;padding:5px 7px;border-radius:6px;font-weight:900}
+.workspace{min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.detailPane{flex:0 0 60%;min-height:0;overflow:auto;padding:12px 12px 18px;background:radial-gradient(circle at 92% 0,#0c1c25 0,transparent 32%)}
+.divider{flex:0 0 15px;position:relative;background:#081015;border-top:1px solid var(--line);border-bottom:1px solid var(--line);cursor:row-resize;touch-action:none;display:grid;place-items:center;user-select:none}
+.divider::after{content:"";width:56px;height:4px;border-radius:999px;background:#47606e}.divider.dragging::after{background:var(--accent)}
+.explorerPane{min-height:0;flex:1 1 auto;display:grid;grid-template-rows:auto auto minmax(0,1fr);gap:6px;padding:7px 8px 10px;background:#081015}
+.explorerToolbar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}.perspective{border:1px solid var(--line);background:var(--panel2);border-radius:6px;padding:7px 3px;font-size:10px;font-weight:900;min-width:0}.perspective.active{background:#163044;border-color:#3e87ad;color:#dff4ff}
+.searchRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px}.search{width:100%;border:1px solid var(--line);background:#071015;border-radius:6px;padding:7px 9px;outline:0;font-size:11px}.treeAction{border:1px solid var(--line);background:var(--panel2);border-radius:6px;padding:0 9px;font-size:10px;font-weight:800}.search:focus{border-color:#477a96}
+.tree{min-height:0;overflow:auto;padding:1px 0 20px;scroll-behavior:smooth}.tree ul{list-style:none;margin:0;padding-left:15px}.tree>.treeRoot{padding-left:0}.tree li{margin:1px 0}.treeRow{display:grid;grid-template-columns:20px minmax(0,1fr);align-items:center;min-height:29px;border-radius:5px}.treeRow.selected{background:var(--selected);outline:1px solid #35637d}.twisty{width:20px;height:27px;border:0;background:transparent;padding:0;color:#819da9;font-size:12px}.twisty.empty{visibility:hidden}.node{min-width:0;border:0;background:transparent;text-align:left;padding:5px 4px;color:#dce7eb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px}.node .kind{margin-left:5px;color:var(--muted);font-size:8px;text-transform:uppercase}.categoryNode{color:#a9bac3;font-weight:800}.searchEmpty{padding:12px 4px;color:var(--muted);font-size:11px}
+.breadcrumbs{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:10px;color:var(--muted);font-size:9px}.crumb{border:0;background:transparent;color:#adc1cb;padding:0}.crumb.linked{color:#bfe8ff}.hero{display:grid;grid-template-columns:74px minmax(0,1fr);gap:11px;align-items:center}.placeholder{width:74px;height:74px;border-radius:9px;border:1px solid #36515f;background:linear-gradient(135deg,#12242d,#0b1217);display:grid;place-items:center;color:#74c9f3;font-weight:900;font-size:22px}.eyebrow{font-size:9px;color:var(--accent2);letter-spacing:.12em;text-transform:uppercase;font-weight:900}.hero h1{margin:3px 0 3px;font-size:21px;line-height:1.05}.subtitle{font-size:11px;color:#aabac2;line-height:1.3}.description{margin-top:11px;color:#d7e2e7;font-size:12px;line-height:1.55}
+.section{margin-top:12px;border:1px solid var(--line);background:rgba(12,20,26,.92);border-radius:8px;overflow:hidden}.section h2{margin:0;padding:7px 9px;border-bottom:1px solid var(--line);background:#0e171d;color:#9fb4bf;font-size:9px;letter-spacing:.12em;text-transform:uppercase}.fieldRows{display:grid}.field{display:grid;grid-template-columns:minmax(92px,36%) minmax(0,1fr);gap:8px;padding:7px 9px;border-top:1px solid #17252d;font-size:11px;align-items:start}.field:first-child{border-top:0}.fieldLabel{color:var(--muted);font-size:10px}.fieldValue{min-width:0;color:#e0e9ed;line-height:1.35}.entityLink{border:0;background:transparent;padding:0;color:var(--link);text-align:left;text-decoration:underline;text-decoration-color:#426f87;text-underline-offset:2px;font-weight:700}.entityLink::after{content:"  →";color:var(--accent)}.multiLinks{display:flex;flex-wrap:wrap;gap:5px}.multiLinks .entityLink{border:1px solid #35576a;background:#102633;border-radius:999px;padding:4px 7px;text-decoration:none;font-size:10px}.multiLinks .entityLink::after{content:""}.tagList{display:flex;flex-wrap:wrap;gap:5px}.tag{border:1px solid #384a53;background:#10191e;color:#ced9de;border-radius:999px;padding:3px 7px;font-size:9px}.resource{padding:8px 9px;border-top:1px solid #17252d}.resource:first-child{border-top:0}.resourceTop{display:flex;justify-content:space-between;gap:8px;align-items:start}.resource strong{font-size:11px}.resourceMeta{color:#a7bac4;font-size:9px;text-align:right}.resource p{margin:4px 0 0;color:#cbd7dc;font-size:10px;line-height:1.4}.longText{padding:9px;color:#d3dfe4;font-size:11px;line-height:1.55}.dev{display:grid;grid-template-columns:auto minmax(0,1fr);gap:5px 10px;font-size:9px}.dev span:nth-child(odd){color:var(--muted)}.dev code{overflow-wrap:anywhere;color:#dbe8ed}.mockNote{margin-top:10px;padding:7px 9px;border:1px solid #594824;background:#1b160b;color:#e9cb8f;border-radius:7px;font-size:9px;line-height:1.4}
+@media(min-width:800px){.topbar{padding:10px 14px}.title small{font-size:9px}.title strong{font-size:16px}.detailPane{padding:16px 22px 22px}.hero{grid-template-columns:92px minmax(0,1fr)}.placeholder{width:92px;height:92px;font-size:28px}.hero h1{font-size:25px}.description{font-size:13px}.field{grid-template-columns:190px minmax(0,1fr);font-size:12px}.explorerPane{padding-left:14px;padding-right:14px}.node{font-size:12px}}
+@media(max-height:650px){.detailPane{flex-basis:55%}.field{padding-top:5px;padding-bottom:5px}.section{margin-top:8px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="title"><small>MINEIT UNIVERSE DATABASE</small><strong>Universe Explorer</strong></div>
+    <div class="mockTag">CONCEPT MOCK • EMBEDDED DATA</div>
+  </header>
+
+  <main class="workspace" id="workspace">
+    <section class="detailPane" id="detail"></section>
+    <div class="divider" id="divider" aria-label="Resize detail and explorer panels"></div>
+    <section class="explorerPane">
+      <div class="explorerToolbar">
+        <button class="perspective active" data-view="geography">Geography</button>
+        <button class="perspective" data-view="organisation">Organisation</button>
+        <button class="perspective" data-view="directory">Directory</button>
+      </div>
+      <div class="searchRow">
+        <input class="search" id="search" placeholder="Search universe..." autocomplete="off">
+        <button class="treeAction" id="collapseAll">Collapse</button>
+      </div>
+      <div class="tree" id="tree"></div>
+    </section>
+  </main>
+</div>
+
+<script>
+const entities={
+  "system-solace":{
+    type:"Star System",icon:"✦",name:"Solace System",subtitle:"G-type commercial core system",
+    description:"A mature trade system in the Koplin Commercial Sphere, centred on Solace II and a dense orbital and surface industrial network.",
+    context:["system-solace"],fields:[
+      {label:"Region",text:"Koplin Commercial Sphere"},{label:"Star type",text:"G-type yellow star"},
+      {label:"Major worlds",refs:["planet-solace-ii","planet-solace-iii"]},{label:"Primary station",ref:"station-solace-commercial-ring"},
+      {label:"Economic profile",text:"Aerospace manufacturing, advanced materials and regional freight"}
+    ],history:"Solace grew from a logistics waypoint into one of the region's principal commercial manufacturing systems after large propulsion and alloy industries established permanent facilities around Solace II."
+  },
+  "planet-solace-ii":{
+    type:"Planet",icon:"●",name:"Solace II",subtitle:"Temperate industrial world",
+    description:"A densely developed temperate world whose equatorial industrial belt supplies propulsion, fabrication and logistics businesses across the region.",
+    context:["system-solace","planet-solace-ii"],fields:[
+      {label:"System",ref:"system-solace"},{label:"Environment",text:"Temperate; heavily urbanised equatorial belt"},{label:"Population",text:"2.8 billion"},
+      {label:"Orbital station",ref:"station-solace-commercial-ring"},{label:"Surface facilities",refs:["facility-helix-solace-driveworks","facility-helix-alloyworks"]},
+      {label:"Major operator",ref:"company-helix-industrial-group"}
+    ]
+  },
+  "planet-solace-iii":{
+    type:"Planet",icon:"●",name:"Solace III",subtitle:"Cold mineral-processing world",
+    description:"A cold, sparsely inhabited world used for specialist mineral processing, bulk storage and hazardous industrial work separated from Solace II's major population centres.",
+    context:["system-solace","planet-solace-iii"],fields:[
+      {label:"System",ref:"system-solace"},{label:"Environment",text:"Cold, dry, thin atmosphere"},{label:"Population",text:"19 million"},
+      {label:"Primary industry",text:"Mineral refining and bulk materials storage"},{label:"Associated company",ref:"company-helix-industrial-group"}
+    ]
+  },
+  "station-solace-commercial-ring":{
+    type:"Station",icon:"⬡",name:"Solace Commercial Ring",subtitle:"Orbital trade and administration station",
+    description:"A major orbital commercial hub containing corporate offices, procurement departments, passenger terminals, berths and high-value freight handling infrastructure.",
+    context:["system-solace","planet-solace-ii","station-solace-commercial-ring"],fields:[
+      {label:"System",ref:"system-solace"},{label:"Planet",ref:"planet-solace-ii"},{label:"Location type",text:"Orbital commercial station"},
+      {label:"Major company",ref:"company-helix-industrial-group"},{label:"Residents / workers",refs:["person-talia-chen","person-arun-das"]},
+      {label:"Home-ported ship",ref:"ship-csv-halcyon-reach"},{label:"Purpose",text:"Corporate administration, procurement and high-value freight exchange"}
+    ]
+  },
+  "system-varda":{
+    type:"Star System",icon:"✦",name:"Varda System",subtitle:"K-type agricultural research system",
+    description:"A quieter system known for controlled-environment agriculture, bioscience campuses and food-security research serving remote colonies.",
+    context:["system-varda"],fields:[
+      {label:"Region",text:"Outer Koplin Commercial Sphere"},{label:"Star type",text:"K-type orange star"},{label:"Primary world",ref:"planet-varda-prime"},
+      {label:"Primary settlement",ref:"station-varda-biosphere"},{label:"Economic profile",text:"Biotechnology, closed-habitat agriculture and life-support research"}
+    ]
+  },
+  "planet-varda-prime":{
+    type:"Planet",icon:"●",name:"Varda Prime",subtitle:"Cool oceanic research world",
+    description:"A cool oceanic world with carefully controlled settlement zones and extensive biological research infrastructure.",
+    context:["system-varda","planet-varda-prime"],fields:[
+      {label:"System",ref:"system-varda"},{label:"Environment",text:"Cool oceanic; dense cloud cover"},{label:"Population",text:"146 million"},
+      {label:"Primary settlement",ref:"station-varda-biosphere"},{label:"Research facility",ref:"facility-verdant-habitat-lab"},{label:"Major operator",ref:"company-verdant-horizon"}
+    ]
+  },
+  "station-varda-biosphere":{
+    type:"Settlement",icon:"⬢",name:"Varda Biosphere Enclave",subtitle:"Sealed research settlement",
+    description:"A sealed coastal research settlement supporting laboratories, food-production trials, specialist housing and an orbital shuttle port.",
+    context:["system-varda","planet-varda-prime","station-varda-biosphere"],fields:[
+      {label:"System",ref:"system-varda"},{label:"Planet",ref:"planet-varda-prime"},{label:"Location type",text:"Sealed surface settlement"},
+      {label:"Primary company",ref:"company-verdant-horizon"},{label:"Research facility",ref:"facility-verdant-habitat-lab"},
+      {label:"Key staff",refs:["person-imani-okoro","person-lena-ortiz"]},{label:"Assigned ship",ref:"ship-csv-seedway"}
+    ]
+  },
+  "company-helix-industrial-group":{
+    type:"Company",icon:"H",name:"Helix Industrial Group",subtitle:"Major aerospace and heavy-engineering conglomerate",
+    description:"Helix designs and manufactures propulsion systems, advanced alloys and commercial spacecraft components. Its corporate identity favours graphite structures, restrained bronze detailing and disciplined industrial interiors.",
+    context:["company-helix-industrial-group"],fields:[
+      {label:"Organisation type",text:"Industrial conglomerate"},{label:"Scale",text:"Major"},{label:"Headquarters",ref:"station-solace-commercial-ring"},
+      {label:"Industries",tags:["Aerospace","Heavy engineering","Advanced materials"]},{label:"Division",ref:"division-helix-propulsion"},
+      {label:"Facilities",refs:["facility-helix-solace-driveworks","facility-helix-alloyworks"]},{label:"Operations",refs:["operation-helix-driveworks-propulsion","operation-helix-alloy-fabrication"]},
+      {label:"Key people",refs:["person-arun-das","person-talia-chen","person-marcus-vale"]},{label:"Corporate ship",ref:"ship-csv-halcyon-reach"}
+    ],visual:"Graphite and bronze corporate palette; angular engineering insignia; practical dark uniforms with bronze identity bands; ships use graphite hull panels with narrow bronze striping."
+  },
+  "division-helix-propulsion":{
+    type:"Division",icon:"▦",name:"Propulsion Systems Division",subtitle:"Helix Industrial Group",
+    description:"The Helix division responsible for commercial drive assemblies, field-control hardware and high-temperature propulsion components.",
+    context:["company-helix-industrial-group","division-helix-propulsion"],fields:[
+      {label:"Company",ref:"company-helix-industrial-group"},{label:"Division president",ref:"person-arun-das"},{label:"Primary facility",ref:"facility-helix-solace-driveworks"},
+      {label:"Departments",refs:["department-helix-procurement","department-helix-operations"]},{label:"Operations",refs:["operation-helix-driveworks-propulsion","operation-helix-alloy-fabrication"]}
+    ]
+  },
+  "department-helix-procurement":{
+    type:"Department",icon:"▤",name:"Strategic Materials Procurement",subtitle:"Propulsion Systems Division",
+    description:"Qualifies suppliers and secures long-term contracts for critical metals and specialist ores used by Helix propulsion manufacturing.",
+    context:["company-helix-industrial-group","division-helix-propulsion","department-helix-procurement"],fields:[
+      {label:"Company",ref:"company-helix-industrial-group"},{label:"Division",ref:"division-helix-propulsion"},{label:"Primary location",ref:"station-solace-commercial-ring"},
+      {label:"Lead buyer",ref:"person-talia-chen"},{label:"Supports operation",ref:"operation-helix-driveworks-propulsion"},
+      {label:"Responsibilities",tags:["Supplier qualification","Strategic metals","Long-term contracts"]}
+    ]
+  },
+  "department-helix-operations":{
+    type:"Department",icon:"▤",name:"Driveworks Operations",subtitle:"Propulsion Systems Division",
+    description:"Coordinates production targets, staffing, maintenance windows and delivery performance across Helix's main propulsion manufacturing complex.",
+    context:["company-helix-industrial-group","division-helix-propulsion","department-helix-operations"],fields:[
+      {label:"Company",ref:"company-helix-industrial-group"},{label:"Division",ref:"division-helix-propulsion"},{label:"Facility",ref:"facility-helix-solace-driveworks"},
+      {label:"Director",ref:"person-marcus-vale"},{label:"Primary operation",ref:"operation-helix-driveworks-propulsion"}
+    ]
+  },
+  "facility-helix-solace-driveworks":{
+    type:"Facility",icon:"⌂",name:"Solace Driveworks",subtitle:"Propulsion manufacturing complex",
+    description:"A large automated industrial complex on Solace II assembling commercial drives and precision field-control systems for Helix customers.",
+    context:["system-solace","planet-solace-ii","facility-helix-solace-driveworks"],fields:[
+      {label:"Owner",ref:"company-helix-industrial-group"},{label:"Planet",ref:"planet-solace-ii"},{label:"Division",ref:"division-helix-propulsion"},{label:"Status",text:"Operational"},
+      {label:"Operations director",ref:"person-marcus-vale"},{label:"Primary operation",ref:"operation-helix-driveworks-propulsion"}
+    ],visual:"Kilometres of low graphite production halls, bronze gantry markings, enclosed magnetic assembly bays and bright inspection chambers connected by automated freight rails."
+  },
+  "facility-helix-alloyworks":{
+    type:"Facility",icon:"⌂",name:"Solace Advanced Alloy Works",subtitle:"High-purity materials complex",
+    description:"A Helix specialist facility producing precision alloys for propulsion housings, thermal systems and high-stress spacecraft structures.",
+    context:["system-solace","planet-solace-ii","facility-helix-alloyworks"],fields:[
+      {label:"Owner",ref:"company-helix-industrial-group"},{label:"Planet",ref:"planet-solace-ii"},{label:"Division",ref:"division-helix-propulsion"},
+      {label:"Status",text:"Operational"},{label:"Primary operation",ref:"operation-helix-alloy-fabrication"}
+    ]
+  },
+  "operation-helix-driveworks-propulsion":{
+    type:"Operation",icon:"⚙",name:"Commercial Drive Assembly Programme",subtitle:"Active manufacturing operation",
+    description:"Produces medium and heavy commercial propulsion assemblies for freight, survey and colony-support vessels.",
+    context:["company-helix-industrial-group","division-helix-propulsion","operation-helix-driveworks-propulsion"],fields:[
+      {label:"Company",ref:"company-helix-industrial-group"},{label:"Division",ref:"division-helix-propulsion"},{label:"Facility",ref:"facility-helix-solace-driveworks"},
+      {label:"Operations director",ref:"person-marcus-vale"},{label:"Procurement contact",ref:"person-talia-chen"},{label:"Collection ship",ref:"ship-csv-halcyon-reach"}
+    ],resources:[
+      {name:"Magnetic Ore",meta:"Critical • High demand • Excellent quality",reason:"Used in high-density field assemblies."},
+      {name:"Copper Ore",meta:"Important • High demand • Good+ quality",reason:"Used in power routing and control systems."},
+      {name:"Platinum",meta:"Important • Moderate demand • Excellent quality",reason:"Used in high-temperature catalyst and control assemblies."}
+    ]
+  },
+  "operation-helix-alloy-fabrication":{
+    type:"Operation",icon:"⚙",name:"Advanced Alloy Fabrication",subtitle:"Active materials operation",
+    description:"Produces high-purity structural and thermal alloys used internally by Helix and sold to regional spacecraft manufacturers.",
+    context:["company-helix-industrial-group","division-helix-propulsion","operation-helix-alloy-fabrication"],fields:[
+      {label:"Company",ref:"company-helix-industrial-group"},{label:"Facility",ref:"facility-helix-alloyworks"},{label:"Procurement department",ref:"department-helix-procurement"}
+    ],resources:[
+      {name:"Iron Ore",meta:"Important • High demand • Good+ quality",reason:"Bulk structural alloy feedstock."},
+      {name:"Reactive Metal Ore",meta:"Critical • Moderate demand • Excellent quality",reason:"Used in specialist high-performance alloy recipes."}
+    ]
+  },
+  "person-arun-das":{
+    type:"Person",icon:"AD",name:"Arun Das",subtitle:"President, Propulsion Systems Division",
+    description:"A veteran engineering executive responsible for strategy, output and commercial performance across Helix's propulsion business.",
+    context:["company-helix-industrial-group","division-helix-propulsion","person-arun-das"],fields:[
+      {label:"Company",ref:"company-helix-industrial-group"},{label:"Division",ref:"division-helix-propulsion"},{label:"Work location",ref:"station-solace-commercial-ring"},
+      {label:"Primary facility",ref:"facility-helix-solace-driveworks"},{label:"Responsibilities",tags:["Division strategy","Capital programmes","Commercial performance"]}
+    ],visual:"Late-50s man with close-cropped silver hair, formal graphite Helix executive jacket with a narrow bronze collar line, usually pictured in a restrained industrial executive office."
+  },
+  "person-talia-chen":{
+    type:"Person",icon:"TC",name:"Talia Chen",subtitle:"Strategic Metals Buyer",
+    description:"A senior procurement specialist responsible for supplier qualification and long-term acquisition of critical propulsion materials.",
+    context:["company-helix-industrial-group","division-helix-propulsion","department-helix-procurement","person-talia-chen"],fields:[
+      {label:"Company",ref:"company-helix-industrial-group"},{label:"Division",ref:"division-helix-propulsion"},{label:"Department",ref:"department-helix-procurement"},
+      {label:"Works at",ref:"station-solace-commercial-ring"},{label:"Supports operation",ref:"operation-helix-driveworks-propulsion"},{label:"Assigned collection ship",ref:"ship-csv-halcyon-reach"},
+      {label:"Responsibilities",tags:["Strategic metals procurement","Supplier qualification","Long-term supply agreements"]}
+    ],biography:"Talia built her career in specialist metals sourcing before moving into Helix propulsion procurement, where she now controls supplier qualification for several materials that can stop drive assembly if supply fails.",visual:"Woman in her early 40s, neat dark hair, practical graphite corporate jacket with bronze Helix badge, photographed in a high-end orbital procurement office with freight traffic visible through reinforced windows."
+  },
+  "person-marcus-vale":{
+    type:"Person",icon:"MV",name:"Marcus Vale",subtitle:"Driveworks Operations Director",
+    description:"The operational director responsible for output, production quality and delivery performance at Solace Driveworks.",
+    context:["company-helix-industrial-group","division-helix-propulsion","department-helix-operations","person-marcus-vale"],fields:[
+      {label:"Company",ref:"company-helix-industrial-group"},{label:"Division",ref:"division-helix-propulsion"},{label:"Department",ref:"department-helix-operations"},
+      {label:"Works at",ref:"facility-helix-solace-driveworks"},{label:"Manages operation",ref:"operation-helix-driveworks-propulsion"},
+      {label:"Responsibilities",tags:["Production output","Quality control","Delivery performance"]}
+    ]
+  },
+  "ship-csv-halcyon-reach":{
+    type:"Ship",icon:"▲",name:"CSV Halcyon Reach",subtitle:"Priority materials courier",
+    description:"A compact high-value cargo vessel operated by Helix for urgent movement of specialist metals and precision components between Solace and regional suppliers.",
+    context:["company-helix-industrial-group","ship-csv-halcyon-reach"],fields:[
+      {label:"Owner",ref:"company-helix-industrial-group"},{label:"Home port",ref:"station-solace-commercial-ring"},{label:"Ship class",text:"Dart Courier"},
+      {label:"Assigned operation",ref:"operation-helix-driveworks-propulsion"},{label:"Commercial contact",ref:"person-talia-chen"},{label:"Role",text:"Priority high-value materials collection"}
+    ],visual:"Small angular interstellar courier with graphite hull armour, narrow bronze Helix stripes, compact cargo spine and oversized high-output engines for rapid high-value collection runs."
+  },
+  "company-verdant-horizon":{
+    type:"Company",icon:"V",name:"Verdant Horizon Biotech",subtitle:"Specialist agricultural and bioscience company",
+    description:"Verdant Horizon develops closed-habitat crops, nutritional cultures and biological support systems for remote settlements and long-duration industrial colonies.",
+    context:["company-verdant-horizon"],fields:[
+      {label:"Organisation type",text:"Specialist biotechnology company"},{label:"Scale",text:"Regional specialist"},{label:"Headquarters",ref:"station-varda-biosphere"},
+      {label:"Industries",tags:["Biotechnology","Agriculture","Life support"]},{label:"Division",ref:"division-verdant-biosciences"},{label:"Facility",ref:"facility-verdant-habitat-lab"},
+      {label:"Operation",ref:"operation-verdant-nutrition"},{label:"Key people",refs:["person-imani-okoro","person-lena-ortiz"]},{label:"Research ship",ref:"ship-csv-seedway"}
+    ],visual:"Soft white and deep botanical green visual identity, rounded clean-room architecture, restrained leaf-cell logo motifs and white ships with dark green scientific markings."
+  },
+  "division-verdant-biosciences":{
+    type:"Division",icon:"▦",name:"Habitat Biosciences Division",subtitle:"Verdant Horizon Biotech",
+    description:"The division responsible for food-system biology, protein cultures and resilient closed-environment nutrition programmes.",
+    context:["company-verdant-horizon","division-verdant-biosciences"],fields:[
+      {label:"Company",ref:"company-verdant-horizon"},{label:"Scientific director",ref:"person-imani-okoro"},{label:"Primary facility",ref:"facility-verdant-habitat-lab"},
+      {label:"Procurement team",ref:"department-verdant-procurement"},{label:"Primary operation",ref:"operation-verdant-nutrition"}
+    ]
+  },
+  "department-verdant-procurement":{
+    type:"Department",icon:"▤",name:"Bio-Resource Procurement",subtitle:"Habitat Biosciences Division",
+    description:"Sources biological feedstocks, nutrient precursors and specialist colony-grown materials for Verdant's research and production programmes.",
+    context:["company-verdant-horizon","division-verdant-biosciences","department-verdant-procurement"],fields:[
+      {label:"Company",ref:"company-verdant-horizon"},{label:"Division",ref:"division-verdant-biosciences"},{label:"Primary location",ref:"station-varda-biosphere"},
+      {label:"Procurement lead",ref:"person-lena-ortiz"},{label:"Supports operation",ref:"operation-verdant-nutrition"}
+    ]
+  },
+  "facility-verdant-habitat-lab":{
+    type:"Facility",icon:"⌂",name:"Varda Closed-Habitat Research Complex",subtitle:"Agricultural bioscience facility",
+    description:"A network of sealed growth chambers, biochemical laboratories and pilot-scale food-production modules on Varda Prime.",
+    context:["system-varda","planet-varda-prime","station-varda-biosphere","facility-verdant-habitat-lab"],fields:[
+      {label:"Owner",ref:"company-verdant-horizon"},{label:"Location",ref:"station-varda-biosphere"},{label:"Division",ref:"division-verdant-biosciences"},
+      {label:"Scientific director",ref:"person-imani-okoro"},{label:"Primary operation",ref:"operation-verdant-nutrition"},{label:"Status",text:"Operational"}
+    ],visual:"White low-rise sealed modules surrounded by dark green utility structures, transparent growth galleries, moist coastal atmosphere and bright clean laboratory interiors."
+  },
+  "operation-verdant-nutrition":{
+    type:"Operation",icon:"⚙",name:"Closed-Habitat Nutrition Programme",subtitle:"Active research and production programme",
+    description:"Develops resilient food cultures and nutrient systems intended to keep remote industrial colonies supplied with compact, reliable nutrition sources.",
+    context:["company-verdant-horizon","division-verdant-biosciences","operation-verdant-nutrition"],fields:[
+      {label:"Company",ref:"company-verdant-horizon"},{label:"Division",ref:"division-verdant-biosciences"},{label:"Facility",ref:"facility-verdant-habitat-lab"},
+      {label:"Scientific director",ref:"person-imani-okoro"},{label:"Procurement contact",ref:"person-lena-ortiz"},{label:"Research ship",ref:"ship-csv-seedway"}
+    ],resources:[
+      {name:"Protein Bloom",meta:"Critical • Moderate demand • Good+ quality",reason:"Used as a high-density protein culture input."},
+      {name:"Thermal Algae",meta:"Important • Moderate demand • Good+ quality",reason:"Used in resilient closed-loop nutrient cultures."},
+      {name:"Hydrogen-rich Brine",meta:"Important • Low demand • Common+ quality",reason:"Used in specialist nutrient and biochemical processing."}
+    ]
+  },
+  "person-imani-okoro":{
+    type:"Person",icon:"IO",name:"Dr Imani Okoro",subtitle:"Scientific Director, Habitat Biosciences",
+    description:"A systems biologist directing Verdant Horizon's closed-habitat nutrition and biological resilience programmes.",
+    context:["company-verdant-horizon","division-verdant-biosciences","person-imani-okoro"],fields:[
+      {label:"Company",ref:"company-verdant-horizon"},{label:"Division",ref:"division-verdant-biosciences"},{label:"Works at",ref:"facility-verdant-habitat-lab"},
+      {label:"Directs operation",ref:"operation-verdant-nutrition"},{label:"Responsibilities",tags:["Research strategy","Habitat biology","Nutritional resilience"]}
+    ],visual:"Woman in her late 40s with short natural hair, clean white Verdant research jacket with dark green detailing, standing in a bright growth laboratory filled with sealed biological culture systems."
+  },
+  "person-lena-ortiz":{
+    type:"Person",icon:"LO",name:"Lena Ortiz",subtitle:"Bio-Resource Procurement Lead",
+    description:"Coordinates external sourcing of unusual biological feedstocks and nutrient precursors needed by Verdant's habitat research programmes.",
+    context:["company-verdant-horizon","division-verdant-biosciences","department-verdant-procurement","person-lena-ortiz"],fields:[
+      {label:"Company",ref:"company-verdant-horizon"},{label:"Division",ref:"division-verdant-biosciences"},{label:"Department",ref:"department-verdant-procurement"},
+      {label:"Works at",ref:"station-varda-biosphere"},{label:"Supports operation",ref:"operation-verdant-nutrition"},{label:"Assigned ship",ref:"ship-csv-seedway"},
+      {label:"Responsibilities",tags:["Bio-resource sourcing","Supplier assessment","Research supply contracts"]}
+    ]
+  },
+  "ship-csv-seedway":{
+    type:"Ship",icon:"▲",name:"CSV Seedway",subtitle:"Scientific supply courier",
+    description:"A compact temperature-controlled supply ship carrying sensitive biological samples, nutrient feedstocks and research equipment between Varda and external suppliers.",
+    context:["company-verdant-horizon","ship-csv-seedway"],fields:[
+      {label:"Owner",ref:"company-verdant-horizon"},{label:"Home port",ref:"station-varda-biosphere"},{label:"Ship class",text:"Sterile Courier"},
+      {label:"Assigned operation",ref:"operation-verdant-nutrition"},{label:"Procurement contact",ref:"person-lena-ortiz"},{label:"Role",text:"Temperature-controlled scientific logistics"}
+    ],visual:"Small smooth-sided white courier with dark green Verdant markings, compact refrigerated cargo modules and a clean scientific rather than industrial appearance."
+  }
+};
+
+const geography={label:"MineIT Universe",children:[
+  {id:"system-solace",children:[
+    {id:"planet-solace-ii",children:[
+      {id:"station-solace-commercial-ring",children:[
+        {label:"Companies",children:[{id:"company-helix-industrial-group"}]},
+        {label:"People",children:[{id:"person-arun-das"},{id:"person-talia-chen"}]},
+        {label:"Ships",children:[{id:"ship-csv-halcyon-reach"}]}
+      ]},
+      {label:"Surface Facilities",children:[{id:"facility-helix-solace-driveworks"},{id:"facility-helix-alloyworks"}]}
+    ]},
+    {id:"planet-solace-iii"}
+  ]},
+  {id:"system-varda",children:[
+    {id:"planet-varda-prime",children:[
+      {id:"station-varda-biosphere",children:[
+        {label:"Companies",children:[{id:"company-verdant-horizon"}]},
+        {label:"People",children:[{id:"person-imani-okoro"},{id:"person-lena-ortiz"}]},
+        {label:"Facilities",children:[{id:"facility-verdant-habitat-lab"}]},
+        {label:"Ships",children:[{id:"ship-csv-seedway"}]}
+      ]}
+    ]}
+  ]}
+]};
+
+const organisation={label:"Companies",children:[
+  {id:"company-helix-industrial-group",children:[
+    {id:"division-helix-propulsion",children:[
+      {id:"department-helix-procurement",children:[{id:"person-talia-chen"}]},
+      {id:"department-helix-operations",children:[{id:"person-marcus-vale"}]},
+      {label:"Leadership",children:[{id:"person-arun-das"}]},
+      {label:"Facilities",children:[{id:"facility-helix-solace-driveworks"},{id:"facility-helix-alloyworks"}]},
+      {label:"Operations",children:[{id:"operation-helix-driveworks-propulsion"},{id:"operation-helix-alloy-fabrication"}]}
+    ]},
+    {label:"Ships",children:[{id:"ship-csv-halcyon-reach"}]}
+  ]},
+  {id:"company-verdant-horizon",children:[
+    {id:"division-verdant-biosciences",children:[
+      {id:"department-verdant-procurement",children:[{id:"person-lena-ortiz"}]},
+      {label:"Leadership",children:[{id:"person-imani-okoro"}]},
+      {label:"Facilities",children:[{id:"facility-verdant-habitat-lab"}]},
+      {label:"Operations",children:[{id:"operation-verdant-nutrition"}]}
+    ]},
+    {label:"Ships",children:[{id:"ship-csv-seedway"}]}
+  ]}
+]};
+
+const directory={label:"Directory",children:[
+  {label:"Systems",children:[{id:"system-solace"},{id:"system-varda"}]},
+  {label:"Planets",children:[{id:"planet-solace-ii"},{id:"planet-solace-iii"},{id:"planet-varda-prime"}]},
+  {label:"Locations",children:[{id:"station-solace-commercial-ring"},{id:"station-varda-biosphere"}]},
+  {label:"Companies",children:[{id:"company-helix-industrial-group"},{id:"company-verdant-horizon"}]},
+  {label:"Organisation Units",children:[{id:"division-helix-propulsion"},{id:"department-helix-procurement"},{id:"department-helix-operations"},{id:"division-verdant-biosciences"},{id:"department-verdant-procurement"}]},
+  {label:"Facilities",children:[{id:"facility-helix-solace-driveworks"},{id:"facility-helix-alloyworks"},{id:"facility-verdant-habitat-lab"}]},
+  {label:"Operations",children:[{id:"operation-helix-driveworks-propulsion"},{id:"operation-helix-alloy-fabrication"},{id:"operation-verdant-nutrition"}]},
+  {label:"People",children:[{id:"person-arun-das"},{id:"person-talia-chen"},{id:"person-marcus-vale"},{id:"person-imani-okoro"},{id:"person-lena-ortiz"}]},
+  {label:"Ships",children:[{id:"ship-csv-halcyon-reach"},{id:"ship-csv-seedway"}]}
+]};
+
+const trees={geography,organisation,directory};
+let activeView="geography";
+let selectedId="company-helix-industrial-group";
+const openNodes=new Set();
+
+const treeEl=document.getElementById("tree");
+const detailEl=document.getElementById("detail");
+const searchEl=document.getElementById("search");
+const detailPane=document.getElementById("detail");
+const workspace=document.getElementById("workspace");
+const divider=document.getElementById("divider");
+
+function nodeKey(node){return node.id||`label:${node.label}`}
+function nodeLabel(node){return node.id?(entities[node.id]?.name||node.id):node.label}
+
+function findPath(node,target,path=[]){
+  const next=[...path,nodeKey(node)];
+  if(node.id===target)return next;
+  for(const child of node.children||[]){const found=findPath(child,target,next);if(found)return found}
+  return null;
+}
+
+function revealSelected(){
+  const path=findPath(trees[activeView],selectedId);
+  if(path) path.slice(0,-1).forEach(key=>openNodes.add(key));
+}
+
+function collapseAll(){openNodes.clear();revealSelected();renderTree()}
+
+function renderNode(node){
+  const key=nodeKey(node),children=node.children||[],hasChildren=children.length>0,isOpen=openNodes.has(key),entity=node.id?entities[node.id]:null;
+  const li=document.createElement("li");
+  const row=document.createElement("div");row.className=`treeRow${node.id===selectedId?" selected":""}`;if(node.id===selectedId)row.dataset.selected="true";
+  const twist=document.createElement("button");twist.className=`twisty${hasChildren?"":" empty"}`;twist.textContent=hasChildren?(isOpen?"▾":"▸"):"";
+  twist.onclick=e=>{e.stopPropagation();if(!hasChildren)return;isOpen?openNodes.delete(key):openNodes.add(key);renderTree()};
+  const button=document.createElement("button");button.className=`node${node.id?"":" categoryNode"}`;
+  button.innerHTML=`${nodeLabel(node)}${entity?` <span class="kind">${entity.type}</span>`:""}`;
+  button.onclick=()=>{if(node.id){selectEntity(node.id)}else if(hasChildren){isOpen?openNodes.delete(key):openNodes.add(key);renderTree()}};
+  row.append(twist,button);li.append(row);
+  if(hasChildren&&isOpen){const ul=document.createElement("ul");children.forEach(child=>ul.append(renderNode(child)));li.append(ul)}
+  return li;
+}
+
+function renderTree(){
+  treeEl.innerHTML="";
+  const query=searchEl.value.trim().toLowerCase();
+  if(query){
+    const matches=Object.entries(entities).filter(([id,e])=>`${e.name} ${e.type} ${e.subtitle} ${e.description}`.toLowerCase().includes(query));
+    if(!matches.length){treeEl.innerHTML='<div class="searchEmpty">No matching universe entities.</div>';return}
+    const ul=document.createElement("ul");ul.className="treeRoot";matches.forEach(([id])=>ul.append(renderNode({id})));treeEl.append(ul);return;
+  }
+  const ul=document.createElement("ul");ul.className="treeRoot";ul.append(renderNode(trees[activeView]));treeEl.append(ul);
+}
+
+function linkButton(id,label){const e=entities[id];if(!e)return `<span>${label||id}</span>`;return `<button class="entityLink" data-ref="${id}">${label||e.name}</button>`}
+function fieldValue(field){
+  if(field.ref)return linkButton(field.ref);
+  if(field.refs)return `<div class="multiLinks">${field.refs.map(id=>linkButton(id)).join("")}</div>`;
+  if(field.tags)return `<div class="tagList">${field.tags.map(t=>`<span class="tag">${t}</span>`).join("")}</div>`;
+  return field.text||"—";
+}
+
+function contextFor(entity){return (entity.context||[]).map(id=>entities[id]?linkButton(id,entities[id].name):`<span>${id}</span>`).join('<span>›</span>')}
+
+function renderDetail(){
+  const e=entities[selectedId];if(!e)return;
+  const fields=(e.fields||[]).map(field=>`<div class="field"><div class="fieldLabel">${field.label}</div><div class="fieldValue">${fieldValue(field)}</div></div>`).join("");
+  const resources=e.resources?`<section class="section"><h2>Resource requirements</h2>${e.resources.map(r=>`<div class="resource"><div class="resourceTop"><strong>${r.name}</strong><div class="resourceMeta">${r.meta}</div></div><p>${r.reason}</p></div>`).join("")}</section>`:"";
+  const biography=e.biography?`<section class="section"><h2>Biography</h2><div class="longText">${e.biography}</div></section>`:"";
+  const history=e.history?`<section class="section"><h2>History</h2><div class="longText">${e.history}</div></section>`:"";
+  const visual=e.visual?`<section class="section"><h2>Visual description</h2><div class="longText">${e.visual}</div></section>`:"";
+  detailEl.innerHTML=`
+    <div class="breadcrumbs">${contextFor(e)}</div>
+    <div class="hero"><div class="placeholder">${e.icon||"?"}</div><div><div class="eyebrow">${e.type}</div><h1>${e.name}</h1><div class="subtitle">${e.subtitle||""}</div></div></div>
+    <div class="description">${e.description||""}</div>
+    <section class="section"><h2>Details</h2><div class="fieldRows">${fields}</div></section>
+    ${resources}${biography}${history}${visual}
+    <section class="section"><h2>Development details</h2><div class="longText"><div class="dev"><span>ID</span><code>${selectedId}</code><span>Perspective</span><code>${activeView}</code><span>Source</span><code>Embedded Concept Mock 0 data</code></div></div></section>
+    <div class="mockNote">Concept Mock 0: embedded data exists only to prove the navigation model. The real Universe Directory will load canonical JSON collections.</div>`;
+  detailEl.querySelectorAll("[data-ref]").forEach(btn=>btn.onclick=()=>selectEntity(btn.dataset.ref));
+}
+
+function selectEntity(id){
+  if(!entities[id])return;
+  selectedId=id;
+  revealSelected();
+  renderDetail();renderTree();
+  requestAnimationFrame(()=>{const row=treeEl.querySelector('[data-selected="true"]');if(row)row.scrollIntoView({block:"nearest"})});
+}
+
+function switchView(view){
+  activeView=view;document.querySelectorAll(".perspective").forEach(btn=>btn.classList.toggle("active",btn.dataset.view===view));
+  revealSelected();renderTree();renderDetail();
+  requestAnimationFrame(()=>{const row=treeEl.querySelector('[data-selected="true"]');if(row)row.scrollIntoView({block:"nearest"})});
+}
+
+document.querySelectorAll(".perspective").forEach(btn=>btn.onclick=()=>switchView(btn.dataset.view));
+searchEl.addEventListener("input",renderTree);
+document.getElementById("collapseAll").onclick=collapseAll;
+
+let dragging=false;
+function applySplit(percent){
+  const pct=Math.max(25,Math.min(75,percent));detailPane.style.flexBasis=`${pct}%`;sessionStorage.setItem("mineitUniverseMockSplit",String(pct));
+}
+divider.addEventListener("pointerdown",e=>{dragging=true;divider.classList.add("dragging");divider.setPointerCapture(e.pointerId)});
+divider.addEventListener("pointermove",e=>{if(!dragging)return;const rect=workspace.getBoundingClientRect();applySplit(((e.clientY-rect.top)/rect.height)*100)});
+divider.addEventListener("pointerup",e=>{dragging=false;divider.classList.remove("dragging");try{divider.releasePointerCapture(e.pointerId)}catch{}});
+divider.addEventListener("pointercancel",()=>{dragging=false;divider.classList.remove("dragging")});
+
+const savedSplit=Number(sessionStorage.getItem("mineitUniverseMockSplit"));if(Number.isFinite(savedSplit)&&savedSplit>=25&&savedSplit<=75)applySplit(savedSplit);
+revealSelected();renderTree();renderDetail();
+</script>
+</body>
+</html>

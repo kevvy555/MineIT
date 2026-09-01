@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>MineIT — Buyer Collection Ship Mockup v2</title>
+<style>
+:root{--bg:#050708;--panel:#0b1116;--line:#273741;--text:#eef5f7;--muted:#8fa1ab;--good:#82dda0;--warn:#ffd166;--bad:#ff7777;--accent:#76c6ff}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button,select{font:inherit;color:inherit}button{border:1px solid var(--line);background:#111a20;border-radius:7px;touch-action:manipulation}
+#app{height:100vh;height:100dvh;max-width:430px;margin:auto;padding:calc(env(safe-area-inset-top) + 6px) 6px calc(env(safe-area-inset-bottom) + 6px);display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:5px;background:linear-gradient(#071015,#050708)}
+.head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px;align-items:center}.head small{display:block;font-size:5.5px;color:var(--muted);letter-spacing:.12em;font-weight:900}.head strong{font-size:11px}.head button{width:34px;height:34px}
+.scenarios{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}.control{min-width:0;padding:3px;background:#0b1116;border:1px solid var(--line);border-radius:5px}.control small{display:block;font-size:4.5px;color:var(--muted)}.control select{width:100%;height:23px;border:0;background:#081015;font-size:5.2px}
+.card{min-height:0;overflow:auto;border:1px solid #354a57;border-radius:8px;background:#091016;padding:6px;display:grid;gap:5px;align-content:start}
+.shipHero{height:145px;border:1px solid #364b58;border-radius:7px;overflow:hidden;background:#05080b;position:relative}.shipHero img{width:100%;height:100%;object-fit:cover;object-position:center}.shipHero .caption{position:absolute;left:5px;right:5px;bottom:5px;padding:4px 5px;border-radius:4px;background:rgba(4,8,11,.78);backdrop-filter:blur(2px)}.shipHero strong{display:block;font-size:7px}.shipHero small{display:block;font-size:5.3px;color:#bed0d8}
+.identity{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:6px;align-items:center}.portrait{width:44px;height:51px;border:1px solid #415662;border-radius:5px;object-fit:cover;object-position:center 22%}.identity h2{font-size:8px;margin:0}.identity p{font-size:5.3px;color:var(--muted);margin:1px 0}.shipBadge{text-align:right}.shipBadge strong{font-size:5.8px;display:block}.shipBadge small{font-size:4.7px;color:#c9ace0}
+.alert{padding:6px;border:1px solid #6e5926;border-radius:5px;background:#211b0c;color:#ffe39a;font-size:6.2px;font-weight:900}.alert.orbit{border-color:#7d4d33;background:#26150d;color:#ffc09d}.alert.good{border-color:#2f6543;background:#0d2115;color:#a4e8b7}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}.metric{min-width:0;padding:4px;background:#0e171d;border:1px solid #1d2b34;border-radius:4px}.metric small{display:block;font-size:4.5px;color:var(--muted)}.metric strong{display:block;font-size:6.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fulfil{padding:5px;border:1px solid #293b45;border-radius:5px;background:#0a1217}.fulfilHead{display:flex;justify-content:space-between;gap:5px;font-size:6.2px;font-weight:900}.bar{height:7px;margin-top:3px;background:#1d2830;border-radius:999px;overflow:hidden}.bar i{display:block;height:100%;width:80%;background:var(--warn)}.bands{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-top:3px}.band{font-size:4.8px;padding:3px;border:1px solid #27353d;border-radius:4px;text-align:center}.band.active{border-color:#c99f3a;background:#221b0b;color:#ffdc80}
+.impact{display:grid;grid-template-columns:1fr auto;gap:4px;padding:5px;border:1px solid #3c2f42;background:#15101a;border-radius:5px}.impact h3{font-size:5.8px;margin:0 0 2px;color:#d8baff}.impact p{font-size:5.1px;color:#c1afca;margin:1px 0}.impactScore{text-align:right;font-size:12px;font-weight:950;color:var(--warn)}.impactScore small{display:block;font-size:4.4px;color:var(--muted)}
+.note{font-size:5.1px;line-height:1.3;color:#aebcc3;padding:4px;border-left:2px solid #36505f;background:#091116}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:4px}.actions button{min-height:43px;font-size:6.5px;font-weight:950}.wait{background:#1b1710;border-color:#615124;color:#ffe49a}.transfer{background:#15354a;border-color:#4b83a7}.transfer:disabled{opacity:.35}
+@media(max-height:760px){.shipHero{height:112px}.portrait{height:45px}.card{gap:4px}}
+</style></head>
+<body>
+<div id="app">
+<header class="head"><div><small>BUYER COLLECTION EVENT • CORPORATION TIME PAUSED</small><strong>Meridian Drive Systems — Collection Ship</strong></div><button onclick="alert('Decision required — cannot dismiss in game')">✕</button></header>
+
+<section class="scenarios">
+<label class="control"><small>BERTH</small><select id="berth"><option value="docked">Docked</option><option value="orbit">No berth</option></select></label>
+<label class="control"><small>STOCK</small><select id="stock"><option value="1">100%</option><option value=".8" selected>80%</option><option value=".6">60%</option><option value=".4">40%</option></select></label>
+<label class="control"><small>TIMING</small><select id="late"><option value="0">Due</option><option value="5">+5d</option><option value="10" selected>+10d</option><option value="15">+15d</option></select></label>
+<label class="control"><small>QUALITY</small><select><option>Good+</option></select></label>
+</section>
+
+<main class="card">
+<section class="shipHero">
+ <img src="../../../../assets/art/buyer-ships/buyer-ship-0001.webp" alt="Dart Courier collection ship">
+ <div class="caption"><strong>CSV HALCYON REACH • DART COURIER</strong><small>Compact fast courier built for small high-value consignments and specialist cargo.</small></div>
+</section>
+
+<section class="identity">
+ <img class="portrait" src="../../../../assets/art/buyers/buyer-0001.webp" alt="Buyer portrait">
+ <div><h2>Aria Mercer</h2><p>Senior Procurement Director</p><strong style="font-size:6px">Meridian Drive Systems</strong><p>Interstellar propulsion & heavy engineering</p></div>
+ <div class="shipBadge"><strong>2,500 CARGO</strong><small>BUYER VESSEL</small></div>
+</section>
+
+<div class="alert good" id="alert">DOCKED • BERTH 2 • READY FOR CARGO TRANSFER</div>
+
+<section class="grid">
+ <div class="metric"><small>RESOURCE</small><strong>Copper Ore</strong></div>
+ <div class="metric"><small>MIN QUALITY</small><strong>Good</strong></div>
+ <div class="metric"><small>CONTRACT LOAD</small><strong>2,400</strong></div>
+ <div class="metric"><small>QUALIFYING STOCK</small><strong id="qualifying">1,920</strong></div>
+ <div class="metric"><small>PRICE / UNIT</small><strong>£0.47</strong></div>
+ <div class="metric"><small>DAYS LATE</small><strong id="lateText">10</strong></div>
+</section>
+
+<section class="fulfil">
+ <div class="fulfilHead"><span>FULFILMENT AVAILABLE</span><span id="pct">80%</span></div>
+ <div class="bar"><i id="bar"></i></div>
+ <div class="bands"><div class="band" id="full">100% • FULL</div><div class="band active" id="minor">75–99% • -1</div><div class="band" id="major">50–74% • -2</div></div>
+</section>
+
+<section class="impact">
+ <div><h3>IF TRANSFERRED NOW</h3><p id="impactLine">+10 day lateness -2 • 80% partial -1</p><p id="paymentLine">Transfer 1,920 • payment £902</p><p id="globalLine">Buyer happiness 73 → 70 • global reputation net -0.29</p></div>
+ <div class="impactScore" id="impactScore">-3<small>BUYER</small></div>
+</section>
+<div class="note" id="note">Accepted partial shipments resolve this collection cycle. The missing amount is not carried forward.</div>
+</main>
+
+<footer class="actions"><button class="wait" id="waitBtn">NOT READY • CONTINUE WAITING</button><button class="transfer" id="transferBtn">TRANSFER 1,920 • £902</button></footer>
+</div>
+
+<script>
+const req=2400,price=.47,$=id=>document.getElementById(id);
+function render(){
+ const stock=+$("stock").value,late=+$("late").value,orbit=$("berth").value==="orbit",qty=Math.floor(req*stock),pct=Math.round(stock*100);
+ $("qualifying").textContent=qty.toLocaleString();$("pct").textContent=pct+"%";$("bar").style.width=pct+"%";$("lateText").textContent=late===0?"ON TIME":late;
+ ["full","minor","major"].forEach(x=>$(x).classList.remove("active"));
+ let partial=0;if(stock>=1)$("full").classList.add("active");else if(stock>=.75){partial=-1;$("minor").classList.add("active")}else if(stock>=.5){partial=-2;$("major").classList.add("active")}
+ const lateness=late===0?1:late===5?-1:late===10?-2:-3,accepted=stock>=.5,impact=accepted?(stock>=1&&late===0?1:(late===0?0:lateness)+partial):0,payment=accepted?qty*price:0;
+ if(orbit){$("alert").className="alert orbit";$("alert").textContent="WAITING IN ORBIT — NO SPACEPORT BERTH AVAILABLE • TRANSFER IMPOSSIBLE"}else{$("alert").className="alert good";$("alert").textContent="DOCKED • BERTH 2 • READY FOR CARGO TRANSFER"}
+ $("impactLine").textContent=!accepted?`Only ${pct}% available • below 50% minimum accepted shipment`:stock>=1&&late===0?"Full shipment on time • +1 buyer happiness":`${late===0?"On time":`+${late} day lateness ${lateness}`} • ${stock<1?`${pct}% partial ${partial}`:"full load"}`;
+ $("paymentLine").textContent=accepted?`Transfer ${qty.toLocaleString()} • payment £${Math.round(payment).toLocaleString()}`:"No accepted transfer available.";
+ let global=accepted?(impact<0?impact*.1+.01:.01):0;$("globalLine").textContent=accepted?`Buyer happiness 73 → ${Math.max(1,73+impact)} • global reputation ${global>=0?"+":""}${global.toFixed(2)}`:"Wait for more stock or resolve a miss at the final attempt.";
+ $("impactScore").innerHTML=(accepted?(impact>0?"+":"")+impact:"—")+`<small>BUYER</small>`;
+ const transfer=$("transferBtn");transfer.disabled=orbit||!accepted;transfer.textContent=orbit?"TRANSFER BLOCKED • NO BERTH":accepted?`TRANSFER ${qty.toLocaleString()} • £${Math.round(payment).toLocaleString()}`:"MINIMUM 50% REQUIRED";
+ $("waitBtn").textContent=late===15&&!accepted?"FINAL ATTEMPT • RESOLVE MISSED SHIPMENT":"NOT READY • CONTINUE WAITING";
+ $("note").textContent=orbit?"The lateness clock continues while the ship waits for a berth. Even with enough stock, transfer is impossible until the vessel docks.":accepted&&stock<1?"Accepted partial shipments resolve this collection cycle. The missing quantity does not carry forward; the next cycle still requires the full contract load.":"The buyer ship departs immediately after an accepted transfer.";
+}
+["berth","stock","late"].forEach(id=>$(id).onchange=render);$("transferBtn").onclick=()=>alert("Mockup: transfer resolves shipment and ship departs.");$("waitBtn").onclick=()=>alert("Mockup: ship waits until the next collection event.");render();
+</script>
+</body>
+</html>

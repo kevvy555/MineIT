@@ -19,197 +19,37 @@ const SHIP_ART="./assets/art/colony-ship.webp?v=3";
  */
 export class WorldView extends CanvasWorldView{
   constructor(options){
-    const originalTap=options.onTap,state=options.state,world=options.world,land=options.land,onSelect=options.onSelect;let runtime=null;
-    const select=(x,y)=>{
-      const tile=world.get(state,x,y);
-      if(!tile?.revealed&&!land?.isShipTile?.(x,y)){originalTap?.(x,y);return;}
-      onSelect?.(x,y);if(runtime){runtime.selectedKey=`${x},${y}`;runtime.safeDraw();}
-    };
-    super({...options,onTap:select,onInspect:select});runtime=this;
-    this.selectedKey=null;
-    this.focusMode=state.colony?.land?.focusMode||"all";
+    const originalTap=options.onTap,state=options.state,world=options.world,survey=options.survey,onSelect=options.onSelect;let runtime=null;
+    const select=(x,y)=>{const tile=world.get(state,x,y);if(survey?.surveyable?.(state,x,y)){originalTap?.(x,y);return;}onSelect?.(x,y);if(runtime){runtime.selectedKey=`${x},${y}`;runtime.safeDraw();}};
+    super({...options,onTap:select,onInspect:select});runtime=this;this.selectedKey=null;this.focusMode=state.colony?.land?.focusMode||"all";
   }
-
-  dispose(){
-    this.controls?.dispose?.();
-    this.icons.setOnReady?.(null);
-  }
-
-  bindViewToggle(){
-    const host=document.querySelector("#mapViewHost");
-    if(!host)throw new Error("Map toolbar host is missing");
-    this.controls=new MapControls({
-      host,state:this.state,resources:this.resources,
-      filters:this.filters,typeFilters:this.typeFilters,sizeFilters:this.sizeFilters,qualityFilters:this.qualityFilters,
-      onFocusChange:mode=>{this.focusMode=mode;if(this.state.colony?.land)this.state.colony.land.focusMode=mode;this.safeDraw();},
-      onFilterChange:()=>this.safeDraw()
-    });
-  }
+  dispose(){this.controls?.dispose?.();this.icons.setOnReady?.(null);}
+  bindViewToggle(){const host=document.querySelector("#mapViewHost");if(!host)throw new Error("Map toolbar host is missing");this.controls=new MapControls({host,state:this.state,resources:this.resources,filters:this.filters,typeFilters:this.typeFilters,sizeFilters:this.sizeFilters,qualityFilters:this.qualityFilters,onFocusChange:mode=>{this.focusMode=mode;if(this.state.colony?.land)this.state.colony.land.focusMode=mode;this.safeDraw();},onFilterChange:()=>this.safeDraw()});}
   bindFilters(){}
   setFocus(mode="all"){this.controls?.setFocus(mode);}
   syncView(){this.controls?.sync();}
   syncFilters(){this.controls?.sync();}
   filterDisabledCount(){return this.controls?.disabledCount()??0;}
   view(){return"resource";}
-
-  resize(){
-    const rect=this.shell.getBoundingClientRect(),width=Math.max(1,rect.width),height=Math.max(1,rect.height),dpr=Math.min(2,Math.max(1,devicePixelRatio||1));
-    this.canvas.width=Math.max(1,Math.round(width*dpr));
-    this.canvas.height=Math.max(1,Math.round(height*dpr));
-    this.canvas.style.removeProperty("width");
-    this.canvas.style.removeProperty("height");
-    this.ctx.setTransform(dpr,0,0,dpr,0,0);
-    this.width=width;this.height=height;this.cell=Math.max(1,Math.min(width,height)/CONFIG.GRID_SIZE);this.safeDraw();
-  }
-
-  isShipTile(x,y){
-    const landing=this.land?.isShipTile?this.land.isShipTile(x,y):x===0&&y===0;if(!landing)return false;
-    const ship=this.state.company?.expansion?.ship;if(!ship)return super.isShipTile(x,y);
-    return ship.status==="docked"&&ship.colonyId===this.state.colonyId;
-  }
-
-  isUpgradeable(tile){
-    if(!tile?.development)return false;
-    const level=Math.max(1,Number(tile.development.level??tile.level)||1);if(level>=5)return false;
-    if(LOCAL_BUILDINGS.has(tile.development.kind))return this.technology.level(this.state,tile.development.kind)>level;
-    if(tile.type==="food")return this.technology.level(this.state,"food")>level;
-    return this.technology.canExploit(this.state,tile);
-  }
-
-  hasProblem(tile){
-    if(!tile?.revealed)return false;
-    if(tile.accidentShutdownDays>0||tile.depleted||tile.renewableWiped)return true;
-    if(this.resources.isRenewable(tile)&&tile.developed&&(Number(tile.harvestIntensity)||1)>1)return true;
-    if(tile.development?.kind==="power"&&(this.state.metrics?.powerFactor??1)<.95)return true;
-    if(tile.development?.kind==="housing"){
-      const cap=Math.max(1,Number(this.state.colony?.housingCapacity)||1);if((Number(this.state.pop)||0)/cap>.9)return true;
-    }
-    if(tile.developed&&(tile.type==="build"||tile.type==="ore"))return(this.state.metrics?.industryCommercialFactor??1)<.999||(this.state.metrics?.workforceCommercialFactor??1)<.999;
-    if(tile.developed&&(tile.type==="food"||tile.type==="fuel"))return(this.state.metrics?.workforceSurvivalFactor??1)<.999;
-    return false;
-  }
-
-  matchesFocus(tile,x,y){
-    const mode=this.focusMode||"all";if(mode==="all")return true;if(mode==="problems")return this.hasProblem(tile);if(mode==="buildings")return!!tile?.development||this.isShipTile(x,y);if(mode==="upgradeable")return this.isUpgradeable(tile);
-    if(["food","build","fuel","ore"].includes(mode))return tile?.type===mode;
-    if(mode==="power")return tile?.development?.kind==="power"||tile?.revealed&&tile.resourceId===null&&!tile.development&&!this.isShipTile(x,y);
-    if(mode==="housing")return tile?.development?.kind==="housing"||tile?.revealed&&tile.resourceId===null&&!tile.development&&!this.isShipTile(x,y);
-    if(mode==="industry")return tile?.development?.kind==="industry"||tile?.revealed&&tile.resourceId===null&&!tile.development&&!this.isShipTile(x,y);
-    return true;
-  }
-
-  drawProblemBadge(c,px,py){
-    const r=Math.max(7,this.cell*.09),x=px+this.cell-r-4,y=py+r+4;c.save();c.fillStyle="#d9534f";c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill();c.fillStyle="#fff";c.font=`bold ${Math.max(8,r*1.35)}px system-ui`;c.textAlign="center";c.textBaseline="middle";c.fillText("!",x,y+.5);c.restore();
-  }
-
-  levelBadgePath(level){return `./assets/art/Level/L${Math.max(1,Math.min(5,Number(level)||1))}.png?v=${LEVEL_ART_VERSION}`;}
-
-  drawBuildingFallback(c,dev,px,py){
-    const kind=developmentKind(dev),cx=px+this.cell/2,cy=py+this.cell*.52,w=this.cell*.58,h=this.cell*.48;
-    c.save();c.fillStyle="rgba(10,15,19,.90)";c.strokeStyle="#d9e4e8";c.lineWidth=Math.max(1,this.cell*.022);
-    if(kind==="housing"){
-      for(let i=-1;i<=1;i++){const bw=this.cell*.14,bh=this.cell*.36,x=cx+i*this.cell*.18-bw/2,y=cy-bh/2;c.fillRect(x,y,bw,bh);c.strokeRect(x,y,bw,bh);}
-    }else if(kind==="industry"||dev?.kind==="power"){
-      c.fillRect(cx-w/2,cy-h/2,w,h);c.strokeRect(cx-w/2,cy-h/2,w,h);
-      if(dev?.kind==="power"){c.beginPath();c.moveTo(cx+this.cell*.04,cy-h*.28);c.lineTo(cx-this.cell*.07,cy);c.lineTo(cx+this.cell*.01,cy);c.lineTo(cx-this.cell*.05,cy+h*.28);c.stroke();}
-    }else{c.beginPath();c.arc(cx,cy,this.cell*.25,0,Math.PI*2);c.fill();c.stroke();}
-    c.restore();
-  }
-
-  drawDevelopment(c,tile,px,py){
-    const dev=tile?.development||(tile?.developed?{kind:"extract",family:tile.family,level:tile.level||1}:null);if(!dev)return;
-    const level=developmentLevel(dev);
-    if(dev.kind==="power")this.drawBuildingFallback(c,dev,px,py);
-    else{
-      const src=developmentAtlasPath(dev),img=artImage(src,this.assetReady);
-      if(!img||!drawDevelopmentFrame(c,img,level,px+1,py+1,this.cell-2,this.cell-2,.98))this.drawBuildingFallback(c,dev,px,py);
-    }
-    const closed=Math.max(0,Math.ceil(Number(tile?.accidentShutdownDays)||0));
-    if(closed){c.save();const h=Math.max(10,this.cell*.16),y=py+this.cell*.72;c.fillStyle="rgba(120,10,10,.90)";c.fillRect(px+this.cell*.12,y,this.cell*.76,h);c.fillStyle="#fff";c.textAlign="center";c.textBaseline="middle";c.font=`bold ${Math.max(6,this.cell*.075)}px system-ui`;c.fillText(`CLOSED ${closed}D`,px+this.cell/2,y+h/2);c.restore();}
-  }
-
-  drawLevelBadge(c,level,px,py){
-    level=Math.max(1,Math.min(5,Number(level)||1));const size=Math.max(15,this.cell*.22),x=px+this.cell-size-this.cell*.045,y=py+this.cell*.045,img=artImage(this.levelBadgePath(level),this.assetReady);
-    c.save();
-    if(img?.complete&&img.naturalWidth>0){try{c.drawImage(img,x,y,size,size);c.restore();return;}catch{}}
-    c.fillStyle="rgba(4,6,8,.90)";c.fillRect(x,y,size,size);c.strokeStyle="rgba(255,255,255,.42)";c.lineWidth=1;c.strokeRect(x+.5,y+.5,size-1,size-1);c.fillStyle="#fff";c.textAlign="center";c.textBaseline="middle";c.shadowColor="#000";c.shadowBlur=3;c.font=`900 ${Math.max(8,size*.44)}px system-ui`;c.fillText(`L${level}`,x+size/2,y+size/2+.5);c.restore();
-  }
-
-  drawResourceBadge(c,tile,px,py){
-    if(!tile?.resourceId)return;const size=Math.max(15,this.cell*.22),x=px+this.cell*.045,y=py+this.cell*.045;
-    c.save();c.fillStyle="rgba(4,6,8,.90)";c.fillRect(x,y,size,size);c.strokeStyle=TYPE_COLOR[tile.type]||"#fff";c.lineWidth=1;c.strokeRect(x+.5,y+.5,size-1,size-1);c.restore();
-    if(!this.icons.drawBackground?.(c,tile,x+1,y+1,size-2,1))this.icons.draw(c,tile,x+size/2,y+size/2,size*.72);
-  }
-
-  drawResourceOverlay(c,tile,px,py,alpha=1){
-    const size=this.cell*.60,x=px+(this.cell-size)/2,y=py+this.cell*.09;
-    c.save();c.shadowColor="rgba(0,0,0,.55)";c.shadowBlur=Math.max(2,this.cell*.035);const drawn=this.icons.drawBackground?.(c,tile,x,y,size,alpha)===true;c.restore();
-    if(drawn||this.icons.isImageLoading?.(tile))return;
-    this.icons.draw(c,tile,px+this.cell/2,py+this.cell*.38,this.cell*.43);
-  }
-
-  drawQuality(c,tile,px,py,yRatio=.12){
-    if(tile?.quality==null)return;c.save();c.fillStyle="#fff";c.textAlign="center";c.textBaseline="middle";c.shadowColor="rgba(0,0,0,.98)";c.shadowBlur=Math.max(3,this.cell*.055);c.shadowOffsetY=1;c.font=`900 ${Math.max(8,this.cell*.12)}px system-ui`;c.fillText(`Q${Math.round(tile.quality)}`,px+this.cell/2,py+this.cell*yRatio,this.cell*.50);c.restore();
-  }
-
-  drawResourceInfo(c,tile,px,py){
-    const col=TYPE_COLOR[tile.type]||"#fff";
-    c.save();const grad=c.createLinearGradient(0,py+this.cell*.55,0,py+this.cell);grad.addColorStop(0,"rgba(0,0,0,0)");grad.addColorStop(1,"rgba(0,0,0,.68)");c.fillStyle=grad;c.fillRect(px+1,py+this.cell*.52,this.cell-2,this.cell*.48-1);
-    c.textAlign="center";c.textBaseline="middle";c.shadowColor="rgba(0,0,0,.95)";c.shadowBlur=3;c.fillStyle="#fff";c.font=`900 ${Math.max(8,this.cell*.12)}px system-ui`;c.fillText(`Q${Math.round(tile.quality)}`,px+this.cell/2,py+this.cell*.67,this.cell*.82);c.fillStyle=col;c.font=`800 ${Math.max(6,this.cell*.082)}px system-ui`;c.fillText(this.depositText(tile),px+this.cell/2,py+this.cell*.80,this.cell*.88);c.restore();
-  }
-
-  drawRemainingBar(c,tile,px,py){
-    if(!tile?.developed||!tile.resourceId)return;const renewable=this.resources.isRenewable(tile),pct=renewable?clamp((tile.renewableHealth||1)/Math.max(1,(tile.renewableOriginalRank||0)+1),0,1):clamp((tile.reserve||0)/Math.max(1,tile.initialReserve||1),0,1),x=px+this.cell*.055,w=this.cell*.89,h=Math.max(4,this.cell*.045),y=py+this.cell-h-this.cell*.04;
-    c.save();c.fillStyle="rgba(0,0,0,.92)";c.fillRect(x-2,y-2,w+4,h+4);c.strokeStyle="rgba(230,240,244,.68)";c.lineWidth=1;c.strokeRect(x-1.5,y-1.5,w+3,h+3);c.fillStyle="#14191c";c.fillRect(x,y,w,h);c.fillStyle=TYPE_COLOR[tile.type]||"#67e66d";c.fillRect(x,y,w*pct,h);c.restore();
-  }
-
-  drawSurveyState(c,tile,px,py,active,queued,selected){
-    this.drawTerrain(c,tile,px,py);
-    c.save();c.fillStyle=active?"rgba(0,24,43,.22)":queued?"rgba(0,15,28,.18)":"rgba(0,0,0,.10)";c.fillRect(px+1,py+1,this.cell-2,this.cell-2);c.fillStyle=selected?"#70dbff":"rgba(255,255,255,.82)";c.textAlign="center";c.textBaseline="middle";c.shadowColor="rgba(0,0,0,.95)";c.shadowBlur=Math.max(3,this.cell*.05);c.font=`900 ${Math.max(23,this.cell*.46)}px system-ui`;c.fillText("?",px+this.cell/2,py+this.cell*.48);
-    if(active||queued){c.font=`900 ${Math.max(6,this.cell*.07)}px system-ui`;c.fillStyle=active?"#70dbff":"#b6c8d2";c.fillText(active?"SCANNING":"QUEUED",px+this.cell/2,py+this.cell*.84,this.cell*.80);}
-    c.shadowBlur=0;c.strokeStyle=selected?"#59d4ff":"rgba(235,245,248,.24)";c.lineWidth=selected?2:1;c.strokeRect(px+.5,py+.5,this.cell-1,this.cell-1);c.restore();
-  }
-
-  drawTileSelectionAndFocus(c,tile,x,y,px,py){
-    if(!this.matchesFocus(tile,x,y)){c.save();c.fillStyle="rgba(0,0,0,.67)";c.fillRect(px+1,py+1,this.cell-2,this.cell-2);c.restore();}
-    if(this.hasProblem(tile))this.drawProblemBadge(c,px,py);
-    if(this.selectedKey===`${x},${y}`){c.save();c.strokeStyle="#ffffff";c.lineWidth=Math.max(2,this.cell*.035);c.strokeRect(px+2,py+2,this.cell-4,this.cell-4);c.strokeStyle="#59d4ff";c.lineWidth=1;c.strokeRect(px+4,py+4,this.cell-8,this.cell-8);c.restore();}
-  }
-
-  drawShip(c,px,py){
-    const img=artImage(SHIP_ART,this.assetReady);
-    if(img?.complete&&img.naturalWidth>0&&img.naturalHeight>0){
-      const angle=Math.PI*.155,cos=Math.abs(Math.cos(angle)),sin=Math.abs(Math.sin(angle)),boundW=img.naturalWidth*cos+img.naturalHeight*sin,boundH=img.naturalWidth*sin+img.naturalHeight*cos,scale=Math.min((this.cell*.94)/boundW,(this.cell*.94)/boundH),w=img.naturalWidth*scale,h=img.naturalHeight*scale;
-      c.save();c.translate(px+this.cell/2,py+this.cell/2);c.rotate(angle);c.shadowColor="rgba(0,0,0,.88)";c.shadowBlur=Math.max(2,this.cell*.065);c.shadowOffsetY=Math.max(1,this.cell*.02);
-      try{c.drawImage(img,-w/2,-h/2,w,h);c.restore();return true;}catch{}c.restore();
-    }
-    c.save();c.fillStyle="rgba(4,8,11,.68)";c.fillRect(px+this.cell*.18,py+this.cell*.69,this.cell*.64,this.cell*.2);c.fillStyle="#fff";c.font=`bold ${Math.max(8,this.cell*.12)}px system-ui`;c.textAlign="center";c.textBaseline="middle";c.fillText("SHIP",px+this.cell/2,py+this.cell*.79);c.restore();return false;
-  }
-
-  drawResourceTile(c,tile,x,y,px,py,active,queued,selected){
-    if(this.isShipTile(x,y)){
-      this.drawTerrain(c,tile,px,py,.10);this.drawShip(c,px,py);this.drawTileSelectionAndFocus(c,tile,x,y,px,py);return;
-    }
-    if(!tile?.revealed){this.drawSurveyState(c,tile,px,py,active,queued,selected);this.drawTileSelectionAndFocus(c,tile,x,y,px,py);return;}
-
-    this.drawTerrain(c,tile,px,py);
-    const hasResource=tile.resourceId!==null&&tile.resourceId!==undefined,dev=tile.development||(tile.developed?{kind:"extract",family:tile.family,level:tile.level||1}:null),hasBuilding=!!dev;
-    if(!hasBuilding){
-      if(hasResource){
-        const techLocked=!tile.depleted&&!this.technology.canExploit(this.state,tile),alpha=techLocked?.48:tile.depleted?.30:.92;this.drawResourceOverlay(c,tile,px,py,alpha);this.drawResourceInfo(c,tile,px,py);
-        if(techLocked){c.save();c.fillStyle="rgba(0,0,0,.62)";c.fillRect(px+this.cell*.13,py+this.cell*.05,this.cell*.74,this.cell*.15);c.fillStyle="#fff";c.font=`800 ${Math.max(6,this.cell*.075)}px system-ui`;c.textAlign="center";c.textBaseline="middle";c.fillText(`LOCK • M${tile.requiredMiningLevel||1}`,px+this.cell/2,py+this.cell*.125,this.cell*.68);c.restore();}
-        if(tile.depleted){c.save();c.fillStyle="rgba(0,0,0,.70)";c.fillRect(px+this.cell*.13,py+this.cell*.05,this.cell*.74,this.cell*.15);c.fillStyle="#c8d0d4";c.font=`800 ${Math.max(6,this.cell*.075)}px system-ui`;c.textAlign="center";c.textBaseline="middle";c.fillText("DEPLETED",px+this.cell/2,py+this.cell*.125);c.restore();}
-      }
-    }else{
-      this.drawDevelopment(c,{...tile,development:dev},px,py);
-      if(hasResource)this.drawResourceBadge(c,tile,px,py);
-      if(hasResource&&(dev.kind==="extract"||tile.developed))this.drawQuality(c,tile,px,py,.12);
-      this.drawLevelBadge(c,developmentLevel(dev),px,py);
-      if(hasResource&&(dev.kind==="extract"||tile.developed))this.drawRemainingBar(c,tile,px,py);
-    }
-    c.save();c.strokeStyle=selected?"#59d4ff":"rgba(235,245,248,.24)";c.lineWidth=selected?2:1;c.strokeRect(px+.5,py+.5,this.cell-1,this.cell-1);c.restore();
-    this.drawTileSelectionAndFocus(c,tile,x,y,px,py);
-  }
-
+  resize(){const rect=this.shell.getBoundingClientRect(),width=Math.max(1,rect.width),height=Math.max(1,rect.height),dpr=Math.min(2,Math.max(1,devicePixelRatio||1));this.canvas.width=Math.max(1,Math.round(width*dpr));this.canvas.height=Math.max(1,Math.round(height*dpr));this.canvas.style.removeProperty("width");this.canvas.style.removeProperty("height");this.ctx.setTransform(dpr,0,0,dpr,0,0);this.width=width;this.height=height;this.cell=Math.max(1,Math.min(width,height)/CONFIG.GRID_SIZE);this.safeDraw();}
+  isShipTile(x,y){const landing=this.land?.isShipTile?this.land.isShipTile(x,y):x===0&&y===0;if(!landing)return false;const ship=this.state.company?.expansion?.ship;if(!ship)return super.isShipTile(x,y);return ship.status==="docked"&&ship.colonyId===this.state.colonyId;}
+  isUpgradeable(tile){if(!tile?.development)return false;const level=Math.max(1,Number(tile.development.level??tile.level)||1);if(level>=5)return false;if(LOCAL_BUILDINGS.has(tile.development.kind))return this.technology.level(this.state,tile.development.kind)>level;if(tile.type==="food")return this.technology.level(this.state,"food")>level;return this.technology.canExploit(this.state,tile);}
+  hasProblem(tile){if(!tile?.revealed)return false;if(tile.accidentShutdownDays>0||tile.depleted||tile.renewableWiped)return true;if(this.resources.isRenewable(tile)&&tile.developed&&(Number(tile.harvestIntensity)||1)>1)return true;if(tile.development?.kind==="power"&&(this.state.metrics?.powerFactor??1)<.95)return true;if(tile.development?.kind==="housing"){const cap=Math.max(1,Number(this.state.colony?.housingCapacity)||1);if((Number(this.state.pop)||0)/cap>.9)return true;}if(tile.developed&&(tile.type==="build"||tile.type==="ore"))return(this.state.metrics?.industryCommercialFactor??1)<.999||(this.state.metrics?.workforceCommercialFactor??1)<.999;if(tile.developed&&(tile.type==="food"||tile.type==="fuel"))return(this.state.metrics?.workforceSurvivalFactor??1)<.999;return false;}
+  matchesFocus(tile,x,y){const mode=this.focusMode||"all";if(mode==="all")return true;if(mode==="problems")return this.hasProblem(tile);if(mode==="buildings")return!!tile?.development||this.isShipTile(x,y);if(mode==="upgradeable")return this.isUpgradeable(tile);if(["food","build","fuel","ore"].includes(mode))return tile?.type===mode;if(mode==="power")return tile?.development?.kind==="power";if(mode==="housing")return tile?.development?.kind==="housing";if(mode==="industry")return tile?.development?.kind==="industry";return true;}
+  drawProblemBadge(c,px,py){const r=Math.max(7,this.cell*.09),x=px+this.cell-r-4,y=py+r+4;c.save();c.fillStyle="#d9534f";c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill();c.fillStyle="#fff";c.font=`bold ${Math.max(8,r*1.35)}px system-ui`;c.textAlign="center";c.textBaseline="middle";c.fillText("!",x,y+.5);c.restore();}
+  levelBadgePath(level){return`./assets/art/Level/L${Math.max(1,Math.min(5,Number(level)||1))}.png?v=${LEVEL_ART_VERSION}`;}
+  drawBuildingFallback(c,dev,px,py){const kind=developmentKind(dev),cx=px+this.cell/2,cy=py+this.cell*.52,w=this.cell*.58,h=this.cell*.48;c.save();c.fillStyle="rgba(10,15,19,.90)";c.strokeStyle="#d9e4e8";c.lineWidth=Math.max(1,this.cell*.022);if(kind==="housing"){for(let i=-1;i<=1;i++){const bw=this.cell*.14,bh=this.cell*.36,x=cx+i*this.cell*.18-bw/2,y=cy-bh/2;c.fillRect(x,y,bw,bh);c.strokeRect(x,y,bw,bh);}}else if(kind==="industry"||dev?.kind==="power"){c.fillRect(cx-w/2,cy-h/2,w,h);c.strokeRect(cx-w/2,cy-h/2,w,h);if(dev?.kind==="power"){c.beginPath();c.moveTo(cx+this.cell*.04,cy-h*.28);c.lineTo(cx-this.cell*.07,cy);c.lineTo(cx+this.cell*.01,cy);c.lineTo(cx-this.cell*.05,cy+h*.28);c.stroke();}}else{c.beginPath();c.arc(cx,cy,this.cell*.25,0,Math.PI*2);c.fill();c.stroke();}c.restore();}
+  drawDevelopment(c,tile,px,py){const dev=tile?.development||(tile?.developed?{kind:"extract",family:tile.family,level:tile.level||1}:null);if(!dev)return;const level=developmentLevel(dev);if(dev.kind==="power")this.drawBuildingFallback(c,dev,px,py);else{const src=developmentAtlasPath(dev),img=artImage(src,this.assetReady);if(!img||!drawDevelopmentFrame(c,img,level,px+1,py+1,this.cell-2,this.cell-2,.98))this.drawBuildingFallback(c,dev,px,py);}const closed=Math.max(0,Math.ceil(Number(tile?.accidentShutdownDays)||0));if(closed){c.save();const h=Math.max(10,this.cell*.16),y=py+this.cell*.72;c.fillStyle="rgba(120,10,10,.90)";c.fillRect(px+this.cell*.12,y,this.cell*.76,h);c.fillStyle="#fff";c.textAlign="center";c.textBaseline="middle";c.font=`bold ${Math.max(6,this.cell*.075)}px system-ui`;c.fillText(`CLOSED ${closed}D`,px+this.cell/2,y+h/2);c.restore();}}
+  drawLevelBadge(c,level,px,py){level=Math.max(1,Math.min(5,Number(level)||1));const size=Math.max(15,this.cell*.22),x=px+this.cell-size-this.cell*.045,y=py+this.cell*.045,img=artImage(this.levelBadgePath(level),this.assetReady);c.save();if(img?.complete&&img.naturalWidth>0){try{c.drawImage(img,x,y,size,size);c.restore();return;}catch{}}c.fillStyle="rgba(4,6,8,.90)";c.fillRect(x,y,size,size);c.strokeStyle="rgba(255,255,255,.42)";c.lineWidth=1;c.strokeRect(x+.5,y+.5,size-1,size-1);c.fillStyle="#fff";c.textAlign="center";c.textBaseline="middle";c.shadowColor="#000";c.shadowBlur=3;c.font=`900 ${Math.max(8,size*.44)}px system-ui`;c.fillText(`L${level}`,x+size/2,y+size/2+.5);c.restore();}
+  drawResourceBadge(c,tile,px,py){if(!tile?.resourceId)return;const size=Math.max(15,this.cell*.22),x=px+this.cell*.045,y=py+this.cell*.045;c.save();c.fillStyle="rgba(4,6,8,.90)";c.fillRect(x,y,size,size);c.strokeStyle=TYPE_COLOR[tile.type]||"#fff";c.lineWidth=1;c.strokeRect(x+.5,y+.5,size-1,size-1);c.restore();if(!this.icons.drawBackground?.(c,tile,x+1,y+1,size-2,1))this.icons.draw(c,tile,x+size/2,y+size/2,size*.72);}
+  drawResourceOverlay(c,tile,px,py,alpha=1){const size=this.cell*.60,x=px+(this.cell-size)/2,y=py+this.cell*.09;c.save();c.shadowColor="rgba(0,0,0,.55)";c.shadowBlur=Math.max(2,this.cell*.035);const drawn=this.icons.drawBackground?.(c,tile,x,y,size,alpha)===true;c.restore();if(drawn||this.icons.isImageLoading?.(tile))return;this.icons.draw(c,tile,px+this.cell/2,py+this.cell*.38,this.cell*.43);}
+  drawQuality(c,tile,px,py,yRatio=.12){if(tile?.quality==null)return;c.save();c.fillStyle="#fff";c.textAlign="center";c.textBaseline="middle";c.shadowColor="rgba(0,0,0,.98)";c.shadowBlur=Math.max(3,this.cell*.055);c.shadowOffsetY=1;c.font=`900 ${Math.max(8,this.cell*.12)}px system-ui`;c.fillText(`Q${Math.round(tile.quality)}`,px+this.cell/2,py+this.cell*yRatio,this.cell*.50);c.restore();}
+  drawResourceInfo(c,tile,px,py){const col=TYPE_COLOR[tile.type]||"#fff";c.save();const grad=c.createLinearGradient(0,py+this.cell*.55,0,py+this.cell);grad.addColorStop(0,"rgba(0,0,0,0)");grad.addColorStop(1,"rgba(0,0,0,.68)");c.fillStyle=grad;c.fillRect(px+1,py+this.cell*.52,this.cell-2,this.cell*.48-1);c.textAlign="center";c.textBaseline="middle";c.shadowColor="rgba(0,0,0,.95)";c.shadowBlur=3;c.fillStyle="#fff";c.font=`900 ${Math.max(8,this.cell*.12)}px system-ui`;c.fillText(`Q${Math.round(tile.quality)}`,px+this.cell/2,py+this.cell*.67,this.cell*.82);c.fillStyle=col;c.font=`800 ${Math.max(6,this.cell*.082)}px system-ui`;c.fillText(this.depositText(tile),px+this.cell/2,py+this.cell*.80,this.cell*.88);c.restore();}
+  drawRemainingBar(c,tile,px,py){if(!tile?.developed||!tile.resourceId)return;const renewable=this.resources.isRenewable(tile),pct=renewable?clamp((tile.renewableHealth||1)/Math.max(1,(tile.renewableOriginalRank||0)+1),0,1):clamp((tile.reserve||0)/Math.max(1,tile.initialReserve||1),0,1),x=px+this.cell*.055,w=this.cell*.89,h=Math.max(4,this.cell*.045),y=py+this.cell-h-this.cell*.04;c.save();c.fillStyle="rgba(0,0,0,.92)";c.fillRect(x-2,y-2,w+4,h+4);c.strokeStyle="rgba(230,240,244,.68)";c.lineWidth=1;c.strokeRect(x-1.5,y-1.5,w+3,h+3);c.fillStyle="#14191c";c.fillRect(x,y,w,h);c.fillStyle=TYPE_COLOR[tile.type]||"#67e66d";c.fillRect(x,y,w*pct,h);c.restore();}
+  drawSurveyState(c,tile,px,py,active,queued,selected){this.drawTerrain(c,tile,px,py);c.save();c.fillStyle=active?"rgba(0,24,43,.22)":queued?"rgba(0,15,28,.18)":"rgba(0,0,0,.10)";c.fillRect(px+1,py+1,this.cell-2,this.cell-2);c.fillStyle=selected?"#70dbff":"rgba(255,255,255,.82)";c.textAlign="center";c.textBaseline="middle";c.shadowColor="rgba(0,0,0,.95)";c.shadowBlur=Math.max(3,this.cell*.05);c.font=`900 ${Math.max(23,this.cell*.46)}px system-ui`;c.fillText("?",px+this.cell/2,py+this.cell*.48);if(active||queued){c.font=`900 ${Math.max(6,this.cell*.07)}px system-ui`;c.fillStyle=active?"#70dbff":"#b6c8d2";c.fillText(active?"SCANNING":"QUEUED",px+this.cell/2,py+this.cell*.84,this.cell*.80);}c.shadowBlur=0;c.strokeStyle=selected?"#59d4ff":"rgba(235,245,248,.24)";c.lineWidth=selected?2:1;c.strokeRect(px+.5,py+.5,this.cell-1,this.cell-1);c.restore();}
+  drawResurveyBadge(c,px,py,active=false,queued=false){const size=Math.max(18,this.cell*.25),x=px+this.cell*.055,y=py+this.cell-size-this.cell*.055;c.save();c.fillStyle="rgba(5,8,10,.92)";c.beginPath();c.arc(x+size/2,y+size/2,size/2,0,Math.PI*2);c.fill();c.strokeStyle=active?"#fff1a6":"#ffd166";c.lineWidth=Math.max(2,this.cell*.018);c.stroke();c.fillStyle="#ffd166";c.textAlign="center";c.textBaseline="middle";c.shadowColor="#000";c.shadowBlur=3;c.font=`900 ${Math.max(12,size*.68)}px system-ui`;c.fillText("?",x+size/2,y+size*.52);if(active||queued){c.shadowBlur=0;c.fillStyle=active?"#fff1a6":"#ffd166";c.font=`900 ${Math.max(5,this.cell*.055)}px system-ui`;c.fillText(active?"RESCAN":"QUEUED",px+this.cell/2,py+this.cell*.91,this.cell*.62);}c.restore();}
+  drawTileSelectionAndFocus(c,tile,x,y,px,py){if(!this.matchesFocus(tile,x,y)){c.save();c.fillStyle="rgba(0,0,0,.67)";c.fillRect(px+1,py+1,this.cell-2,this.cell-2);c.restore();}if(this.hasProblem(tile))this.drawProblemBadge(c,px,py);if(this.selectedKey===`${x},${y}`){c.save();c.strokeStyle="#ffffff";c.lineWidth=Math.max(2,this.cell*.035);c.strokeRect(px+2,py+2,this.cell-4,this.cell-4);c.strokeStyle="#59d4ff";c.lineWidth=1;c.strokeRect(px+4,py+4,this.cell-8,this.cell-8);c.restore();}}
+  drawShip(c,px,py){const img=artImage(SHIP_ART,this.assetReady);if(img?.complete&&img.naturalWidth>0&&img.naturalHeight>0){const angle=Math.PI*.155,cos=Math.abs(Math.cos(angle)),sin=Math.abs(Math.sin(angle)),boundW=img.naturalWidth*cos+img.naturalHeight*sin,boundH=img.naturalWidth*sin+img.naturalHeight*cos,scale=Math.min((this.cell*.94)/boundW,(this.cell*.94)/boundH),w=img.naturalWidth*scale,h=img.naturalHeight*scale;c.save();c.translate(px+this.cell/2,py+this.cell/2);c.rotate(angle);c.shadowColor="rgba(0,0,0,.88)";c.shadowBlur=Math.max(2,this.cell*.065);c.shadowOffsetY=Math.max(1,this.cell*.02);try{c.drawImage(img,-w/2,-h/2,w,h);c.restore();return true;}catch{}c.restore();}c.save();c.fillStyle="rgba(4,8,11,.68)";c.fillRect(px+this.cell*.18,py+this.cell*.69,this.cell*.64,this.cell*.2);c.fillStyle="#fff";c.font=`bold ${Math.max(8,this.cell*.12)}px system-ui`;c.textAlign="center";c.textBaseline="middle";c.fillText("SHIP",px+this.cell/2,py+this.cell*.79);c.restore();return false;}
+  drawResourceTile(c,tile,x,y,px,py,active,queued,selected){if(this.isShipTile(x,y)){this.drawTerrain(c,tile,px,py,.10);this.drawShip(c,px,py);this.drawTileSelectionAndFocus(c,tile,x,y,px,py);return;}if(!tile?.revealed){this.drawSurveyState(c,tile,px,py,active,queued,selected);this.drawTileSelectionAndFocus(c,tile,x,y,px,py);return;}this.drawTerrain(c,tile,px,py);const hasResource=tile.resourceId!==null&&tile.resourceId!==undefined,dev=tile.development||(tile.developed?{kind:"extract",family:tile.family,level:tile.level||1}:null),hasBuilding=!!dev;if(!hasBuilding){if(hasResource){const techLocked=!tile.depleted&&!this.technology.canExploit(this.state,tile),alpha=techLocked?.48:tile.depleted?.30:.92;this.drawResourceOverlay(c,tile,px,py,alpha);this.drawResourceInfo(c,tile,px,py);if(techLocked){c.save();c.fillStyle="rgba(0,0,0,.62)";c.fillRect(px+this.cell*.13,py+this.cell*.05,this.cell*.74,this.cell*.15);c.fillStyle="#fff";c.font=`800 ${Math.max(6,this.cell*.075)}px system-ui`;c.textAlign="center";c.textBaseline="middle";c.fillText(`LOCK • M${tile.requiredMiningLevel||1}`,px+this.cell/2,py+this.cell*.125,this.cell*.68);c.restore();}if(tile.depleted){c.save();c.fillStyle="rgba(0,0,0,.70)";c.fillRect(px+this.cell*.13,py+this.cell*.05,this.cell*.74,this.cell*.15);c.fillStyle="#c8d0d4";c.font=`800 ${Math.max(6,this.cell*.075)}px system-ui`;c.textAlign="center";c.textBaseline="middle";c.fillText("DEPLETED",px+this.cell/2,py+this.cell*.125);c.restore();}}}else{this.drawDevelopment(c,{...tile,development:dev},px,py);if(hasResource)this.drawResourceBadge(c,tile,px,py);if(hasResource&&(dev.kind==="extract"||tile.developed))this.drawQuality(c,tile,px,py,.12);this.drawLevelBadge(c,developmentLevel(dev),px,py);if(hasResource&&(dev.kind==="extract"||tile.developed))this.drawRemainingBar(c,tile,px,py);}if(this.survey?.isResurveyable?.(this.state,x,y))this.drawResurveyBadge(c,px,py,active,queued);c.save();c.strokeStyle=selected?"#59d4ff":"rgba(235,245,248,.24)";c.lineWidth=selected?2:1;c.strokeRect(px+.5,py+.5,this.cell-1,this.cell-1);c.restore();this.drawTileSelectionAndFocus(c,tile,x,y,px,py);}
   draw(){super.draw();const label=document.querySelector("#cameraText");if(label)label.textContent="COLONY MAP • 8×8";}
 }

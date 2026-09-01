@@ -1,0 +1,31 @@
+<article class="card">
+  <h3>BASIC SPACEPORT</h3>
+  <p>Conglomerate-provided landing control, ground support and off-world handling infrastructure. All landed ships consume a Spaceport berth.</p>
+  <div class="grid3">
+    <div class="metric"><small>Level</small><strong data-spaceport-level></strong></div>
+    <div class="metric"><small>Berths</small><strong data-spaceport-berths></strong></div>
+    <div class="metric"><small>Free</small><strong data-spaceport-free></strong></div>
+  </div>
+  <div class="effect">Further Spaceport upgrades will use normal colony construction. Exact berth progression and ship-size classes are reserved for the wider freight-ship expansion.</div>
+</article>
+
+<article class="card">
+  <h3>LANDED SHIPS</h3>
+  <div data-spaceport-landed></div>
+  <div class="effect" data-spaceport-landed-empty>No ships are currently landed.</div>
+</article>
+
+<article class="card">
+  <h3>ORBITAL HOLDING</h3>
+  <div data-spaceport-orbit></div>
+  <div class="effect" data-spaceport-orbit-empty>No ships are waiting for a berth.</div>
+</article>
+
+<template data-spaceport-ship-template>
+  <div class="requirement" data-spaceport-ship-row><strong data-spaceport-ship-name></strong><span data-spaceport-ship-detail></span></div>
+</template>
+
+<div class="grid2">
+  <button data-spaceport-company>CORPORATION</button>
+  <button data-spaceport-player-ship>PLAYER SHIP</button>
+</div>

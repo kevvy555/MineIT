@@ -93,6 +93,16 @@ jobs:
             exit 1
           fi
 
+          echo "Testing cold Corporate Ship async tab navigation"
+          "$chrome" --headless --no-sandbox --disable-gpu --window-size=390,844 --virtual-time-budget=14000 --dump-dom http://127.0.0.1:8123/tests/quick-trade-cold-load-probe.html >/tmp/quick-trade-cold.html 2>/tmp/quick-trade-cold.log
+          if ! grep -q 'PASS cold Corporate Ship tabs acknowledge one tap, dedupe pending renders and keep a stable shell' /tmp/quick-trade-cold.html; then
+            echo "Cold Corporate Ship interaction probe failed"
+            cat /tmp/quick-trade-cold.html
+            cat /tmp/quick-trade-cold.log
+            cat /tmp/mineit-http.log
+            exit 1
+          fi
+
           echo "Testing first-contract renewal and multi-colony event lifecycle"
           "$chrome" --headless --no-sandbox --disable-gpu --window-size=390,844 --virtual-time-budget=12000 --dump-dom http://127.0.0.1:8123/tests/multi-colony-lifecycle-probe.html >/tmp/lifecycle.html 2>/tmp/lifecycle.log
           if ! grep -q 'PASS first contract renewal, second colony, recovered ship queue and colony switching' /tmp/lifecycle.html; then
@@ -112,3 +122,38 @@ jobs:
             cat /tmp/mineit-http.log
             exit 1
           fi
+
+          echo "Testing mobile development-task JSON and clipboard workflow"
+          "$chrome" --headless --no-sandbox --disable-gpu --window-size=390,844 --virtual-time-budget=15000 --dump-dom http://127.0.0.1:8123/tests/development-tasks-probe.html >/tmp/development-tasks.html 2>/tmp/development-tasks.log
+          if ! grep -q 'PASS development task file, type/status filters, import, status icons, editor, numbered multi-copy, autosave and simulation pause' /tmp/development-tasks.html; then
+            echo "Development Tasks interaction probe failed"
+            cat /tmp/development-tasks.html
+            cat /tmp/development-tasks.log
+            cat /tmp/mineit-http.log
+            exit 1
+          fi
+
+          for size in 360,640 375,667 390,844 412,915 915,412; do
+            echo "Testing Conglomerate Buyers Service viewport $size"
+            "$chrome" --headless --no-sandbox --disable-gpu --window-size="$size" --virtual-time-budget=12000 --dump-dom http://127.0.0.1:8123/tests/buyer-mobile-layout-probe.html >"/tmp/buyers-$size.html" 2>"/tmp/buyers-$size.log"
+            if ! grep -Fq '<div id="result">PASS buyer catalogue, profile and collection mobile viewport coverage</div>' "/tmp/buyers-$size.html"; then
+              echo "Conglomerate Buyers Service presentation probe failed at $size"
+              echo "Rendered buyer probe result:"
+              {
+                echo "viewport=$size"
+                grep -o '<div id="result">[^<]*</div>' "/tmp/buyers-$size.html" || echo '<div id="result">RESULT NOT FOUND</div>'
+                echo "--- chrome log ---"
+                cat "/tmp/buyers-$size.log"
+              } > /tmp/buyer-probe-result.txt
+              cat /tmp/buyer-probe-result.txt
+              cat /tmp/mineit-http.log
+              exit 1
+            fi
+          done
+      - name: Upload buyer probe failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: buyer-probe-failure
+          path: /tmp/buyer-probe-result.txt
+          if-no-files-found: ignore

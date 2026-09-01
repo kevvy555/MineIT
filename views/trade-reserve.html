@@ -1,20 +1,17 @@
 <article class="card trade-reserve-editor">
-  <h3>COLONY TRADE RESERVE</h3>
-  <p class="trade-reserve-note">The corporate ship will never sell below this amount. When exporting, higher-quality stock is sold first so the reserve keeps the lowest-value material for colony use.</p>
-  <div class="grid2">
-    <div class="metric"><small>Current stock</small><strong>{{STOCK}}</strong></div>
-    <div class="metric"><small>Current reserve</small><strong>{{RESERVE}}</strong></div>
-  </div>
+  <h3>COLONY STOCK RESERVE</h3>
+  <p class="trade-reserve-note">The Corporate Ship will protect this amount of every individual Food, Build, Fuel and Ore resource. Higher-quality stock is sold first, leaving the protected reserve behind.</p>
+  <div class="metric"><small>Reserve per resource</small><strong>{{RESERVE}}</strong></div>
   <div class="trade-amount-main">
-    <button data-reserve-step="-1000">−</button>
+    <button data-reserve-step="-1000">−1K</button>
     <input data-reserve-input type="number" min="0" max="{{MAX_RESERVE}}" step="1" inputmode="numeric" value="{{RESERVE_RAW}}">
-    <button data-reserve-step="1000">+</button>
+    <button data-reserve-step="1000">+1K</button>
   </div>
   <div class="trade-reserve-actions">
     <button data-reserve-set="0">NONE</button>
     <button data-reserve-set="1000">1K</button>
     <button data-reserve-set="10000">10K</button>
-    <button data-reserve-set="{{STOCK_RAW}}">STOCK</button>
+    <button data-reserve-set="100000">100K</button>
   </div>
   <button data-reserve-save class="trade-reserve-save">SAVE RESERVE</button>
 </article>

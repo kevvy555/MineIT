@@ -5,14 +5,20 @@ import { ResourceService } from "../js/domain/resource-service.js";
 import { InventoryService } from "../js/domain/inventory-service.js";
 import { PortfolioService } from "../js/domain/portfolio-service.js";
 import { ExpansionService, HOME_SYSTEM_ID } from "../js/domain/expansion-service.js";
+import { GameLogService } from "../js/domain/game-log-service.js";
 
-const contracts=new ContractService(),resources=new ResourceService(),inventory=new InventoryService(resources),portfolio=new PortfolioService(),expansion=new ExpansionService(inventory,resources,contracts);
+const contracts=new ContractService(),resources=new ResourceService(),inventory=new InventoryService(resources),portfolio=new PortfolioService(),expansion=new ExpansionService(inventory,resources,contracts),gameLog=new GameLogService();
 const state=createGameState(contracts.first());portfolio.ensure(state);expansion.ensure(state);
 const firstId=state.colonyId;
 
 state.company.cash=987654;
-state.company.tech={housing:3,power:4,food:2,industry:3,mining:5};
+state.company.tech={housing:3,power:4,food:2,industry:3,mining:5,scanning:4};
+state.colony.tech={housing:2,power:3,food:2,industry:2,mining:4,scanning:3};
+state.colony.engineeringDeployments=[{id:"roundtrip-engineering",colonyId:firstId,status:"preparing",orderAbsoluteDay:12,preparationDaysRemaining:3,transportCost:5000,packageSubtotal:15000,paidTotal:20000,upgrades:[{category:"mining",level:5,techId:"mining-5",name:"Rotary Drilling",packageCost:15000}]}];
 state.company.pendingEvents.push({id:"roundtrip-event",type:"ship",colonyId:firstId,colonyName:state.contract.colonyName,absoluteDay:42});
+state.tiles["1,1"]={x:1,y:1,terrain:"plain",terrainVariant:1,revealed:true,lastScannedAtLevel:2,empty:true,resourceId:null,developed:false,development:null};
+state.tiles["2,2"]={x:2,y:2,terrain:"plain",terrainVariant:1,revealed:true,lastScannedAtLevel:2,empty:false,type:"ore",resourceId:"surface-iron",name:"Surface Iron Nodules",quality:120,depositScale:"large",terrainYieldFactor:1,requiredMiningLevel:1,developed:true,depleted:false,level:1,development:{kind:"extract",family:"mine",level:1,investedBuild:40,investedOre:0},resourceCovered:true,reserve:500,initialReserve:500};
+state.tiles["3,3"]={x:3,y:3,terrain:"plain",terrainVariant:1,revealed:true,lastScannedAtLevel:2,empty:false,type:"ore",resourceId:"surface-iron",name:"Surface Iron Nodules",quality:80,requiredMiningLevel:1,developed:false,depleted:false,development:{kind:"housing",level:1,investedBuild:55,investedOre:0},resourceCovered:false,reserve:500,initialReserve:500};
 
 const second=contracts.make(contracts.archetype({arch:"arid"}),2,0);second.colonyName="Roundtrip Secondary";portfolio.addColony(state,second);assert.equal(state.portfolio.colonies.length,2);
 assert.equal(portfolio.switchTo(state,firstId),true);
@@ -34,25 +40,41 @@ portfolio.captureActive(state,true);
 const expected={
   cash:state.company.cash,
   tech:{...state.company.tech},
+  localTech:{...state.colony.tech},
+  engineering:JSON.parse(JSON.stringify(state.colony.engineeringDeployments)),
   colonies:state.portfolio.colonies.map(c=>({id:c.id,name:c.name})),
   activeId:state.colonyId,
   pop:state.pop,
   eventCount:state.company.pendingEvents.length,
   ship:{status:expansion.ship(state).status,systemId:expansion.ship(state).systemId,targetSystemId:expansion.ship(state).targetSystemId,passengers:expansion.ship(state).passengers,fuel:expansion.fuelAmount(state),cargo:expansion.cargoAmount(state)},
-  foodBands:JSON.parse(JSON.stringify(state.inventory["food:fungal"]?.qualityBands||{}))
+  foodBands:JSON.parse(JSON.stringify(state.inventory["food:fungal"]?.qualityBands||{})),
+  lastScannedAtLevel:state.tiles["1,1"].lastScannedAtLevel
 };
 
 const serialized=JSON.stringify(state);
 assert.ok(serialized.length>1000,"realistic save should contain substantial state");
 const loaded=normalizeState(JSON.parse(serialized));portfolio.ensure(loaded);expansion.ensure(loaded);
 
-assert.equal(loaded.version,9);
+assert.equal(loaded.version,13);
 assert.equal(loaded.company.cash,expected.cash);
 assert.deepEqual(loaded.company.tech,expected.tech);
+assert.deepEqual(loaded.colony.tech,expected.localTech);
+assert.deepEqual(loaded.colony.engineeringDeployments,expected.engineering);
+assert.equal(loaded.colony.spaceport.level,1);
 assert.equal(loaded.company.pendingEvents.length,expected.eventCount);
 assert.deepEqual(loaded.portfolio.colonies.map(c=>({id:c.id,name:c.name})),expected.colonies);
 assert.equal(loaded.colonyId,expected.activeId);
 assert.equal(loaded.pop,expected.pop);
+assert.equal(loaded.tiles["1,1"].lastScannedAtLevel,expected.lastScannedAtLevel,"per-tile scan history must survive save/load");
+assert.equal(loaded.tiles["2,2"].resourceCovered,false,"Scanning v11 normalization must repair extraction sites incorrectly marked as resource-covered");
+assert.ok(resources.sitePotentialRate(loaded.tiles["2,2"])>0,"repaired extraction sites must retain non-zero production potential after save/load");
+assert.equal(loaded.tiles["3,3"].resourceCovered,true,"a non-extraction building over a known resource must remain resource-covered");
+const diagnostics=gameLog.colonySnapshot({id:loaded.colonyId,data:loaded});
+assert.equal(diagnostics.extractionSites,1,"game logs must report developed extraction-site count");
+assert.equal(diagnostics.coveredExtractionSites,0,"game logs must expose corrupted covered extraction sites directly");
+assert.ok(diagnostics.coveredResourceSites>=1,"game logs must report resources genuinely covered by buildings");
+assert.equal(diagnostics.foodStarvationDays,0,"game logs must expose starvation duration");
+assert.equal(diagnostics.tradeReserve,Math.max(0,Number(loaded.colony.tradeReserve)||0),"game logs must expose colony trade reserve");
 assert.equal(expansion.ship(loaded).status,expected.ship.status);
 assert.equal(expansion.ship(loaded).systemId,expected.ship.systemId);
 assert.equal(expansion.ship(loaded).targetSystemId,expected.ship.targetSystemId);
@@ -65,4 +87,8 @@ portfolio.captureActive(loaded,true);const serializedAgain=JSON.stringify(loaded
 assert.equal(loadedAgain.portfolio.colonies.length,2);
 assert.equal(expansion.ship(loadedAgain).passengers,expected.ship.passengers);
 assert.equal(expansion.fuelAmount(loadedAgain),expected.ship.fuel);
-console.log("MineIT realistic multi-colony + player-ship save round-trip passed");
+assert.equal(loadedAgain.colony.engineeringDeployments[0].status,"preparing");
+assert.equal(loadedAgain.colony.tech.scanning,expected.localTech.scanning);
+assert.equal(loadedAgain.tiles["1,1"].lastScannedAtLevel,expected.lastScannedAtLevel);
+assert.equal(loadedAgain.tiles["2,2"].resourceCovered,false,"extraction-site coverage repair must remain stable across repeated normalization");
+console.log("MineIT realistic multi-colony + player-ship + engineering-deployment + scan-history save round-trip passed");

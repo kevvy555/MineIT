@@ -23,17 +23,21 @@ export class UIController extends BaseUIController{
 
   contextParts(tile){
     if(tile&&this.land?.isShipTile?.(tile.x,tile.y)){
-      if(this.playerShipHere())return{title:"LANDED PLAYER SHIP",sub:"Tap the ship to open technology, navigation, cargo and colony controls.",actions:"",requirement:""};
+      if(this.playerShipHere())return{title:"SPACEPORT • PLAYER SHIP LANDED",sub:"The Basic Spaceport is active here. Tap the ship for technology, buyers, navigation, cargo, colony and Spaceport controls.",actions:"",requirement:""};
       const ship=this.expansion?.ship?.(this.state),where=ship?.status==="travelling"?"The player ship is currently in transit.":ship?.status==="arrived"?"The player ship has arrived in another star system.":"The player ship is currently docked at another colony.";
-      return{title:"VACANT LANDING PAD",sub:where,actions:"",requirement:""};
+      return{title:"SPACEPORT • BERTH AVAILABLE",sub:`Basic Spaceport remains operational. ${where}`,actions:this.action?.("SPACEPORT","spaceport")||"",requirement:""};
     }
     return super.contextParts(tile);
   }
 
+  runContextAction(action,kind=null){if(action==="spaceport"){this.spaceportPanel();return;}return super.runContextAction(action,kind);}
+
   playerShipPanel(){
     if(!this.playerShipHere()){this.toast("The player ship is not landed at this colony.");return;}
     const actions=[
-      ["TECHNOLOGY","Research and licences","tech"],
+      ["SPACEPORT","Berths, landed ships and orbital holding","spaceport"],
+      ["TECHNOLOGY","Capability packages and Engineering Ships","tech"],
+      ["BUYERS SERVICE","Brokered recurring resource contracts","buyers"],
       ["STAR MAP","Systems, probes and routes","star-map"],
       ["COLONIES","All colony operations","colonies"],
       ["CARGO BAY","Load ship, fuel and colonists","cargo"],
@@ -44,7 +48,9 @@ export class UIController extends BaseUIController{
     this.modal.classList.add("player-ship-menu-modal");
     this.modal.querySelectorAll("[data-player-ship-action]").forEach(button=>button.onclick=()=>{
       const action=button.dataset.playerShipAction;
-      if(action==="tech")this.tech();
+      if(action==="spaceport")this.spaceportPanel();
+      else if(action==="tech")this.tech();
+      else if(action==="buyers")this.buyerUI?.openCatalog?.();
       else if(action==="star-map")this.starMap();
       else if(action==="colonies")this.coloniesPanel();
       else if(action==="cargo")this.shipPrep();

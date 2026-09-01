@@ -1,0 +1,21 @@
+<section data-corporation-contract-failed>
+  <article class="card">
+    <h3 class="bad">CORPORATION FAILED — CONTRACT DEFAULT</h3>
+    <p>{{REASON}}</p>
+    <div class="effect warn">The final operating colony missed its contract objectives and the corporation could not afford the required extension. With no other operating colony to carry the company, the campaign has ended.</div>
+  </article>
+  <div class="grid2">
+    <div class="metric"><small>COLONY</small><strong>{{COLONY}}</strong></div>
+    <div class="metric"><small>POPULATION</small><strong>{{POPULATION}}</strong></div>
+    <div class="metric"><small>CASH AT FAILURE</small><strong>{{CASH}}</strong></div>
+    <div class="metric"><small>CONTRACT PROFIT</small><strong>{{PROFIT}}</strong></div>
+    <div class="metric"><small>FOOD OBJECTIVE</small><strong>{{FOOD_SCORE}}</strong></div>
+    <div class="metric"><small>INDUSTRY OBJECTIVE</small><strong>{{INDUSTRY_SCORE}}</strong></div>
+    <div class="metric"><small>POPULATION OBJECTIVE</small><strong>{{POPULATION_SCORE}}</strong></div>
+    <div class="metric"><small>EXTENSION REQUIRED</small><strong>{{EXTENSION_FEE}}</strong></div>
+  </div>
+  <div class="grid2">
+    <button data-failed-colonies>VIEW COLONY RECORDS</button>
+    <button class="bad" data-failed-reset>START NEW CORPORATION</button>
+  </div>
+</section>

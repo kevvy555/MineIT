@@ -29,7 +29,8 @@ const upgraded=siteService.upgrade(siteState,tile);assert.equal(upgraded.ok,true
 // Housing/Power/Industry construction follows the same local-material policy.
 const land={terrainCostMultiplier:()=>1,isShipTile:()=>false};
 const development=new DevelopmentService(inventory,land);
-const devState={status:"playing",company:{cash:32000,tech:{housing:2,power:1,food:1,industry:1,mining:1}},contract:{ended:false,localCosts:0},tiles:{},colony:{},metrics:{}};
+const devTech={housing:2,power:1,food:1,industry:1,mining:1,scanning:1};
+const devState={status:"playing",company:{cash:32000,tech:{...devTech}},contract:{ended:false,localCosts:0},tiles:{},colony:{tech:{...devTech}},metrics:{}};
 const landTile={x:2,y:2,terrain:"plain",revealed:true,developed:false,development:null,resourceId:null};devState.tiles["2,2"]=landTile;
 const devBefore=devState.company.cash;
 const placed=development.place(devState,landTile,"housing");assert.equal(placed.ok,true);assert.equal(placed.cash,0);assert.equal(devState.company.cash,devBefore,"Housing construction must use local resources, not cash");
@@ -38,10 +39,11 @@ const devUpgrade=development.upgrade(devState,landTile);assert.equal(devUpgrade.
 const colony=new ColonyService(inventory,new TechnologyService());
 assert.equal(colony.housingCashCost(),0);assert.equal(colony.industryCashCost(),0);for(const status of["playing","holdover","liability"])assert.equal(colony.operatingCost({status},20),0,`${status} must not have a generic daily cash drain`);
 
-// Technology, transport, contract services and off-world imports remain genuine external cash costs.
+// Technology packages, their Engineering Ship transport, other transport, contracts and imports remain genuine external cash costs.
 const tech=new TechnologyService();
-const techState={company:{cash:32000,tech:{housing:1,power:1,food:1,industry:1,mining:1}},contract:{techAccess:"direct"},colony:{},tiles:{},metrics:{}};
-const techBuy=tech.buy(techState,"mining");assert.equal(techBuy.ok,true);assert.equal(techBuy.tech.cost,25000);assert.equal(techState.company.cash,7000,"technology remains an external cash purchase");
+const techState={year:1,day:1,status:"playing",colonyId:"cash-policy",company:{cash:32000,tech:{housing:1,power:1,food:1,industry:1,mining:1,scanning:1}},contract:{techAccess:"direct",ended:false,localCosts:0,colonyName:"Cash Policy"},colony:{tech:{housing:1,power:1,food:1,industry:1,mining:1,scanning:1}},tiles:{},metrics:{}};
+const miningOrder=tech.buy(techState,"mining");assert.equal(miningOrder.ok,true);assert.equal(miningOrder.tech.cost,15000);assert.equal(miningOrder.transportCost,5000);assert.equal(techState.company.cash,12000,"first same-day capability order pays its package plus one Engineering Ship transport charge");
+const scanningOrder=tech.buy(techState,"scanning");assert.equal(scanningOrder.ok,true);assert.equal(scanningOrder.tech.cost,10000);assert.equal(scanningOrder.transportCost,0);assert.equal(scanningOrder.joinsBatch,true);assert.equal(techState.company.cash,2000,"same-day second capability pays only its package because it shares the Engineering Ship");assert.equal(miningOrder.deployment.paidTotal,30000);assert.equal(miningOrder.deployment.sharedTransportSaving,5000);
 
 const transport=new TransportService();
 const transportState={year:1,day:1,status:"playing",company:{cash:100000},contract:{supportLoad:1,ended:false,localCosts:0},colony:{housingCapacity:500,transportOrders:[]},metrics:{powerPopulationCap:500},pop:120};

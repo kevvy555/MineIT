@@ -1,8 +1,14 @@
 <section class="trade-view-panel" data-trade-sell-view>
-  <div class="trade-view-head"><div><strong>SELL COLONY STOCK</strong><small>Highest quality is sold first. Colony reserves are protected.</small></div><b data-sell-total></b></div>
+  <div class="trade-view-head"><div><strong>SELL COLONY STOCK</strong><small>Highest quality is sold first. Colony reserves are protected: one colony-wide amount is kept for every individual resource.</small></div><b data-sell-total></b></div>
   <div data-trade-amount-host></div>
+  <div class="trade-category-sell">
+    <button data-sell-category="food"></button>
+    <button data-sell-category="build"></button>
+    <button data-sell-category="fuel"></button>
+    <button data-sell-category="ore"></button>
+  </div>
   <div class="trade-quick-list" data-sell-rows></div>
-  <div class="trade-empty" data-sell-empty>No stock is available above your colony reserves.</div>
+  <div class="trade-empty" data-sell-empty>No stock is available above the colony reserve.</div>
   <div class="trade-view-footer">
     <button data-sell-all class="trade-primary"></button>
     <div class="trade-pager" data-trade-pager>

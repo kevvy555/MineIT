@@ -9,7 +9,7 @@ export function formatNumber(value){
   if(abs >= 1e3) return `${(n/1e3).toFixed(1)}k`;
   return Math.round(n).toString();
 }
-export const formatMoney = value => `£${formatNumber(value)}`;
+export const formatMoney = value => `cc ${formatNumber(value)}`;
 
 export function hashString(value){
   let h = 2166136261 >>> 0;
