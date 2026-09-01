@@ -1,5 +1,6 @@
 import { CONFIG } from "../core/config.js";
 import { CONTRACT_ARCHETYPES } from "../data/contracts.js";
+import { awardColonyContract } from "./reputation-service.js";
 
 export class ContractService {
   absoluteDay(state){return(Math.max(1,Number(state.year)||1)-1)*CONFIG.DAYS_PER_YEAR+Math.max(1,Number(state.day)||1);}
@@ -15,7 +16,7 @@ export class ContractService {
   deadlineDays(state){return this.deadline(state)*CONFIG.DAYS_PER_YEAR;}
   operatingColonyCount(state){const entries=state.portfolio?.colonies||[];if(!entries.length)return state.status==="dead"?0:1;return entries.filter(entry=>entry?.data?.status!=="dead"&&!entry?.data?.company?.gameOver).length||1;}
   deadlineState(state){if(state.status==="dead"||this.contractAgeDays(state)<=this.deadlineDays(state)||state.status!=="playing")return null;if(state.contract.completed)return"renewal-ended";const score=this.score(state);if(score.passed)return"complete";if(state.contract.extUsed<CONFIG.MAX_EXTENSIONS){if(this.operatingColonyCount(state)<=1&&state.company.cash<this.extensionFee(state))return"corporation-failed";return"extension";}return"failed";}
-  awardCompletion(state){const score=this.score(state);if(!score.passed)return{ok:false,score};if(!state.contract.completionAwarded){state.company.wins++;state.company.rep+=({Bronze:1,Silver:2,Gold:4,Platinum:7}[score.rating]||1);state.contract.completionAwarded=true;}state.contract.completed=true;state.status="holdover";return{ok:true,score};}
+  awardCompletion(state){const score=this.score(state);if(!score.passed)return{ok:false,score};if(!state.contract.completionAwarded){state.company.wins++;awardColonyContract(state);state.contract.completionAwarded=true;}state.contract.completed=true;state.status="holdover";return{ok:true,score};}
   enterHoldover(state){state.status="holdover";state.contract.completed=true;return true;}
   extensionFee(state){const n=state.contract.extUsed+1;return 25000*n*state.contract.tier;}
   extend(state){if(state.contract.extUsed>=CONFIG.MAX_EXTENSIONS)return false;const fee=this.extensionFee(state);if(state.company.cash<fee)return false;state.company.cash-=fee;state.contract.localCosts=(state.contract.localCosts||0)+fee;state.contract.extUsed++;state.contract.ext++;state.status="playing";return true;}

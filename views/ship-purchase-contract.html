@@ -1,0 +1,38 @@
+<div class="ship-contract-overlay" data-market-contract-view>
+  <article class="ship-contract-paper">
+    <header><small>KOPLIN DEEP REACH CORPORATION</small><h2>Factory-New Vessel Purchase Contract</h2><p>Capital Acquisition Framework • Year 5326</p></header>
+    <section class="ship-contract-body">
+      <p>This document authorises Koplin Deep Reach corporate procurement to place a factory-new vessel order on behalf of the player operating company under the active charter framework.</p>
+      <h3>Purchase details</h3>
+      <dl>
+        <div><dt>Purchaser</dt><dd>Player Operating Company</dd></div>
+        <div><dt>Approved supplier</dt><dd data-contract-supplier></dd></div>
+        <div><dt>Vessel</dt><dd data-contract-vessel></dd></div>
+        <div><dt>Delivery colony</dt><dd data-contract-colony></dd></div>
+        <div><dt>Manufacturer list price</dt><dd data-contract-list></dd></div>
+        <div><dt>Deep Reach framework discount</dt><dd data-contract-discount></dd></div>
+        <div class="total"><dt>Contract value</dt><dd data-contract-value></dd></div>
+        <div><dt>Estimated factory lead</dt><dd data-contract-lead></dd></div>
+        <div><dt>Ownership on delivery</dt><dd>Player operating company</dd></div>
+        <div><dt>Payment source</dt><dd>Operating cash • Commonwealth Credits</dd></div>
+      </dl>
+      <h3>Purchase statement</h3>
+      <p data-contract-statement></p>
+      <h3>Key terms</h3>
+      <ol>
+        <li>Signing reserves production capacity and immediately commits the stated contract value from operating cash.</li>
+        <li>The Deep Reach framework discount applies while charter procurement access remains active.</li>
+        <li>The stated factory lead is the normal manufacturer allocation period and is not real-time factory telemetry.</li>
+        <li>Cancellation before manufacturing lock returns the contract value less the stated administration fee.</li>
+        <li>After manufacturing lock the order cannot be cancelled under the current charter terms.</li>
+        <li>On delivery the vessel becomes a player-company fleet asset and enters the selected colony Spaceport or orbital holding if all berths are occupied.</li>
+      </ol>
+      <div class="ship-contract-warning" data-contract-warning></div>
+    </section>
+    <section class="ship-contract-signature">
+      <div><small>AUTHORISED SIGNATURE</small><span>Draw your signature below to execute this capital purchase.</span></div>
+      <canvas data-contract-signature width="700" height="170" aria-label="Purchase contract signature pad"></canvas>
+      <div class="ship-contract-actions"><button data-contract-clear>CLEAR</button><button data-contract-cancel>CANCEL</button><button class="primary" data-contract-sign disabled>SIGN & PLACE ORDER</button></div>
+    </section>
+  </article>
+</div>

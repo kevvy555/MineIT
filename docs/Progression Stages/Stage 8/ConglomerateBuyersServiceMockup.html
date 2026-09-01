@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>MineIT — Conglomerate Buyers Service Portrait Mockup</title>
+<style>
+:root{--bg:#050708;--panel:#0b1116;--panel2:#111a20;--line:#273741;--text:#eef5f7;--muted:#8fa1ab;--accent:#76c6ff;--good:#82dda0;--warn:#ffd166;--bad:#ff7777;--violet:#c69cff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#020405;color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button,select{font:inherit;color:inherit}button{border:1px solid var(--line);background:var(--panel2);border-radius:6px;touch-action:manipulation}
+#frame{height:100vh;height:100dvh;max-width:430px;margin:auto;padding:calc(env(safe-area-inset-top) + 5px) 5px calc(env(safe-area-inset-bottom) + 5px);display:grid;grid-template-rows:auto auto auto minmax(0,1fr);gap:4px;background:linear-gradient(#071015,#050708)}
+.top{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:4px;align-items:center}
+.title small{display:block;font-size:5.5px;color:var(--muted);letter-spacing:.12em;font-weight:900}.title strong{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rep{min-width:88px;padding:4px 6px;text-align:right}.rep small{display:block;font-size:4.7px;color:var(--muted)}.rep strong{font-size:8.5px}.rep span{display:block;font-size:5px;color:var(--accent)}.close{width:34px;height:34px}
+.filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px}
+.filter{min-width:0;padding:3px;border:1px solid #1d2b33;background:#081015;border-radius:5px}.filter small{display:block;font-size:4.4px;color:var(--muted);margin-bottom:1px}.filter select{width:100%;height:22px;border:0;background:#081015;font-size:5.6px;outline:0}
+.headRow,.buyerRow{display:grid;grid-template-columns:50px minmax(72px,1fr) 49px 26px 42px 40px 32px 31px;gap:2px;align-items:center}
+.headRow{padding:4px 2px;background:#101820;border:1px solid var(--line);border-radius:5px 5px 0 0;font-size:5px;color:#b8c6cc;font-weight:900;text-transform:uppercase}
+.rows{min-height:0;overflow:auto;border:1px solid var(--line);border-top:0;border-radius:0 0 7px 7px;background:#080d11}
+.buyerRow{min-height:48px;padding:3px 2px;border-bottom:1px solid #162129;font-size:5.8px}
+.buyerRow.current{background:#0c1b13}.buyerRow.locked{opacity:.58}
+.buyerCompany strong{display:block;font-size:6.4px;line-height:1.05}.buyerCompany small{display:block;font-size:5.2px;color:var(--muted);line-height:1.05;margin-top:2px}
+.resource{font-size:5.5px;line-height:1.05;white-space:normal;overflow-wrap:anywhere}
+.num{text-align:right;font-variant-numeric:tabular-nums}.q{text-align:center;font-weight:900;color:#c6adff}
+.action{height:30px;padding:1px 2px;font-size:5.3px;font-weight:950}.contact{border-color:#4c88aa;background:#14344a}.view{border-color:#39714d;background:#10271a}.lockedBtn{border-color:#5c4530;background:#20170e;color:#e7b56e}
+.legend{font-size:5px;color:var(--muted);padding:0 2px}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);display:grid;place-items:center;z-index:20;padding:5px}.hidden{display:none!important}
+.modal{width:min(96vw,420px);height:50dvh;min-height:390px;max-height:480px;background:#091016;border:1px solid #47606f;border-radius:9px;display:grid;grid-template-rows:auto minmax(0,1fr);overflow:hidden;box-shadow:0 20px 70px rgba(0,0,0,.65)}
+.modalTop{display:flex;justify-content:space-between;align-items:center;padding:5px 7px;border-bottom:1px solid #25353e}.modalTop strong{font-size:7px;color:#d7e8ee}.modalTop button{width:28px;height:28px}
+.modalBody{min-height:0;display:grid;grid-template-columns:42% 58%;gap:0}
+.leftPane{min-height:0;padding:6px;border-right:1px solid #24343d;display:grid;grid-template-rows:minmax(0,1fr) auto;gap:5px}
+.portrait{min-height:0;width:100%;height:100%;object-fit:cover;object-position:center 24%;border:1px solid #465e6b;border-radius:6px;background:#101820}
+.enter{min-height:38px;background:#5a3b10;border-color:#b77b23;color:#ffe0a3;font-size:6.6px;font-weight:950}
+.rightPane{min-height:0;overflow:auto;padding:6px}
+.identity h2{margin:0;font-size:10px}.identity .role{font-size:5.7px;color:var(--muted);margin-top:1px}.company{margin-top:4px;font-size:7.2px;color:var(--accent);font-weight:900}.business{font-size:5.5px;color:#b7c5cb;margin-top:1px}
+.section{margin-top:6px;padding-top:5px;border-top:1px solid #263741}.section h3{margin:0 0 3px;font-size:5.5px;color:#c7d8df;letter-spacing:.06em}
+.shipCard{padding:5px;border:1px solid #46365c;border-radius:5px;background:#171020}.shipCard strong{display:block;font-size:6.5px;color:#d7b7ff}.shipCard small{display:block;font-size:5.1px;color:#b8a2c9;line-height:1.22;margin-top:2px}
+.terms{display:grid;grid-template-columns:1fr auto;gap:2px 5px;font-size:5.6px}.terms span:nth-child(odd){color:var(--muted)}.terms b{text-align:right}
+.broker{margin-top:5px;font-size:5.2px;line-height:1.25;color:#c8b986;padding:4px;background:#17140a;border:1px solid #4b411d;border-radius:4px}
+.relationship{display:grid;grid-template-columns:auto 1fr;gap:5px;align-items:center;padding:4px;border:1px solid #2f6543;background:#0d2115;border-radius:5px}.score{font-size:13px;color:var(--good);font-weight:950}.relationship strong{font-size:5.8px}.relationship small{font-size:4.8px;color:#b7d9c0}
+.history{font-size:5.1px;display:grid;gap:2px;margin-top:4px}.history div{display:grid;grid-template-columns:45px 1fr auto;gap:3px;padding:2px;border-top:1px solid #19262d}
+@media(max-height:760px){.modal{min-height:350px;height:54dvh}}
+</style>
+</head>
+<body>
+<div id="frame">
+<header class="top">
+ <div class="title"><small>CONGLOMERATE COMMERCIAL NETWORK</small><strong>CONGLOMERATE BUYERS SERVICE</strong></div>
+ <button class="rep"><small>GLOBAL REP</small><strong>18.42</strong><span>RECOGNISED</span></button>
+ <button class="close" onclick="alert('Mockup only')">✕</button>
+</header>
+
+<section class="filters">
+ <label class="filter"><small>STATUS</small><select id="statusFilter"><option value="all">All</option><option value="available">Available</option><option value="current">Current</option><option value="locked">Locked</option></select></label>
+ <label class="filter"><small>RESOURCE</small><select id="resourceFilter"><option value="">All</option><option>Iron Ore</option><option>Copper Ore</option><option>Gold</option><option>Coal Seam</option><option>Silica</option></select></label>
+ <label class="filter"><small>QUALITY</small><select id="qualityFilter"><option value="">All</option><option>Common</option><option>Good</option><option>Excellent</option></select></label>
+ <label class="filter"><small>LOAD</small><select id="loadFilter"><option value="">All</option><option value="small">≤25k</option><option value="mid">25–75k</option><option value="large">75k+</option></select></label>
+ <label class="filter"><small>PRICE</small><select id="priceFilter"><option value="">All</option><option value="low">&lt;£0.25</option><option value="mid">£0.25–1</option><option value="high">£1+</option></select></label>
+ <label class="filter"><small>EVERY</small><select id="freqFilter"><option value="">All</option><option value="fast">≤35d</option><option value="mid">36–60d</option><option value="slow">60d+</option></select></label>
+ <label class="filter"><small>REP</small><select id="repFilter"><option value="">All</option><option value="eligible">Eligible</option><option value="0">0–9</option><option value="10">10–24</option><option value="25">25+</option></select></label>
+ <label class="filter"><small>SORT</small><select id="sortSelect"><option value="rep">Rep low</option><option value="priceDesc">Price high</option><option value="price">Price low</option><option value="load">Load low</option><option value="loadDesc">Load high</option><option value="freq">Frequency</option></select></label>
+</section>
+
+<section>
+ <div class="headRow"><span>Action</span><span>Buyer / Company</span><span>Resource</span><span>Q</span><span class="num">Load</span><span class="num">£/u</span><span class="num">Every</span><span class="num">Rep</span></div>
+ <div class="rows" id="rows"></div>
+</section>
+<div class="legend">CONTACT = available • VIEW = current contract • REP LOCKED remains visible</div>
+</div>
+
+<div class="overlay hidden" id="overlay">
+ <section class="modal">
+  <header class="modalTop"><strong id="modalLabel">BUYER CONTRACT PROFILE</strong><button onclick="closeModal()">✕</button></header>
+  <div class="modalBody">
+   <div class="leftPane">
+    <img class="portrait" src="../../../../assets/art/buyers/buyer-0001.webp" alt="Buyer portrait">
+    <button class="enter" id="primaryBtn">ENTER CONTRACT</button>
+   </div>
+   <div class="rightPane">
+    <div class="identity"><h2 id="buyerName">Aria Mercer</h2><div class="role" id="buyerRole">Senior Procurement Director</div><div class="company" id="companyName">Meridian Drive Systems</div><div class="business" id="businessType">Interstellar propulsion & heavy engineering • Major buyer</div></div>
+    <div class="section"><h3>COLLECTION SHIP</h3><div class="shipCard"><strong id="shipName">CSV HALCYON REACH • VANGUARD HAULER</strong><small id="shipDesc">High-reliability heavy industrial hauler favoured by major manufacturers. Cargo capacity 120,000.</small></div></div>
+    <div class="section"><h3>CONTRACT</h3><div class="terms">
+      <span>Resource</span><b id="termResource">Copper Ore</b>
+      <span>Minimum quality</span><b id="termQuality">Good</b>
+      <span>Shipment</span><b id="termLoad">48,000</b>
+      <span>Price / unit</span><b id="termPrice">£0.47</b>
+      <span>Full value</span><b id="termValue">£22,560</b>
+      <span>Collection</span><b id="termEvery">Every 45d</b>
+      <span>Reputation</span><b id="termRep">12.00</b>
+    </div><div class="broker">The conglomerate brokers the relationship and retains its commercial margin. Buyer collection capacity is independent of the normal Corporate Ship.</div></div>
+    <div class="section hidden" id="currentDetails"><h3>CURRENT RELATIONSHIP</h3><div class="relationship"><div class="score">73</div><div><strong>GREEN • BUYER HAPPY</strong><small>Next collection Y3 D126 • £91,220 earned</small></div></div><div class="history"><div><span>Y3 D81</span><span>Full shipment</span><b>+1</b></div><div><span>Y3 D36</span><span>80% partial</span><b>-1</b></div><div><span>Y2 D351</span><span>+5 days late</span><b>-1</b></div></div><button class="enter" style="width:100%;margin-top:5px;background:#2b1215;border-color:#724147" onclick="alert('Cancel confirmation: -5 buyer / -0.5 global')">CANCEL CONTRACT</button></div>
+   </div>
+  </div>
+ </section>
+</div>
+
+<script>
+const rep=18.42;
+const buyers=[
+{name:"Aria Mercer",role:"Senior Procurement Director",company:"Meridian Drive Systems",business:"Interstellar propulsion & heavy engineering • Major buyer",resource:"Copper Ore",quality:"Good",load:48000,price:.47,every:45,req:12,status:"available",ship:"CSV Halcyon Reach",shipClass:"Vanguard Hauler",shipCap:120000,shipDesc:"High-reliability heavy industrial hauler favoured by major manufacturers."},
+{name:"Tomas Vey",role:"Fuel Procurement Controller",company:"Redshift Energy Cooperative",business:"Industrial energy generation • Regional buyer",resource:"Coal Seam",quality:"Good",load:65000,price:.22,every:50,req:10,status:"current",ship:"CSV Long Ember",shipClass:"Meridian Bulk Carrier",shipCap:90000,shipDesc:"Dedicated bulk-material carrier optimised for regular commodity collections."},
+{name:"Jalen Voss",role:"Commercial Materials Lead",company:"Torren Habitat Works",business:"Habitat fabrication • Regional buyer",resource:"Stone",quality:"Common",load:18000,price:.078,every:60,req:4,status:"available",ship:"CSV Quiet Meridian",shipClass:"Ranger Cargo Cutter",shipCap:18000,shipDesc:"Compact medium freighter balancing useful capacity with easy Spaceport handling."},
+{name:"Devin Kade",role:"Foundry Supply Officer",company:"Kestrel Heavy Industries",business:"Heavy industrial fabrication • Major buyer",resource:"Iron Ore",quality:"Good",load:110000,price:.33,every:40,req:18,status:"available",ship:"CSV Foundry Star",shipClass:"Longreach Freighter",shipCap:160000,shipDesc:"Endurance-oriented heavy freighter for large recurring intersystem contracts."},
+{name:"Mira Chen",role:"Strategic Sourcing Manager",company:"Helix Array Fabrication",business:"Electronics & sensor manufacturing • Major buyer",resource:"Conductive Ore",quality:"Excellent",load:12000,price:.84,every:35,req:24,status:"locked",ship:"CSV Glass Horizon",shipClass:"Wayfarer Freighter",shipCap:25000,shipDesc:"Common long-haul merchant vessel used by established regional companies."},
+{name:"Selene Arko",role:"Precious Materials Director",company:"Orison Reserve Holdings",business:"Luxury materials & reserves • Strategic buyer",resource:"Gold",quality:"Excellent",load:9000,price:3.92,every:30,req:38,status:"locked",ship:"CSV Aureate Passage",shipClass:"Merchant Lifter",shipCap:35000,shipDesc:"Reinforced commercial lifter for heavier contract lots and containerised materials."},
+{name:"Noa Fenn",role:"Infrastructure Procurement Lead",company:"Crownline Civil Systems",business:"Planetary infrastructure • Regional buyer",resource:"Silica",quality:"Good",load:25000,price:.11,every:55,req:8,status:"available",ship:"CSV Grey Lantern",shipClass:"Caravan Freighter",shipCap:50000,shipDesc:"Modular multi-hold ship used for sustained regional commodity movement."},
+{name:"Iris Vale",role:"Metals Acquisition Director",company:"Pallas Aerospace Consortium",business:"Aerospace manufacturing • Strategic buyer",resource:"Reactive Metal Ore",quality:"Excellent",load:76000,price:.68,every:32,req:31,status:"locked",ship:"CSV Vector Crown",shipClass:"Vanguard Hauler",shipCap:120000,shipDesc:"High-reliability heavy industrial hauler favoured by major manufacturers."}
+];
+const $=id=>document.getElementById(id);
+const money=v=>v>=1?`£${v.toFixed(2)}`:`£${v.toFixed(3)}`;
+function row(b,i){
+ const locked=b.req>rep&&b.status!=="current";
+ const act=b.status==="current"?`<button class="action view" onclick="openModal(${i},true)">VIEW</button>`:locked?`<button class="action lockedBtn" disabled>LOCKED</button>`:`<button class="action contact" onclick="openModal(${i},false)">CONTACT</button>`;
+ return `<div class="buyerRow ${b.status==="current"?"current":locked?"locked":""}">${act}<div class="buyerCompany"><strong>${b.name}</strong><small>${b.company}</small></div><div class="resource">${b.resource}</div><div class="q">${b.quality[0]}</div><div class="num">${b.load>=1000?(b.load/1000).toFixed(b.load%1000?1:0)+"k":b.load}</div><div class="num">${money(b.price).replace("£","")}</div><div class="num">${b.every}d</div><div class="num">${b.req}</div></div>`;
+}
+function matchFilters(b){
+ const sf=$("statusFilter").value,rf=$("resourceFilter").value,qf=$("qualityFilter").value,lf=$("loadFilter").value,pf=$("priceFilter").value,ff=$("freqFilter").value,repf=$("repFilter").value;
+ const locked=b.req>rep&&b.status!=="current";
+ if(sf==="available"&&(locked||b.status==="current"))return false;
+ if(sf==="current"&&b.status!=="current")return false;
+ if(sf==="locked"&&!locked)return false;
+ if(rf&&b.resource!==rf)return false;if(qf&&b.quality!==qf)return false;
+ if(lf==="small"&&b.load>25000)return false;if(lf==="mid"&&(b.load<25000||b.load>75000))return false;if(lf==="large"&&b.load<75000)return false;
+ if(pf==="low"&&b.price>=.25)return false;if(pf==="mid"&&(b.price<.25||b.price>1))return false;if(pf==="high"&&b.price<1)return false;
+ if(ff==="fast"&&b.every>35)return false;if(ff==="mid"&&(b.every<36||b.every>60))return false;if(ff==="slow"&&b.every<=60)return false;
+ if(repf==="eligible"&&locked)return false;if(repf==="0"&&(b.req<0||b.req>9.99))return false;if(repf==="10"&&(b.req<10||b.req>24.99))return false;if(repf==="25"&&b.req<25)return false;
+ return true;
+}
+function render(){
+ let list=buyers.map((b,i)=>({...b,_i:i})).filter(matchFilters);
+ const s=$("sortSelect").value;
+ list.sort((a,b)=>s==="priceDesc"?b.price-a.price:s==="price"?a.price-b.price:s==="loadDesc"?b.load-a.load:s==="load"?a.load-b.load:s==="freq"?a.every-b.every:a.req-b.req);
+ $("rows").innerHTML=list.map(b=>row(b,b._i)).join("");
+}
+function openModal(i,current){
+ const b=buyers[i];$("buyerName").textContent=b.name;$("buyerRole").textContent=b.role;$("companyName").textContent=b.company;$("businessType").textContent=b.business;
+ $("shipName").textContent=`${b.ship.toUpperCase()} • ${b.shipClass.toUpperCase()}`;$("shipDesc").textContent=`${b.shipDesc} Cargo capacity ${b.shipCap.toLocaleString()}.`;
+ $("termResource").textContent=b.resource;$("termQuality").textContent=b.quality;$("termLoad").textContent=b.load.toLocaleString();$("termPrice").textContent=money(b.price);$("termValue").textContent="£"+Math.round(b.load*b.price).toLocaleString();$("termEvery").textContent=`Every ${b.every}d`;$("termRep").textContent=b.req.toFixed(2);
+ $("currentDetails").classList.toggle("hidden",!current);$("primaryBtn").classList.toggle("hidden",current);$("modalLabel").textContent=current?"CURRENT BUYER CONTRACT":"BUYER CONTRACT PROFILE";$("overlay").classList.remove("hidden");
+}
+function closeModal(){$("overlay").classList.add("hidden")}
+document.querySelectorAll("select").forEach(s=>s.onchange=render);$("primaryBtn").onclick=()=>alert("Mockup: ENTER CONTRACT");render();
+</script>
+</body>
+</html>

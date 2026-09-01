@@ -1,6 +1,7 @@
 import * as Base from "./game-state.js";
 import { ExpansionService } from "./expansion-service.js";
 import { normalizeTechnologyState } from "./technology-service.js";
+import { normalizeReputation } from "./reputation-service.js";
 
 const expansion=new ExpansionService();
 
@@ -47,14 +48,20 @@ function normalizeSurveyHistoryAcrossPortfolio(state){
   for(const entry of state.portfolio?.colonies||[])normalizeSurveyHistory(entry?.data);
   return state;
 }
+function normalizeBuyerRoot(state){
+  state.company||={};state.company.rep=normalizeReputation(state.company.rep);
+  const buyers=state.company.buyers;if(!buyers)return state;
+  buyers.version=Math.max(0,Math.floor(Number(buyers.version)||0));buyers.seed=Math.max(0,Number(buyers.seed)||0);buyers.offers=Array.isArray(buyers.offers)?buyers.offers:[];buyers.relationships=buyers.relationships&&typeof buyers.relationships==="object"?buyers.relationships:{};buyers.contracts=buyers.contracts&&typeof buyers.contracts==="object"?buyers.contracts:{};buyers.nextContractSequence=Math.max(1,Math.floor(Number(buyers.nextContractSequence)||1));return state;
+}
 
-/** Runtime state factory: base schema/migrations plus persisted interstellar expansion, deployed capability and scan-history state. */
+/** Runtime state factory: base schema/migrations plus persisted interstellar expansion, deployed capability, scan-history and Stage 8 buyer/fleet state. */
 export function createGameState(contract){
   const state=Base.createGameState(contract);
   expansion.ensure(state);
   normalizeTechnologyAcrossPortfolio(state);
   normalizeSurveyHistoryAcrossPortfolio(state);
-  state.version=11;
+  normalizeBuyerRoot(state);
+  state.version=13;
   return state;
 }
 
@@ -63,6 +70,7 @@ export function normalizeState(state){
   expansion.ensure(normalized);
   normalizeTechnologyAcrossPortfolio(normalized);
   normalizeSurveyHistoryAcrossPortfolio(normalized);
-  normalized.version=11;
+  normalizeBuyerRoot(normalized);
+  normalized.version=13;
   return normalized;
 }

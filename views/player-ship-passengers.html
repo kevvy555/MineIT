@@ -1,16 +1,26 @@
 <section class="exp-section">
   <div class="exp-section-head">
-    <h3>COLONISTS</h3>
-    <span>Minimum 10 aboard to launch or continue an interstellar journey.</span>
+    <h3>CREW & COLONISTS</h3>
+    <span>Crew operate the vessel; colonists are transported as passenger payload. Launch requires the class minimum crew.</span>
   </div>
-  <div class="exp-passengers">
+  <div class="exp-passengers exp-people-grid">
     <div><small>COLONY</small><strong>{{COLONY_POPULATION}}</strong></div>
-    <div><small>ABOARD</small><strong>{{PASSENGERS}} / {{PASSENGER_CAPACITY}}</strong></div>
+    <div><small>CREW</small><strong>{{CREW}} / {{MAX_CREW}}</strong><span>Minimum {{MIN_CREW}}</span></div>
+    <button data-load-crew="1">CREW +1</button>
+    <button data-load-crew="minimum">TO MIN</button>
+    <button data-load-crew="max">CREW MAX</button>
+    <button data-unload-crew-step="1" {{CREW_UNLOAD_DISABLED}}>CREW −1</button>
+    <button data-unload-crew-step="5" {{CREW_UNLOAD_DISABLED}}>CREW −5</button>
+    <button data-unload-crew-step="all" {{CREW_UNLOAD_DISABLED}}>UNLOAD CREW</button>
+  </div>
+  <div class="exp-passengers exp-people-grid">
+    <div><small>COLONY</small><strong>{{COLONY_POPULATION}}</strong></div>
+    <div><small>COLONISTS</small><strong>{{PASSENGERS}} / {{PASSENGER_CAPACITY}}</strong><span>Passenger capacity</span></div>
     <button data-load-pax="10">+10</button>
     <button data-load-pax="50">+50</button>
     <button data-load-pax="max">MAX</button>
-    <button data-unload-pax-step="10" {{UNLOAD_DISABLED}}>−10</button>
-    <button data-unload-pax-step="50" {{UNLOAD_DISABLED}}>−50</button>
-    <button data-unload-pax-step="all" {{UNLOAD_DISABLED}}>UNLOAD ALL</button>
+    <button data-unload-pax-step="10" {{PAX_UNLOAD_DISABLED}}>−10</button>
+    <button data-unload-pax-step="50" {{PAX_UNLOAD_DISABLED}}>−50</button>
+    <button data-unload-pax-step="all" {{PAX_UNLOAD_DISABLED}}>UNLOAD ALL</button>
   </div>
 </section>

@@ -1,10 +1,14 @@
 import { TradeUI as BaseTradeUI } from "./v55-trade-ui.js";
 import { formatMoney, formatNumber } from "../core/utils.js";
 import { loadViewTemplate,renderViewTemplate } from "../core/view-template.js";
+import { preloadShipViews } from "./ship-view-preload.js";
 
 const PAGE_SIZE=4,MAX_TRADE=100000,BUY_CATEGORIES=["Fuel","Food","Ore","Build"],SELL_CATEGORIES=["food","build","fuel","ore"];
-const QUICK_VIEWS={sell:"./views/quick-trade-sell.html",buy:"./views/quick-trade-buy.html"};
+const QUICK_VIEWS={sell:"./views/quick-trade-sell.html",buy:"./views/quick-trade-buy.html",colonists:"./views/quick-trade-colonists.html"};
+const QUICK_SHELL="./views/quick-trade-shell.html";
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,Math.floor(Number(value)||0)));
+
+preloadShipViews();
 
 export class TradeUI extends BaseTradeUI{
   constructor(opts){
@@ -18,6 +22,8 @@ export class TradeUI extends BaseTradeUI{
     this.buyPage=0;
     this.buyCategory="Fuel";
     this.quickRenderRevision=0;
+    this.quickPendingTab=null;
+    this.quickShellPromise=null;
   }
 
   amountControl(kind,value){return renderViewTemplate("./views/quick-trade-amount.html",{KIND:kind,MAX_TRADE,VALUE:value});}
@@ -41,26 +47,60 @@ export class TradeUI extends BaseTradeUI{
     return{qty,cost:qty*price,price};
   }
 
+  quickShell(){return this.ui.modal?.querySelector("[data-trade-quick-shell]")||null;}
+  quickShellSlots(){
+    const colonistsBlocked=this.state.contract.ended||this.state.status==="liability";
+    return{CASH:formatMoney(this.state.company.cash),IMPORT:formatNumber(this.trade.cargoRemaining(this.state)),EXPORT:formatNumber(this.trade.exportRemaining(this.state)),PAX:colonistsBlocked?"—":formatNumber(this.trade.passengerRemaining(this.state)),SELL_ACTIVE:this.quickTab==="sell"?"active":"",BUY_ACTIVE:this.quickTab==="buy"?"active":"",COLONISTS_ACTIVE:this.quickTab==="colonists"?"active":"",SELL_PRESSED:this.quickTab==="sell"?"true":"false",BUY_PRESSED:this.quickTab==="buy"?"true":"false",COLONISTS_PRESSED:this.quickTab==="colonists"?"true":"false",COLONISTS_DISABLED:colonistsBlocked?"disabled":""};
+  }
+  refreshQuickShell(){
+    const shell=this.quickShell();if(!shell)return false;
+    const slots=this.quickShellSlots();
+    this.setTradeText(shell,'[data-trade-summary="cash"]',slots.CASH);this.setTradeText(shell,'[data-trade-summary="import"]',slots.IMPORT);this.setTradeText(shell,'[data-trade-summary="export"]',slots.EXPORT);this.setTradeText(shell,'[data-trade-summary="pax"]',slots.PAX);
+    const colonistsBlocked=this.state.contract.ended||this.state.status==="liability";
+    shell.querySelectorAll("[data-trade-tab]").forEach(button=>{const active=button.dataset.tradeTab===this.quickTab;button.classList.toggle("active",active);button.setAttribute("aria-pressed",active?"true":"false");if(button.dataset.tradeTab==="colonists")button.disabled=colonistsBlocked;});
+    return true;
+  }
+  showQuickLoading(tab){
+    const host=this.quickShell()?.querySelector("[data-trade-view-host]");if(!host)return;const loading=document.createElement("div");loading.className="trade-empty";loading.dataset.tradeLoading="1";loading.textContent=`LOADING ${tab.toUpperCase()}…`;host.replaceChildren(loading);
+  }
+  async ensureQuickShell(){
+    const existing=this.quickShell();if(existing){this.ui.modal.classList.remove("hidden");this.ui.modal.classList.add("trade-quick-modal");return existing;}
+    if(this.quickShellPromise)return this.quickShellPromise;
+    this.quickShellPromise=(async()=>{
+      let body;try{body=await renderViewTemplate(QUICK_SHELL,this.quickShellSlots());}catch(error){this.ui.diagnostics?.error?.("quick trade shell template failed",error);this.ui.toast("Unable to open the corporate trade ship.");return null;}
+      if(!this.state.trade.active)return null;
+      this.ui.open("Corporate Trade Ship — DOCKED",body);this.ui.modal.classList.add("trade-quick-modal");this.bindQuickShell();this.refreshQuickShell();return this.quickShell();
+    })();
+    try{return await this.quickShellPromise;}finally{this.quickShellPromise=null;}
+  }
+
   open(selectedKey=null){
     if(!this.state.trade.active){this.status();return;}
     if(selectedKey){const selected=this.trade.catalog().find(x=>x.key===selectedKey);if(selected){this.buyCategory=selected.category;this.quickTab="buy";}}
     if((this.state.contract.ended||this.state.status==="liability")&&this.quickTab==="colonists")this.quickTab="sell";
-    this.renderQuick();
+    void this.renderQuick();
   }
 
-  async selectedTradeView(){if(this.quickTab==="sell")return this.sellView();if(this.quickTab==="buy")return this.buyView();return this.viewFragment(await this.colonistView());}
-  async renderQuick(){
-    if(!this.state.trade.active){this.status();return;}
-    const revision=++this.quickRenderRevision,cash=this.state.company.cash,cargo=this.trade.cargoRemaining(this.state),exports=this.trade.exportRemaining(this.state),pax=this.trade.passengerRemaining(this.state),colonistsBlocked=this.state.contract.ended||this.state.status==="liability";
-    let tradeView,body;
-    try{
-      [tradeView,body]=await Promise.all([this.selectedTradeView(),renderViewTemplate("./views/quick-trade-shell.html",{CASH:formatMoney(cash),IMPORT:formatNumber(cargo),EXPORT:formatNumber(exports),PAX:colonistsBlocked?"—":formatNumber(pax),SELL_ACTIVE:this.quickTab==="sell"?"active":"",BUY_ACTIVE:this.quickTab==="buy"?"active":"",COLONISTS_ACTIVE:this.quickTab==="colonists"?"active":"",COLONISTS_DISABLED:colonistsBlocked?"disabled":""})]);
-    }catch(error){if(revision!==this.quickRenderRevision)return;this.ui.diagnostics?.error?.("quick trade template failed",error);this.ui.toast("Unable to open the corporate trade ship.");return;}
-    if(revision!==this.quickRenderRevision||!this.state.trade.active)return;
-    this.ui.open("Corporate Trade Ship — DOCKED",body);this.ui.modal.querySelector("[data-trade-view-host]")?.replaceChildren(tradeView);
-    this.ui.modal.classList.add("trade-quick-modal");
-    this.bindQuick();
+  async selectedTradeView(tab=this.quickTab){if(tab==="sell")return this.sellView();if(tab==="buy")return this.buyView();return this.viewFragment(await this.colonistView());}
+  selectQuickTab(tab){
+    if(!QUICK_VIEWS[tab])return false;if(tab==="colonists"&&(this.state.contract.ended||this.state.status==="liability"))return false;
+    if(this.quickTab===tab)return false;
+    this.quickTab=tab;if(tab==="sell")this.sellPage=0;if(tab==="buy")this.buyPage=0;this.refreshQuickShell();void this.renderQuickView(tab);return true;
   }
+  async renderQuick(){
+    if(!this.state.trade.active){this.status();return false;}
+    const shell=await this.ensureQuickShell();if(!shell||!this.state.trade.active)return false;
+    this.refreshQuickShell();if(this.quickPendingTab===this.quickTab)return true;return this.renderQuickView(this.quickTab);
+  }
+  async renderQuickView(tab,{supersede=false}={}){
+    if(this.quickPendingTab===tab&&!supersede)return false;
+    const shellAtStart=this.quickShell(),revision=++this.quickRenderRevision;this.quickPendingTab=tab;this.refreshQuickShell();this.showQuickLoading(tab);
+    let tradeView;try{tradeView=await this.selectedTradeView(tab);}catch(error){if(revision!==this.quickRenderRevision)return false;if(this.quickPendingTab===tab)this.quickPendingTab=null;this.refreshQuickShell();this.ui.diagnostics?.error?.("quick trade view template failed",error);this.ui.toast("Unable to load that corporate trade view.");return false;}
+    if(revision!==this.quickRenderRevision||tab!==this.quickTab||!this.state.trade.active)return false;
+    const shell=this.quickShell(),host=shell?.querySelector("[data-trade-view-host]");if(!shell||shell!==shellAtStart||!host){if(this.quickPendingTab===tab)this.quickPendingTab=null;return false;}
+    host.replaceChildren(tradeView);this.quickPendingTab=null;this.refreshQuickShell();this.bindQuickView();return true;
+  }
+  refreshQuickView(){return this.renderQuickView(this.quickTab,{supersede:true});}
 
   async sellView(){
     const all=this.trade.sellableStock(this.state),pages=Math.max(1,Math.ceil(all.length/PAGE_SIZE));this.sellPage=clamp(this.sellPage,0,pages-1);const rows=all.slice(this.sellPage*PAGE_SIZE,(this.sellPage+1)*PAGE_SIZE),allQuote=this.trade.sellAllQuote(this.state),[source,amount]=await Promise.all([loadViewTemplate(QUICK_VIEWS.sell),this.amountControl("sell",this.sellAmount)]),fragment=this.viewFragment(source),root=fragment.querySelector("[data-trade-sell-view]");
@@ -88,31 +128,34 @@ export class TradeUI extends BaseTradeUI{
   syncColonistDefault(){const visit=Number(this.state.trade?.visits)||0;if(this.colonistVisit===visit)return;this.colonistVisit=visit;this.colonistAmount=Math.min(this.colonistHardMax(),this.trade.colonistSafeCapacity(this.state));}
   async colonistView(){
     this.syncColonistDefault();const supported=Math.max(0,Math.floor(Math.min(Number(this.state.colony.housingCapacity)||0,Number(this.state.metrics.powerPopulationCap)||Number(this.state.colony.housingCapacity)||0))),available=Math.max(0,Math.floor(this.trade.colonistCapacity(this.state))),pax=Math.max(0,Math.floor(this.trade.passengerRemaining(this.state))),hardMax=this.colonistHardMax(),safeMax=Math.min(hardMax,this.trade.colonistSafeCapacity(this.state)),qty=clamp(this.colonistAmount,0,hardMax);this.colonistAmount=qty;const cost=qty?this.trade.colonistTransferCost(this.state,qty):0,foodMargin=this.trade.colonistFoodSurplusAfter(this.state,qty),powerMargin=(Number(this.state.metrics.powerCapacity)||0)-(Number(this.state.metrics.powerDemand)||0),can=qty?this.trade.canTransferColonists(this.state,qty):{ok:false};
-    return renderViewTemplate("./views/quick-trade-colonists.html",{MAX:formatNumber(safeMax),POPULATION:formatNumber(this.state.pop),SUPPORTED:formatNumber(supported),HOUSING_FREE:formatNumber(available),PAX:formatNumber(pax),FOOD_CLASS:foodMargin<0?"bad":"good",FOOD_MARGIN:`${foodMargin>=0?"+":""}${formatNumber(foodMargin)}`,POWER_CLASS:powerMargin<0?"bad":"good",POWER_MARGIN:`${powerMargin>=0?"+":""}${formatNumber(powerMargin)}`,MIN_DISABLED:qty<=0?"disabled":"",INPUT_MAX:Math.max(0,hardMax),QUANTITY:qty,MAX_DISABLED:qty>=hardMax?"disabled":"",SAFE_MAX_DISABLED:safeMax<=0?"disabled":"",COST:formatMoney(cost),AFTER_POPULATION:formatNumber(Number(this.state.pop)+qty),BUY_DISABLED:can.ok?"":"disabled",BUY_LABEL:qty>0?`BUY ${formatNumber(qty)} COLONISTS`:"SELECT COLONISTS"});
+    return renderViewTemplate(QUICK_VIEWS.colonists,{MAX:formatNumber(safeMax),POPULATION:formatNumber(this.state.pop),SUPPORTED:formatNumber(supported),HOUSING_FREE:formatNumber(available),PAX:formatNumber(pax),FOOD_CLASS:foodMargin<0?"bad":"good",FOOD_MARGIN:`${foodMargin>=0?"+":""}${formatNumber(foodMargin)}`,POWER_CLASS:powerMargin<0?"bad":"good",POWER_MARGIN:`${powerMargin>=0?"+":""}${formatNumber(powerMargin)}`,MIN_DISABLED:qty<=0?"disabled":"",INPUT_MAX:Math.max(0,hardMax),QUANTITY:qty,MAX_DISABLED:qty>=hardMax?"disabled":"",SAFE_MAX_DISABLED:safeMax<=0?"disabled":"",COST:formatMoney(cost),AFTER_POPULATION:formatNumber(Number(this.state.pop)+qty),BUY_DISABLED:can.ok?"":"disabled",BUY_LABEL:qty>0?`BUY ${formatNumber(qty)} COLONISTS`:"SELECT COLONISTS"});
   }
 
-  afterSale(result,kind,label){if(!result.ok){this.ui.toast(result.reason||"Nothing could be exported.");return;}this.log(kind,`${label} sold ${formatNumber(result.qty)} units for ${formatMoney(result.revenue)} while protecting the colony reserve.`,{quantity:result.qty,revenue:result.revenue,exportRemaining:result.exportRemaining});this.repo.save(this.state);this.ui.render?.();this.ui.toast(`Sold ${formatNumber(result.qty)} units for ${formatMoney(result.revenue)}.`);this.renderQuick();}
-  bindQuick(){
+  afterSale(result,kind,label){if(!result.ok){this.ui.toast(result.reason||"Nothing could be exported.");return;}this.log(kind,`${label} sold ${formatNumber(result.qty)} units for ${formatMoney(result.revenue)} while protecting the colony reserve.`,{quantity:result.qty,revenue:result.revenue,exportRemaining:result.exportRemaining});this.repo.save(this.state);this.ui.render?.();this.ui.toast(`Sold ${formatNumber(result.qty)} units for ${formatMoney(result.revenue)}.`);void this.refreshQuickView();}
+  bindQuickShell(){
+    const shell=this.quickShell();if(!shell)return;
+    shell.querySelectorAll("[data-trade-tab]").forEach(button=>button.onclick=()=>this.selectQuickTab(button.dataset.tradeTab));
+    const depart=shell.querySelector("[data-depart]");if(depart)depart.onclick=()=>{this.quickRenderRevision++;this.quickPendingTab=null;this.trade.depart(this.state);this.log("ship-departed",`Corporate ship departed ${this.state.contract.colonyName}.`,{visit:this.state.trade.visits,nextArrivalDay:this.state.trade.nextArrivalDay,exportUsed:this.state.trade.exportUsed,cargoUsed:this.state.trade.cargoUsed});this.ui.modal.classList.remove("trade-quick-modal");this.ui.modal.classList.add("hidden");this.render();this.repo.save(this.state);this.onDepart?.();};
+  }
+  bindQuickView(){
     const modal=this.ui.modal;
-    modal.querySelectorAll("[data-trade-tab]").forEach(button=>button.onclick=()=>{this.quickTab=button.dataset.tradeTab;if(this.quickTab==="sell")this.sellPage=0;if(this.quickTab==="buy")this.buyPage=0;this.renderQuick();});
-    modal.querySelectorAll("[data-qty-step]").forEach(button=>button.onclick=()=>{const kind=button.dataset.qtyStep,prop=kind==="sell"?"sellAmount":"buyAmount";this[prop]=clamp(this[prop]+Number(button.dataset.delta),1,MAX_TRADE);this.renderQuick();});
-    modal.querySelectorAll("[data-qty-set]").forEach(button=>button.onclick=()=>{const prop=button.dataset.qtySet==="sell"?"sellAmount":"buyAmount";this[prop]=clamp(button.dataset.value,1,MAX_TRADE);this.renderQuick();});
-    modal.querySelectorAll("[data-qty-input]").forEach(input=>input.onchange=()=>{const prop=input.dataset.qtyInput==="sell"?"sellAmount":"buyAmount";this[prop]=clamp(input.value,1,MAX_TRADE);this.renderQuick();});
-    modal.querySelectorAll("[data-page]").forEach(button=>button.onclick=()=>{const prop=button.dataset.page==="sell"?"sellPage":"buyPage";this[prop]=Math.max(0,this[prop]+Number(button.dataset.dir));this.renderQuick();});
-    modal.querySelectorAll("[data-buy-category]").forEach(button=>button.onclick=()=>{this.buyCategory=button.dataset.buyCategory;this.buyPage=0;this.renderQuick();});
-    modal.querySelectorAll("[data-sell-key]").forEach(button=>button.onclick=()=>{const key=button.dataset.sellKey,entry=this.state.inventory[key],r=this.trade.sell(this.state,key,this.sellAmount);if(!r.ok){this.ui.toast(r.reason);return;}this.log("trade-sale",`Sold ${formatNumber(r.qty)} ${entry?.name||"resource"} for ${formatMoney(r.revenue)}.`,{resource:entry?.name,resourceId:entry?.resourceId,quantity:r.qty,revenue:r.revenue,exportRemaining:r.exportRemaining});this.repo.save(this.state);this.ui.render?.();this.ui.toast(`Sold ${formatNumber(r.qty)} for ${formatMoney(r.revenue)}.`);this.renderQuick();});
+    modal.querySelectorAll("[data-qty-step]").forEach(button=>button.onclick=()=>{const kind=button.dataset.qtyStep,prop=kind==="sell"?"sellAmount":"buyAmount";this[prop]=clamp(this[prop]+Number(button.dataset.delta),1,MAX_TRADE);void this.refreshQuickView();});
+    modal.querySelectorAll("[data-qty-set]").forEach(button=>button.onclick=()=>{const prop=button.dataset.qtySet==="sell"?"sellAmount":"buyAmount";this[prop]=clamp(button.dataset.value,1,MAX_TRADE);void this.refreshQuickView();});
+    modal.querySelectorAll("[data-qty-input]").forEach(input=>input.onchange=()=>{const prop=input.dataset.qtyInput==="sell"?"sellAmount":"buyAmount";this[prop]=clamp(input.value,1,MAX_TRADE);void this.refreshQuickView();});
+    modal.querySelectorAll("[data-page]").forEach(button=>button.onclick=()=>{const prop=button.dataset.page==="sell"?"sellPage":"buyPage";this[prop]=Math.max(0,this[prop]+Number(button.dataset.dir));void this.refreshQuickView();});
+    modal.querySelectorAll("[data-buy-category]").forEach(button=>button.onclick=()=>{this.buyCategory=button.dataset.buyCategory;this.buyPage=0;void this.refreshQuickView();});
+    modal.querySelectorAll("[data-sell-key]").forEach(button=>button.onclick=()=>{const key=button.dataset.sellKey,entry=this.state.inventory[key],r=this.trade.sell(this.state,key,this.sellAmount);if(!r.ok){this.ui.toast(r.reason);return;}this.log("trade-sale",`Sold ${formatNumber(r.qty)} ${entry?.name||"resource"} for ${formatMoney(r.revenue)}.`,{resource:entry?.name,resourceId:entry?.resourceId,quantity:r.qty,revenue:r.revenue,exportRemaining:r.exportRemaining});this.repo.save(this.state);this.ui.render?.();this.ui.toast(`Sold ${formatNumber(r.qty)} for ${formatMoney(r.revenue)}.`);void this.refreshQuickView();});
     const sellAll=modal.querySelector("[data-sell-all]");if(sellAll)sellAll.onclick=()=>this.afterSale(this.trade.sellAll(this.state),"trade-sell-all","Bulk export");
     modal.querySelectorAll("[data-sell-category]").forEach(button=>button.onclick=()=>{const type=button.dataset.sellCategory;this.afterSale(this.trade.sellCategory(this.state,type),`trade-sell-${type}`,`${type.toUpperCase()} export`);});
     modal.querySelectorAll("[data-buy-key]").forEach(button=>button.onclick=()=>this.buyResource(button.dataset.buyKey,this.buyAmount));
     const reserveBuy=modal.querySelector("[data-buy-reserve]");if(reserveBuy&&reserveBuy.dataset.buyReserve)reserveBuy.onclick=()=>{const key=reserveBuy.dataset.buyReserve,shortfall=this.trade.reserveShortfall(this.state,key);if(shortfall<=0){this.ui.toast("That reserve is already met.");return;}this.buyResource(key,shortfall);};
-    modal.querySelectorAll("[data-colonist-step]").forEach(button=>button.onclick=()=>{const max=this.colonistHardMax();this.colonistAmount=clamp(this.colonistAmount+Number(button.dataset.colonistStep),0,max);this.renderQuick();});
-    const maxSafe=modal.querySelector("[data-colonist-max]");if(maxSafe)maxSafe.onclick=()=>{this.colonistAmount=Math.min(this.colonistHardMax(),this.trade.colonistSafeCapacity(this.state));this.renderQuick();};
-    const colonistInput=modal.querySelector("[data-colonist-input]");if(colonistInput)colonistInput.onchange=()=>{this.colonistAmount=clamp(colonistInput.value,0,this.colonistHardMax());this.renderQuick();};
-    const colonists=modal.querySelector("[data-buy-colonists]");if(colonists)colonists.onclick=()=>{const r=this.trade.transferColonists(this.state,this.colonistAmount);if(!r.ok){this.ui.toast(r.reason);return;}this.log("colonists-arrived",`${formatNumber(r.qty)} colonists arrived on the corporate trade ship.`,{quantity:r.qty,cost:r.cost,source:"trade-ship",population:r.pop});this.ui.onRecalculate?.();this.repo.save(this.state);this.ui.render?.();this.ui.toast(`${formatNumber(r.qty)} colonists transferred to the colony.`);this.renderQuick();};
-    const depart=modal.querySelector("[data-depart]");if(depart)depart.onclick=()=>{this.trade.depart(this.state);this.log("ship-departed",`Corporate ship departed ${this.state.contract.colonyName}.`,{visit:this.state.trade.visits,nextArrivalDay:this.state.trade.nextArrivalDay,exportUsed:this.state.trade.exportUsed,cargoUsed:this.state.trade.cargoUsed});modal.classList.remove("trade-quick-modal");modal.classList.add("hidden");this.render();this.repo.save(this.state);this.onDepart?.();};
+    modal.querySelectorAll("[data-colonist-step]").forEach(button=>button.onclick=()=>{const max=this.colonistHardMax();this.colonistAmount=clamp(this.colonistAmount+Number(button.dataset.colonistStep),0,max);void this.refreshQuickView();});
+    const maxSafe=modal.querySelector("[data-colonist-max]");if(maxSafe)maxSafe.onclick=()=>{this.colonistAmount=Math.min(this.colonistHardMax(),this.trade.colonistSafeCapacity(this.state));void this.refreshQuickView();};
+    const colonistInput=modal.querySelector("[data-colonist-input]");if(colonistInput)colonistInput.onchange=()=>{this.colonistAmount=clamp(colonistInput.value,0,this.colonistHardMax());void this.refreshQuickView();};
+    const colonists=modal.querySelector("[data-buy-colonists]");if(colonists)colonists.onclick=()=>{const r=this.trade.transferColonists(this.state,this.colonistAmount);if(!r.ok){this.ui.toast(r.reason);return;}this.log("colonists-arrived",`${formatNumber(r.qty)} colonists arrived on the corporate trade ship.`,{quantity:r.qty,cost:r.cost,source:"trade-ship",population:r.pop});this.ui.onRecalculate?.();this.repo.save(this.state);this.ui.render?.();this.ui.toast(`${formatNumber(r.qty)} colonists transferred to the colony.`);void this.refreshQuickView();};
   }
 
   buyResource(key,amount){
-    const item=this.trade.catalog().find(x=>x.key===key),r=this.trade.buy(this.state,key,amount);if(!r.ok){this.ui.toast(r.reason);return;}this.log("trade-purchase",`Bought ${formatNumber(r.qty)} ${r.entry.name} for ${formatMoney(r.cost)}.`,{resource:r.entry.name,resourceId:r.entry.resourceId,quantity:r.qty,cost:r.cost,cargoRemaining:r.cargoRemaining});this.ui.onRecalculate?.();this.repo.save(this.state);this.ui.render?.();this.ui.toast(`Bought ${formatNumber(r.qty)} ${item?.name||r.entry.name} • ${formatNumber(r.cargoRemaining)} cargo left.`);this.renderQuick();
+    const item=this.trade.catalog().find(x=>x.key===key),r=this.trade.buy(this.state,key,amount);if(!r.ok){this.ui.toast(r.reason);return;}this.log("trade-purchase",`Bought ${formatNumber(r.qty)} ${r.entry.name} for ${formatMoney(r.cost)}.`,{resource:r.entry.name,resourceId:r.entry.resourceId,quantity:r.qty,cost:r.cost,cargoRemaining:r.cargoRemaining});this.ui.onRecalculate?.();this.repo.save(this.state);this.ui.render?.();this.ui.toast(`Bought ${formatNumber(r.qty)} ${item?.name||r.entry.name} • ${formatNumber(r.cargoRemaining)} cargo left.`);void this.refreshQuickView();
   }
 }

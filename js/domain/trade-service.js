@@ -1,5 +1,6 @@
 import { CONFIG } from "../core/config.js";
 import { ExpansionService } from "./expansion-service.js";
+import { awardCorporateExportVisit } from "./reputation-service.js";
 import { ensureSpaceport,hasFreeBerth } from "./spaceport-model.js";
 
 /** Canonical corporate trade service, including service radius and shared Spaceport berth rules. */
@@ -29,9 +30,19 @@ export class TradeService {
   exportPrice(state,itemOrType,resourceId=null,qualityBandKey=null){return this.sellPrice(itemOrType,resourceId,qualityBandKey)*this.processingMultiplier(state);}
   buyPrice(itemOrType,resourceId=null){return this.sellPrice(itemOrType,resourceId)*CONFIG.CORPORATE_BUY_MARKUP;}
   stockValue(state){return this.stock(state).reduce((sum,e)=>sum+this.entryValue(state,e),0);}
-  cargoCapacity(state){return Math.min(CONFIG.TRADE_MAX_CARGO,CONFIG.TRADE_BASE_CARGO+Math.max(0,Number(state.company.rep)||0)*CONFIG.TRADE_CARGO_PER_REP);}
+  cargoCapacity(state){
+    if(state.trade?.active&&Number.isFinite(state.trade.visitCargoCapacity))return state.trade.visitCargoCapacity;
+    const capacity=Math.min(CONFIG.TRADE_MAX_CARGO,CONFIG.TRADE_BASE_CARGO+Math.max(0,Number(state.company.rep)||0)*CONFIG.TRADE_CARGO_PER_REP);
+    if(state.trade?.active)state.trade.visitCargoCapacity=capacity;
+    return capacity;
+  }
   cargoRemaining(state){return Math.max(0,this.cargoCapacity(state)-(Number(state.trade.cargoUsed)||0));}
-  exportCapacity(state){return Math.min(CONFIG.TRADE_MAX_EXPORT_CARGO,CONFIG.TRADE_BASE_EXPORT_CARGO+Math.max(0,Number(state.company.rep)||0)*CONFIG.TRADE_EXPORT_PER_REP);}
+  exportCapacity(state){
+    if(state.trade?.active&&Number.isFinite(state.trade.visitExportCapacity))return state.trade.visitExportCapacity;
+    const capacity=Math.min(CONFIG.TRADE_MAX_EXPORT_CARGO,CONFIG.TRADE_BASE_EXPORT_CARGO+Math.max(0,Number(state.company.rep)||0)*CONFIG.TRADE_EXPORT_PER_REP);
+    if(state.trade?.active)state.trade.visitExportCapacity=capacity;
+    return capacity;
+  }
   exportRemaining(state){return Math.max(0,this.exportCapacity(state)-(Number(state.trade.exportUsed)||0));}
   passengerRemaining(state){return Math.max(0,CONFIG.TRADE_PASSENGER_CAPACITY-(Number(state.trade.passengersUsed)||0));}
   pendingTransportPopulation(state){return(state.colony?.transportOrders||[]).reduce((sum,o)=>sum+Math.max(0,Number(o.amount)||0),0);}
@@ -51,11 +62,12 @@ export class TradeService {
   }
   arrive(state){
     ensureSpaceport(state);if(!this.serviceAvailable(state)||state.trade.active||state.status==="dead")return false;if(!hasFreeBerth(state)){state.trade.orbitalHolding=true;state.trade.orbitalSinceAbsoluteDay??=this.absoluteDay(state);return false;}
-    state.trade.active=true;state.trade.orbitalHolding=false;state.trade.orbitalSinceAbsoluteDay=null;state.trade.arrivedAt=this.absoluteDay(state);state.trade.cargoUsed=0;state.trade.exportUsed=0;state.trade.passengersUsed=0;state.trade.visits++;do{state.trade.nextArrivalDay+=CONFIG.TRADE_INTERVAL_DAYS;}while(state.trade.nextArrivalDay<=state.trade.arrivedAt);return true;
+    delete state.trade.visitCargoCapacity;delete state.trade.visitExportCapacity;state.trade.active=true;state.trade.orbitalHolding=false;state.trade.orbitalSinceAbsoluteDay=null;state.trade.arrivedAt=this.absoluteDay(state);state.trade.cargoUsed=0;state.trade.exportUsed=0;state.trade.passengersUsed=0;state.trade.exportReputationAwarded=false;state.trade.visitCargoCapacity=this.cargoCapacity(state);state.trade.visitExportCapacity=this.exportCapacity(state);state.trade.visits++;do{state.trade.nextArrivalDay+=CONFIG.TRADE_INTERVAL_DAYS;}while(state.trade.nextArrivalDay<=state.trade.arrivedAt);return true;
   }
-  depart(state){if(!state.trade.active)return false;state.trade.active=false;state.trade.arrivedAt=null;return true;}
+  depart(state){if(!state.trade.active)return false;state.trade.active=false;state.trade.arrivedAt=null;delete state.trade.visitCargoCapacity;delete state.trade.visitExportCapacity;return true;}
   daysUntilArrival(state){return this.serviceAvailable(state)?(state.trade.active||state.trade.orbitalHolding?0:Math.max(0,state.trade.nextArrivalDay-this.absoluteDay(state))):Infinity;}
-  sellBand(state,key,bandKey,amount){if(!state.trade.active)return{ok:false,reason:"No corporate ship is docked."};const entry=state.inventory[key];if(!entry)return{ok:false,reason:"No stock available."};this.inventory.ensureEntry(state,entry.type,entry.resourceId,entry.name);const band=entry.qualityBands?.[bandKey],available=Math.max(0,Number(band?.amount)||0);if(!available)return{ok:false,reason:"No stock available in that quality band."};const exportRoom=this.exportRemaining(state);if(exportRoom<=0)return{ok:false,reason:"Ship export capacity is exhausted for this visit."};const aboveReserve=this.sellableAmount(state,entry);if(aboveReserve<=0)return{ok:false,reason:"This stock is protected by the colony trade reserve."};const qty=Math.min(available,Math.max(0,Number(amount)||0),exportRoom,aboveReserve);if(qty<=0)return{ok:false,reason:"Nothing selected."};const unitPrice=this.exportPrice(state,entry.type,entry.resourceId,bandKey),revenue=qty*unitPrice;band.amount-=qty;this.inventory.syncEntry(entry);state.company.cash+=revenue;state.company.earn+=revenue;state.contract.localRevenue=(state.contract.localRevenue||0)+revenue;state.trade.exportUsed=(Number(state.trade.exportUsed)||0)+qty;return{ok:true,qty,revenue,unitPrice,bandKey,entry,processingBonus:this.processingBonus(state),exportRemaining:this.exportRemaining(state)};}
+  awardExportVisitReputation(state){if(state.trade.exportReputationAwarded)return null;state.trade.exportReputationAwarded=true;return awardCorporateExportVisit(state);}
+  sellBand(state,key,bandKey,amount){if(!state.trade.active)return{ok:false,reason:"No corporate ship is docked."};const entry=state.inventory[key];if(!entry)return{ok:false,reason:"No stock available."};this.inventory.ensureEntry(state,entry.type,entry.resourceId,entry.name);const band=entry.qualityBands?.[bandKey],available=Math.max(0,Number(band?.amount)||0);if(!available)return{ok:false,reason:"No stock available in that quality band."};const exportRoom=this.exportRemaining(state);if(exportRoom<=0)return{ok:false,reason:"Ship export capacity is exhausted for this visit."};const aboveReserve=this.sellableAmount(state,entry);if(aboveReserve<=0)return{ok:false,reason:"This stock is protected by the colony trade reserve."};const qty=Math.min(available,Math.max(0,Number(amount)||0),exportRoom,aboveReserve);if(qty<=0)return{ok:false,reason:"Nothing selected."};const unitPrice=this.exportPrice(state,entry.type,entry.resourceId,bandKey),revenue=qty*unitPrice;band.amount-=qty;this.inventory.syncEntry(entry);state.company.cash+=revenue;state.company.earn+=revenue;state.contract.localRevenue=(state.contract.localRevenue||0)+revenue;state.trade.exportUsed=(Number(state.trade.exportUsed)||0)+qty;const reputation=this.awardExportVisitReputation(state);return{ok:true,qty,revenue,unitPrice,bandKey,entry,processingBonus:this.processingBonus(state),exportRemaining:this.exportRemaining(state),reputation};}
   sell(state,key,amount,bandKey=null){if(bandKey)return this.sellBand(state,key,bandKey,amount);if(!state.trade.active)return{ok:false,reason:"No corporate ship is docked."};const entry=state.inventory[key];if(!entry||this.inventory.syncEntry(entry).amount<=0)return{ok:false,reason:"No stock available."};let remaining=Math.min(this.sellableAmount(state,entry),Math.max(0,Number(amount)||0)),qty=0,revenue=0;if(remaining<=0)return{ok:false,reason:"This stock is protected by the colony trade reserve."};for(const band of this.qualityRows(entry,state).sort((a,b)=>b.unitPrice-a.unitPrice)){if(remaining<=0||this.exportRemaining(state)<=0)break;const r=this.sellBand(state,key,band.key,Math.min(remaining,band.amount));if(r.ok){remaining-=r.qty;qty+=r.qty;revenue+=r.revenue;}}return{ok:qty>0,qty,revenue,entry,exportRemaining:this.exportRemaining(state)};}
   sellEntries(state,entries){const candidates=[];for(const entry of entries)for(const band of this.qualityRows(entry,state))candidates.push({entry,band});candidates.sort((a,b)=>b.band.unitPrice-a.band.unitPrice||b.band.value-a.band.value);let revenue=0,qty=0;for(const {entry,band} of candidates){if(this.exportRemaining(state)<=0)break;const r=this.sellBand(state,entry.key,band.key,band.amount);if(r.ok){revenue+=r.revenue;qty+=r.qty;}}return{ok:qty>0,revenue,qty,exportRemaining:this.exportRemaining(state),reason:qty>0?null:"Nothing is available above the colony reserve or export capacity."};}
   sellAll(state){return this.sellEntries(state,this.stock(state));}
