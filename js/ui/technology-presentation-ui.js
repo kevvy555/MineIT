@@ -5,7 +5,7 @@ import { loadViewTemplate } from "../core/view-template.js";
 import { BUILDING_MODEL,SHIP_INFRASTRUCTURE,buildingCapacity,localBuildings,syncBuildingTotals } from "../domain/building-model.js";
 import { berthStatus } from "../domain/spaceport-model.js";
 
-const LOCAL_KINDS=["housing","power","industry"];
+const LOCAL_KINDS=["housing","power","industry","headquarters"];
 const TECH_CATEGORIES=["housing","power","food","industry","mining","scanning"];
 const TECH_LABELS={housing:"HOUSING",power:"POWER",food:"FOOD PRODUCTION",industry:"INDUSTRY",mining:"MINING / EXTRACTION",scanning:"SCANNING / PROSPECTING"};
 const TECH_SHORT_LABELS={housing:"HOUSING",power:"POWER",food:"FOOD",industry:"INDUSTRY",mining:"MINING",scanning:"SCANNING"};
