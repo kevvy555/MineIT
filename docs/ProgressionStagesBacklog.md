@@ -76,9 +76,13 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** Complete  
 **Purpose:** Increase the scale and efficiency of extraction by overcoming workforce, Power, Industry, technology and infrastructure bottlenecks.
 
+### Complete
+
+- **A02 — Colonist Food projection bug.** Make the pre-transfer forecast and live simulation use the same authoritative calculation, including post-transfer consumption, operational production, net balance and days remaining. **Status: Complete.** [Detailed specification](./Progression%20Stages/Stage%204/A02-Colonist-Food-Projection.md)
+
 ### Ready for Review
 
-- **A02 — Colonist Food projection bug.** Make the pre-transfer forecast and live simulation use the same authoritative calculation, including post-transfer consumption, operational production, net balance and days remaining. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%204/A02-Colonist-Food-Projection.md)
+- None currently identified.
 
 ### Not Started
 
@@ -114,10 +118,13 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** Complete  
 **Purpose:** Prepare and execute the first colony expedition, establish a viable settlement and leave it capable of operating after the colony ship departs.
 
+### Complete
+
+- **A06 — Emergency use of landed colony-ship Food.** Prevent phantom production, consume colony Food first and require explicit approval before a colony can consume Food held by a landed player ship. **Status: Complete.** [Detailed specification](./Progression%20Stages/Stage%206/A06-Emergency-Colony-Ship-Food.md)
+- **A07 — Ship and colony accommodation allocation.** Use ship-class capacity and provide fully manual movement between ship accommodation and colony housing, including warned launch into homelessness. **Status: Complete.** [Detailed specification](./Progression%20Stages/Stage%206/A07-Ship-Accommodation-Allocation.md)
+
 ### Ready for Review
 
-- **A06 — Emergency use of landed colony-ship Food.** Prevent phantom production, consume colony Food first and require explicit approval before a colony can consume Food held by a landed player ship. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/A06-Emergency-Colony-Ship-Food.md)
-- **A07 — Ship and colony accommodation allocation.** Use ship-class capacity and provide fully manual movement between ship accommodation and colony housing, including warned launch into homelessness. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/A07-Ship-Accommodation-Allocation.md)
 - **A08 — Operational Headquarters gate.** Require a constructed, powered and staffed command facility before departure, with defined network and efficiency consequences for later outages. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/A08-Operational-Headquarters.md)
 - **A09 and B06a — System map and planetary navigation.** Support planet selection, rerouting, time-and-Fuel-consuming in-system travel, colonisation and temporary landings from a shared system map. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/A09-B06a-System-Navigation.md)
 - **B03a — Global ship management.** Provide a persistent global ship list and state-aware controls for navigation, journey preview, crew and accommodation. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/B03a-Global-Ship-Management.md)

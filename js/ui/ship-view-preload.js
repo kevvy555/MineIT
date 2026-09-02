@@ -16,6 +16,7 @@ export const SHIP_VIEW_PATHS=[
   "./views/player-ship-passengers.html",
   "./views/player-ship-route.html",
   "./views/player-ship-lost.html",
+  "./views/emergency-ship-food.html",
   "./views/colonies.html",
   "./views/colony-card.html",
   "./views/colony-land-panel.html",

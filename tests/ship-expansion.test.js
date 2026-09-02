@@ -20,7 +20,7 @@ const stock=(state)=>{inventory.store(state,"food","fungal","Fungal Shelf",20000
 const stockedKey=(type,resourceId)=>inventory.key(type,resourceId);
 
 const {state,portfolio,expansion}=fresh();
-assert.equal(state.version,13);
+assert.equal(state.version,14);
 assert.equal(state.company.expansion.version,EXPANSION_VERSION);
 assert.equal(EXPANSION_VERSION,3);
 assert.equal(state.company.expansion.ships.length,1);
@@ -98,7 +98,7 @@ assert.equal(te.ship(ts).status,"arrived");
 assert.equal(te.ship(ts).systemId,target.id);
 assert.equal(te.ship(ts).awaitingDestination,true);
 
-// Every compartment remaining aboard becomes initial colony stock. Crew and passengers disembark as colonists.
+// Ship Food remains aboard after founding; non-Food cargo and Fuel become initial colony stock.
 ts.company.tech={housing:5,power:5,food:5,industry:5,mining:10,scanning:10};
 const planet=target.planets[0],contract=te.makePlanetContract(ts,target.id,planet.id),beforeFood=te.transitFoodAmount(ts),beforeFuel=te.fuelAmount(ts);
 assert.ok(beforeFood>0);
@@ -107,15 +107,16 @@ const entry=tp.addColony(ts,contract);
 assert.equal(ts.colonyId,entry.id);
 assert.equal(Math.floor(ts.pop),PLAYER_SHIP_MIN_CREW+10);
 assert.ok(inventory.amount(ts,"build")>=800);
-assert.ok(inventory.amount(ts,"food")>=beforeFood-.001,"remaining dedicated/general Food must disembark into colony stock");
+assert.equal(inventory.amount(ts,"food"),0,"founding must not turn ship Food into colony stock");
 assert.ok(inventory.amount(ts,"fuel")>=beforeFuel-.001,"remaining Fuel must disembark into colony stock");
-assert.equal(te.cargoAmount(ts),0);
-assert.equal(te.foodAmount(ts),0);
+assert.equal(te.transitFoodAmount(ts),beforeFood,"all dedicated/general-hold Food must remain aboard the landed ship");
+assert.equal(te.cargoAmount(ts),te.cargoCategory(ts,"food"),"only general-hold Food may remain after founding");
 assert.equal(te.fuelAmount(ts),0);
 assert.equal(te.ship(ts).crew,0);
 assert.equal(te.ship(ts).passengers,0);
 assert.equal(te.ship(ts).status,"docked");
 assert.equal(te.ship(ts).colonyId,entry.id);
+assert.equal(te.shipResidentCount(ts,te.ship(ts).id),Math.floor(ts.pop),"founders must remain resident aboard until manually moved ashore");
 
 // A travelling ship can be selected/rerouted from its live interpolated position using remaining supplies.
 const reroute=fresh(),rs=reroute.state,re=reroute.expansion;
@@ -180,6 +181,6 @@ assert.match(operational,/canAdjustHarvestIntensity/);
 assert.match(operational,/critical-resource-warning\.html/);
 assert.match(failure,/CORPORATION FAILED — CONTRACT DEFAULT/);
 assert.match(index,/id="starMapBtn"/);
-assert.match(portfolioSource,/ship\?\.foodLots/);
+assert.match(portfolioSource,/entry\?\.type!=="food"/,"expedition founding must keep every ship Food lot out of colony inventory");
 assert.equal(existsSync(new URL("../js/ui/ship-gameplay-extension.js",import.meta.url)),false,"temporary parallel ship gameplay controller must be removed");
 console.log("MineIT ShipExpansion gameplay regression test passed");

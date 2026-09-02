@@ -1,0 +1,16 @@
+<section class="exp-section emergency-ship-food" data-emergency-ship-food>
+  <div class="exp-section-head">
+    <h3>COLONY FOOD EXHAUSTED</h3>
+    <span>{{COLONY}} has no colony Food available.</span>
+  </div>
+  <div class="trade-colony-metrics">
+    <div class="trade-qmetric"><small>COLONY FOOD</small><strong class="bad">{{COLONY_FOOD}}</strong></div>
+    <div class="trade-qmetric"><small>{{SHIP}} FOOD</small><strong>{{SHIP_FOOD}}</strong></div>
+  </div>
+  <p>Authorise colonists to consume Food held aboard {{SHIP}}? Approval remains active until colony Food supply returns or the ship leaves.</p>
+  <p class="tiny warn">All Food aboard may be consumed. No return-journey reserve is protected automatically.</p>
+  <div class="exp-prep-actions">
+    <button data-emergency-food-decline>DECLINE</button>
+    <button class="action" data-emergency-food-approve>AUTHORISE SHIP FOOD</button>
+  </div>
+</section>

@@ -2,7 +2,7 @@
 
 **Progression stage:** 6 — Second Colony Establishment  
 **Type:** Bug fix and feature clarification  
-**Status:** Ready for Review
+**Status:** Complete
 
 ## Original backlog text
 
@@ -53,6 +53,10 @@ A resident assignment must remain valid across:
 7. No production code retains the fixed 180-person assumption.
 8. Save/load preserves valid accommodation assignments.
 
-## Review state
+## Implementation
 
-No unresolved product questions remain. Crew requirements and passenger transport rules outside accommodation allocation remain separate features.
+- The fixed landed-ship accommodation value has been removed; capacity is derived from canonical ship-class passenger and crew data.
+- Ship residents, planetary residents and homeless colonists are persisted as separate authoritative values and normalised during save migration.
+- The ship interface supports capacity-checked manual moves ashore and aboard and displays each accommodation pool separately.
+- Launching with residents still aboard warns the player but remains possible; confirmed launch leaves those residents homeless at the colony.
+- Behavioural regression coverage is provided by `tests/priority-colony-bug-fixes.test.js` and the strengthened expansion/save tests.

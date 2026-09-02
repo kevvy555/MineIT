@@ -1,11 +1,12 @@
 import { CONFIG } from "../core/config.js";
 import { ExpansionService } from "./expansion-service.js";
+import { ColonyService } from "./colony-service.js";
 import { awardCorporateExportVisit } from "./reputation-service.js";
 import { ensureSpaceport,hasFreeBerth } from "./spaceport-model.js";
 
 /** Canonical corporate trade service, including service radius and shared Spaceport berth rules. */
 export class TradeService {
-  constructor(resourceService,inventoryService){this.resources=resourceService;this.inventory=inventoryService;this.expansion=new ExpansionService(inventoryService,resourceService);}
+  constructor(resourceService,inventoryService,colonyService=null){this.resources=resourceService;this.inventory=inventoryService;this.colony=colonyService||new ColonyService(inventoryService,null);this.expansion=new ExpansionService(inventoryService,resourceService);}
   absoluteDay(state){return(Math.max(1,state.year)-1)*CONFIG.DAYS_PER_YEAR+Math.max(1,state.day);}
   serviceAvailable(state){return this.expansion.corporateServiceAvailable(state);}
   catalog(){return this.resources.catalog().map(def=>({key:this.inventory.key(def.type,def.id),type:def.type,resourceId:def.id,name:def.name,category:def.category,rarity:def.rarity,sellPrice:def.sellPrice})).sort((a,b)=>a.category.localeCompare(b.category)||a.name.localeCompare(b.name));}
@@ -46,14 +47,15 @@ export class TradeService {
   exportRemaining(state){return Math.max(0,this.exportCapacity(state)-(Number(state.trade.exportUsed)||0));}
   passengerRemaining(state){return Math.max(0,CONFIG.TRADE_PASSENGER_CAPACITY-(Number(state.trade.passengersUsed)||0));}
   pendingTransportPopulation(state){return(state.colony?.transportOrders||[]).reduce((sum,o)=>sum+Math.max(0,Number(o.amount)||0),0);}
-  colonistCapacity(state){return Math.max(0,Math.floor(Math.min(state.colony.housingCapacity,state.metrics.powerPopulationCap||state.colony.housingCapacity)-state.pop-this.pendingTransportPopulation(state)));}
-  colonistFoodSurplus(state){return(Number(state.metrics?.food)||0)-(Number(state.metrics?.foodDemand)||0);}
+  colonistCapacity(state){const planetaryCapacity=Number.isFinite(Number(state.colony?.housingBuildingCapacity))?Math.max(0,Number(state.colony.housingBuildingCapacity)):Math.max(0,Number(state.colony?.housingCapacity)||0),planetaryResidents=this.expansion.planetaryAccommodationResidentCount(state),supported=Math.min(planetaryCapacity,Number(state.metrics.powerPopulationCap)||planetaryCapacity);return Math.max(0,Math.floor(supported-planetaryResidents-this.pendingTransportPopulation(state)));}
+  colonistProjection(state,amount=0){return this.colony.foodForecast(state,{additionalPopulation:Math.max(0,Number(amount)||0),production:state.metrics?.food});}
+  colonistFoodSurplus(state){return this.colonistProjection(state).net;}
   colonistFoodSupportedCapacity(state){return Math.max(0,Math.floor(this.colonistFoodSurplus(state)/Math.max(.0001,CONFIG.FOOD_PER_COLONIST)));}
   colonistSafeCapacity(state){return Math.max(0,Math.min(this.colonistCapacity(state),this.passengerRemaining(state),this.colonistFoodSupportedCapacity(state)));}
-  colonistFoodSurplusAfter(state,amount){return this.colonistFoodSurplus(state)-Math.max(0,Number(amount)||0)*CONFIG.FOOD_PER_COLONIST;}
+  colonistFoodSurplusAfter(state,amount){return this.colonistProjection(state,amount).net;}
   colonistTransferCost(state,amount){return Math.round(Math.max(0,Number(amount)||0)*CONFIG.COLONIST_TRANSFER_COST*Math.max(.5,Number(state.contract.supportLoad)||1));}
   canTransferColonists(state,amount){const qty=Math.max(0,Math.floor(Number(amount)||0)),cost=this.colonistTransferCost(state,qty);if(!state.trade.active)return{ok:false,reason:"No corporate ship is docked.",qty,cost};if(state.status==="dead"||state.contract.ended)return{ok:false,reason:"This colony cannot receive colonists.",qty,cost};if(qty<=0)return{ok:false,reason:"No colonists selected.",qty,cost};if(this.passengerRemaining(state)<qty)return{ok:false,reason:`Only ${this.passengerRemaining(state)} passenger berths remain this visit.`,qty,cost};if(this.colonistCapacity(state)<qty)return{ok:false,reason:`Only ${this.colonistCapacity(state)} supported housing places remain after pending transports.`,qty,cost};if(state.company.cash<cost)return{ok:false,reason:"Insufficient cash for colonist transfer.",qty,cost};return{ok:true,qty,cost};}
-  transferColonists(state,amount){const r=this.canTransferColonists(state,amount);if(!r.ok)return r;state.company.cash-=r.cost;state.contract.localCosts=(state.contract.localCosts||0)+r.cost;state.pop+=r.qty;state.trade.passengersUsed=(Number(state.trade.passengersUsed)||0)+r.qty;return{ok:true,qty:r.qty,cost:r.cost,pop:state.pop};}
+  transferColonists(state,amount){const r=this.canTransferColonists(state,amount);if(!r.ok)return r;state.company.cash-=r.cost;state.contract.localCosts=(state.contract.localCosts||0)+r.cost;state.pop+=r.qty;state.colony.planetaryAccommodationResidents=this.expansion.planetaryAccommodationResidentCount(state)+r.qty;state.trade.passengersUsed=(Number(state.trade.passengersUsed)||0)+r.qty;return{ok:true,qty:r.qty,cost:r.cost,pop:state.pop};}
   scheduledAndSupported(state){if(!this.serviceAvailable(state))return false;const supported=["playing","holdover","liability"].includes(state.status),charterAllows=!state.contract.ended||state.status==="liability";return supported&&charterAllows&&!state.trade.active&&this.absoluteDay(state)>=state.trade.nextArrivalDay;}
   shouldArrive(state){
     ensureSpaceport(state);if(!this.scheduledAndSupported(state))return false;

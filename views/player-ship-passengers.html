@@ -1,5 +1,18 @@
 <section class="exp-section">
   <div class="exp-section-head">
+    <h3>COLONY ACCOMMODATION</h3>
+    <span>Residents remain aboard until you move them. Ship and planetary accommodation are separate.</span>
+  </div>
+  <div class="exp-passengers exp-people-grid">
+    <div><small>SHIP RESIDENTS</small><strong>{{SHIP_RESIDENTS}} / {{SHIP_ACCOMMODATION}}</strong><span>Class accommodation</span></div>
+    <div><small>PLANET RESIDENTS</small><strong>{{PLANET_RESIDENTS}} / {{PLANET_ACCOMMODATION}}</strong><span>{{HOMELESS}} homeless</span></div>
+    <button data-move-residents-ashore="10" {{ASHORE_DISABLED}}>ASHORE +10</button>
+    <button data-move-residents-ashore="max" {{ASHORE_DISABLED}}>ASHORE MAX</button>
+    <button data-move-residents-aboard="10" {{ABOARD_DISABLED}}>ABOARD +10</button>
+    <button data-move-residents-aboard="max" {{ABOARD_DISABLED}}>ABOARD MAX</button>
+  </div>
+  <p class="requirement warn" {{RESIDENT_WARNING_HIDDEN}}>Launching this ship requires confirmation because its colony residents will remain behind and become homeless.</p>
+  <div class="exp-section-head">
     <h3>CREW & COLONISTS</h3>
     <span>Crew operate the vessel; colonists are transported as passenger payload. Launch requires the class minimum crew.</span>
   </div>

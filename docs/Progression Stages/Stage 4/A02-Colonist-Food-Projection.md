@@ -2,7 +2,7 @@
 
 **Progression stage:** 4 — Production Expansion  
 **Type:** Bug fix  
-**Status:** Ready for Review
+**Status:** Complete
 
 ## Original backlog text
 
@@ -54,6 +54,9 @@ At minimum, the calculation receives:
 6. The player can proceed despite a deficit without a second warning.
 7. Regression coverage reproduces the original mismatch and proves the preview and simulation use the same result.
 
-## Review state
+## Implementation
 
-No unresolved product questions remain. Exact formatting and mobile layout may be resolved during implementation without changing the approved behaviour.
+- The colonist-order preview and live simulation now use the same `ColonyService` Food forecast.
+- The preview separates operational production, post-transfer consumption, daily balance, stored-Food duration and authorised emergency ship supplies.
+- Inactive production does not make the transfer appear safe, and a deficit remains visible without blocking the order.
+- Behavioural regression coverage is provided by `tests/priority-colony-bug-fixes.test.js`.

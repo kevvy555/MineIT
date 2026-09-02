@@ -61,7 +61,7 @@ export function createGameState(contract){
   normalizeTechnologyAcrossPortfolio(state);
   normalizeSurveyHistoryAcrossPortfolio(state);
   normalizeBuyerRoot(state);
-  state.version=13;
+  state.version=14;
   return state;
 }
 
@@ -71,6 +71,6 @@ export function normalizeState(state){
   normalizeTechnologyAcrossPortfolio(normalized);
   normalizeSurveyHistoryAcrossPortfolio(normalized);
   normalizeBuyerRoot(normalized);
-  normalized.version=13;
+  normalized.version=14;
   return normalized;
 }

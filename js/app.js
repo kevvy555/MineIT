@@ -52,7 +52,7 @@ class MineITApp {
     this.technology=new TechnologyService();
     this.collection=new CollectionService(this.resources,this.inventory,this.technology);
     this.colony=new ColonyService(this.inventory,this.technology);
-    this.trade=new TradeService(this.resources,this.inventory);
+    this.trade=new TradeService(this.resources,this.inventory,this.colony);
     this.buyers=new BuyerService(this.resources,this.inventory);
     this.events=new CorporateEventService(this.contracts,this.trade,this.buyers);
     this.land=new LandService();
@@ -193,7 +193,7 @@ class MineITApp {
     return true;
   }
 
-  pendingEventLabel(event){return event?.type==="ship"?"corporate ship":event?.type==="buyer"?"buyer collection":"contract decision";}
+  pendingEventLabel(event){return event?.type==="ship"?"corporate ship":event?.type==="buyer"?"buyer collection":event?.type==="emergency-food"?"emergency Food request":"contract decision";}
   switchColony(id,force=false){
     const pending=this.events.sort(this.state.company)[0];
     if(pending&&!force&&id!==pending.colonyId){this.ui.toast(`Resolve the pending ${this.pendingEventLabel(pending)} for ${pending.colonyName||"the current colony"} first.`);return false;}
@@ -273,7 +273,7 @@ class MineITApp {
   advanceColony(local,entryName){
     this.land.ensure(local);this.development.sync(local);
     if(!this.contracts.isOperating(local))return{discoveries:[],died:false};
-    const tickResult=this.engine.tick(local);this.engine.recalculate(local);this.logSimulationEvents(local,tickResult,entryName);
+    const tickResult=this.engine.tick(local);if(tickResult.emergencyFoodRequest){this.events.queueEmergencyFood(local,entryName,tickResult.emergencyFoodRequest);this.gameLog.event(local,"emergency-ship-food-request",`${entryName} exhausted colony Food and requested access to ${tickResult.emergencyFoodRequest.shipName}.`,{shipId:tickResult.emergencyFoodRequest.shipId,shipFood:tickResult.emergencyFoodRequest.amount},local.colonyId,entryName);}this.engine.recalculate(local);this.logSimulationEvents(local,tickResult,entryName);
     if(tickResult.colonyDied)return{discoveries:[],died:true,deaths:tickResult.deaths};
     const discoveries=local.contract.ended?[]:this.survey.tick(local);
     for(const tile of discoveries){
@@ -372,6 +372,10 @@ class MineITApp {
       if(!this.state.trade.active){this.events.remove(this.state.company,event);return this.processPendingCorporateEvent();}
       this.renderAll();this.tradeUI.open();return true;
     }
+    if(event.type==="emergency-food"){
+      const decision=this.engine.expansion.emergencyFoodDecision(this.state);if(decision.status!=="pending"||decision.shipId!==event.shipId){this.events.remove(this.state.company,event);return this.processPendingCorporateEvent();}
+      this.renderAll();void this.ui.emergencyShipFoodPrompt(event,action=>this.resolveEmergencyShipFood(event,action));return true;
+    }
     if(event.type==="contract"){
       const kind=event.kind||this.state.contract?.pendingDecision;
       if(!kind){this.events.remove(this.state.company,event);return this.processPendingCorporateEvent();}
@@ -380,6 +384,8 @@ class MineITApp {
     this.events.remove(this.state.company,event);return this.processPendingCorporateEvent();
   }
   processPendingShipEvent(){return this.processPendingCorporateEvent();}
+
+  resolveEmergencyShipFood(event,action){const result=action==="approve"?this.engine.expansion.authorizeEmergencyFood(this.state,event.shipId):this.engine.expansion.declineEmergencyFood(this.state,event.shipId);if(!result.ok){this.ui.toast(result.reason);return result;}this.ui.modal.classList.add("hidden");this.events.remove(this.state.company,event);this.engine.recalculate(this.state);this.gameLog.event(this.state,action==="approve"?"emergency-ship-food-approved":"emergency-ship-food-declined",action==="approve"?`${event.colonyName} may consume Food from ${event.shipName} until colony supply returns.`:`${event.colonyName} declined emergency Food from ${event.shipName}.`,{shipId:event.shipId,approved:action==="approve"});this.portfolio.captureActive(this.state,true);this.repo.save(this.state);this.continueCorporateEventQueue();return result;}
 
   enterBuyerContract(offerId){const result=this.buyers.enterContract(this.state,offerId,this.state.colonyId);if(!result.ok)return result;this.gameLog.event(this.state,"buyer-contract-entered",`${result.buyer.company} recurring contract established for ${formatNumberSafe(result.contract.quantity)} ${result.contract.resourceName} every ${result.contract.intervalDays} days.`,{contractId:result.contract.id,offerId,result:result.contract,buyerId:result.buyer.id});this.portfolio.captureActive(this.state,true);this.repo.save(this.state);return result;}
   cancelBuyerContract(contractId){const before=this.buyers.snapshotContract(this.state,contractId),result=this.buyers.cancelContract(this.state,contractId);if(!result.ok)return result;this.gameLog.event(this.state,"buyer-contract-cancelled",`${before?.buyer?.company||"Buyer"} contract cancelled by the player.`,{contractId,buyerId:before?.buyer?.id,cooldownUntilAbsoluteDay:result.cooldownUntilAbsoluteDay,happiness:result.relationship.happiness});this.portfolio.captureActive(this.state,true);this.repo.save(this.state);return result;}

@@ -1,7 +1,6 @@
 export const MAX_BUILDING_LEVEL=5;
 
 export const SHIP_INFRASTRUCTURE=Object.freeze({
-  housing:180,
   power:30,
   industry:50
 });
@@ -48,13 +47,14 @@ export function productionStopped(tile){return tile?.development?.productionStop
 export function operatingBuildings(state,kind=null){return localBuildings(state,kind).filter(tile=>tile.development.kind==="housing"||!productionStopped(tile));}
 export function builtCapacity(state,kind){return operatingBuildings(state,kind).reduce((sum,tile)=>sum+buildingCapacity(kind,tile.development.level),0);}
 export function maxBuiltLevel(state,kind){return localBuildings(state,kind).reduce((max,tile)=>Math.max(max,buildingLevel(tile.development)),0);}
+export function landedShipHousing(state){return(state?.company?.expansion?.ships||[]).filter(ship=>ship?.status==="docked"&&ship.colonyId===state?.colonyId).reduce((sum,ship)=>sum+Math.max(0,Number(ship.accommodationCapacity)||0),0);}
 
 export function syncBuildingTotals(state){
   state.colony||={};state.metrics||={};
   const builtHousing=builtCapacity(state,"housing"),builtPower=builtCapacity(state,"power"),builtIndustry=builtCapacity(state,"industry");
-  const housing=SHIP_INFRASTRUCTURE.housing+builtHousing,power=SHIP_INFRASTRUCTURE.power+builtPower,industry=SHIP_INFRASTRUCTURE.industry+builtIndustry;
+  const shipHousing=landedShipHousing(state),housing=shipHousing+builtHousing,power=SHIP_INFRASTRUCTURE.power+builtPower,industry=SHIP_INFRASTRUCTURE.industry+builtIndustry;
   Object.assign(state.colony,{
-    shipHousing:SHIP_INFRASTRUCTURE.housing,
+    shipHousing,
     shipPower:SHIP_INFRASTRUCTURE.power,
     shipIndustry:SHIP_INFRASTRUCTURE.industry,
     housingBuildingCapacity:builtHousing,

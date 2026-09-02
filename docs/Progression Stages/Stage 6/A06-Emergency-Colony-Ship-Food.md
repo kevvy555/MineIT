@@ -2,7 +2,7 @@
 
 **Progression stage:** 6 — Second Colony Establishment  
 **Type:** Bug fix and rule clarification  
-**Status:** Ready for Review
+**Status:** Complete
 
 ## Original backlog text
 
@@ -51,6 +51,9 @@ The authorisation must survive save/load while its conditions remain valid and m
 7. Save/load preserves a valid active authorisation.
 8. Regression coverage proves there is no phantom production.
 
-## Review state
+## Implementation
 
-No unresolved product questions remain. Food quantities and deficit effects continue to use the existing authoritative Food model.
+- Founding a colony now preserves Food aboard the colony ship instead of transferring or generating it as colony stock.
+- When colony Food is exhausted, the simulation creates a persisted corporate event and waits for explicit approval before consuming the selected landed ship's Food.
+- Approval, decline, colony-Food recovery, ship departure and save/load all reconcile the authorisation through the domain service.
+- Behavioural regression coverage is provided by `tests/priority-colony-bug-fixes.test.js` and the strengthened expansion/save tests.
