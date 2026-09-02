@@ -479,9 +479,23 @@ The initial recommendation was to preserve non-Headquarters values and fix corre
 - Exact facility curves, generator capacities, Spaceport consequences and installed-capacity upgrade gates remain to be approved.
 
 
+### Decision 25 — Occupancy-aware Housing, hybrid Industry and facility-family extraction demand
+
+- Housing has a small fixed facility demand by building level plus separate life-support demand for the planetary residents actually assigned ashore.
+- Ship residents remain excluded from both components: they do not occupy Housing and their support comes from ship supplies.
+- Industry has a small online idle demand plus a much larger variable demand based on its staffed operational capacity.
+- Stopped Industry contributes no installed operational capacity and consumes neither idle nor variable Power.
+- Understaffed Industry retains its online idle demand but its variable demand falls with staffed capacity.
+- Extraction and production Power demand is defined by canonical facility family rather than one shared curve or only the broad resource category.
+- Required facility families are Farm, Ranch, Bio facility, Algae facility, Quarry, Rig, Mine and Deep Mine.
+- Facility-family identity already exists canonically through extraction development metadata and must remain a domain concern, not be inferred by the UI.
+- Every family curve increases materially from L1 to L5.
+- Exact fixed Housing, Industry, facility-family and Power Plant tables remain proposed balance values until explicitly approved.
+
+
 ## Unresolved questions
 
-A08a now includes the full Power-economy rebalance. Shortage priority and Fuel-use basis are resolved. Remaining discovery must approve the facility-demand hierarchy details, Spaceport effects, final generation/demand curves and installed-capacity gates.
+A08a now includes the full Power-economy rebalance. Housing, Industry and facility-family demand models are resolved. Remaining discovery must define Spaceport effects and partial-shortage behaviour, then approve the proposed generation, demand and installed-capacity tables.
 
 ## Provisional acceptance criteria
 
