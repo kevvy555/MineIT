@@ -128,7 +128,7 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 - A deployed mine or other colony production site produces nothing when no colony Power is available.
 - The current demand, Food-consumption, accommodation-transfer and production calculations must be aligned with these ownership rules rather than treating all `state.pop` as planetary residents.
 - Existing A06 emergency ship-Food behaviour remains relevant for planetary residents seeking access to ship Food. Normal ship-resident consumption must be distinguished from that emergency transfer path.
-- The exact Power-capacity check for moving residents ashore remains unresolved. Decision 6 defines the existing 50 Industry baseline.
+- Decision 7 defines the authoritative projected Power check, warning and confirmation behaviour for moving residents ashore. Decision 6 defines the existing 50 Industry baseline.
 - Because these rules are required to establish the staff who operate Headquarters, they are currently treated as an A08a dependency. Final discovery will determine whether their implementation remains a coherent prerequisite within A08a or is captured as a linked independent backlog item.
 
 ### Decision 6 — Docked colony-ship Industry support
@@ -173,14 +173,14 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 - Additional Headquarters are command-expansion facilities rather than additional primaries.
 - Headquarters buildings support upgrades through the canonical building-development model.
 - Every upgrade level and every additional Headquarters must provide a defined gameplay purpose; duplicate low-level buildings and a higher-level primary must represent deliberate alternatives rather than empty duplication.
-- The benefit model, primary-selection rule, departure-gate relationship and staffing behaviour of expansion Headquarters remain to be decided.
+- Decisions 10 through 22 define the benefit model, Primary-selection rule, departure relationship, staffing, Power and emergency-command behaviour.
 - A08b must later reuse the same Primary Headquarters identity rather than inventing a second active-command selection.
 
 ### Decision 10 — Headquarters network, Primary selection and staffing
 
 - Upgraded and additional Headquarters provide command capacity tied to the colony's building expansion.
 - A larger or more developed building portfolio requires greater combined Headquarters capacity.
-- Staffed Headquarters also provide colony-efficiency benefits; the exact formula, stacking rule and cap remain to be decided.
+- Staffed Headquarters provide the colony-efficiency benefits defined by Decision 14.
 - This is intended to create gameplay pressure through construction resources, land use and permanent workforce reservation.
 - The first fully constructed and fully staffed Headquarters becomes Primary automatically.
 - The player can explicitly designate a different eligible Headquarters as Primary later.
@@ -200,13 +200,13 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 - Positive contributions use diminishing returns and a global cap.
 - An understaffed Headquarters contributes neither capacity nor positive efficiency.
 - Over-capacity penalty and positive Headquarters bonus are separately visible and combine through one authoritative domain calculation.
-- Exact facility weights, capacity values, penalty curve, bonus scope and bonus cap remain to be balanced.
+- Decisions 12 through 14 define the facility scope, exact weights, capacities, penalty curve, bonus scope and cap.
 
 ### Decision 12 — Temporary ship command, facility scope and efficiency scope
 
 - The docked founding colony ship provides temporary command capacity equal to an L1 Headquarters.
 - Its temporary command capacity is replaced when a fully constructed and staffed Primary Headquarters becomes operational; ship and Primary capacity do not stack.
-- After replacement, the ship does not normally regain or add command capacity merely because it remains docked or later returns. Decision 16 introduces an emergency management transfer when the Primary is demolished; the qualifying ship types and A08a/A08b implementation boundary remain to be finalised.
+- After replacement, the ship does not normally regain or add command capacity merely because it remains docked or later returns. Decisions 16 through 18 define emergency management transfer, qualifying ship capability and the A08a/A08b boundary.
 - Every player-built operational facility consumes command capacity except Headquarters buildings and the fixed Basic Spaceport.
 - Command load is differentiated by facility type and level: Housing is lighter, while Industry and advanced production/extraction are heavier.
 - Headquarters efficiency applies to extraction and Food/Fuel/Build production, industrial processing and surveying speed.
@@ -308,7 +308,7 @@ Combined factor:
 - After handover, loss of the Primary causes major colony disruption and severe efficiency penalties.
 - If a qualifying ship is docked when the Primary is lost, colony management transfers to that ship temporarily. When that ship leaves without an eligible replacement Primary, the colony returns to the same disrupted state as a Headquarters-destroyed colony.
 - The outage, disruption and penalty lifecycle belongs to A08b rather than the initial A08a departure gate. A08a must preserve the canonical Primary identity and command-capability state needed by A08b.
-- Which ship classes can provide emergency management, and whether the emergency-transfer mechanics themselves are implemented now or deferred wholly to A08b, remain unresolved.
+- Decisions 17 and 18 define qualifying command-capable ships and assign immediate emergency transfer to A08a while preserving the longer outage lifecycle for A08b.
 
 
 
@@ -381,7 +381,7 @@ Combined factor:
 - A qualifying crewed ship automatically takes over whenever the Primary is non-operational because it is missing, incomplete, understaffed or not receiving its required operational Power.
 - Power remains excluded from first-departure eligibility: an unpowered but fully constructed and fully staffed Primary does not block launch.
 - If launch removes the only qualifying command ship while the Primary remains non-operational, the colony immediately loses ship command and applies the no-command state.
-- The Headquarters operational Power-demand progression remains the final unresolved numeric rule.
+- Decision 22 defines the Headquarters operational Power-demand progression and allocation priority.
 
 
 ### Decision 22 — Light Headquarters operational Power curve and priority
@@ -476,7 +476,7 @@ The initial recommendation was to preserve non-Headquarters values and fix corre
 - Players may stop Power Plant production through the existing canonical control to remove both its generation and Fuel burn.
 - Fuel shortage reduces the generation actually available from the online fleet; unserved generation capacity cannot supply downstream consumers.
 - Fuel consumption must be zero when no Power Plant is online, correcting the current behaviour that can burn Fuel against demand with zero generation.
-- Exact facility curves, generator capacities, Spaceport consequences and installed-capacity upgrade gates remain to be approved.
+- Decisions 26 and 27 define and approve the facility curves, generator capacities, Spaceport consequences and installed-generation upgrade gates.
 
 
 ### Decision 25 — Occupancy-aware Housing, hybrid Industry and facility-family extraction demand
@@ -490,7 +490,7 @@ The initial recommendation was to preserve non-Headquarters values and fix corre
 - Required facility families are Farm, Ranch, Bio facility, Algae facility, Quarry, Rig, Mine and Deep Mine.
 - Facility-family identity already exists canonically through extraction development metadata and must remain a domain concern, not be inferred by the UI.
 - Every family curve increases materially from L1 to L5.
-- Exact fixed Housing, Industry, facility-family and Power Plant tables remain proposed balance values until explicitly approved.
+- Decision 27 approves the fixed Housing, Industry, facility-family and Power Plant tables.
 
 
 ### Decision 26 — Spaceport priority and proportional partial-Power operation
@@ -563,18 +563,125 @@ The representative colony contains one full same-level Housing building, one ful
 Fuel burn uses the deployed Power technology's existing intensity curve of 0.10/0.085/0.070/0.050/0.035 multiplied by complete online generation capacity. One baseline same-level Fuel site can therefore sustain one same-level Power Plant before resource quality, terrain, workforce, Industry and Power-delivery effects.
 
 
-## Unresolved questions
+### Decision 28 — Fuel-day sequencing, existing-save transition and visible Power network
 
-All generation, demand and installed-generation gate values are approved. Remaining discovery must define Fuel production timing, existing-save transition behaviour and final Power-network presentation before consolidation for final review.
+- Daily available generation is calculated from online Power Plant capacity and Fuel stored at the beginning of that simulation day.
+- Required Fuel equals complete online generation capacity multiplied by the colony's deployed Power-technology Fuel intensity.
+- When beginning-of-day Fuel is insufficient, the available-generation factor equals stored Fuel divided by required Fuel; delivered generation capacity is reduced by that factor and the available Fuel is consumed.
+- When Fuel is sufficient, every online plant burns for its complete capacity even if colony demand is lower; unused generated capacity is wasted.
+- With no online Power Plant, Fuel burn and colony generation are both zero.
+- Fuel produced during the current day is added after generation Fuel has been resolved and becomes available from the next day. A colony with no stored Fuel therefore cannot self-start a Fuel facility without importing or otherwise obtaining Fuel.
+- Forecasts and UI values must use the same day-sequencing rules and clearly distinguish beginning-of-day stored Fuel from projected new production.
+- Existing saves adopt every new generation and demand curve immediately at their saved game speed.
+- Existing colonies receive no grace period, free Power, free Fuel or grandfathered building values.
+- Save migration still marks all pre-A08a colony command handovers complete under Decision 17.
+- The normal Power presentation always shows online capacity, Fuel-limited available generation, total requested demand, delivered Power and shortage by priority band, full-capacity Fuel burn, actual Fuel consumed and unused generation.
+- Each facility detail shows requested Power, delivered Power, priority band and resulting operating factor.
+- Warnings identify the exact limiting cause: no online generation, insufficient Fuel, insufficient capacity, or a higher-priority band consuming the available supply.
 
-## Provisional acceptance criteria
+## Discovery outcome
 
-These criteria contain only the scope already established by the user and will be completed after discovery.
+Discovery is complete. No product questions remain open. The item remains **In Discovery** until the user explicitly approves this complete specification. Approval will change the detailed file and master backlog to **Approved**; implementation will begin only after that approval and a subsequent **In Progress** update.
 
-1. A colony ship docked at the first colony cannot launch until the dedicated Headquarters is fully constructed and minimally staffed.
-2. The same rule applies to every later colony established by a colony ship.
-3. A failed gate identifies each missing applicable requirement.
-4. Corporate-home departures and genuine in-transit reroutes are not incorrectly gated as colony departures.
-5. The UI and launch mutation consume the same authoritative domain calculation.
-6. Ships contribute no colony Power in old or new saves, while all state required by the construction and staffing gate is preserved or correctly derived.
-7. Behavioural regression coverage includes the first colony, a later colony, each failure reason, successful launch and stale-UI/bypass protection.
+## Canonical implementation ownership
+
+- `BUILDING_MODEL` and `DevelopmentService` own Headquarters, Housing, Power and Industry static definitions, placement, costs, levels and normal building mutation.
+- Canonical extraction-family metadata and `SiteService` own facility-family Power demand and installed-generation upgrade requirements.
+- `ColonyService` owns Headquarters staffing, command load/capacity/efficiency and the complete priority-band Power assessment.
+- `SimulationEngine` consumes the authoritative Power assessment, sequences beginning-of-day Fuel burn before same-day production, and applies delivered factors to survival, production and processing.
+- `ExpansionService` owns founding-ship identity, one-time command handover, command-capable ship assessment and the authoritative launch rejection.
+- Save normalization owns migration defaults for Primary identity, command handover and ship capability/state without persisting values that can be derived from canonical buildings, residents, crew and inventory.
+- UI modules render the canonical Headquarters, command and Power assessments and dispatch domain actions. They must not reconstruct eligibility, allocation, forecasts or penalties.
+
+## Final acceptance criteria
+
+### Headquarters construction, progression and identity
+
+1. Headquarters is a dedicated canonical building type with L1-L5 costs, capacities, staff, Power and bonuses exactly as approved in Decisions 13-15, 22 and 27.
+2. Headquarters has no technology gate and uses normal revealed, empty, buildable tile placement, terrain cost and resource-covering rules.
+3. Headquarters construction and upgrades use the current immediate canonical lifecycle while exposing an explicit construction-complete predicate compatible with future A05a work.
+4. A colony may build multiple Headquarters but has at most one explicitly stored Primary identity.
+5. The first fully constructed and fully staffed Headquarters becomes Primary automatically; later Primary changes require an explicit action and an eligible target.
+6. Primary identity is visibly marked on the map, in building details and in command status.
+
+### Staffing and command network
+
+7. Headquarters staffing is allocated before ordinary workforce and is all-or-nothing per facility.
+8. Staffing order is Primary first, then highest-level eligible expansions, with stable tile identity/order breaking ties and insufficient expansions skipped.
+9. Staff reserved for Headquarters cannot satisfy production or another Headquarters simultaneously.
+10. Facility command load, Headquarters capacity and minimum staffing use the exact Decision 13 tables.
+11. Stopped intact facilities continue to consume command load; demolished or canonically exhausted facilities do not.
+12. Command overload and positive Headquarters bonus use the exact Decision 14 formulas, diminishing returns and caps.
+13. Production/extraction, Industry processing and surveying consume the same authoritative command-efficiency factor; excluded systems remain unaffected.
+
+### Colony establishment, residents and temporary ship infrastructure
+
+14. Ships contribute zero colony Power in new and migrated saves.
+15. The colony-establishment ship contributes 50 Industry only while it is actually docked at the colony it founded; unrelated ships contribute none unless future canonical class metadata explicitly says otherwise.
+16. Residents assigned to ship accommodation consume ship supplies and are excluded from planetary Housing, life-support Power and workforce calculations.
+17. Resident transfer ashore is always explicit, requires Housing and a fully powered Spaceport service, blocks at zero colony generation, and warns before a confirmed transfer that creates a projected shortage.
+18. A confirmed warned transfer moves the requested residents subject to Housing capacity and creates the real projected shortage; cancellation changes nothing.
+
+### First-departure gate
+
+19. Every newly founded colony records its founding colony ship and begins with command handover pending.
+20. Only that founding ship's first departure from that colony is gated; unrelated ships, corporate-home departures, arrivals, orbit actions and in-transit reroutes are exempt.
+21. The gated departure requires the explicitly selected Primary Headquarters to be fully constructed and fully staffed independently; expansion Headquarters cannot substitute or pool staff.
+22. Headquarters Power and Spaceport Power do not block the gated departure.
+23. Missing Headquarters requirements alone leave Launch enabled. The authoritative launch action rejects without mutation and returns all applicable structured failures, including missing Primary, incomplete construction and required/current staff.
+24. A successful first gated departure persists handover complete. Later visits and departures are not retrapped by A08a.
+25. `ExpansionService.launch()` rechecks the complete authoritative assessment so stale UI state or direct action cannot bypass the gate.
+
+### Primary loss and emergency ship command
+
+26. Primary demolition is allowed only after a confirmation previews the resulting command source, capacity, load, bonus, overload and efficiency.
+27. Only a docked ship with explicit command capability and at least its class minimum crew can provide emergency management; colony ships have the capability by default.
+28. A qualifying ship automatically takes over whenever the Primary is missing, incomplete, understaffed or lacks its required operational Power.
+29. Temporary ship management provides 16 command capacity, no positive bonus and no colony Power; it does not copy the lost Primary's level.
+30. Without an operational Primary or qualifying ship, expansion Headquarters disconnect, reserve no staff and provide no capacity or bonus; zero capacity applies the maximum 50-point command penalty.
+31. Immediate takeover, disconnection and command-efficiency effects belong to A08a. Conglomerate restrictions, daily degradation and ten-day recovery remain A08b.
+
+### Rebalanced Power economy
+
+32. Power Plant generation, Housing fixed demand, planetary support, Headquarters demand, Spaceport demand, Industry idle/variable demand and every facility-family demand use the exact approved Decision 27 tables and formulas.
+33. Industry variable demand is based on staffed operational capacity; stopped Industry consumes no idle or variable Power.
+34. Installed-generation extraction upgrade gates use the exact family-specific Decision 27c table and the same authoritative online-capacity calculation used by the Power network.
+35. Power allocation order is Headquarters, planetary Housing/life support, Food/Fuel operations and their Industry support, Spaceport services, then commercial Industry and Build/Ore operations.
+36. Ordinary consumers share shortages proportionally inside their band and scale throughput by delivered fraction; zero delivered Power produces zero output.
+37. Headquarters and Spaceport binary requirements release unusable partial allocation to the next band.
+38. An unpowered mine or other planetary facility produces and processes nothing, correcting the current extraction bypass.
+39. The Spaceport requires its full 10 Power for trade, cargo, passenger/accommodation transfer and Engineering Ship services, but never blocks arrival or emergency departure.
+40. Online generation burns Fuel against complete capacity using the deployed 0.10/0.085/0.070/0.050/0.035 intensity curve, regardless of lower demand.
+41. Fuel shortage proportionally reduces available generation; no online plant means no generation and no Fuel burn.
+42. Only beginning-of-day stored Fuel powers that day's generation; same-day production becomes available next day.
+
+### Persistence, migration and presentation
+
+43. Pre-A08a colonies migrate with handover complete; only subsequently founded colonies begin pending.
+44. Existing saves immediately use the new curves at their saved speed without grace resources or grandfathered values.
+45. Primary identity, handover and ship capability/crew/location state survive save/load and portfolio switching; derived allocation and efficiency are recomputed rather than duplicated.
+46. The always-visible Power status exposes capacity, Fuel-limited generation, demand/delivery/shortage by band, Fuel burn/consumption and unused generation.
+47. Headquarters and facility details expose Primary/expansion state, construction, required/reserved staff, required/delivered Power, command contribution, priority and operating factor.
+48. Every rejection and warning names the precise missing or limiting condition and displays current versus required/projected values.
+
+## Required behavioural regression coverage
+
+- First colony and later-colony first departures: missing Primary, incomplete Primary, understaffed Primary, unpowered but otherwise eligible Primary, success, persisted completion and stale-assessment recheck.
+- Exempt ship actions: unrelated freight ship, corporate-home launch, arrival/orbit and in-transit reroute.
+- Primary selection, reassignment, demolition confirmation/cancellation and save/load.
+- Deterministic Headquarters staff and Power priority with multiple levels, ties, shortages and portfolio switching.
+- Command load/capacity, diminishing bonuses, overload curve, zero-capacity penalty and affected/excluded operations.
+- Emergency takeover for eligible/ineligible, crewed/under-crewed and docked/non-docked ships, including removal on departure.
+- Removal of ship Power, conditional founding-ship Industry and correct ship-resident exclusion from planetary consumption/workforce.
+- Resident transfer: manual-only, Housing failure, Spaceport failure, zero generation, warned shortage confirm/cancel and authoritative projected values.
+- Every approved generation/demand/facility/gate value at L1-L5.
+- Priority-band allocation, proportional partial throughput, zero-Power production shutdown and binary Headquarters/Spaceport release behaviour.
+- Full online-capacity Fuel burn, unused-capacity waste, Fuel shortage scaling, no-generator zero burn and next-day availability of same-day Fuel production.
+- Existing-save migration at saved speed and new-colony pending handover.
+- UI/domain ownership tests proving presentations consume structured domain assessments rather than duplicating formulas.
+- Focused relevant test commands and the complete suite required by `AGENTS.md`.
+- Package and visible application versions incremented together only during approved implementation.
+
+## Implementation gate
+
+No source code, gameplay values, tests or versions may be changed until the user explicitly approves this complete A08a specification. After approval, status changes to **Approved**, then to **In Progress** immediately before implementation. **Complete** requires implementation, focused and full-suite verification, save/migration coverage, version increments, documentation updates, commit and push on `feature/next-priority-items`.
