@@ -87,9 +87,18 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 - Headquarters identity must be canonical building data, not UI state or a player-applied label.
 - Any future alternative or higher-tier command facility will qualify only if its canonical definition explicitly identifies it as an approved Headquarters replacement.
 
+### Decision 2 — Headquarters Power priority
+
+- Headquarters is a protected priority Power load.
+- Its canonical building definition will specify a fixed required Power demand.
+- Headquarters counts as powered whenever the colony's currently available generation can supply that full demand, even if remaining generation cannot satisfy every other colony load.
+- A wider colony brownout therefore does not make Headquarters non-operational when its own full demand is covered.
+- Headquarters is unpowered when available generation is below its required demand; a partial proportional allocation does not satisfy the departure gate.
+- The authoritative calculation must allocate Headquarters Power before applying the existing shared shortage factor to remaining loads. The UI must consume the resulting operational assessment rather than interpret the general colony `powerFactor`.
+
 ## Unresolved questions
 
-Questions will be worked through one at a time. The next question is how Headquarters receives Power when the colony has an aggregate Power network rather than per-building allocation. Later questions will cover construction completion, staffing allocation, post-departure projection, which ships/departures are gated, balance values and presentation of multiple failures.
+Questions will be worked through one at a time. The next question is whether the departure gate evaluates the colony's projected state after the selected ship leaves, excluding that ship's infrastructure and departing people. Later questions will cover construction completion, staffing allocation, which ships/departures are gated, balance values and presentation of multiple failures.
 
 ## Provisional acceptance criteria
 
