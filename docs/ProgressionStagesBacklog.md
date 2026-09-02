@@ -125,7 +125,7 @@ For traceability, references beginning with **A** correspond to the first number
 
 ### In Discovery
 
-- **A08a — Operational Headquarters departure gate.** Prevent a colony ship from leaving a colony until an approved Headquarters replacement is fully constructed, receiving its required Power and staffed to its defined minimum. **Status: In Discovery.** [Detailed specification](./Progression%20Stages/Stage%206/A08a-Operational-Headquarters-Departure-Gate.md)
+- **A08a — Operational Headquarters departure gate.** Prevent a colony ship from leaving a colony until a dedicated Headquarters is fully constructed and staffed to its defined minimum; ships provide no colony Power or Industry. **Status: In Discovery.** [Detailed specification](./Progression%20Stages/Stage%206/A08a-Operational-Headquarters-Departure-Gate.md)
 
 ### Ready for Review
 
@@ -399,7 +399,7 @@ For traceability, references beginning with **A** correspond to the first number
 1. **Food behaviour:** A06 defines the authoritative colony-versus-ship Food source rules. A02 must read the same domain Food calculation used by the live simulation.
 2. **Ship capability data:** A07 and A22b require canonical ship-class accommodation, drive, tank-capacity and consumption-rate fields.
 3. **Navigation and ship control:** A09/B06a and B03a must share route, ship-state and Fuel-preview services before later fleet automation and recurring logistics.
-4. **Headquarters state:** A08a requires authoritative construction, Power and staffing eligibility for colony-ship departure. A08b separately owns network-service restrictions, outage degradation and recovery state with save/load support.
+4. **Headquarters state:** A08a requires authoritative construction and staffing eligibility for colony-ship departure and removes ship-provided colony Power/Industry. A08b separately owns network-service restrictions, Headquarters outage degradation and recovery state with save/load support.
 5. **Veyrite condition:** N01 extends A22b but remains a separate maintained-drive system rather than another Fuel.
 6. **Gas-giant production:** N02 provides a later source of atmospheric feedstock and manufactured Fusion Fuel. It does not block the first A22b release because Fuel can be purchased from the conglomerate.
 7. **Corporation reporting:** A12 should precede B02 and A23.
