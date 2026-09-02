@@ -248,9 +248,34 @@ Additional rules:
 - Command load follows the current facility level immediately after placement, upgrade, demolition, depletion or other canonical level/state change.
 - Stopped but intact facilities continue to create administrative command load; demolished facilities do not. Depleted extraction sites stop contributing when their developed facility ceases to operate under the canonical depletion lifecycle.
 
+### Decision 14 — Command overload and positive efficiency formulas
+
+Over-capacity penalty:
+
+- `overloadRatio = max(0, commandLoad / commandCapacity - 1)`.
+- `overloadPenalty = min(0.50, overloadRatio * 0.50)`.
+- Every 10% that load exceeds capacity therefore removes 5 percentage points of efficiency.
+- The penalty is capped at 50 percentage points.
+- When command capacity is zero and command load is positive, the maximum 50-point overload penalty applies.
+
+Positive Headquarters bonus:
+
+- Each fully staffed Headquarters has a raw bonus equal to 2 percentage points per Headquarters level.
+- Staffed Headquarters are ordered by raw contribution from highest to lowest for diminishing-return calculation.
+- The strongest contribution counts at 100%, the second at 50%, the third at 25%, and every later contribution at 12.5%.
+- The combined positive Headquarters bonus is capped at 15 percentage points.
+- The temporary founding-ship command centre provides no positive Headquarters bonus.
+
+Combined factor:
+
+- `commandEfficiency = clamp(1 + headquartersBonus - overloadPenalty, 0, 1.15)`.
+- Extraction/production output, industrial processing and survey speed consume this same factor.
+- The positive bonus and overload penalty are shown separately alongside the combined effective percentage.
+- Calculations use unrounded values; the UI may round percentages for display.
+
 ## Unresolved questions
 
-Discovery questions may now be asked in batches of up to three at the user's request. The current batch defines the over-capacity penalty curve, positive Headquarters bonus formula and whether temporary ship command grants a positive bonus. Later questions will cover construction and upgrade costs, technology gates, placement, Primary change restrictions, migration, scope split and failure presentation.
+Discovery questions may now be asked in batches of up to three at the user's request. The current batch defines Headquarters technology gating, construction/upgrade costs and placement. Later questions will cover Primary change restrictions, demolition, migration, scope split, failure presentation and test boundaries.
 
 ## Provisional acceptance criteria
 
