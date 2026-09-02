@@ -369,9 +369,24 @@ Combined factor:
 - `ExpansionService.launch()` remains the final authority even if the UI's earlier assessment becomes stale.
 
 
+### Decision 21 — Deterministic Headquarters staffing and operational takeover
+
+- Headquarters workforce allocation is deterministic and all-or-nothing per facility because a partially staffed Headquarters contributes nothing.
+- The Primary Headquarters receives the first opportunity to reserve its full level-specific minimum.
+- Eligible expansion Headquarters are then considered from highest level to lowest level; an expansion that cannot be fully staffed is skipped.
+- Equal-level expansions use stable tile identity/order as the tie-breaker, so save/load and portfolio switching cannot change allocation.
+- Headquarters staffing is assessed before ordinary extraction, production and processing workforce.
+- A docked command-capable ship must carry at least its canonical ship-class minimum crew before it can manage the colony.
+- An empty or under-crewed ship provides no temporary command capacity and does not prevent no-command disruption.
+- A qualifying crewed ship automatically takes over whenever the Primary is non-operational because it is missing, incomplete, understaffed or not receiving its required operational Power.
+- Power remains excluded from first-departure eligibility: an unpowered but fully constructed and fully staffed Primary does not block launch.
+- If launch removes the only qualifying command ship while the Primary remains non-operational, the colony immediately loses ship command and applies the no-command state.
+- The Headquarters operational Power-demand progression remains the final unresolved numeric rule.
+
+
 ## Unresolved questions
 
-The departure gate and presentation are resolved. The final operational edge cases are Headquarters workforce priority during shortage, the staffing requirement for temporary command ships and the conditions that trigger emergency takeover.
+All behavioural rules are resolved except the numeric Headquarters operational Power demand by level. Power does not gate launch, but it determines ongoing Primary operation and emergency ship takeover.
 
 ## Provisional acceptance criteria
 
