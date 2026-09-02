@@ -50,7 +50,7 @@ export class ColonyService{
     for(const row of ordered){if(!row.constructed||remaining<row.requiredStaff)continue;row.staffed=true;row.staff=row.requiredStaff;remaining-=row.requiredStaff;reserved+=row.requiredStaff;if(!state.colony.primaryHeadquartersId&&!state.colony.primaryHeadquartersEver){state.colony.primaryHeadquartersId=row.id;state.colony.primaryHeadquartersEver=true;}}
     return{rows,available,reserved,remaining,primaryId:state.colony.primaryHeadquartersId||null};
   }
-  headquartersBonus(rows){const active=[...rows].filter(row=>row.staffed&&row.powered).sort((a,b)=>b.level-a.level||a.id.localeCompare(b.id));let sum=0;for(let i=0;i<active.length;i++)sum+=tierValue([1,.5,.25,.125],i+1)*active[i].level*HEADQUARTERS_BONUS_PER_LEVEL;return Math.min(HEADQUARTERS_BONUS_CAP,sum);}
+  headquartersBonus(rows){const active=[...rows].filter(row=>row.staffed&&row.powered).sort((a,b)=>b.level-a.level||a.id.localeCompare(b.id));let sum=0;for(let i=0;i<active.length;i++){const diminishing=i===0?1:i===1?.5:i===2?.25:.125;sum+=diminishing*active[i].level*HEADQUARTERS_BONUS_PER_LEVEL;}return Math.min(HEADQUARTERS_BONUS_CAP,sum);}
   commandLoad(state){
     let load=0;for(const tile of Object.values(state.tiles||{})){const dev=tile.development;if(!dev||tile.depleted||dev.kind==="headquarters")continue;let weight=0;if(dev.kind==="housing")weight=HEADQUARTERS_COMMAND_LOAD.housing;else if(dev.kind==="power")weight=HEADQUARTERS_COMMAND_LOAD.power;else if(dev.kind==="industry")weight=HEADQUARTERS_COMMAND_LOAD.industry;else if(dev.kind==="extract")weight=tile.type==="ore"?HEADQUARTERS_COMMAND_LOAD.ore:(HEADQUARTERS_COMMAND_LOAD[tile.type]||2);load+=weight*tierValue([1,2,3,4,5],dev.level);}
     return load;
