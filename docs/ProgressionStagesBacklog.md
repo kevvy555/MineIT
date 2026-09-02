@@ -123,9 +123,13 @@ For traceability, references beginning with **A** correspond to the first number
 - **A06 — Emergency use of landed colony-ship Food.** Prevent phantom production, consume colony Food first and require explicit approval before a colony can consume Food held by a landed player ship. **Status: Complete.** [Detailed specification](./Progression%20Stages/Stage%206/A06-Emergency-Colony-Ship-Food.md)
 - **A07 — Ship and colony accommodation allocation.** Use ship-class capacity and provide fully manual movement between ship accommodation and colony housing, including warned launch into homelessness. **Status: Complete.** [Detailed specification](./Progression%20Stages/Stage%206/A07-Ship-Accommodation-Allocation.md)
 
+### In Discovery
+
+- **A08a — Operational Headquarters departure gate.** Prevent a colony ship from leaving a colony until an approved Headquarters replacement is fully constructed, receiving its required Power and staffed to its defined minimum. **Status: In Discovery.** [Detailed specification](./Progression%20Stages/Stage%206/A08a-Operational-Headquarters-Departure-Gate.md)
+
 ### Ready for Review
 
-- **A08 — Operational Headquarters gate.** Require a constructed, powered and staffed command facility before departure, with defined network and efficiency consequences for later outages. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/A08-Operational-Headquarters.md)
+- **A08b — Headquarters outage and recovery.** Apply conglomerate-network restrictions, progressive colony-efficiency loss and ten-day recovery after an established Headquarters becomes non-operational. This item was split from A08 and retains its previously agreed decisions. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/A08b-Headquarters-Outage-And-Recovery.md)
 - **A09 and B06a — System map and planetary navigation.** Support planet selection, rerouting, time-and-Fuel-consuming in-system travel, colonisation and temporary landings from a shared system map. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/A09-B06a-System-Navigation.md)
 - **B03a — Global ship management.** Provide a persistent global ship list and state-aware controls for navigation, journey preview, crew and accommodation. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/B03a-Global-Ship-Management.md)
 - **A22b — Spacecraft Fuel system.** Introduce separate Propellant and Fusion Fuel tanks, compatible drives, averaged distance consumption, spaceport refuelling, warned under-fuelled journeys, stranding and rescue. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/A22b-Spacecraft-Fuel-System.md)
@@ -395,7 +399,7 @@ For traceability, references beginning with **A** correspond to the first number
 1. **Food behaviour:** A06 defines the authoritative colony-versus-ship Food source rules. A02 must read the same domain Food calculation used by the live simulation.
 2. **Ship capability data:** A07 and A22b require canonical ship-class accommodation, drive, tank-capacity and consumption-rate fields.
 3. **Navigation and ship control:** A09/B06a and B03a must share route, ship-state and Fuel-preview services before later fleet automation and recurring logistics.
-4. **Headquarters state:** A08 requires authoritative Power, staffing, network-service and colony-efficiency state with save/load support.
+4. **Headquarters state:** A08a requires authoritative construction, Power and staffing eligibility for colony-ship departure. A08b separately owns network-service restrictions, outage degradation and recovery state with save/load support.
 5. **Veyrite condition:** N01 extends A22b but remains a separate maintained-drive system rather than another Fuel.
 6. **Gas-giant production:** N02 provides a later source of atmospheric feedstock and manufactured Fusion Fuel. It does not block the first A22b release because Fuel can be purchased from the conglomerate.
 7. **Corporation reporting:** A12 should precede B02 and A23.
