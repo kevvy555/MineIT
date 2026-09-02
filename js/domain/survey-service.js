@@ -16,7 +16,7 @@ export class SurveyService {
   enqueue(state,x,y){if(!this.surveyable(state,x,y))return{ok:false,active:false,reason:"Sector cannot currently be surveyed."};state.scanQueue.push({x,y});this.fill(state);return{ok:true,active:this.isActive(state,x,y),resurvey:this.isActive(state,x,y)?!!state.scans.find(s=>s.x===x&&s.y===y)?.resurvey:this.isResurveyable(state,x,y)};}
   enqueueMany(state,cells){const seen=new Set();let count=0;for(const cell of cells){const k=`${cell.x},${cell.y}`;if(seen.has(k))continue;seen.add(k);if(this.surveyable(state,cell.x,cell.y)){state.scanQueue.push({x:cell.x,y:cell.y});count++;}}this.fill(state);return count;}
   tick(state){
-    if(state.contract?.ended)return[];this.fill(state);const completed=[];for(const scan of state.scans)scan.remaining--;
+    if(state.contract?.ended)return[];this.fill(state);const completed=[],continuity=clamp(Number(state.metrics?.headquartersContinuityFactor??1),0,1);for(const scan of state.scans)scan.remaining-=continuity;
     for(const scan of state.scans.filter(s=>s.remaining<=0)){
       const before=this.world.get(state,scan.x,scan.y),previousResourceId=before?.resourceId||null,tile=this.world.reveal(state,scan.x,scan.y,scan.scanningLevel||this.scanningLevel(state));
       if(scan.resurvey&&tile?.development?.kind==="extract")tile.resourceCovered=false;

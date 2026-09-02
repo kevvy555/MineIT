@@ -55,9 +55,9 @@ export class V55UIMixin {
     this.populateTransportCard(root);this.bindTransportCard(root);anchor.before(fragment);
   }
   populateTransportCard(card){
-    const supported=this.transport?.availableCapacity(this.state)||0,orders=this.transport?.ensure(this.state)||[],blocked=this.state.contract.ended||this.state.status==="liability";
+    const supported=this.transport?.availableCapacity(this.state)||0,orders=this.transport?.ensure(this.state)||[],network=this.transport?.networkStatus(this.state)||{networkAvailable:true},blocked=this.state.contract.ended||this.state.status==="liability"||!network.networkAvailable,blockedReason=!network.networkAvailable?"Conglomerate network offline — existing transports continue, but new requests require an operational Primary Headquarters.":"This colony cannot receive new colonists.";
     this.setViewText(card,"[data-transport-days]",CONFIG.DEDICATED_TRANSPORT_DAYS);this.setViewText(card,"[data-transport-supported]",formatNumber(supported));this.setViewText(card,"[data-transport-pending]",formatNumber(this.transport.pendingPopulation(this.state)));
-    this.populateTransportOrders(card,orders);card.querySelector("[data-transport-blocked]").hidden=!blocked;card.querySelector("[data-transport-controls]").hidden=blocked;
+    this.populateTransportOrders(card,orders);card.querySelector("[data-transport-blocked]").hidden=!blocked;card.querySelector("[data-transport-blocked]").textContent=blockedReason;card.querySelector("[data-transport-controls]").hidden=blocked;
     if(!blocked)this.configureTransportControls(card,supported);
   }
   populateTransportOrders(card,orders){

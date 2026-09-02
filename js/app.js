@@ -52,8 +52,9 @@ class MineITApp {
     this.technology=new TechnologyService();
     this.collection=new CollectionService(this.resources,this.inventory,this.technology);
     this.colony=new ColonyService(this.inventory,this.technology);
+    this.technology.colonyService=this.colony;
     this.trade=new TradeService(this.resources,this.inventory,this.colony);
-    this.buyers=new BuyerService(this.resources,this.inventory);
+    this.buyers=new BuyerService(this.resources,this.inventory,this.colony);
     this.events=new CorporateEventService(this.contracts,this.trade,this.buyers);
     this.land=new LandService();
     this.development=new DevelopmentService(this.inventory,this.land,this.colony);
@@ -63,7 +64,7 @@ class MineITApp {
     this.engine=new SimulationEngine(this.resources,this.technology,this.collection,this.trade,this.inventory,this.colony);
     this.portfolio=new PortfolioService();
     this.gameLog=new GameLogService();
-    this.transport=new TransportService();
+    this.transport=new TransportService(this.colony);
     this.icons=new ResourceIcons();
 
     const saved=this.repo.load();

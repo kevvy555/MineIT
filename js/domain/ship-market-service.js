@@ -11,7 +11,8 @@ const absoluteDay=state=>(Math.max(1,Number(state.year)||1)-1)*CONFIG.DAYS_PER_Y
 
 /** Owns MineIT-specific ship quotes, orders, payment, cancellation and delivery. */
 export class ShipMarketService{
-  constructor(catalogue,expansion){this.catalogue=catalogue;this.expansion=expansion;}
+  constructor(catalogue,expansion,colonyService=null){this.catalogue=catalogue;this.expansion=expansion;this.colonyService=colonyService;}
+  networkStatus(state){if(!this.colonyService?.headquartersContinuity)return{networkAvailable:true};return this.colonyService.headquartersContinuity(state);}
 
   ensure(state){
     state.company||={};
@@ -47,10 +48,11 @@ export class ShipMarketService{
 
   canOrder(state,shipClassId,colonyId){
     const quote=this.quote(state,shipClassId);if(!quote.ok)return quote;
+    const network=this.networkStatus(state);if(!network.networkAvailable)return{ok:false,reason:"Conglomerate network offline: restore the Primary Headquarters before placing a new factory ship order.",quote,network};
     if(!quote.shipClass.specifications?.vectorExchangeCapable)return{ok:false,reason:"This in-system-only class is visible in the catalogue but local-system ship operations are not available yet.",quote};
     const colony=this.deliveryColonies(state).find(item=>item.id===colonyId);if(!colony)return{ok:false,reason:"Select a living owned colony for delivery.",quote};
     if(Math.max(0,Number(state.company?.cash)||0)<quote.price)return{ok:false,reason:`Need cc ${Math.round(quote.price).toLocaleString()} operating cash to place this order.`,quote,colony};
-    return{ok:true,quote,colony};
+    return{ok:true,quote,colony,network};
   }
 
   placeOrder(state,shipClassId,colonyId,{signatureAccepted=false}={}){

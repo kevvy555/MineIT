@@ -95,6 +95,26 @@ export class ColonyService{
     return{...staffing,rows,reserved,remaining,power,primary,primaryOperational,source,activeHeadquarters:active,capacity:hqCapacity,load,overloadRatio:overload,overloadPenalty:penalty,bonus,efficiency,commandEfficiency:efficiency,disconnected:!source};
   }
   commandStatus(state,options={}){return this.headquartersNetwork(state,options);}
+  absoluteDay(state){return(Math.max(1,Number(state.year)||1)-1)*CONFIG.DAYS_PER_YEAR+Math.max(1,Number(state.day)||1);}
+  normalizeHeadquartersContinuity(state){
+    state.colony||={};const current=state.colony.headquartersOutage&&typeof state.colony.headquartersOutage==="object"?state.colony.headquartersOutage:{};
+    const phase=["online","outage","recovery"].includes(current.phase)?current.phase:"online",date=value=>value===null||value===undefined||value===""?null:Number.isFinite(Number(value))?Math.max(1,Math.floor(Number(value))):null;
+    state.colony.headquartersOutage={phase,penalty:clamp(Number(current.penalty)||0,0,1),offlineDays:Math.max(0,Math.floor(Number(current.offlineDays)||0)),outageStartedAbsoluteDay:date(current.outageStartedAbsoluteDay),outageStartPenalty:clamp(Number(current.outageStartPenalty)||0,0,1),recoveryStartedAbsoluteDay:date(current.recoveryStartedAbsoluteDay),recoveryInitialPenalty:clamp(Number(current.recoveryInitialPenalty)||0,0,1),recoveryDaysElapsed:Math.max(0,Math.min(10,Math.floor(Number(current.recoveryDaysElapsed)||0))),recoveryDaysRemaining:Math.max(0,Math.min(10,Math.floor(Number(current.recoveryDaysRemaining)||0))),lastOutageDays:Math.max(0,Math.floor(Number(current.lastOutageDays)||0))};
+    return state.colony.headquartersOutage;
+  }
+  headquartersContinuity(state,{command=null,fuelStock=null}={}){
+    const continuity=this.normalizeHeadquartersContinuity(state),now=this.absoluteDay(state),assessment=command||this.headquartersNetwork(state,{fuelStock}),established=state.colony?.commandHandoverComplete===true,primaryOperational=assessment.primaryOperational===true;
+    if(continuity.phase==="outage"){
+      const started=continuity.outageStartedAbsoluteDay||now,elapsed=Math.max(0,now-started);continuity.outageStartedAbsoluteDay=started;continuity.offlineDays=elapsed;continuity.penalty=clamp((continuity.outageStartPenalty||.10)+elapsed*.01,0,1);
+    }else if(continuity.phase==="recovery"){
+      const started=continuity.recoveryStartedAbsoluteDay||now,elapsed=Math.max(0,Math.min(10,now-started)),initial=clamp(continuity.recoveryInitialPenalty||continuity.penalty,0,1);continuity.recoveryStartedAbsoluteDay=started;continuity.recoveryInitialPenalty=initial;continuity.recoveryDaysElapsed=elapsed;continuity.recoveryDaysRemaining=Math.max(0,10-elapsed);continuity.penalty=clamp(initial*(1-elapsed/10),0,1);if(elapsed>=10)Object.assign(continuity,{phase:"online",penalty:0,recoveryStartedAbsoluteDay:null,recoveryInitialPenalty:0,recoveryDaysElapsed:0,recoveryDaysRemaining:0});
+    }
+    if(!established){Object.assign(continuity,{phase:"online",penalty:0,offlineDays:0,outageStartedAbsoluteDay:null,outageStartPenalty:0,recoveryStartedAbsoluteDay:null,recoveryInitialPenalty:0,recoveryDaysElapsed:0,recoveryDaysRemaining:0});}
+    else if(!primaryOperational&&continuity.phase!=="outage")Object.assign(continuity,{phase:"outage",penalty:Math.max(.10,continuity.penalty),offlineDays:0,outageStartedAbsoluteDay:now,outageStartPenalty:Math.max(.10,continuity.penalty),recoveryStartedAbsoluteDay:null,recoveryInitialPenalty:0,recoveryDaysElapsed:0,recoveryDaysRemaining:0});
+    else if(primaryOperational&&continuity.phase==="outage"){const loss=continuity.penalty;Object.assign(continuity,{phase:loss>0?"recovery":"online",lastOutageDays:continuity.offlineDays,recoveryStartedAbsoluteDay:loss>0?now:null,recoveryInitialPenalty:loss,recoveryDaysElapsed:0,recoveryDaysRemaining:loss>0?10:0});}
+    const factor=clamp(1-continuity.penalty,0,1),networkAvailable=!established||primaryOperational;
+    return{...continuity,established,primaryOperational,networkAvailable,efficiencyFactor:factor,downTools:factor<=.000001,command:assessment,effectiveCommandEfficiency:clamp((assessment.efficiency??1)*factor,0,1.15),reason:networkAvailable?continuity.phase==="recovery"?"Headquarters restored; operational efficiency is recovering.":"Headquarters network online.":assessment.source?.type==="ship"?"Primary Headquarters offline; emergency ship command cannot access the conglomerate network.":"Primary Headquarters offline; conglomerate network unavailable."};
+  }
   setPrimaryHeadquarters(state,tile){
     const id=tileId(state,tile),staffing=this.headquartersStaffing(state),row=staffing.rows.find(item=>item.id===id);
     if(!row?.constructed||!row.staffed)return{ok:false,reason:"Primary Headquarters must be fully constructed and staffed."};
