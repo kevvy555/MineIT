@@ -175,8 +175,7 @@ class MineITApp {
   demolishDevelopment(tile){
     const before=tile.development?{...tile.development}:null,preview=this.development.demolishPreview?.(this.state,tile);
     if(preview?.requiresConfirmation){
-      const projected=this.colony.commandStatus(this.state);
-      if(!confirm("Demolish the Primary Headquarters? Current command capacity is "+Math.round(projected.capacity)+" with "+Math.round(projected.load)+" command load and "+Math.round((projected.efficiency||1)*100)+"% efficiency. Expansion HQs will not become Primary automatically."))return false;
+      const projected=preview;if(!confirm("Demolish the Primary Headquarters? Projected command capacity is "+Math.round(projected.projectedCapacity??0)+" with "+Math.round(projected.projectedLoad??0)+" command load and "+Math.round((projected.projectedEfficiency||1)*100)+"% efficiency. Expansion HQs will not become Primary automatically."))return false;
     }
     const r=this.development.demolish(this.state,tile);
     if(!r.ok){this.ui.toast(r.reason);return false;}
