@@ -125,7 +125,7 @@ For traceability, references beginning with **A** correspond to the first number
 
 ### In Discovery
 
-- **A08a — Operational Headquarters departure gate.** Prevent a colony ship from leaving a colony until a dedicated Headquarters is fully constructed and staffed to its defined minimum; ships provide no colony Power, the colony-establishment ship provides 50 Industry only while docked, ship residents use ship support, and unpowered planetary facilities cannot operate. **Status: In Discovery.** [Detailed specification](./Progression%20Stages/Stage%206/A08a-Operational-Headquarters-Departure-Gate.md)
+- **A08a — Operational Headquarters departure gate.** Prevent a colony ship from leaving a colony until a dedicated Headquarters is fully constructed and staffed to its defined minimum; add the Headquarters command network and emergency ship takeover; remove ship-provided colony Power; make founding-ship Industry conditional on docking; separate ship-supported residents from planetary demand; and rebalance the authoritative Power generation, consumption, Fuel-use and shortage curves. **Status: In Discovery.** [Detailed specification](./Progression%20Stages/Stage%206/A08a-Operational-Headquarters-Departure-Gate.md)
 
 ### Ready for Review
 
