@@ -273,9 +273,31 @@ Combined factor:
 - The positive bonus and overload penalty are shown separately alongside the combined effective percentage.
 - Calculations use unrounded values; the UI may round percentages for display.
 
+
+### Decision 15 — Economically gated Headquarters progression and placement
+
+- Headquarters construction and upgrades have no technology gate.
+- Headquarters may progress from L1 through L5 whenever the canonical placement or upgrade action's other requirements are satisfied.
+- A08a introduces no Headquarters technology-tree entry and no Industry-capacity prerequisite for Headquarters construction or upgrades.
+- Headquarters use the following Build and Ore costs; an upgrade pays the row for its target level:
+
+| Target Headquarters level | Build | Ore |
+|---|---:|---:|
+| L1 construction | 90 | 0 |
+| L2 | 170 | 25 |
+| L3 | 300 | 65 |
+| L4 | 510 | 130 |
+| L5 | 850 | 240 |
+
+- The canonical action consumes these resources from colony inventory and applies the existing terrain construction-cost multiplier where the normal building model applies it.
+- Headquarters may be constructed on any tile that satisfies the normal local-building placement rules: revealed, empty and buildable, excluding lake tiles and the fixed Spaceport tile.
+- Building over a revealed resource follows the same resource-covering behaviour and confirmation rules as other local buildings.
+- Construction is immediate under Decision 4; later upgrades likewise use the current canonical building-development lifecycle.
+
+
 ## Unresolved questions
 
-Discovery questions may now be asked in batches of up to three at the user's request. The current batch defines Headquarters technology gating, construction/upgrade costs and placement. Later questions will cover Primary change restrictions, demolition, migration, scope split, failure presentation and test boundaries.
+Discovery questions may now be asked in batches of up to three at the user's request. The current batch defines Primary eligibility, the multiple-Headquarters departure check and Primary demolition behaviour. Later questions will cover migration, scope split, failure presentation and test boundaries.
 
 ## Provisional acceptance criteria
 
