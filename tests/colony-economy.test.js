@@ -14,7 +14,7 @@ import { SimulationEngine } from "../js/domain/simulation-engine.js";
 
 const contracts=new ContractService(),resources=new ResourceService(),inventory=new InventoryService(resources),tech=new TechnologyService();
 const world=new WorldService(resources,contracts),collection=new CollectionService(resources,inventory,tech),colony=new ColonyService(inventory,tech),sites=new SiteService(contracts,tech,inventory,colony,resources),trade=new TradeService(resources,inventory),engine=new SimulationEngine(resources,tech,collection,trade,inventory,colony);
-const state=createGameState(contracts.first());state.colony.shipAccommodation={};state.tiles["0,0"]={x:0,y:0,terrain:"plain",revealed:true,developed:true,development:{kind:"power",level:1,investedBuild:40,investedOre:0}};state.tiles["0,1"]={x:0,y:1,terrain:"plain",revealed:true,developed:true,development:{kind:"industry",level:1,investedBuild:80,investedOre:0}};tech.recompute(state);engine.recalculate(state);
+const state=createGameState(contracts.first());state.colony.shipAccommodation={};state.tiles["0,0"]={x:0,y:0,terrain:"plain",revealed:true,developed:true,name:"Power Plant",development:{kind:"power",level:1,investedBuild:40,investedOre:0}};state.tiles["0,1"]={x:0,y:1,terrain:"plain",revealed:true,developed:true,name:"Industry",development:{kind:"industry",level:1,investedBuild:80,investedOre:0}};tech.recompute(state);engine.recalculate(state);
 assert.deepEqual(state.company.tech,{housing:1,power:1,food:1,industry:1,mining:1,scanning:1});
 assert.deepEqual(state.colony.tech,{housing:1,power:1,food:1,industry:1,mining:1,scanning:1});
 assert.equal(state.contract.colonyTier,1);assert.equal(state.contract.techAccess,"direct");
@@ -30,7 +30,7 @@ const buildBefore=inventory.amount(state,"build"),cashBeforeDevelop=state.compan
 state.tiles["1,1"]=stone;
 
 const rowsBefore=collection.current(state).filter(row=>row.tile?.resourceId);assert.equal(rowsBefore.length,1);assert.equal(rowsBefore[0].stock,0);
-engine.tick(state);const rowsAfter=collection.current(state).filter(row=>row.tile?.resourceId);console.log("A08A DEBUG ECON",JSON.stringify({rows:rowsAfter,metrics:state.metrics,stone}));assert.ok(rowsAfter[0].stock>0,"collection popup stock should rise after collection");
+engine.tick(state);const rowsAfter=collection.current(state).filter(row=>row.tile?.resourceId);assert.ok(rowsAfter[0].stock>0,"collection popup stock should rise after collection");
 
 const foodBefore=inventory.amount(state,"food"),fuelBefore=inventory.amount(state,"fuel"),oreBefore=inventory.amount(state,"ore");
 for(let i=0;i<10;i++)engine.tick(state);
