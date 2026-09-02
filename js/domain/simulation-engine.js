@@ -6,7 +6,7 @@ import { changeReputation } from "./reputation-service.js";
 
 /** Canonical colony simulation engine, including expansion travel and same-tick network refresh. */
 export class SimulationEngine{
-  constructor(resourceService,technologyService,collectionService,tradeService,inventoryService,colonyService){Object.assign(this,{resources:resourceService,technology:technologyService,collection:collectionService,trade:tradeService,inventory:inventoryService,colony:colonyService});this.expansion=new ExpansionService(inventoryService,resourceService);this.shipMarket=new ShipMarketService(universeShipCatalogue,this.expansion);}
+  constructor(resourceService,technologyService,collectionService,tradeService,inventoryService,colonyService){Object.assign(this,{resources:resourceService,technology:technologyService,collection:collectionService,trade:tradeService,inventory:inventoryService,colony:colonyService});this.expansion=new ExpansionService(inventoryService,resourceService);this.expansion.colonyService=colonyService;this.shipMarket=new ShipMarketService(universeShipCatalogue,this.expansion);}
   updateNetworks(state,sites,fuelStock=null){
     Object.assign(state.metrics,this.colony.workforceNetwork(state,sites),this.colony.industryNetwork(state,sites));
     const command=this.colony.headquartersNetwork(state,{fuelStock}),power=command.power||this.colony.powerNetwork(state,{fuelStock}),powerFactors={};
