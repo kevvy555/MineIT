@@ -14,7 +14,7 @@ import { SimulationEngine } from "../js/domain/simulation-engine.js";
 
 const contracts=new ContractService(),resources=new ResourceService(),inventory=new InventoryService(resources),tech=new TechnologyService();
 const world=new WorldService(resources,contracts),collection=new CollectionService(resources,inventory,tech),colony=new ColonyService(inventory,tech),sites=new SiteService(contracts,tech,inventory,colony,resources),trade=new TradeService(resources,inventory),engine=new SimulationEngine(resources,tech,collection,trade,inventory,colony);
-const state=createGameState(contracts.first());tech.recompute(state);engine.recalculate(state);
+const state=createGameState(contracts.first());state.colony.shipAccommodation={};state.tiles["0,0"]={x:0,y:0,terrain:"plain",revealed:true,developed:true,development:{kind:"power",level:1,investedBuild:40,investedOre:0}};tech.recompute(state);engine.recalculate(state);
 assert.deepEqual(state.company.tech,{housing:1,power:1,food:1,industry:1,mining:1,scanning:1});
 assert.deepEqual(state.colony.tech,{housing:1,power:1,food:1,industry:1,mining:1,scanning:1});
 assert.equal(state.contract.colonyTier,1);assert.equal(state.contract.techAccess,"direct");
