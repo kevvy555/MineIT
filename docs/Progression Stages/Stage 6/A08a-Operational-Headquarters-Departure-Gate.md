@@ -176,9 +176,23 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 - The benefit model, primary-selection rule, departure-gate relationship and staffing behaviour of expansion Headquarters remain to be decided.
 - A08b must later reuse the same Primary Headquarters identity rather than inventing a second active-command selection.
 
+### Decision 10 — Headquarters network, Primary selection and staffing
+
+- Upgraded and additional Headquarters provide command capacity tied to the colony's building expansion.
+- A larger or more developed building portfolio requires greater combined Headquarters capacity.
+- Staffed Headquarters also provide colony-efficiency benefits; the exact formula, stacking rule and cap remain to be decided.
+- This is intended to create gameplay pressure through construction resources, technology progression, land use and permanent workforce reservation.
+- The first Headquarters constructed becomes Primary automatically.
+- The player can explicitly designate a different eligible Headquarters as Primary later.
+- Primary identity is persisted per colony and must be visibly marked wherever Headquarters are shown.
+- Every Headquarters reserves its own minimum workforce.
+- An understaffed Headquarters contributes no expansion capacity or efficiency benefit.
+- The Primary Headquarters must independently satisfy A08a's minimum staffing departure gate; expansion staffing cannot be pooled to make an understaffed Primary operational.
+- The model must make one upgraded Headquarters and several low-level expansions meaningful alternatives without allowing cheap Headquarters spam to dominate.
+
 ## Unresolved questions
 
-Discovery questions may now be asked in batches of up to three at the user's request. The current batch defines the gameplay purpose of additional/upgraded Headquarters, the Primary Headquarters selection rule and staffing for expansion Headquarters. Later questions will cover departure eligibility with multiple Headquarters, placement, numeric balance, migration, scope split and failure presentation.
+Discovery questions may now be asked in batches of up to three at the user's request. The current batch defines over-capacity behaviour, command-load calculation and efficiency-bonus stacking. Later questions will cover placement, numeric level balance, Primary eligibility/change restrictions, migration, scope split and failure presentation.
 
 ## Provisional acceptance criteria
 
