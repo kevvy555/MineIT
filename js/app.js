@@ -56,7 +56,7 @@ class MineITApp {
     this.buyers=new BuyerService(this.resources,this.inventory);
     this.events=new CorporateEventService(this.contracts,this.trade,this.buyers);
     this.land=new LandService();
-    this.development=new DevelopmentService(this.inventory,this.land);
+    this.development=new DevelopmentService(this.inventory,this.land,this.colony);
     this.world=new WorldService(this.resources,this.contracts,this.land);
     this.sites=new SiteService(this.contracts,this.technology,this.inventory,this.colony,this.resources);
     this.survey=new SurveyService(this.world,this.contracts);
@@ -173,15 +173,19 @@ class MineITApp {
   }
 
   demolishDevelopment(tile){
-    const before=tile.development?{...tile.development}:null,r=this.development.demolish(this.state,tile);
+    const before=tile.development?{...tile.development}:null,preview=this.development.demolishPreview?.(this.state,tile);
+    if(preview?.requiresConfirmation){
+      const projected=this.colony.commandStatus(this.state);
+      if(!confirm("Demolish the Primary Headquarters? Current command capacity is "+Math.round(projected.capacity)+" with "+Math.round(projected.load)+" command load and "+Math.round((projected.efficiency||1)*100)+"% efficiency. Expansion HQs will not become Primary automatically."))return false;
+    }
+    const r=this.development.demolish(this.state,tile);
     if(!r.ok){this.ui.toast(r.reason);return false;}
     this.prepareActive();
-    this.gameLog.event(this.state,"land-development-demolished",`${this.development.label(before?.kind)} at ${tile.x},${tile.y} demolished.`,{x:tile.x,y:tile.y,kind:before?.kind,level:before?.level,recoveredBuild:r.recover});
+    this.gameLog.event(this.state,"land-development-demolished",this.development.label(before?.kind)+" at "+tile.x+","+tile.y+" demolished.",{x:tile.x,y:tile.y,kind:before?.kind,level:before?.level,recoveredBuild:r.recover,primary:!!preview?.primary});
     this.ui.modal.classList.add("hidden");this.ui.tilePanel.classList.add("hidden");this.repo.save(this.state);this.renderAll();
-    this.ui.toast(`Development demolished${r.recover?` • ${r.recover} Build recovered`:""}.`);
+    this.ui.toast("Development demolished"+(r.recover?" • "+r.recover+" Build recovered":"")+".");
     return true;
   }
-
   addColony(contract){
     if(this.state.company.pendingEvents?.length){this.ui.toast("Resolve the pending corporate event first.");return false;}
     if(this.state.company.gameOver){this.ui.toast("This corporation has ended. Start a new corporation to continue.");return false;}
