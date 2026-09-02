@@ -181,7 +181,7 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 - Upgraded and additional Headquarters provide command capacity tied to the colony's building expansion.
 - A larger or more developed building portfolio requires greater combined Headquarters capacity.
 - Staffed Headquarters also provide colony-efficiency benefits; the exact formula, stacking rule and cap remain to be decided.
-- This is intended to create gameplay pressure through construction resources, technology progression, land use and permanent workforce reservation.
+- This is intended to create gameplay pressure through construction resources, land use and permanent workforce reservation.
 - The first fully constructed and fully staffed Headquarters becomes Primary automatically.
 - The player can explicitly designate a different eligible Headquarters as Primary later.
 - Primary identity is persisted per colony and must be visibly marked wherever Headquarters are shown.
@@ -322,7 +322,7 @@ Combined factor:
 - The migration does not retroactively gate an established colony's next ship departure or require reconstructing a founding-ship identity that old saves did not preserve.
 - Only colonies founded after the migrated save is loaded begin with command handover pending and record their founding colony ship.
 - Save/load must preserve command handover, Primary identity and the ship/colony relationship used by the authoritative command assessment.
-- The user selected A08a to own emergency takeover and disruption. The exact meaning of “disruption” still requires clarification because absorbing A08b's already-separated network restrictions, progressive degradation and ten-day recovery would conflict with the original scope instruction.
+- A08a owns immediate emergency takeover and no-command disruption. A08b remains separate and owns conglomerate restrictions, progressive daily degradation and ten-day recovery, as settled by Decision 18.
 
 
 
@@ -352,12 +352,26 @@ Combined factor:
 - The UI presents those projected consequences in a confirmation warning.
 - Confirming rechecks and performs the demolition; cancelling makes no state change.
 - If a command-capable ship is docked, the preview includes its temporary 16 capacity and zero positive bonus.
-- The presentation of missing Headquarters launch requirements remains unresolved because the latest answer may overturn the defining first-departure gate and requires explicit clarification.
+- Headquarters requirements still block the actual first departure; Decision 20 defines how the enabled Launch action presents the rejection.
+
+
+### Decision 20 — Enabled Launch action with authoritative Headquarters rejection
+
+- A missing, incomplete or understaffed Primary Headquarters continues to block the founding colony ship's first actual departure.
+- Missing Headquarters requirements alone do not disable the Launch control.
+- When the player presses Launch, the authoritative domain action rechecks the complete launch assessment and rejects the departure without mutating ship, colony, Fuel, Food or handover state.
+- The rejection presents every applicable Headquarters failure rather than only the first one.
+- Structured Headquarters failures distinguish at least: no eligible Primary selected, Primary construction incomplete, and Primary staff below its level-specific minimum.
+- An understaffed failure displays the required and currently reserved staff values.
+- Headquarters Power is never included in the A08a launch failures.
+- There is no confirmation override for a failed Headquarters handover.
+- Existing non-Headquarters launch rules retain their current authoritative checks and presentation unless implementation requires a shared structured-reason model to avoid duplicated eligibility logic.
+- `ExpansionService.launch()` remains the final authority even if the UI's earlier assessment becomes stale.
 
 
 ## Unresolved questions
 
-The no-command penalty and destructive-action warning are resolved. One defining clarification remains: whether a missing or understaffed Primary still blocks the founding colony ship's first departure, or whether only the Launch button presentation was being corrected.
+The departure gate and presentation are resolved. The final operational edge cases are Headquarters workforce priority during shortage, the staffing requirement for temporary command ships and the conditions that trigger emergency takeover.
 
 ## Provisional acceptance criteria
 
