@@ -29,6 +29,7 @@ export class UIController extends ResourceDevelopmentUIController{
 
   localBuildingData(tile){
     const dev=tile.development,kind=dev.kind,level=developmentLevel(dev),label=this.development.label(kind),terrain=this.land.terrainLabel(tile.terrain),capacity=this.development.contribution(kind,level),totals=this.colony.totals(this.state),next=this.development.canUpgrade(this.state,tile),max=level>=MAX_LEVEL||next.max,nextLevel=max?level:next.nextLevel||level+1,nextCapacity=this.development.contribution(kind,nextLevel),gain=Math.max(0,nextCapacity-capacity),cost=max?null:this.development.cost(this.state,tile,kind,nextLevel),buildStock=this.inventory.amount(this.state,"build"),oreStock=this.inventory.amount(this.state,"ore"),techRequired=max?level:next.techRequired||nextLevel,currentTech=this.development.techLevel(this.state,kind),covered=tile.resourceCovered&&tile.resourceId?`${tile.name} • Q${formatNumber(tile.quality||0)}`:null;
+     const primary=kind==="headquarters"&&this.state.colony?.primaryHeadquartersId===Object.entries(this.state.tiles||{}).find(([,value])=>value===tile)?.[0];
     let overview=[];
     if(kind==="housing"){
       const total=Math.max(0,totals.housing||0),occupied=Math.max(0,Number(this.state.pop)||0),free=Math.max(0,total-occupied);
