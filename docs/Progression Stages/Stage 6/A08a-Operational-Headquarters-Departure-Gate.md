@@ -100,9 +100,20 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 - This decision intentionally overrides the Power condition in the initial A08a scope. The original backlog wording remains preserved above.
 - A08b remains separate and retains its previously documented post-departure Power-outage rules pending its own later review.
 
+### Decision 3 — Automatic priority Headquarters staffing
+
+- Headquarters has a fixed minimum workforce requirement in its canonical building definition.
+- The workforce network automatically reserves that minimum for Headquarters before allocating workforce to extraction and other production.
+- Reserved Headquarters workers cannot simultaneously satisfy another workforce requirement.
+- If total available workforce is below the Headquarters minimum, the facility is understaffed and the departure gate blocks launch.
+- Headquarters staffing is derived from canonical available workforce and priority, not stored as a separate manual assignment.
+- Crew and passengers are removed from colony population when loaded, so the staffing assessment naturally uses only people remaining at the colony.
+- Conditions that reduce available workforce to zero, including colony loss or the existing starvation rule, also leave Headquarters understaffed.
+- The reserved minimum reduces free workforce and may reduce lower-priority production capacity through the existing workforce-network calculation.
+
 ## Unresolved questions
 
-Questions will be worked through one at a time. The next question is how Headquarters minimum staffing is supplied. Later questions will cover construction completion, which ships/departures are gated, staffing and construction balance values, and presentation of multiple failures.
+Questions will be worked through one at a time. The next question is whether Headquarters uses the existing immediate construction lifecycle or introduces its own timer before A05a. Later questions will cover which ships/departures are gated, Headquarters count and placement, staffing/construction balance values, initial colony infrastructure after ship contributions are removed, and presentation of multiple failures.
 
 ## Provisional acceptance criteria
 
