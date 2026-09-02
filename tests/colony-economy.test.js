@@ -30,7 +30,7 @@ const buildBefore=inventory.amount(state,"build"),cashBeforeDevelop=state.compan
 state.tiles["1,1"]=stone;
 
 const rowsBefore=collection.current(state).filter(row=>row.tile?.resourceId);assert.equal(rowsBefore.length,1);assert.equal(rowsBefore[0].stock,0);
-engine.tick(state);const rowsAfter=collection.current(state).filter(row=>row.tile?.resourceId);assert.ok(rowsAfter[0].stock>0,"collection popup stock should rise after collection");
+engine.tick(state);const rowsAfter=collection.current(state).filter(row=>row.tile?.resourceId);console.log("A08A DEBUG ECON",JSON.stringify({rows:rowsAfter,metrics:state.metrics,stone}));assert.ok(rowsAfter[0].stock>0,"collection popup stock should rise after collection");
 
 const foodBefore=inventory.amount(state,"food"),fuelBefore=inventory.amount(state,"fuel"),oreBefore=inventory.amount(state,"ore");
 for(let i=0;i<10;i++)engine.tick(state);
