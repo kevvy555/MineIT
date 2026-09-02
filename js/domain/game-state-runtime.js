@@ -89,6 +89,7 @@ export function createGameState(contract){
 }
 
 export function normalizeState(state){
+  const previousVersion=Number(state?.version)||0;
   const normalized=Base.normalizeState(state);
   expansion.ensure(normalized);
   normalizeTechnologyAcrossPortfolio(normalized);
