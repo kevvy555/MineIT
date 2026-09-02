@@ -29,7 +29,7 @@ state.company.cash=1e9;state.company.tech.mining=2;state.colony.tech.mining=2;te
 const buildBefore=inventory.amount(state,"build"),cashBeforeDevelop=state.company.cash;const developed=sites.develop(state,stone);assert.equal(developed.ok,true);assert.ok(inventory.amount(state,"build")<buildBefore);assert.equal(state.company.cash,cashBeforeDevelop,"local extraction construction must not spend corporate cash");
 state.tiles["1,1"]=stone;
 
-const rowsBefore=collection.current(state).filter(row=>row.resourceId);console.log("A08A DEBUG BEFORE",JSON.stringify(rowsBefore));assert.equal(rowsBefore.length,1);assert.equal(rowsBefore[0].stock,0);
+const rowsBefore=collection.current(state).filter(row=>row.resourceId==="stone");assert.equal(rowsBefore.length,1);assert.equal(rowsBefore[0].stock,0);
 engine.tick(state);const rowsAfter=collection.current(state).filter(row=>row.resourceId);assert.ok(rowsAfter[0].stock>0,"collection popup stock should rise after collection");
 
 const foodBefore=inventory.amount(state,"food"),fuelBefore=inventory.amount(state,"fuel"),oreBefore=inventory.amount(state,"ore");
