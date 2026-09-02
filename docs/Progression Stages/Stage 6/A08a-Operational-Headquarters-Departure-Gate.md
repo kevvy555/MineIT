@@ -506,11 +506,11 @@ The initial recommendation was to preserve non-Headquarters values and fix corre
 - Headquarters remain all-or-nothing under Decision 22 because partial command Power contributes nothing.
 - The Spaceport is also a binary service consumer: if its complete fixed demand cannot be met, its restricted services remain offline and the unused partial allocation is released to the next band.
 
-## Proposed rebalanced Power tables — awaiting approval
+## Approved rebalanced Power tables
 
-These values implement the agreed hierarchy and are documentation proposals only. They do not change gameplay until the complete specification is approved and implemented.
+These values are approved A08a balance decisions. They do not change gameplay until the complete A08a specification is approved and implemented.
 
-### Generation and non-extraction demand
+### Decision 27a — Generation and non-extraction demand
 
 | Level | Power Plant generation | Housing fixed demand | Full-Housing resident support at 0.07 each | HQ demand | Industry idle demand | Industry variable demand at full staffed capacity | Total full Industry demand |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -525,7 +525,7 @@ These values implement the agreed hierarchy and are documentation proposals only
 - The Basic Spaceport has a fixed demand of 10 Power.
 - Power Plants have no parasitic electrical demand because their Fuel burn is charged against complete online generation capacity.
 
-### Facility-family demand
+### Decision 27b — Facility-family demand
 
 | Level | Farm | Ranch | Bio facility | Algae facility | Quarry | Rig | Mine | Deep Mine |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -535,7 +535,7 @@ These values implement the agreed hierarchy and are documentation proposals only
 | L4 | 18 | 16 | 22 | 22 | 29 | 33 | 40 | 54 |
 | L5 | 30 | 26 | 35 | 35 | 46 | 52 | 64 | 86 |
 
-### Installed-generation upgrade gates
+### Decision 27c — Installed-generation upgrade gates
 
 The value is the required online installed generation before upgrading that family to the target level. L1 construction remains permitted without generation but cannot operate until Power is delivered.
 
@@ -548,7 +548,7 @@ The value is the required online installed generation before upgrading that fami
 
 Every target exceeds one previous-level Power Plant but fits within one same-level plant. Players may instead combine multiple lower-level plants, trading tiles, construction resources, Fuel burn and Headquarters command load for capacity.
 
-### Representative utilisation
+### Approved balance evidence
 
 The representative colony contains one full same-level Housing building, one fully staffed same-level Industry building, one same-level Headquarters, the Basic Spaceport and five same-level facilities: Farm, Bio, Quarry, Rig and Mine.
 
@@ -565,7 +565,7 @@ Fuel burn uses the deployed Power technology's existing intensity curve of 0.10/
 
 ## Unresolved questions
 
-Spaceport and partial-shortage behaviour are resolved. The proposed generation, non-extraction demand, facility-family demand and installed-generation gate tables now require explicit approval or revision.
+All generation, demand and installed-generation gate values are approved. Remaining discovery must define Fuel production timing, existing-save transition behaviour and final Power-network presentation before consolidation for final review.
 
 ## Provisional acceptance criteria
 
