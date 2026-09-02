@@ -165,9 +165,20 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 - The authoritative state belongs to the colony and must survive portfolio switching and save/load.
 - Migration must avoid retroactively trapping ships or invalidating colonies that were established before the handover field existed; the exact migration rule will be specified before final review.
 
+### Decision 9 — Multiple Headquarters with one explicit Primary Headquarters
+
+- A colony may construct multiple Headquarters buildings.
+- Exactly one Headquarters is the colony's Primary Headquarters.
+- The Primary Headquarters must be explicitly and visibly identified in the map, building details and any command-status presentation so the player never has to infer which facility owns command.
+- Additional Headquarters are command-expansion facilities rather than additional primaries.
+- Headquarters buildings support upgrades through the canonical building-development model.
+- Every upgrade level and every additional Headquarters must provide a defined gameplay purpose; duplicate low-level buildings and a higher-level primary must represent deliberate alternatives rather than empty duplication.
+- The benefit model, primary-selection rule, departure-gate relationship and staffing behaviour of expansion Headquarters remain to be decided.
+- A08b must later reuse the same Primary Headquarters identity rather than inventing a second active-command selection.
+
 ## Unresolved questions
 
-Questions will be worked through one at a time. The next question is whether a colony may construct more than one Headquarters. Later questions will cover placement, staffing/construction balance values, migration, scope split, and presentation of multiple failures.
+Discovery questions may now be asked in batches of up to three at the user's request. The current batch defines the gameplay purpose of additional/upgraded Headquarters, the Primary Headquarters selection rule and staffing for expansion Headquarters. Later questions will cover departure eligibility with multiple Headquarters, placement, numeric balance, migration, scope split and failure presentation.
 
 ## Provisional acceptance criteria
 
