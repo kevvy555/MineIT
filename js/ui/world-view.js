@@ -5,7 +5,7 @@ import { terrainPath, artImage, drawCover } from "./land-art.js";
 const SIZE_FILTERS=[["limited","LIMITED"],["established","ESTABLISHED"],["small","SMALL"],["modest","MODEST"],["large","LARGE"],["huge","HUGE"],["colossal","COLOSSAL"],["vast","VAST"],["legacy","LEGACY"]];
 const TYPE_FILTERS=[["food","FOOD"],["build","BUILD"],["fuel","FUEL"],["ore","ORE"]];
 const TERRAIN_COLORS={plain:["#314c2a","#668852"],hill:["#4b4328","#8a7545"],mountain:["#34383b","#7b858b"],lake:["#163f53","#3f819b"]};
-const SHORT={housing:"H",industry:"I",mine:"M",quarry:"Q","deep-mine":"DM",rig:"R",farm:"F",ranch:"RA",bio:"B",algae:"A"};
+const SHORT={housing:"H",industry:"I",headquarters:"HQ",mine:"M",quarry:"Q","deep-mine":"DM",rig:"R",farm:"F",ranch:"RA",bio:"B",algae:"A"};
 const SHIP_ART="./assets/art/colony-ship.webp?v=2";
 
 export class WorldView {

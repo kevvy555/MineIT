@@ -4,7 +4,7 @@ import { getLoadedViewTemplate,loadViewTemplate,preloadViewTemplates } from "../
 import { buildingCapacity,syncBuildingTotals } from "../domain/building-model.js";
 import { supportsOverdrive } from "../domain/extraction-overdrive.js";
 
-const LOCAL_KINDS=new Set(["housing","power","industry"]);
+const LOCAL_KINDS=new Set(["housing","power","industry","headquarters"]);
 const RESOURCE_LABEL={food:"FOOD",build:"BUILD",fuel:"FUEL",ore:"ORE"};
 const MAP_FIRST_HELP_VIEW="./views/map-first-help-controls.html";
 const cap=(v,min=0,max=1)=>Math.max(min,Math.min(max,Number(v)||0));
@@ -34,7 +34,7 @@ export class UIController extends LegacyUIController{
   renderMapFirstHud(){
     if(this.state.status==="site-selection")return;
     const s=this.state,m=s.metrics||{},totals=syncBuildingTotals(s),housing=Math.max(0,totals.housing),power=Math.max(0,totals.power),industry=Math.max(0,totals.industry),free=Math.max(0,Math.floor(Number(m.workforceFree)||0));
-    this.setText("housingHud",`${formatNumber(s.pop)} / ${formatNumber(housing)}`);this.setText("powerHud",`${formatNumber(m.powerDemand||0)} / ${formatNumber(power)}`);this.setText("industryHud",`${formatNumber(m.industry||0)} / ${formatNumber(industry)}`);this.setText("workforceHud",`${formatNumber(free)} FREE`);
+    this.setText("housingHud",`${formatNumber(s.pop)} / ${formatNumber(housing)}`);this.setText("powerHud",`${formatNumber(m.powerDelivered||m.powerFactor*(m.powerDemand||0)||0)} / ${formatNumber(m.powerFuelLimitedGeneration??power)} • ${formatNumber(m.powerDemand||0)} req`);this.setText("industryHud",`${formatNumber(m.industry||0)} / ${formatNumber(industry)}`);this.setText("workforceHud",`${formatNumber(free)} FREE`);
     this.setState("housingOp",housing>0&&s.pop/housing>.9?"warn":"good");this.setState("powerOp",(m.powerFactor??1)<.9?"bad":(m.powerFactor??1)<.98?"warn":"good");this.setState("industryOp",(m.industryCommercialFactor??1)<.8?"bad":(m.industryCommercialFactor??1)<.999?"warn":"good");this.setState("workforceOp",(m.workforceShortfall||0)>0?"bad":free<10?"warn":"good");
     this.setText("foodDaysHud",this.daysText(m.foodDays));this.setText("fuelDaysHud",this.daysText(m.fuelDays));this.setText("oreDaysHud",this.daysText(m.oreDays));
     const g=s.contract?.goals||{};for(const [id,value,target] of [["food",m.food,g.food],["ind",m.industry,g.industry],["pop",s.pop,g.pop]]){const pct=target?Math.round(cap(value/target)*100):100;this.setText(`${id}Val`,`${pct}%`);this.setText(`${id}Goal`,`${formatNumber(value||0)} / ${formatNumber(target||0)}`);}
@@ -45,7 +45,7 @@ export class UIController extends LegacyUIController{
     if(s.status==="dead")return{level:"bad",title:"COLONY LOST",detail:"Population has reached zero.",label:"OPEN COLONY",action:"colony"};
     if(s.trade?.active)return{level:"warn",title:"CORPORATE SHIP DOCKED",detail:"Resolve trade before corporation time can continue.",label:"OPEN SHIP ›",action:"ship"};
     if((m.foodSupply??1)<.9||foodDays!==null&&foodDays!==undefined&&foodDays<=30)return{level:(m.foodSupply??1)<.5||foodDays<=10?"bad":"warn",title:`FOOD LOW — ${this.daysText(foodDays)}`,detail:"Food demand is consuming reserves faster than production.",label:"SHOW FOOD ›",focus:"food"};
-    if((m.powerFactor??1)<.95||Number(m.powerDemand||0)>Number(totals.power||0))return{level:(m.powerFactor??1)<.6?"bad":"warn",title:"POWER SHORTAGE",detail:`Demand ${formatNumber(m.powerDemand||0)} • generation ${formatNumber(totals.power||0)}.`,label:"SHOW POWER ›",focus:"power"};
+    if((m.powerFactor??1)<.95||Number(m.powerDemand||0)>Number(totals.power||0))return{level:(m.powerFactor??1)<.6?"bad":"warn",title:"POWER SHORTAGE",detail:`Demand ${formatNumber(m.powerDemand||0)} • delivered ${formatNumber(m.powerDelivered||0)} • Fuel-limited ${formatNumber((m.powerFuelLimitedGeneration??totals.power??0))}.`,label:"SHOW POWER ›",focus:"power"};
     if((m.fuelSupply??1)<.9||fuelDays!==null&&fuelDays!==undefined&&fuelDays<=30)return{level:(m.fuelSupply??1)<.5||fuelDays<=10?"bad":"warn",title:`FUEL LOW — ${this.daysText(fuelDays)}`,detail:"Power demand is drawing Fuel reserves down.",label:"SHOW FUEL ›",focus:"fuel"};
     if((m.workforceShortfall||0)>0)return{level:"warn",title:"WORKFORCE SHORTAGE",detail:`${formatNumber(m.workforceRequired||0)} required • ${formatNumber(m.workforceAvailable||0)} available.`,label:"COLONY ›",action:"colony"};
     if((m.industryCommercialFactor??1)<.999)return{level:"warn",title:"INDUSTRY OVERLOAD",detail:`Build/Ore operations are running at ${Math.round((m.industryCommercialFactor??1)*100)}%.`,label:"SHOW INDUSTRY ›",focus:"industry"};
@@ -58,10 +58,10 @@ export class UIController extends LegacyUIController{
   contextParts(tile){
     const totals=syncBuildingTotals(this.state);
     if(!tile)return{title:"COLONY MAP",sub:"Tap a surveyed tile to see its actions. Tap an unsurveyed tile to survey it.",actions:"",requirement:""};
-    if(this.land.isShipTile(tile.x,tile.y))return{title:"LANDED SHIP",sub:"180 accommodation • 30 Power • 50 Industry starter infrastructure",actions:this.action("CORPORATION","company")+this.action("COLONY SUMMARY","colony"),requirement:""};
+    if(this.land.isShipTile(tile.x,tile.y)){const ship=this.expansion.ship(this.state),accommodation=Math.max(0,Number(ship?.accommodationCapacity)||0),industry=this.state.colony?.shipIndustry||0;return{title:"LANDED SHIP",sub:`${formatNumber(accommodation)} accommodation • 0 colony Power • ${formatNumber(industry)} Industry while docked`,actions:this.action("CORPORATION","company")+this.action("COLONY SUMMARY","colony"),requirement:""};}
     const dev=tile.development;
     if(dev&&LOCAL_KINDS.has(dev.kind)){
-      const kind=dev.kind,level=Math.max(1,Number(dev.level)||1),current=buildingCapacity(kind,level),next=this.development.canUpgrade(this.state,tile),unit=kind==="housing"?"housing":kind==="power"?"Power":"Industry",gain=level<5?buildingCapacity(kind,level+1)-current:0;
+      const kind=dev.kind,level=Math.max(1,Number(dev.level)||1),current=buildingCapacity(kind,level),next=this.development.canUpgrade(this.state,tile),unit=kind==="housing"?"housing":kind==="power"?"Power":kind==="headquarters"?"command":"Industry",gain=level<5?buildingCapacity(kind,level+1)-current:0;
       let actions=level<5?this.action(`UPGRADE L${level+1}${gain?` • +${formatNumber(gain)}`:""}`,"local-upgrade",{disabled:!next.ok,cls:"primary"}):this.action("MAX LEVEL","noop",{disabled:true});actions+=this.action("DETAILS","details");
       if(!next.ok&&/Tech/i.test(next.reason||""))actions+=this.action("TECH","tech");else if(!next.ok&&/Build/i.test(next.reason||""))actions+=this.action("SHOW BUILD","focus",{kind:"build"});
       return{title:`${this.development.label(kind).toUpperCase()} L${level} • ${formatNumber(current)} ${unit}`,sub:`This building contributes directly to colony ${unit.toLowerCase()} capacity.`,actions,requirement:level>=5?"Maximum building level reached.":next.ok?`Upgrade ready • ${this.localCost(next)}`:next.reason};

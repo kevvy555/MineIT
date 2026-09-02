@@ -12,6 +12,8 @@ import { SimulationEngine } from "../js/domain/simulation-engine.js";
 
 const contracts=new ContractService(),resources=new ResourceService(),inventory=new InventoryService(resources),technology=new TechnologyService(),collection=new CollectionService(resources,inventory,technology),colony=new ColonyService(inventory,technology),trade=new TradeService(resources,inventory),engine=new SimulationEngine(resources,technology,collection,trade,inventory,colony);
 const state=createGameState(contracts.first());
+state.colony.shipAccommodation={};
+state.tiles.power={x:1,y:1,terrain:"plain",revealed:true,development:{kind:"power",level:1}};
 state.company.cash=1e12;
 inventory.store(state,"food","soak-food","Soak Food",5e6,500);
 inventory.store(state,"fuel","soak-fuel","Soak Fuel",5e6,500);

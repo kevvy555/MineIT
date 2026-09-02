@@ -4,6 +4,30 @@ import { normalizeTechnologyState } from "./technology-service.js";
 import { normalizeReputation } from "./reputation-service.js";
 
 const expansion=new ExpansionService();
+export const A08A_STATE_VERSION=15;
+function normalizeHeadquartersState(state,previousVersion){
+  const apply=local=>{
+    if(!local)return;
+    local.colony||={};
+    if(previousVersion<A08A_STATE_VERSION)local.colony.commandHandoverComplete=true;
+    local.colony.commandHandoverComplete=!!local.colony.commandHandoverComplete;
+    local.colony.foundingShipId??=null;
+    local.colony.primaryHeadquartersId??=null;
+    local.colony.primaryHeadquartersEver=!!local.colony.primaryHeadquartersEver;
+    const shipStarvation=local.colony.shipResidentStarvationDays;
+    local.colony.shipResidentStarvationDays=shipStarvation&&typeof shipStarvation==="object"?Object.fromEntries(Object.entries(shipStarvation).map(([shipId,days])=>[shipId,Math.max(0,Math.floor(Number(days)||0))])):{};
+  };
+  apply(state);
+  for(const entry of state.portfolio?.colonies||[])apply(entry?.data);
+  const ships=state.company?.expansion?.ships||[];
+  const assign=local=>{
+    if(!local?.colony||local.colony.foundingShipId)return;
+    const ship=ships.find(item=>item.source==="charter-issued"&&item.status==="docked"&&item.colonyId===local.colonyId);
+    if(ship)local.colony.foundingShipId=ship.id;
+  };
+  assign(state);for(const entry of state.portfolio?.colonies||[])assign(entry?.data);
+  return state;
+}
 
 export const COLONY_STATE_KEYS=Base.COLONY_STATE_KEYS;
 export const starterInventory=Base.starterInventory;
@@ -61,16 +85,19 @@ export function createGameState(contract){
   normalizeTechnologyAcrossPortfolio(state);
   normalizeSurveyHistoryAcrossPortfolio(state);
   normalizeBuyerRoot(state);
-  state.version=14;
+  normalizeHeadquartersState(state,A08A_STATE_VERSION);
+  state.version=A08A_STATE_VERSION;
   return state;
 }
 
 export function normalizeState(state){
+  const previousVersion=Number(state?.version)||0;
   const normalized=Base.normalizeState(state);
   expansion.ensure(normalized);
   normalizeTechnologyAcrossPortfolio(normalized);
   normalizeSurveyHistoryAcrossPortfolio(normalized);
   normalizeBuyerRoot(normalized);
-  normalized.version=14;
+  normalizeHeadquartersState(normalized,previousVersion);
+  normalized.version=A08A_STATE_VERSION;
   return normalized;
 }

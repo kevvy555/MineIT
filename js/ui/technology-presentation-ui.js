@@ -2,10 +2,10 @@ import { UIController as LegacyUIController } from "./cash-policy-ui.js";
 import { CONFIG } from "../core/config.js";
 import { formatMoney,formatNumber } from "../core/utils.js";
 import { loadViewTemplate } from "../core/view-template.js";
-import { BUILDING_MODEL,SHIP_INFRASTRUCTURE,buildingCapacity,localBuildings,syncBuildingTotals } from "../domain/building-model.js";
+import { BUILDING_MODEL,buildingCapacity,localBuildings,syncBuildingTotals } from "../domain/building-model.js";
 import { berthStatus } from "../domain/spaceport-model.js";
 
-const LOCAL_KINDS=["housing","power","industry"];
+const LOCAL_KINDS=["housing","power","industry","headquarters"];
 const TECH_CATEGORIES=["housing","power","food","industry","mining","scanning"];
 const TECH_LABELS={housing:"HOUSING",power:"POWER",food:"FOOD PRODUCTION",industry:"INDUSTRY",mining:"MINING / EXTRACTION",scanning:"SCANNING / PROSPECTING"};
 const TECH_SHORT_LABELS={housing:"HOUSING",power:"POWER",food:"FOOD",industry:"INDUSTRY",mining:"MINING",scanning:"SCANNING"};
@@ -72,7 +72,7 @@ const findMetric=(root,label)=>[...root.querySelectorAll(".metric")].find(m=>m.q
 
 export class UIController extends LegacyUIController{
   localCost(req){return`${formatNumber(req?.build||0)} Build${(req?.ore||0)>0?` + ${formatNumber(req.ore)} Ore`:""}`;}
-  capacityText(kind,value){return kind==="housing"?`${formatNumber(value)} housing`:kind==="power"?`${formatNumber(value)} power`:`${formatNumber(value)} Industry`;}
+  capacityText(kind,value){return kind==="housing"?`${formatNumber(value)} housing`:kind==="power"?`${formatNumber(value)} power`:kind==="headquarters"?`${formatNumber(value)} command capacity`:`${formatNumber(value)} Industry`;}
   setPresentationText(root,selector,value){const node=root?.querySelector(selector);if(node)node.textContent=String(value??"");}
   cloneViewTemplate(root,selector){return root?.querySelector(selector)?.content.cloneNode(true)||null;}
   async loadPresentationView(path,label){try{return await loadViewTemplate(path);}catch(error){this.diagnostics?.error?.(`${label} view failed`,error);this.toast(`Unable to open ${label}.`);return null;}}
@@ -143,7 +143,7 @@ export class UIController extends LegacyUIController{
   async renderLocalInfrastructureCard(body,totals,m){
     const source=await this.loadPresentationView(VIEW_PATHS.localInfrastructure,"local infrastructure");if(!source||!body.isConnected||body!==this.modal.querySelector(".modal-body"))return;
     const fragment=document.createRange().createContextualFragment(source),card=fragment.querySelector("[data-local-infrastructure-card]");if(!card)return;
-    this.setPresentationText(card,"[data-local-housing]",`${formatNumber(this.state.pop)} / ${formatNumber(totals.housing)}`);this.setPresentationText(card,"[data-local-power]",`${formatNumber(m.powerDemand||0)} / ${formatNumber(totals.power)}`);this.setPresentationText(card,"[data-local-industry]",`${formatNumber(m.industry||0)} / ${formatNumber(totals.industry)}`);this.setPresentationText(card,"[data-ship-housing]",formatNumber(this.state.colony?.shipHousing||0));this.setPresentationText(card,"[data-ship-power]",SHIP_INFRASTRUCTURE.power);this.setPresentationText(card,"[data-ship-industry]",SHIP_INFRASTRUCTURE.industry);
+    this.setPresentationText(card,"[data-local-housing]",`${formatNumber(this.state.pop)} / ${formatNumber(totals.housing)}`);this.setPresentationText(card,"[data-local-power]",`${formatNumber(m.powerDemand||0)} / ${formatNumber(totals.power)}`);this.setPresentationText(card,"[data-local-industry]",`${formatNumber(m.industry||0)} / ${formatNumber(totals.industry)}`);this.setPresentationText(card,"[data-ship-housing]",formatNumber(this.state.colony?.shipHousing||0));this.setPresentationText(card,"[data-ship-power]",formatNumber(totals.shipPower||0));this.setPresentationText(card,"[data-ship-industry]",formatNumber(totals.shipIndustry||0));
     const management=body.querySelector(".colony-management");if(management)management.before(fragment);else body.appendChild(fragment);
   }
   colonyPanel(){if(this.state.status==="dead")return super.colonyPanel();return this.landColonyPanel();}

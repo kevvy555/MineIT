@@ -14,7 +14,7 @@ import { SimulationEngine } from "../js/domain/simulation-engine.js";
 
 const contracts=new ContractService(),resources=new ResourceService(),inventory=new InventoryService(resources),tech=new TechnologyService();
 const world=new WorldService(resources,contracts),collection=new CollectionService(resources,inventory,tech),colony=new ColonyService(inventory,tech),sites=new SiteService(contracts,tech,inventory,colony,resources),trade=new TradeService(resources,inventory),engine=new SimulationEngine(resources,tech,collection,trade,inventory,colony);
-const state=createGameState(contracts.first());tech.recompute(state);engine.recalculate(state);
+const state=createGameState(contracts.first());state.colony.shipAccommodation={};state.tiles["0,0"]={x:0,y:0,terrain:"plain",revealed:true,developed:true,name:"Power Plant",development:{kind:"power",level:1,investedBuild:40,investedOre:0}};state.tiles["0,1"]={x:0,y:1,terrain:"plain",revealed:true,developed:true,name:"Industry",development:{kind:"industry",level:1,investedBuild:80,investedOre:0}};tech.recompute(state);engine.recalculate(state);
 assert.deepEqual(state.company.tech,{housing:1,power:1,food:1,industry:1,mining:1,scanning:1});
 assert.deepEqual(state.colony.tech,{housing:1,power:1,food:1,industry:1,mining:1,scanning:1});
 assert.equal(state.contract.colonyTier,1);assert.equal(state.contract.techAccess,"direct");
@@ -23,14 +23,14 @@ assert.ok(inventory.amount(state,"food")>0&&inventory.amount(state,"build")>0&&i
 const cats=new Set();for(let y=-30;y<=30;y++)for(let x=-30;x<=30;x++){const tile=world.reveal(state,x,y);if(tile.type)cats.add(tile.type);}
 assert.deepEqual([...cats].sort(),["build","food","fuel","ore"]);
 
-const stone={x:1,y:1,terrain:"hill",terrainYieldFactor:1,revealed:true,developed:false,depleted:false,type:"build",resourceId:"stone",name:"Stone",quality:100,resourceMult:1,requiredScanningLevel:2,requiredMiningLevel:2,requiredMiningTech:"Quarrying",sustainability:"finite",reserve:100000,initialReserve:100000};
+const stone={x:1,y:1,terrain:"hill",terrainYieldFactor:1,revealed:true,developed:false,depleted:false,type:"build",family:"quarry",resourceId:"stone",name:"Stone",quality:100,resourceCovered:false,level:1,resourceMult:1,requiredScanningLevel:2,requiredMiningLevel:2,requiredMiningTech:"Quarrying",sustainability:"finite",reserve:100000,initialReserve:100000};
 assert.equal(sites.developRequirements(state,stone).ok,false);assert.match(sites.developRequirements(state,stone).reason,/Mining L2/);
 state.company.cash=1e9;state.company.tech.mining=2;state.colony.tech.mining=2;tech.recompute(state);assert.equal(tech.level(state,"mining"),2);
 const buildBefore=inventory.amount(state,"build"),cashBeforeDevelop=state.company.cash;const developed=sites.develop(state,stone);assert.equal(developed.ok,true);assert.ok(inventory.amount(state,"build")<buildBefore);assert.equal(state.company.cash,cashBeforeDevelop,"local extraction construction must not spend corporate cash");
 state.tiles["1,1"]=stone;
 
-const rowsBefore=collection.current(state);assert.equal(rowsBefore.length,1);assert.equal(rowsBefore[0].stock,0);
-engine.tick(state);const rowsAfter=collection.current(state);assert.ok(rowsAfter[0].stock>0,"collection popup stock should rise after collection");
+const rowsBefore=collection.current(state).filter(row=>row.resourceId==="stone");assert.equal(rowsBefore.length,1);assert.equal(rowsBefore[0].stock,0);
+engine.tick(state);const rowsAfter=collection.current(state).filter(row=>row.resourceId);assert.ok(rowsAfter[0].stock>0,"collection popup stock should rise after collection");
 
 const foodBefore=inventory.amount(state,"food"),fuelBefore=inventory.amount(state,"fuel"),oreBefore=inventory.amount(state,"ore");
 for(let i=0;i<10;i++)engine.tick(state);

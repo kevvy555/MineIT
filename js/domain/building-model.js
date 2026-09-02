@@ -1,8 +1,55 @@
 export const MAX_BUILDING_LEVEL=5;
 
 export const SHIP_INFRASTRUCTURE=Object.freeze({
-  power:30,
+  power:0,
   industry:50
+});
+
+export const HEADQUARTERS_CAPACITY=Object.freeze([16,36,64,100,150]);
+export const HEADQUARTERS_MINIMUM_STAFF=Object.freeze([5,10,18,28,40]);
+export const HEADQUARTERS_POWER_DEMAND=Object.freeze([1,2,4,7,11]);
+export const HEADQUARTERS_BUILD_COST=Object.freeze([90,170,300,510,850]);
+export const HEADQUARTERS_ORE_COST=Object.freeze([0,25,65,130,240]);
+export const HEADQUARTERS_BONUS_PER_LEVEL=.02;
+export const HEADQUARTERS_BONUS_CAP=.15;
+export const HEADQUARTERS_OVERLOAD_PENALTY_CAP=.50;
+export const HEADQUARTERS_OVERLOAD_PENALTY_PER_RATIO=.50;
+export const HEADQUARTERS_COMMAND_LOAD=Object.freeze({
+  housing:1,
+  power:2,
+  food:2,
+  fuel:2,
+  build:2,
+  industry:3,
+  ore:3,
+  spaceport:0,
+  headquarters:0
+});
+
+export const POWER_GENERATION=Object.freeze([75,165,300,500,800]);
+export const HOUSING_FIXED_POWER=Object.freeze([1,2,4,7,11]);
+export const INDUSTRY_IDLE_POWER=Object.freeze([3,7,14,24,38]);
+export const INDUSTRY_VARIABLE_POWER_PER_CAPACITY=.25;
+export const BASIC_SPACEPORT_POWER=10;
+export const FACILITY_POWER_DEMAND=Object.freeze({
+  farm:Object.freeze([2,5,10,18,30]),
+  ranch:Object.freeze([2,5,9,16,26]),
+  bio:Object.freeze([3,7,13,22,35]),
+  algae:Object.freeze([3,7,13,22,35]),
+  quarry:Object.freeze([4,9,17,29,46]),
+  rig:Object.freeze([4,10,19,33,52]),
+  mine:Object.freeze([5,12,23,40,64]),
+  "deep-mine":Object.freeze([7,16,31,54,86])
+});
+export const POWER_UPGRADE_GATES=Object.freeze({
+  farm:Object.freeze([0,90,190,340,550]),
+  ranch:Object.freeze([0,90,190,340,550]),
+  bio:Object.freeze([0,100,210,370,600]),
+  algae:Object.freeze([0,100,210,370,600]),
+  quarry:Object.freeze([0,110,225,400,650]),
+  rig:Object.freeze([0,115,235,420,680]),
+  mine:Object.freeze([0,125,250,440,710]),
+  "deep-mine":Object.freeze([0,140,280,470,750])
 });
 
 export const BUILDING_MODEL=Object.freeze({
@@ -18,7 +65,7 @@ export const BUILDING_MODEL=Object.freeze({
     label:"Power Plant",
     tech:"power",
     unit:"power",
-    capacity:Object.freeze([30,75,160,330,650]),
+    capacity:POWER_GENERATION,
     build:Object.freeze([70,125,220,390,680]),
     ore:Object.freeze([0,15,45,90,170])
   }),
@@ -29,6 +76,14 @@ export const BUILDING_MODEL=Object.freeze({
     capacity:Object.freeze([100,230,420,700,1100]),
     build:Object.freeze([80,145,255,435,720]),
     ore:Object.freeze([0,20,55,110,200])
+  }),
+  headquarters:Object.freeze({
+    label:"Headquarters",
+    tech:null,
+    unit:"command",
+    capacity:HEADQUARTERS_CAPACITY,
+    build:HEADQUARTERS_BUILD_COST,
+    ore:HEADQUARTERS_ORE_COST
   })
 });
 
@@ -48,15 +103,20 @@ export function operatingBuildings(state,kind=null){return localBuildings(state,
 export function builtCapacity(state,kind){return operatingBuildings(state,kind).reduce((sum,tile)=>sum+buildingCapacity(kind,tile.development.level),0);}
 export function maxBuiltLevel(state,kind){return localBuildings(state,kind).reduce((max,tile)=>Math.max(max,buildingLevel(tile.development)),0);}
 export function landedShipHousing(state){return(state?.company?.expansion?.ships||[]).filter(ship=>ship?.status==="docked"&&ship.colonyId===state?.colonyId).reduce((sum,ship)=>sum+Math.max(0,Number(ship.accommodationCapacity)||0),0);}
-
+function foundingShipProvidesIndustry(state){
+  const ships=state?.company?.expansion?.ships||[],foundingId=state?.colony?.foundingShipId;
+  if(foundingId)return ships.some(ship=>ship.id===foundingId&&ship.status==="docked"&&ship.colonyId===state.colonyId);
+  return ships.some(ship=>ship.source==="charter-issued"&&ship.status==="docked"&&ship.colonyId===state.colonyId);
+}
+export function foundingShipIndustryCapacity(state){return foundingShipProvidesIndustry(state)?SHIP_INFRASTRUCTURE.industry:0;}
 export function syncBuildingTotals(state){
   state.colony||={};state.metrics||={};
-  const builtHousing=builtCapacity(state,"housing"),builtPower=builtCapacity(state,"power"),builtIndustry=builtCapacity(state,"industry");
-  const shipHousing=landedShipHousing(state),housing=shipHousing+builtHousing,power=SHIP_INFRASTRUCTURE.power+builtPower,industry=SHIP_INFRASTRUCTURE.industry+builtIndustry;
+  const builtHousing=builtCapacity(state,"housing"),builtPower=builtCapacity(state,"power"),builtIndustry=builtCapacity(state,"industry"),shipHousing=landedShipHousing(state),shipIndustry=foundingShipIndustryCapacity(state);
+  const housing=shipHousing+builtHousing,power=builtPower,industry=shipIndustry+builtIndustry;
   Object.assign(state.colony,{
     shipHousing,
-    shipPower:SHIP_INFRASTRUCTURE.power,
-    shipIndustry:SHIP_INFRASTRUCTURE.industry,
+    shipPower:0,
+    shipIndustry,
     housingBuildingCapacity:builtHousing,
     powerBuildingCapacity:builtPower,
     industryBuildingCapacity:builtIndustry,
@@ -75,5 +135,5 @@ export function syncBuildingTotals(state){
     delete land.baseIndustryLevel;
     land.legacyBaseInfrastructureNormalized=true;
   }
-  return{housing,power,industry,builtHousing,builtPower,builtIndustry};
+  return{housing,power,industry,builtHousing,builtPower,builtIndustry,shipHousing,shipIndustry};
 }
