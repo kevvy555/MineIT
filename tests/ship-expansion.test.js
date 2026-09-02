@@ -14,7 +14,7 @@ import {
 } from "../js/domain/expansion-service.js";
 
 const contracts=new ContractService(),resources=new ResourceService(),inventory=new InventoryService(resources),trade=new TradeService(resources,inventory);
-const fresh=()=>{const state=createGameState(contracts.first()),portfolio=new PortfolioService(),expansion=new ExpansionService(inventory,resources,contracts);portfolio.ensure(state);expansion.ensure(state);return{state,portfolio,expansion};};
+const fresh=()=>{const state=createGameState(contracts.first()),portfolio=new PortfolioService(),expansion=new ExpansionService(inventory,resources,contracts);portfolio.ensure(state);expansion.ensure(state);state.colony.commandHandoverComplete=true;return{state,portfolio,expansion};};
 const setAbsolute=(s,day)=>{s.year=Math.floor((day-1)/CONFIG.DAYS_PER_YEAR)+1;s.day=(day-1)%CONFIG.DAYS_PER_YEAR+1;};
 const stock=(state)=>{inventory.store(state,"food","fungal","Fungal Shelf",20000,500);inventory.store(state,"fuel","biomass","Biomass",20000,500);inventory.store(state,"build","stone","Stone",20000,500);inventory.store(state,"ore","surface-iron","Surface Iron Nodules",20000,500);};
 const stockedKey=(type,resourceId)=>inventory.key(type,resourceId);

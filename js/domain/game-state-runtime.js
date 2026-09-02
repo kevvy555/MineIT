@@ -14,6 +14,8 @@ function normalizeHeadquartersState(state,previousVersion){
     local.colony.foundingShipId??=null;
     local.colony.primaryHeadquartersId??=null;
     local.colony.primaryHeadquartersEver=!!local.colony.primaryHeadquartersEver;
+    const shipStarvation=local.colony.shipResidentStarvationDays;
+    local.colony.shipResidentStarvationDays=shipStarvation&&typeof shipStarvation==="object"?Object.fromEntries(Object.entries(shipStarvation).map(([shipId,days])=>[shipId,Math.max(0,Math.floor(Number(days)||0))])):{};
   };
   apply(state);
   for(const entry of state.portfolio?.colonies||[])apply(entry?.data);

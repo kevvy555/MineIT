@@ -108,9 +108,10 @@ function foundingShipProvidesIndustry(state){
   if(foundingId)return ships.some(ship=>ship.id===foundingId&&ship.status==="docked"&&ship.colonyId===state.colonyId);
   return ships.some(ship=>ship.source==="charter-issued"&&ship.status==="docked"&&ship.colonyId===state.colonyId);
 }
+export function foundingShipIndustryCapacity(state){return foundingShipProvidesIndustry(state)?SHIP_INFRASTRUCTURE.industry:0;}
 export function syncBuildingTotals(state){
   state.colony||={};state.metrics||={};
-  const builtHousing=builtCapacity(state,"housing"),builtPower=builtCapacity(state,"power"),builtIndustry=builtCapacity(state,"industry"),shipHousing=landedShipHousing(state),shipIndustry=foundingShipProvidesIndustry(state)?SHIP_INFRASTRUCTURE.industry:0;
+  const builtHousing=builtCapacity(state,"housing"),builtPower=builtCapacity(state,"power"),builtIndustry=builtCapacity(state,"industry"),shipHousing=landedShipHousing(state),shipIndustry=foundingShipIndustryCapacity(state);
   const housing=shipHousing+builtHousing,power=builtPower,industry=shipIndustry+builtIndustry;
   Object.assign(state.colony,{
     shipHousing,

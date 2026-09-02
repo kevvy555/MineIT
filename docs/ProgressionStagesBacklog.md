@@ -122,10 +122,11 @@ For traceability, references beginning with **A** correspond to the first number
 
 - **A06 — Emergency use of landed colony-ship Food.** Prevent phantom production, consume colony Food first and require explicit approval before a colony can consume Food held by a landed player ship. **Status: Complete.** [Detailed specification](./Progression%20Stages/Stage%206/A06-Emergency-Colony-Ship-Food.md)
 - **A07 — Ship and colony accommodation allocation.** Use ship-class capacity and provide fully manual movement between ship accommodation and colony housing, including warned launch into homelessness. **Status: Complete.** [Detailed specification](./Progression%20Stages/Stage%206/A07-Ship-Accommodation-Allocation.md)
+- **A08a — Operational Headquarters departure gate.** Prevent a colony ship from leaving a colony until a dedicated Headquarters is fully constructed and staffed to its defined minimum; add the Headquarters command network and emergency ship takeover; remove ship-provided colony Power; make founding-ship Industry conditional on docking; separate ship-supported residents from planetary demand; and rebalance the authoritative Power generation, consumption, Fuel-use and shortage curves. **Status: Complete.** [Detailed specification](./Progression%20Stages/Stage%206/A08a-Operational-Headquarters-Departure-Gate.md)
 
 ### In Discovery
 
-- **A08a — Operational Headquarters departure gate.** Prevent a colony ship from leaving a colony until a dedicated Headquarters is fully constructed and staffed to its defined minimum; add the Headquarters command network and emergency ship takeover; remove ship-provided colony Power; make founding-ship Industry conditional on docking; separate ship-supported residents from planetary demand; and rebalance the authoritative Power generation, consumption, Fuel-use and shortage curves. **Status: In Progress.** [Detailed specification](./Progression%20Stages/Stage%206/A08a-Operational-Headquarters-Departure-Gate.md)
+- None currently identified.
 
 ### Ready for Review
 

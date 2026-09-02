@@ -82,6 +82,7 @@ export class ExpansionService{
       shipClassId:STARTER_SHIP_CLASS_ID,
       name:"Pioneer Colony Transport",
       source:"charter-issued",
+      commandCapable:true,
       cargoCapacity:PLAYER_SHIP_CARGO_CAPACITY,
       foodCapacity:PLAYER_SHIP_FOOD_CAPACITY,
       fuelCapacity:PLAYER_SHIP_FUEL_CAPACITY,
@@ -109,6 +110,7 @@ export class ExpansionService{
     current.passengerCapacity=Math.max(0,Math.floor(finiteOr(current.passengerCapacity,starter.passengerCapacity)));
     current.minimumCrew=Math.max(0,Math.floor(finiteOr(current.minimumCrew,starter.minimumCrew)));
     current.maximumCrew=Math.max(current.minimumCrew,Math.floor(finiteOr(current.maximumCrew,starter.maximumCrew)));
+    current.commandCapable=current.commandCapable===true||current.shipClassId===STARTER_SHIP_CLASS_ID;
     current.accommodationCapacity=Math.max(0,Math.floor(finiteOr(current.accommodationCapacity,current.passengerCapacity+current.maximumCrew)));
     current.transitWeeksPerLightYear=Math.max(.01,finiteOr(current.transitWeeksPerLightYear,starter.transitWeeksPerLightYear));
     current.fuelUsePerLightYear=Math.max(0,finiteOr(current.fuelUsePerLightYear,starter.fuelUsePerLightYear));
@@ -206,6 +208,7 @@ export class ExpansionService{
       shipClassId:classRecord?.id||classRecord?.shipClassId||null,
       name:name||classRecord?.name||classRecord?.model||"Purchased Ship",
       source:"manufacturer-direct",
+      commandCapable:classRecord?.commandCapable===true||classRecord?.capabilities?.command===true,
       purchase:purchase?clone(purchase):null,
       cargoCapacity:capacity.cargo??classRecord?.cargoCapacity,
       fuelCapacity:capacity.fuel??classRecord?.fuelCapacity,
@@ -263,8 +266,8 @@ export class ExpansionService{
     for(const entry of state.portfolio?.colonies||[])this.normalizeAccommodationForLocal(state,entry?.data,entry?.id);
     this.normalizeAccommodationForLocal(state,state,state.colonyId);
   }
-  moveResidentsAboard(state,shipId,amount){const ship=this.ship(state,shipId);if(!ship||!this.isAtActiveColony(state,ship.id))return{ok:false,reason:"The selected player ship is not docked at this colony."};const assignments=this.accommodationAssignments(state),room=Math.max(0,this.accommodationCapacity(state,ship.id)-this.shipResidentCount(state,ship.id)),qty=Math.min(room,this.planetaryResidentCount(state),Math.max(0,Math.floor(Number(amount)||0)));if(qty<=0)return{ok:false,reason:room<=0?"Ship accommodation is full.":"No colony residents can be moved aboard."};const fromPlanetaryAccommodation=Math.max(0,qty-this.homelessCount(state));state.colony.planetaryAccommodationResidents=Math.max(0,this.planetaryAccommodationResidentCount(state)-fromPlanetaryAccommodation);assignments[ship.id]=this.shipResidentCount(state,ship.id)+qty;return{ok:true,qty,aboard:assignments[ship.id]};}
-  moveResidentsAshore(state,shipId,amount,{confirmed=false}={}){const ship=this.ship(state,shipId);if(!ship||!this.isAtActiveColony(state,ship.id))return{ok:false,reason:"The selected player ship is not docked at this colony."};const assignments=this.accommodationAssignments(state),aboard=this.shipResidentCount(state,ship.id),free=Math.max(0,this.planetaryHousingCapacity(state)-this.planetaryAccommodationResidentCount(state)),qty=Math.min(aboard,free,Math.max(0,Math.floor(Number(amount)||0)));if(qty<=0)return{ok:false,reason:free<=0?"No planetary accommodation is available.":"No colony residents are assigned to this ship."};const capacity=Math.max(0,Number(state.colony?.powerCapacity)||0);if(capacity<=0)return{ok:false,reason:"Build and power a colony Power Plant before moving residents into habitats."};const currentResidents=this.planetaryResidentCount(state),supportLoad=Math.max(.5,Number(state.contract?.supportLoad)||1),projectedSupport=(currentResidents+qty)*CONFIG.LIFE_SUPPORT_POWER_PER_COLONIST*supportLoad,available=Number(state.metrics?.powerFuelLimitedGeneration??capacity)||capacity;if(projectedSupport>available&& !confirmed)return{ok:false,warning:true,requiresConfirmation:true,reason:`Power shortage warning: ${qty} residents will raise life-support demand to ${projectedSupport.toFixed(1)} against ${available.toFixed(1)} available Power. Transfer anyway?`};const next=aboard-qty;if(next>0)assignments[ship.id]=next;else delete assignments[ship.id];state.colony.planetaryAccommodationResidents=this.planetaryAccommodationResidentCount(state)+qty;return{ok:true,qty,aboard:next,shortage:projectedSupport>available};}
+  moveResidentsAboard(state,shipId,amount){const ship=this.ship(state,shipId);if(!ship||!this.isAtActiveColony(state,ship.id))return{ok:false,reason:"The selected player ship is not docked at this colony."};const powerReason=this.spaceportServiceFailure(state);if(powerReason)return{ok:false,reason:powerReason};const assignments=this.accommodationAssignments(state),room=Math.max(0,this.accommodationCapacity(state,ship.id)-this.shipResidentCount(state,ship.id)),qty=Math.min(room,this.planetaryResidentCount(state),Math.max(0,Math.floor(Number(amount)||0)));if(qty<=0)return{ok:false,reason:room<=0?"Ship accommodation is full.":"No colony residents can be moved aboard."};const fromPlanetaryAccommodation=Math.max(0,qty-this.homelessCount(state));state.colony.planetaryAccommodationResidents=Math.max(0,this.planetaryAccommodationResidentCount(state)-fromPlanetaryAccommodation);assignments[ship.id]=this.shipResidentCount(state,ship.id)+qty;return{ok:true,qty,aboard:assignments[ship.id]};}
+  moveResidentsAshore(state,shipId,amount,{confirmed=false}={}){const ship=this.ship(state,shipId);if(!ship||!this.isAtActiveColony(state,ship.id))return{ok:false,reason:"The selected player ship is not docked at this colony."};const assignments=this.accommodationAssignments(state),aboard=this.shipResidentCount(state,ship.id),free=Math.max(0,this.planetaryHousingCapacity(state)-this.planetaryAccommodationResidentCount(state)),qty=Math.min(aboard,free,Math.max(0,Math.floor(Number(amount)||0)));if(qty<=0)return{ok:false,reason:free<=0?"No planetary accommodation is available.":"No colony residents are assigned to this ship."};const powerReason=this.spaceportServiceFailure(state);if(powerReason)return{ok:false,reason:powerReason};const network=this.colonyService?.powerNetwork?.(state,{fuelStock:this.inventory?.amount?.(state,"fuel")||0}),capacity=Math.max(0,Number(network?.onlineCapacity??state.colony?.powerCapacity)||0);if(capacity<=0)return{ok:false,reason:"Build and power a colony Power Plant before moving residents into habitats."};const supportLoad=Math.max(.5,Number(state.contract?.supportLoad)||1),incrementalSupport=qty*CONFIG.LIFE_SUPPORT_POWER_PER_COLONIST*supportLoad,projectedDemand=Math.max(0,Number(network?.demand)||0)+incrementalSupport,available=Math.max(0,Number(network?.fuelLimitedGeneration??state.metrics?.powerFuelLimitedGeneration??capacity)||0),shortage=projectedDemand>available+.001;if(shortage&&!confirmed)return{ok:false,warning:true,requiresConfirmation:true,projectedDemand,availableGeneration:available,shortage:projectedDemand-available,reason:`Power shortage warning: projected demand is ${projectedDemand.toFixed(1)} against ${available.toFixed(1)} available generation (${(projectedDemand-available).toFixed(1)} short). Transfer anyway?`};const next=aboard-qty;if(next>0)assignments[ship.id]=next;else delete assignments[ship.id];state.colony.planetaryAccommodationResidents=this.planetaryAccommodationResidentCount(state)+qty;return{ok:true,qty,aboard:next,shortage,projectedDemand,availableGeneration:available};}
   releaseShipAccommodation(state,shipId){const assignments=this.accommodationAssignments(state),residents=Math.max(0,Math.floor(Number(assignments[shipId])||0));delete assignments[shipId];return residents;}
   travelResidentCount(state){return Math.max(0,Math.floor(Number(state.pop)||0));}
   removeResidentsForTravel(state,shipId,amount){const qty=Math.min(this.travelResidentCount(state),Math.max(0,Math.floor(Number(amount)||0))),assignments=this.accommodationAssignments(state),homelessBefore=this.homelessCount(state);let remaining=qty;for(const id of[shipId,...Object.keys(assignments).filter(id=>id!==shipId)]){if(remaining<=0)break;const aboard=Math.max(0,Math.floor(Number(assignments[id])||0)),take=Math.min(aboard,remaining),next=aboard-take;remaining-=take;if(next>0)assignments[id]=next;else delete assignments[id];}const fromPlanetaryAccommodation=Math.max(0,remaining-homelessBefore);state.colony.planetaryAccommodationResidents=Math.max(0,this.planetaryAccommodationResidentCount(state)-fromPlanetaryAccommodation);state.pop=Math.max(0,Number(state.pop)-qty);return qty;}
@@ -381,24 +384,44 @@ export class ExpansionService{
 
   headquartersLaunchAssessment(state,ship=null){
     ship=ship||this.ship(state);
-    const foundingId=state.colony?.foundingShipId||ship?.id;const pending=!!state.colony&&!state.colony.commandHandoverComplete&&ship?.status==="docked"&&ship?.id===foundingId;
+    const foundingId=state.colony?.foundingShipId||this.ensure(state).ships.find(item=>item.source==="charter-issued"&&item.colonyId===state.colonyId)?.id||null;const pending=!!foundingId&&!!state.colony&&!state.colony.commandHandoverComplete&&ship?.status==="docked"&&ship?.id===foundingId;
     if(!pending)return{required:false,ok:true,failures:[]};
     const colony=this.colonyService,failures=[];
-    if(!colony)return{required:true,ok:false,failures:["Primary Headquarters status is unavailable."]};
+    if(!colony){const failure={code:"headquarters-unavailable",message:"Primary Headquarters status is unavailable."};return{required:true,ok:false,failures:[failure],reason:failure.message};}
     const rows=colony.headquartersRows(state),primaryId=state.colony.primaryHeadquartersId,row=rows.find(item=>item.id===primaryId);
-    if(!row)failures.push("No Primary Headquarters is designated.");
+    if(!row)failures.push({code:"primary-missing",message:"No Primary Headquarters is designated."});
     else{
-      if(!row.constructed)failures.push("Primary Headquarters is not fully constructed.");
+      if(!row.constructed)failures.push({code:"primary-incomplete",message:"Primary Headquarters is not fully constructed.",primaryId:row.id});
       const staffing=colony.headquartersStaffing(state),staffed=staffing.rows.find(item=>item.id===row.id);
-      if(!staffed?.staffed)failures.push(`Primary Headquarters requires ${row.requiredStaff} staff; ${staffed?.staff||0} assigned.`);
+      if(!staffed?.staffed)failures.push({code:"primary-understaffed",message:`Primary Headquarters requires ${row.requiredStaff} staff; ${staffed?.staff||0} assigned.`,primaryId:row.id,requiredStaff:row.requiredStaff,assignedStaff:staffed?.staff||0});
     }
-    return{required:true,ok:failures.length===0,failures,reason:failures.length?failures.join(" "):null,primaryId};
+    return{required:true,ok:failures.length===0,failures,reason:failures.length?failures.map(failure=>failure.message).join(" "):null,primaryId};
   }
 
   canLaunch(state,shipId=null){const ship=this.ship(state,shipId);if(!ship)return{ok:false,launchEnabled:false,reason:"Player ship not found."};if(!["docked","home"].includes(ship.status))return{ok:false,launchEnabled:false,reason:"The ship is not ready to launch."};if(ship.status==="docked"&&!this.isAtActiveColony(state,ship.id))return{ok:false,launchEnabled:false,reason:"Switch to the colony where the ship is docked."};if(ship.crew<ship.minimumCrew)return{ok:false,launchEnabled:false,reason:`Load at least ${ship.minimumCrew} crew before launch.`};if(!ship.targetSystemId)return{ok:false,launchEnabled:false,reason:"Select a destination system first."};const p=this.travelProfile(state,ship.targetSystemId,null,ship.id);if(!p)return{ok:false,launchEnabled:false,reason:"Route unavailable."};const supplied=this.routeCanBeSupplied(state,p,ship.id);if(!supplied.ok)return{ok:false,launchEnabled:false,reason:supplied.reason};const headquarters=this.headquartersLaunchAssessment(state,ship);if(!headquarters.ok)return{ok:false,launchEnabled:true,headquarters,profile:p,reason:`DEPARTURE BLOCKED • ${headquarters.reason}`};return{ok:true,launchEnabled:true,profile:p,headquarters};}
   launch(state,shipId=null){const r=this.canLaunch(state,shipId);if(!r.ok){return r;}const ship=this.ship(state,shipId),result=this.startTravel(state,r.profile,{shipId:ship.id,targetColonyId:ship.targetColonyId});if(result.ok&&r.headquarters?.required){state.colony.commandHandoverComplete=true;}return result;}
 
   consumeTransitFood(state,requested,shipId=null){const ship=this.ship(state,shipId),first=consumeContainerCategory(ship?.foodLots,"food",requested),remaining=Math.max(0,requested-first.consumed);if(remaining<=0)return{requested,consumed:first.consumed,ratio:1};const second=consumeContainerCategory(ship?.cargo,"food",remaining),consumed=first.consumed+second.consumed;return{requested,consumed,ratio:requested>0?Math.min(1,consumed/requested):1};}
+
+  shipResidentFoodStatus(state){
+    const rows=this.shipsAtColony(state).map(ship=>{const residents=this.shipResidentCount(state,ship.id),requested=residents*CONFIG.FOOD_PER_COLONIST,available=this.transitFoodAmount(state,ship.id);return{shipId:ship.id,shipName:ship.name,residents,requested,available,consumed:0,ratio:requested>0?Math.min(1,available/requested):1,starvationDays:Math.max(0,Math.floor(Number(state.colony?.shipResidentStarvationDays?.[ship.id])||0))};}).filter(row=>row.residents>0);
+    const requested=rows.reduce((sum,row)=>sum+row.requested,0),available=rows.reduce((sum,row)=>sum+row.available,0);
+    return{rows,requested,available,consumed:0,ratio:requested>0?Math.min(1,available/requested):1};
+  }
+
+  consumeShipResidentFood(state){
+    state.colony||={};state.colony.shipResidentStarvationDays=state.colony.shipResidentStarvationDays&&typeof state.colony.shipResidentStarvationDays==="object"?state.colony.shipResidentStarvationDays:{};
+    const status=this.shipResidentFoodStatus(state),activeIds=new Set();let consumed=0;
+    for(const row of status.rows){activeIds.add(row.shipId);const use=this.consumeTransitFood(state,row.requested,row.shipId);row.consumed=use.consumed;row.ratio=use.ratio;const noFood=row.requested>0&&row.consumed<=.0001,rowDays=noFood?(row.starvationDays+1):0;row.starvationDays=rowDays;state.colony.shipResidentStarvationDays[row.shipId]=rowDays;consumed+=row.consumed;}
+    for(const shipId of Object.keys(state.colony.shipResidentStarvationDays))if(!activeIds.has(shipId))delete state.colony.shipResidentStarvationDays[shipId];
+    return{...status,consumed,ratio:status.requested>0?Math.min(1,consumed/status.requested):1};
+  }
+
+  applyShipResidentDeaths(state,losses=[]){
+    const assignments=this.accommodationAssignments(state);let deaths=0;
+    for(const loss of losses){const aboard=Math.max(0,Number(assignments[loss.shipId])||0),lost=Math.min(aboard,Math.max(0,Number(loss.deaths)||0)),remaining=Math.max(0,aboard-lost);if(remaining>=.5)assignments[loss.shipId]=remaining;else delete assignments[loss.shipId];deaths+=lost;}
+    state.pop=Math.max(0,(Number(state.pop)||0)-deaths);return deaths;
+  }
 
   colonyHasFreeBerth(state,colonyId){return berthStatusForColony(state,colonyId).free>0;}
   tryAutoDock(state,ship){

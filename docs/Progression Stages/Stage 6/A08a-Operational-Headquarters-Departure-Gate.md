@@ -2,7 +2,7 @@
 
 **Progression stage:** 6 — Second Colony Establishment  
 **Type:** Feature  
-**Status:** In Progress  
+**Status:** Complete
 **Split from:** A08 — Operational Headquarters
 
 ## Original backlog text
@@ -24,7 +24,7 @@ The rule applies to the first colony and every later colony established by a col
 
 Headquarters outage effects, conglomerate-network restrictions, progressive efficiency loss and ten-day recovery are explicitly outside A08a and are preserved in [A08b](./A08b-Headquarters-Outage-And-Recovery.md).
 
-## Current implementation discovery
+## Pre-implementation discovery
 
 ### Ship launch
 
@@ -508,7 +508,7 @@ The initial recommendation was to preserve non-Headquarters values and fix corre
 
 ## Approved rebalanced Power tables
 
-These values are approved A08a balance decisions. They do not change gameplay until the complete A08a specification is approved and implemented.
+These approved A08a balance decisions are implemented in the canonical building and Power models.
 
 ### Decision 27a — Generation and non-extraction demand
 
@@ -581,7 +581,7 @@ Fuel burn uses the deployed Power technology's existing intensity curve of 0.10/
 
 ## Discovery outcome
 
-Discovery is complete. No product questions remain open. The item remains **In Discovery** until the user explicitly approves this complete specification. Approval will change the detailed file and master backlog to **Approved**; implementation will begin only after that approval and a subsequent **In Progress** update.
+Discovery and final review are complete. The user approved the complete specification, and the implementation now satisfies the acceptance criteria below.
 
 ## Canonical implementation ownership
 
@@ -682,6 +682,10 @@ Discovery is complete. No product questions remain open. The item remains **In D
 - Focused relevant test commands and the complete suite required by `AGENTS.md`.
 - Package and visible application versions incremented together only during approved implementation.
 
-## Implementation gate
+## Implementation verification
 
-No source code, gameplay values, tests or versions may be changed until the user explicitly approves this complete A08a specification. After approval, status changes to **Approved**, then to **In Progress** immediately before implementation. **Complete** requires implementation, focused and full-suite verification, save/migration coverage, version increments, documentation updates, commit and push on `feature/next-priority-items`.
+- Implemented on `feature/next-priority-items` with domain-authoritative Headquarters, command, Power, Fuel, resident and launch rules.
+- Added focused behavioural coverage for departure gates, migration, emergency command, resident ownership, Power allocation and next-day Fuel sequencing.
+- Updated Headquarters, Power, facility and ship-preparation presentation without duplicating domain calculations in UI modules.
+- Updated package and visible application versions together to `5.13.14`.
+- Passed the focused A08a regression commands and the complete `npm test` suite, including the 9,000-day simulation soak.

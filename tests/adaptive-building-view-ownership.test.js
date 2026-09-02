@@ -19,11 +19,13 @@ assert.match(ui,/template\.content\.cloneNode\(true\)/);
 assert.match(ui,/host\.replaceChildren\(buttons\)/);
 assert.match(ui,/button\[data-adaptive-mode\]/);
 assert.match(ui,/this\.resources\.adjustHarvestIntensity\(tile,Number\(button\.dataset\.harvestDelta\)\)/);
+assert.match(ui,/setPrimaryHeadquarters\(this\.state,tile\)/,"Headquarters Primary selection must dispatch to the domain service");
+for(const marker of["ONLINE CAPACITY","FUEL-LIMITED","FULL FUEL BURN","ACTUAL FUEL USED","power.bandRows"])assert.ok(ui.includes(marker),`missing always-visible Power detail ${marker}`);
 assert.doesNotMatch(ui,/tile\.harvestIntensity\s*=/,"adaptive UI must not mutate renewable harvest state directly");
 assert.match(resources,/adjustHarvestIntensity\(tile,deltaPercent\)/);
 assert.equal(largeHtmlTemplates(ui).length,0,"adaptive-building-ui.js must not retain large inline presentation templates");
 
-for(const marker of["data-adaptive-building-shell","data-adaptive-art","data-adaptive-badges","data-adaptive-mode","data-adaptive-mode-template","data-adaptive-harvest","data-adaptive-upgrade","data-adaptive-demolish","data-adaptive-close"])assert.ok(view.includes(marker),`missing adaptive-building view marker ${marker}`);
+for(const marker of["data-adaptive-building-shell","data-adaptive-art","data-adaptive-badges","data-adaptive-mode","data-adaptive-mode-template","data-adaptive-harvest","data-adaptive-primary","data-adaptive-upgrade","data-adaptive-demolish","data-adaptive-close"])assert.ok(view.includes(marker),`missing adaptive-building view marker ${marker}`);
 for(const text of["OVERVIEW","OPERATING MODE","Choose mode directly","HARVEST INTENSITY","OPERATIONS","UPGRADE TO NEXT LEVEL","REQUIREMENTS","DEMOLISH","CLOSE"])assert.ok(view.includes(text),`missing adaptive-building view copy ${text}`);
 
 console.log("MineIT adaptive-building view ownership test passed");

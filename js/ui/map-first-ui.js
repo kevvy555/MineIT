@@ -58,10 +58,10 @@ export class UIController extends LegacyUIController{
   contextParts(tile){
     const totals=syncBuildingTotals(this.state);
     if(!tile)return{title:"COLONY MAP",sub:"Tap a surveyed tile to see its actions. Tap an unsurveyed tile to survey it.",actions:"",requirement:""};
-    if(this.land.isShipTile(tile.x,tile.y))return{title:"LANDED SHIP",sub:"180 accommodation • 30 Power • 50 Industry starter infrastructure",actions:this.action("CORPORATION","company")+this.action("COLONY SUMMARY","colony"),requirement:""};
+    if(this.land.isShipTile(tile.x,tile.y)){const ship=this.expansion.ship(this.state),accommodation=Math.max(0,Number(ship?.accommodationCapacity)||0),industry=this.state.colony?.shipIndustry||0;return{title:"LANDED SHIP",sub:`${formatNumber(accommodation)} accommodation • 0 colony Power • ${formatNumber(industry)} Industry while docked`,actions:this.action("CORPORATION","company")+this.action("COLONY SUMMARY","colony"),requirement:""};}
     const dev=tile.development;
     if(dev&&LOCAL_KINDS.has(dev.kind)){
-      const kind=dev.kind,level=Math.max(1,Number(dev.level)||1),current=buildingCapacity(kind,level),next=this.development.canUpgrade(this.state,tile),unit=kind==="housing"?"housing":kind==="power"?"Power":"Industry",gain=level<5?buildingCapacity(kind,level+1)-current:0;
+      const kind=dev.kind,level=Math.max(1,Number(dev.level)||1),current=buildingCapacity(kind,level),next=this.development.canUpgrade(this.state,tile),unit=kind==="housing"?"housing":kind==="power"?"Power":kind==="headquarters"?"command":"Industry",gain=level<5?buildingCapacity(kind,level+1)-current:0;
       let actions=level<5?this.action(`UPGRADE L${level+1}${gain?` • +${formatNumber(gain)}`:""}`,"local-upgrade",{disabled:!next.ok,cls:"primary"}):this.action("MAX LEVEL","noop",{disabled:true});actions+=this.action("DETAILS","details");
       if(!next.ok&&/Tech/i.test(next.reason||""))actions+=this.action("TECH","tech");else if(!next.ok&&/Build/i.test(next.reason||""))actions+=this.action("SHOW BUILD","focus",{kind:"build"});
       return{title:`${this.development.label(kind).toUpperCase()} L${level} • ${formatNumber(current)} ${unit}`,sub:`This building contributes directly to colony ${unit.toLowerCase()} capacity.`,actions,requirement:level>=5?"Maximum building level reached.":next.ok?`Upgrade ready • ${this.localCost(next)}`:next.reason};

@@ -2,7 +2,7 @@ import { UIController as LegacyUIController } from "./cash-policy-ui.js";
 import { CONFIG } from "../core/config.js";
 import { formatMoney,formatNumber } from "../core/utils.js";
 import { loadViewTemplate } from "../core/view-template.js";
-import { BUILDING_MODEL,SHIP_INFRASTRUCTURE,buildingCapacity,localBuildings,syncBuildingTotals } from "../domain/building-model.js";
+import { BUILDING_MODEL,buildingCapacity,localBuildings,syncBuildingTotals } from "../domain/building-model.js";
 import { berthStatus } from "../domain/spaceport-model.js";
 
 const LOCAL_KINDS=["housing","power","industry","headquarters"];
@@ -143,7 +143,7 @@ export class UIController extends LegacyUIController{
   async renderLocalInfrastructureCard(body,totals,m){
     const source=await this.loadPresentationView(VIEW_PATHS.localInfrastructure,"local infrastructure");if(!source||!body.isConnected||body!==this.modal.querySelector(".modal-body"))return;
     const fragment=document.createRange().createContextualFragment(source),card=fragment.querySelector("[data-local-infrastructure-card]");if(!card)return;
-    this.setPresentationText(card,"[data-local-housing]",`${formatNumber(this.state.pop)} / ${formatNumber(totals.housing)}`);this.setPresentationText(card,"[data-local-power]",`${formatNumber(m.powerDemand||0)} / ${formatNumber(totals.power)}`);this.setPresentationText(card,"[data-local-industry]",`${formatNumber(m.industry||0)} / ${formatNumber(totals.industry)}`);this.setPresentationText(card,"[data-ship-housing]",formatNumber(this.state.colony?.shipHousing||0));this.setPresentationText(card,"[data-ship-power]",SHIP_INFRASTRUCTURE.power);this.setPresentationText(card,"[data-ship-industry]",SHIP_INFRASTRUCTURE.industry);
+    this.setPresentationText(card,"[data-local-housing]",`${formatNumber(this.state.pop)} / ${formatNumber(totals.housing)}`);this.setPresentationText(card,"[data-local-power]",`${formatNumber(m.powerDemand||0)} / ${formatNumber(totals.power)}`);this.setPresentationText(card,"[data-local-industry]",`${formatNumber(m.industry||0)} / ${formatNumber(totals.industry)}`);this.setPresentationText(card,"[data-ship-housing]",formatNumber(this.state.colony?.shipHousing||0));this.setPresentationText(card,"[data-ship-power]",formatNumber(totals.shipPower||0));this.setPresentationText(card,"[data-ship-industry]",formatNumber(totals.shipIndustry||0));
     const management=body.querySelector(".colony-management");if(management)management.before(fragment);else body.appendChild(fragment);
   }
   colonyPanel(){if(this.state.status==="dead")return super.colonyPanel();return this.landColonyPanel();}

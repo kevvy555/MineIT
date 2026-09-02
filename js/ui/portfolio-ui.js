@@ -1,6 +1,6 @@
 import { renderViewTemplate } from "../core/view-template.js";
 import { formatMoney, formatNumber } from "../core/utils.js";
-import { SHIP_INFRASTRUCTURE,builtCapacity } from "../domain/building-model.js";
+import { builtCapacity,foundingShipIndustryCapacity } from "../domain/building-model.js";
 
 /** Canonical corporation portfolio presentation. */
 export class PortfolioUIMixin {
@@ -15,7 +15,7 @@ export class PortfolioUIMixin {
     try{
       cards=(await Promise.all(entries.map(entry=>{
         const s=this.portfolio.summary(entry,this.state),st=this.colonyStatus(s),wf=s.workforceRequired?Math.min(100,Math.round(s.workforceAvailable/s.workforceRequired*100)):100,data=entry.id===active?this.state:entry.data;
-        const installed=SHIP_INFRASTRUCTURE.industry+builtCapacity(entry.data,"industry"),effective=Math.max(0,Number(entry.data?.metrics?.industry)||0),rawStaff=Number(entry.data?.metrics?.industryStaffFactor),staff=Math.round(Math.max(0,Math.min(1,Number.isFinite(rawStaff)?rawStaff:1))*100),shipWaiting=!!data?.trade?.active;
+        const colonyState={...entry.data,company:this.state.company},installed=foundingShipIndustryCapacity(colonyState)+builtCapacity(entry.data,"industry"),effective=Math.max(0,Number(entry.data?.metrics?.industry)||0),rawStaff=Number(entry.data?.metrics?.industryStaffFactor),staff=Math.round(Math.max(0,Math.min(1,Number.isFinite(rawStaff)?rawStaff:1))*100),shipWaiting=!!data?.trade?.active;
         return renderViewTemplate("./views/colony-card.html",{
           ACTIVE_CLASS:entry.id===active?"active":"",COLONY_ID:entry.id,NAME:s.name,STATUS_CLASS:st.cls,STATUS_LABEL:st.label,TIER:s.tier,ENVIRONMENT:s.environment,SUPPORT_LOAD:Number(s.supportLoad||1).toFixed(2),POPULATION:formatNumber(s.pop),INDUSTRY_EFFECTIVE:formatNumber(effective),INDUSTRY_INSTALLED:formatNumber(installed),STAFF_PERCENT:staff,WORKFORCE_PERCENT:wf,CONTRACT_YEAR:s.year,CONTRACT_DAY:s.day,
           FOOD:s.status==="dead"?formatNumber(s.foodStock):this.colonyDays(s.foodDays),FUEL:s.status==="dead"?formatNumber(s.fuelStock):this.colonyDays(s.fuelDays),ORE:s.status==="dead"?formatNumber(s.oreStock):this.colonyDays(s.oreDays),

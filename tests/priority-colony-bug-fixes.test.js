@@ -14,14 +14,14 @@ import { createGameState,normalizeState } from "../js/domain/game-state-runtime.
 const contracts=new ContractService(),resources=new ResourceService();
 function setup(){
   const inventory=new InventoryService(resources),technology=new TechnologyService(),collection=new CollectionService(resources,inventory,technology),colony=new ColonyService(inventory,technology),trade=new TradeService(resources,inventory,colony),engine=new SimulationEngine(resources,technology,collection,trade,inventory,colony),state=createGameState(contracts.first()),expansion=engine.expansion;
-  expansion.ensure(state);engine.recalculate(state);return{state,inventory,technology,colony,trade,engine,expansion};
+  expansion.ensure(state);state.tiles.power={x:2,y:1,revealed:true,development:{kind:"power",level:1}};inventory.store(state,"fuel","biomass","Biomass",100);engine.recalculate(state);return{state,inventory,technology,colony,trade,engine,expansion};
 }
 function clearFood(state,inventory){for(const entry of Object.values(state.inventory||{})){if(entry.type!=="food")continue;for(const band of Object.values(entry.qualityBands||{}))band.amount=0;inventory.syncEntry(entry);}}
 function addShipFood(state,inventory,expansion,amount=200){const key=Object.keys(state.inventory).find(candidate=>state.inventory[candidate]?.type==="food");inventory.store(state,"food","fungal","Fungal Shelf",amount);const loaded=expansion.loadFood(state,key,amount);assert.equal(loaded.ok,true);clearFood(state,inventory);return expansion.transitFoodAmount(state);}
 
 // A02: the selector and live simulation share ColonyService.foodForecast.
 {
-  const{state,trade,engine}=setup();state.tiles.house={x:1,y:1,revealed:true,development:{kind:"housing",level:1}};state.trade.active=true;state.company.cash=1e9;engine.recalculate(state);
+  const{state,trade,engine}=setup();state.colony.shipAccommodation={};state.tiles.house={x:1,y:1,revealed:true,development:{kind:"housing",level:2}};state.trade.active=true;state.company.cash=1e9;engine.recalculate(state);
   const selected=50,projection=trade.colonistProjection(state,selected);
   assert.equal(projection.population,state.pop+selected);
   assert.equal(projection.demand,(state.pop+selected)*CONFIG.FOOD_PER_COLONIST);
@@ -37,7 +37,7 @@ function addShipFood(state,inventory,expansion,amount=200){const key=Object.keys
 
 // A06: ship Food is explicit emergency supply, never implicit colony stock.
 {
-  const{state,inventory,engine,expansion}=setup(),ship=expansion.ship(state),shipFood=addShipFood(state,inventory,expansion,300);
+  const{state,inventory,engine,expansion}=setup();state.colony.shipAccommodation={};const ship=expansion.ship(state),shipFood=addShipFood(state,inventory,expansion,300);
   engine.recalculate(state);assert.equal(state.metrics.foodStock,0);assert.equal(state.metrics.food,0);
   const first=engine.tick(state);assert.equal(first.emergencyFoodRequest?.shipId,ship.id);assert.equal(expansion.transitFoodAmount(state),shipFood,"the first shortage must not consume unapproved ship Food");
   assert.equal(expansion.emergencyFoodDecision(state).status,"pending");assert.equal(expansion.authorizeEmergencyFood(state,ship.id).ok,true);
@@ -45,10 +45,10 @@ function addShipFood(state,inventory,expansion,amount=200){const key=Object.keys
   inventory.store(state,"food","fungal","Fungal Shelf",.5);engine.recalculate(state);assert.equal(expansion.emergencyFoodDecision(state).status,"none","any returning colony Food must end emergency authorisation");
 }
 {
-  const{state,inventory,engine,expansion}=setup(),ship=expansion.ship(state),shipFood=addShipFood(state,inventory,expansion,200);const request=engine.tick(state).emergencyFoodRequest;assert.equal(expansion.declineEmergencyFood(state,request.shipId).ok,true);engine.tick(state);assert.equal(expansion.transitFoodAmount(state),shipFood,"declining must leave ship Food untouched");
+  const{state,inventory,engine,expansion}=setup();state.colony.shipAccommodation={};const ship=expansion.ship(state),shipFood=addShipFood(state,inventory,expansion,200),request=engine.tick(state).emergencyFoodRequest;assert.equal(expansion.declineEmergencyFood(state,request.shipId).ok,true);engine.tick(state);assert.equal(expansion.transitFoodAmount(state),shipFood,"declining must leave ship Food untouched");
 }
 {
-  const{state,inventory,engine,expansion}=setup(),ship=expansion.ship(state);addShipFood(state,inventory,expansion,200);engine.tick(state);assert.equal(expansion.authorizeEmergencyFood(state,ship.id).ok,true);const loaded=normalizeState(JSON.parse(JSON.stringify(state))),loadedExpansion=engine.expansion;assert.equal(loaded.version,15);assert.deepEqual(loaded.colony.emergencyShipFood,{shipId:ship.id,status:"authorized"},"a valid authorisation must survive save/load");const target=loaded.company.expansion.systems.find(system=>system.id!==loaded.contract.systemId),profile=loadedExpansion.travelProfile(loaded,target.id);const launched=loadedExpansion.startTravel(loaded,profile,{shipId:ship.id});assert.equal(launched.ok,true);assert.equal(loadedExpansion.emergencyFoodDecision(loaded).status,"none","ship departure must end emergency Food access");
+  const{state,inventory,engine,expansion}=setup();state.colony.shipAccommodation={};const ship=expansion.ship(state);addShipFood(state,inventory,expansion,200);engine.tick(state);assert.equal(expansion.authorizeEmergencyFood(state,ship.id).ok,true);const loaded=normalizeState(JSON.parse(JSON.stringify(state))),loadedExpansion=engine.expansion;assert.equal(loaded.version,15);assert.deepEqual(loaded.colony.emergencyShipFood,{shipId:ship.id,status:"authorized"},"a valid authorisation must survive save/load");const target=loaded.company.expansion.systems.find(system=>system.id!==loaded.contract.systemId),profile=loadedExpansion.travelProfile(loaded,target.id);const launched=loadedExpansion.startTravel(loaded,profile,{shipId:ship.id});assert.equal(launched.ok,true);assert.equal(loadedExpansion.emergencyFoodDecision(loaded).status,"none","ship departure must end emergency Food access");
 }
 
 // A07: class capacity and each manually assigned accommodation pool persist independently.
