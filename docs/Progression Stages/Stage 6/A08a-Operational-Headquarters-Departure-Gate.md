@@ -94,7 +94,7 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 ### Decision 2 — Power is not an A08a launch requirement
 
 - Headquarters Power state does not block colony-ship launch.
-- A08a will not add a Headquarters Power demand, priority allocation or `powerFactor` threshold to departure eligibility.
+- Headquarters Power never participates in departure eligibility. A08a does define Headquarters operational Power demand and priority allocation for ongoing command operation, as settled by Decisions 21 and 22.
 - Ships contribute zero Power to a colony. The current unconditional `SHIP_INFRASTRUCTURE.power` contribution must be removed from canonical colony totals. The existing 50 Industry contribution is handled by Decision 6.
 - Launch eligibility therefore does not need a projected “without ship Power” calculation: no ship provides colony Power before or after departure.
 - This decision intentionally overrides the Power condition in the initial A08a scope. The original backlog wording remains preserved above.
@@ -384,9 +384,82 @@ Combined factor:
 - The Headquarters operational Power-demand progression remains the final unresolved numeric rule.
 
 
+### Decision 22 — Light Headquarters operational Power curve and priority
+
+- Headquarters operational Power demand uses the existing light site curve:
+
+| Headquarters level | Required operational Power |
+|---|---:|
+| L1 | 1 |
+| L2 | 2 |
+| L3 | 4 |
+| L4 | 7 |
+| L5 | 11 |
+
+- Power remains excluded from A08a's first-departure gate.
+- During a colony-wide shortage, the Primary Headquarters receives Power before expansion Headquarters and ordinary colony demand.
+- Expansion Headquarters then receive Power from highest level to lowest level, with stable tile identity/order breaking equal-level ties.
+- A Headquarters contributes only when its complete level-specific Power demand is met; partial Power supplies no command capacity or positive bonus.
+- A docked command-capable ship uses ship support rather than colony Power and may take over when the Primary is unpowered.
+- After Headquarters priority demand is allocated, remaining generation feeds the colony's ordinary aggregate Power calculation.
+
+## Power-consumption and generation audit
+
+### Canonical curves on `develop`
+
+| Level | Power Plant generation | Housing capacity | Full Housing life support (temperate) | Industry capacity | Full Industry demand | Extraction-site demand | Approved HQ demand |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| L1 | 30 | 160 | 11.2 | 100 | 4.0 | 1 | 1 |
+| L2 | 75 | 360 | 25.2 | 230 | 9.2 | 2 | 2 |
+| L3 | 160 | 650 | 45.5 | 420 | 16.8 | 4 | 4 |
+| L4 | 330 | 1,050 | 73.5 | 700 | 28.0 | 7 | 7 |
+| L5 | 650 | 1,600 | 112.0 | 1,100 | 44.0 | 11 | 11 |
+
+Current formulas and omissions:
+
+- Planetary life support uses `population × 0.07 × scenario support load`; support load ranges from 0.9 to 2.0.
+- Industry uses four Power per 100 operational Industry capacity.
+- Every active extraction/production site uses the same 1/2/4/7/11 curve regardless of resource family.
+- Housing has no fixed building draw beyond resident life support.
+- Power Plants have no parasitic demand.
+- The fixed Basic Spaceport has no Power demand.
+- Power technology reduces Fuel intensity from 0.10 at L1 to 0.035 at L5; it does not multiply generation.
+- Extraction upgrades also require installed generation capacity, separately from runtime demand: Food sites require 45/90/160/260 Power for L2-L5, and industrial sites require 60/120/220/360.
+
+### Representative same-level colony
+
+This comparison uses one full Housing building, one fully staffed Industry building, one Headquarters and either one or five extraction sites at the same level.
+
+| Level | Generation | Demand with one site | Utilisation | Demand with five sites | Utilisation | Five sites at maximum 2.0 support load | Utilisation |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| L1 | 30 | 17.2 | 57.3% | 21.2 | 70.7% | 32.4 | 108.0% |
+| L2 | 75 | 38.4 | 51.2% | 46.4 | 61.9% | 71.6 | 95.5% |
+| L3 | 160 | 70.3 | 43.9% | 86.3 | 53.9% | 131.8 | 82.4% |
+| L4 | 330 | 115.5 | 35.0% | 143.5 | 43.5% | 217.0 | 65.8% |
+| L5 | 650 | 178.0 | 27.4% | 222.0 | 34.2% | 334.0 | 51.4% |
+
+### Findings
+
+1. The light Headquarters curve is small relative to same-level generation and does not materially distort the existing economy. Its principal pressure remains workforce, construction cost, land and command capacity.
+2. Same-level Power Plant generation grows faster than the representative Housing, Industry and extraction demand bundle. High-level colonies therefore gain increasing headroom, although multiple buildings and sites can consume it.
+3. Extraction sites become less Power-efficient as upgraded: output rises 10/18/30/48/72 while demand rises 1/2/4/7/11. Output per Power falls from 10.0 at L1 to about 6.55 at L5, partly countering the generous generator curve.
+4. Installed-Power upgrade gates are much larger than individual runtime site demand. Power currently acts more strongly as an upgrade prerequisite than as an operating constraint.
+5. The current shortage calculation produces a colony `powerFactor`, but `ResourceService.collectionRate()` does not consume it. Extraction, including mines, can therefore continue producing with zero generation. This is a correctness defect and conflicts with the agreed establishment rule.
+6. Current life-support demand uses total colony population rather than planetary residents, so colonists assigned to docked ship accommodation incorrectly consume colony Power. A08a already requires this ownership error to be corrected.
+7. The current 30 ship Power and 50 ship Industry are unconditional static baselines. A08a removes ship Power and makes the founding ship's Industry conditional on docking.
+
+### Audit recommendation
+
+- Keep the existing Power Plant, resident, Industry and extraction demand values unchanged in A08a.
+- Implement the agreed Headquarters curve, correct ship/planetary ownership and make zero Power stop planetary facilities.
+- Apply authoritative Power availability to affected production instead of merely displaying a `powerFactor` that extraction ignores.
+- Add focused behavioural tests for no Power, partial shortage, Headquarters priority, ship-resident exclusion and removal of docked-ship infrastructure.
+- Treat any broader generator/demand rebalance as a separately approved balance item after corrected telemetry can measure real colony configurations.
+
+
 ## Unresolved questions
 
-All behavioural rules are resolved except the numeric Headquarters operational Power demand by level. Power does not gate launch, but it determines ongoing Primary operation and emergency ship takeover.
+The Headquarters Power curve is resolved and the current building-Power audit is complete. Final review now needs a scope decision on whether A08a keeps existing non-Headquarters numeric curves while fixing their authoritative behaviour, or expands into a broad Power rebalance.
 
 ## Provisional acceptance criteria
 
