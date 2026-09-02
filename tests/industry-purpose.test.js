@@ -12,7 +12,7 @@ import { SiteService } from "../js/domain/site-service.js";
 import { SimulationEngine } from "../js/domain/simulation-engine.js";
 
 const contracts=new ContractService(),resources=new ResourceService(),inventory=new InventoryService(resources),technology=new TechnologyService(),collection=new CollectionService(resources,inventory,technology),colony=new ColonyService(inventory,technology),trade=new TradeService(resources,inventory),sites=new SiteService(contracts,technology,inventory,colony,resources),engine=new SimulationEngine(resources,technology,collection,trade,inventory,colony);
-const state=createGameState(contracts.first());state.pop=200;state.colony.shipAccommodation={};technology.recompute(state);state.company.cash=1e9;
+const state=createGameState(contracts.first());state.pop=1000;state.colony.shipAccommodation={};technology.recompute(state);state.company.cash=1e9;
 const tile=(x,type,resourceId,name)=>({x,y:1,revealed:true,developed:true,depleted:false,level:1,type,resourceId,name,quality:100,requiredMiningLevel:1,sustainability:type==="food"||resourceId==="biomass"||resourceId==="fiber"?"renewable":"finite",abundanceLabel:"Established",harvestIntensity:1,depositScale:"Large",reserve:100000,initialReserve:100000});
 state.tiles={power:{x:0,y:1,revealed:true,developed:true,name:"Power Plant",development:{kind:"power",level:1}},food:tile(1,"food","fungal","Fungal Shelf"),fuel:tile(2,"fuel","biomass","Biomass"),build1:tile(3,"build","fiber","Construction Fibre"),build2:tile(4,"build","fiber","Construction Fibre"),ore1:tile(5,"ore","surface-iron","Surface Iron Nodules"),ore2:tile(6,"ore","surface-iron","Surface Iron Nodules")};
 engine.recalculate(state);
