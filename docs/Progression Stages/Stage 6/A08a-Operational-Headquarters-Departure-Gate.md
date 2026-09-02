@@ -2,7 +2,7 @@
 
 **Progression stage:** 6 — Second Colony Establishment  
 **Type:** Feature  
-**Status:** Approved  
+**Status:** In Progress  
 **Split from:** A08 — Operational Headquarters
 
 ## Original backlog text
