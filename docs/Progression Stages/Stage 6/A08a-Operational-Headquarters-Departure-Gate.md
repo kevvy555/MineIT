@@ -202,9 +202,20 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 - Over-capacity penalty and positive Headquarters bonus are separately visible and combine through one authoritative domain calculation.
 - Exact facility weights, capacity values, penalty curve, bonus scope and bonus cap remain to be balanced.
 
+### Decision 12 — Temporary ship command, facility scope and efficiency scope
+
+- The docked founding colony ship provides temporary command capacity equal to an L1 Headquarters.
+- Its temporary command capacity is replaced when a fully constructed and staffed Primary Headquarters becomes operational; ship and Primary capacity do not stack.
+- After replacement, the ship does not regain or add command capacity merely because it remains docked or later returns.
+- Every player-built operational facility consumes command capacity except Headquarters buildings and the fixed Basic Spaceport.
+- Command load is differentiated by facility type and level: Housing is lighter, while Industry and advanced production/extraction are heavier.
+- Headquarters efficiency applies to extraction and Food/Fuel/Build production, industrial processing and surveying speed.
+- Headquarters efficiency does not change survival consumption, resource sale prices, storage capacity, physical building/ship capacity, transport time or ship travel.
+- The same authoritative command-efficiency factor must be consumed by each affected domain calculation rather than separately approximated by UI or individual systems.
+
 ## Unresolved questions
 
-Discovery questions may now be asked in batches of up to three at the user's request. The current batch defines temporary founding-ship command capacity, which facilities create command load and which operations receive Headquarters efficiency. Later questions will cover numeric capacity/weights/curves, placement, Primary eligibility/change restrictions, migration, scope split and failure presentation.
+Discovery questions may now be asked in batches of up to three at the user's request. The current batch proposes facility command weights, Headquarters capacity by level and minimum staff by level. Later questions will cover penalty/bonus curves, construction and upgrade costs, technology gates, placement, Primary change restrictions, migration, scope split and failure presentation.
 
 ## Provisional acceptance criteria
 
