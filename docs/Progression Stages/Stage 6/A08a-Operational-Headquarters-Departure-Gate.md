@@ -457,9 +457,20 @@ This comparison uses one full Housing building, one fully staffed Industry build
 - Treat any broader generator/demand rebalance as a separately approved balance item after corrected telemetry can measure real colony configurations.
 
 
+### Decision 23 — Expand A08a to rebalance the complete Power economy
+
+- A08a will not preserve the existing non-Headquarters generation and demand values by default.
+- Discovery expands to analyse and rebalance the complete authoritative Power economy before final review.
+- The balance pass includes Power Plant generation, planetary life-support demand, Industry demand, extraction/production-site demand, Headquarters priority demand, installed-Power upgrade gates, Fuel consumption and shortage allocation.
+- The approved light Headquarters curve remains the starting point and will change only through another explicit decision.
+- The pass must retain the establishment rules: ships provide no colony Power, ship residents use ship support, and planetary facilities cannot operate without delivered colony Power.
+- Gameplay values will not be modified until the rebalanced tables and their economic consequences have been presented and approved as part of the complete A08a specification.
+- The implementation must replace disconnected scalar approximations with one authoritative domain Power assessment consumed by production, processing, survival, upgrade checks and UI presentation.
+
+
 ## Unresolved questions
 
-The Headquarters Power curve is resolved and the current building-Power audit is complete. Final review now needs a scope decision on whether A08a keeps existing non-Headquarters numeric curves while fixing their authoritative behaviour, or expands into a broad Power rebalance.
+A08a now includes the full Power-economy rebalance. Remaining discovery must set the target operating headroom, shortage priorities, Fuel-use basis and the final generation, demand and installed-capacity tables.
 
 ## Provisional acceptance criteria
 
