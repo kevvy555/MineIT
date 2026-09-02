@@ -20,7 +20,7 @@ const stock=(state)=>{inventory.store(state,"food","fungal","Fungal Shelf",20000
 const stockedKey=(type,resourceId)=>inventory.key(type,resourceId);
 
 const {state,portfolio,expansion}=fresh();
-assert.equal(state.version,14);
+assert.equal(state.version,15);
 assert.equal(state.company.expansion.version,EXPANSION_VERSION);
 assert.equal(EXPANSION_VERSION,3);
 assert.equal(state.company.expansion.ships.length,1);
