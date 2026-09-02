@@ -153,9 +153,21 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 - The authoritative domain action must calculate and recheck the post-transfer Power position; the UI displays that result but does not independently decide eligibility.
 - Residents remaining aboard continue using ship support and are excluded from colony Power demand and workforce.
 
+### Decision 8 — One-time founding-ship command handover
+
+- Each newly founded colony records the identity of the colony ship that established it and begins with command handover pending.
+- A08a gates only that founding colony ship's first departure from that colony.
+- The first successful gated launch persists command handover as complete for the colony.
+- Once complete, later visits and departures by the founding ship are not gated by A08a, even if Headquarters later becomes understaffed.
+- A08b will own later Headquarters outage consequences rather than using A08a to trap a visiting ship.
+- Purchased freight ships and other non-founding ships are not subject to the gate.
+- Corporate-home departures, arrivals, orbiting actions and in-transit reroutes are not colony command handovers and remain outside the gate.
+- The authoritative state belongs to the colony and must survive portfolio switching and save/load.
+- Migration must avoid retroactively trapping ships or invalidating colonies that were established before the handover field existed; the exact migration rule will be specified before final review.
+
 ## Unresolved questions
 
-Questions will be worked through one at a time. The next question is which colony-ship departures are subject to the Headquarters handover gate. Later questions will cover Headquarters count and placement, staffing/construction balance values, scope split, and presentation of multiple failures.
+Questions will be worked through one at a time. The next question is whether a colony may construct more than one Headquarters. Later questions will cover placement, staffing/construction balance values, migration, scope split, and presentation of multiple failures.
 
 ## Provisional acceptance criteria
 
