@@ -2,7 +2,7 @@ import { BUILDING_MODEL,MAX_BUILDING_LEVEL,buildingCapacity,buildingCost,buildin
 
 const RECOVERY=.25;
 export class DevelopmentService{
-  constructor(inventoryService,landService){this.inventory=inventoryService;this.land=landService;}
+  constructor(inventoryService,landService,colonyService=null){this.inventory=inventoryService;this.land=landService;this.colony=colonyService;}
   label(kind){return BUILDING_MODEL[kind]?.label||kind;}
   developments(state,kind=null){return localBuildings(state,kind).concat(kind&&BUILDING_MODEL[kind]?[]:Object.values(state.tiles||{}).filter(t=>t.development?.kind==="extract"&&(!kind||kind==="extract")));}
   levels(state,kind){return localBuildings(state,kind).reduce((sum,t)=>sum+Math.max(0,Number(t.development?.level)||0),0);}
@@ -25,7 +25,7 @@ export class DevelopmentService{
     if(tile.development||tile.developed)return{ok:false,reason:"Demolish the existing development first."};
     if(tile.terrain==="lake")return{ok:false,reason:`Standard ${this.label(kind)} cannot be built on lakes.`};
     const cost=this.cost(state,tile,kind,1),resourceReason=this.checkResources(state,cost);if(resourceReason)return{ok:false,reason:resourceReason,...cost,nextLevel:1};
-    if(this.techLevel(state,kind)<1)return{ok:false,reason:`Requires deployed ${this.label(kind)} technology L1.`,...cost,nextLevel:1};
+    if(buildingTechCategory(kind)&&this.techLevel(state,kind)<1)return{ok:false,reason:`Requires deployed ${this.label(kind)} technology L1.`,...cost,nextLevel:1};
     return{ok:true,...cost,nextLevel:1,capacity:buildingCapacity(kind,1),coversResource:!!tile.resourceId};
   }
   place(state,tile,kind){
@@ -40,7 +40,7 @@ export class DevelopmentService{
     if(state.status==="dead")return{ok:false,reason:"This colony has been lost."};if(state.contract?.ended)return{ok:false,reason:"The mining contract has ended."};
     const level=Math.max(1,Number(dev.level)||1);if(level>=MAX_BUILDING_LEVEL)return{ok:false,reason:`${this.label(kind)} is already at L${MAX_BUILDING_LEVEL}.`,max:true};
     const nextLevel=level+1,cost=this.cost(state,tile,kind,nextLevel),tech=this.techLevel(state,kind),resourceReason=this.checkResources(state,cost);
-    if(tech<nextLevel)return{ok:false,reason:`Requires ${this.label(kind)} Tech L${nextLevel}; this colony has deployed L${tech}.`,...cost,nextLevel,techRequired:nextLevel};
+    if(buildingTechCategory(kind)&&tech<nextLevel)return{ok:false,reason:`Requires ${this.label(kind)} Tech L${nextLevel}; this colony has deployed L${tech}.`,...cost,nextLevel,techRequired:nextLevel};
     if(resourceReason)return{ok:false,reason:resourceReason,...cost,nextLevel,techRequired:nextLevel};
     return{ok:true,...cost,nextLevel,techRequired:nextLevel,currentCapacity:buildingCapacity(kind,level),capacity:buildingCapacity(kind,nextLevel)};
   }
@@ -55,6 +55,6 @@ export class DevelopmentService{
     const dev=tile?.development;if(!dev)return{ok:false,reason:"Nothing has been constructed on this tile."};
     const recoverBuild=Math.floor(Math.max(0,Number(dev.investedBuild)||0)*RECOVERY),recoverOre=Math.floor(Math.max(0,Number(dev.investedOre)||0)*RECOVERY),clearedExhaustedResource=dev.kind==="extract"&&this.clearExhaustedResource(tile);
     if(recoverBuild)this.inventory.store(state,"build","fiber","Construction Fibre",recoverBuild);if(recoverOre)this.inventory.store(state,"ore","surface-iron","Surface Iron Nodules",recoverOre);
-    if(dev.kind==="extract"){tile.developed=false;tile.level=0;}tile.development=null;tile.resourceCovered=false;this.sync(state);return{ok:true,recover:recoverBuild,recoverBuild,recoverOre,clearedExhaustedResource};
+    if(dev.kind==="extract"){tile.developed=false;tile.level=0;}\n    if(dev.kind==="headquarters"){const id=Object.entries(state.tiles||{}).find(([,value])=>value===tile)?.[0];if(state.colony?.primaryHeadquartersId===id){state.colony.primaryHeadquartersId=null;state.colony.primaryHeadquartersEver=true;}}\n    tile.development=null;tile.resourceCovered=false;this.sync(state);return{ok:true,recover:recoverBuild,recoverBuild,recoverOre,clearedExhaustedResource};
   }
 }
