@@ -311,9 +311,23 @@ Combined factor:
 - Which ship classes can provide emergency management, and whether the emergency-transfer mechanics themselves are implemented now or deferred wholly to A08b, remain unresolved.
 
 
+
+### Decision 17 — Command-capable ships and migration of existing saves
+
+- Emergency ship management is driven by an explicit canonical ship-class command capability.
+- Colony ships have this capability by default.
+- Other present or future ship classes qualify only when their canonical class definition explicitly grants command capability; merely being player-owned and docked is insufficient.
+- A qualifying ship must actually be docked at the affected colony to assume management.
+- Pre-A08a saves migrate every existing colony with command handover already complete.
+- The migration does not retroactively gate an established colony's next ship departure or require reconstructing a founding-ship identity that old saves did not preserve.
+- Only colonies founded after the migrated save is loaded begin with command handover pending and record their founding colony ship.
+- Save/load must preserve command handover, Primary identity and the ship/colony relationship used by the authoritative command assessment.
+- The user selected A08a to own emergency takeover and disruption. The exact meaning of “disruption” still requires clarification because absorbing A08b's already-separated network restrictions, progressive degradation and ten-day recovery would conflict with the original scope instruction.
+
+
 ## Unresolved questions
 
-Discovery questions may now be asked in batches of up to three at the user's request. The current batch defines emergency ship eligibility, the A08a/A08b implementation boundary and existing-save migration. Failure presentation and final behavioural test boundaries will then be consolidated for review.
+Discovery questions may now be asked in batches of up to three at the user's request. The current batch clarifies whether A08a absorbs the full A08b lifecycle and defines command behaviour after Primary loss. Failure presentation and final behavioural test boundaries will then be consolidated for review.
 
 ## Provisional acceptance criteria
 
