@@ -377,8 +377,24 @@ export class ExpansionService{
     return{ok:false,reason:"The ship cannot change destination in its current state."};
   }
 
-  canLaunch(state,shipId=null){const ship=this.ship(state,shipId);if(!ship)return{ok:false,reason:"Player ship not found."};if(!["docked","home"].includes(ship.status))return{ok:false,reason:"The ship is not ready to launch."};if(ship.status==="docked"&&!this.isAtActiveColony(state,ship.id))return{ok:false,reason:"Switch to the colony where the ship is docked."};if(ship.crew<ship.minimumCrew)return{ok:false,reason:`Load at least ${ship.minimumCrew} crew before launch.`};if(!ship.targetSystemId)return{ok:false,reason:"Select a destination system first."};const p=this.travelProfile(state,ship.targetSystemId,null,ship.id);if(!p)return{ok:false,reason:"Route unavailable."};const supplied=this.routeCanBeSupplied(state,p,ship.id);if(!supplied.ok)return supplied;return{ok:true,profile:p};}
-  launch(state,shipId=null){const r=this.canLaunch(state,shipId);if(!r.ok)return r;const ship=this.ship(state,shipId);return this.startTravel(state,r.profile,{shipId:ship.id,targetColonyId:ship.targetColonyId});}
+  headquartersLaunchAssessment(state,ship=null){
+    ship=ship||this.ship(state);
+    const pending=!!state.colony&&!state.colony.commandHandoverComplete&&(!state.colony.foundingShipId||state.colony.foundingShipId===ship?.id)&&ship?.status==="docked"&&ship?.id===state.colony?.foundingShipId;
+    if(!pending)return{required:false,ok:true,failures:[]};
+    const colony=this.colonyService,failures=[];
+    if(!colony)return{required:true,ok:false,failures:["Primary Headquarters status is unavailable."]};
+    const rows=colony.headquartersRows(state),primaryId=state.colony.primaryHeadquartersId,row=rows.find(item=>item.id===primaryId);
+    if(!row)failures.push("No Primary Headquarters is designated.");
+    else{
+      if(!row.constructed)failures.push("Primary Headquarters is not fully constructed.");
+      const staffing=colony.headquartersStaffing(state),staffed=staffing.rows.find(item=>item.id===row.id);
+      if(!staffed?.staffed)failures.push(`Primary Headquarters requires ${row.requiredStaff} staff; ${staffed?.staff||0} assigned.`);
+    }
+    return{required:true,ok:failures.length===0,failures,reason:failures.length?failures.join(" "):null,primaryId};
+  }
+
+  canLaunch(state,shipId=null){const ship=this.ship(state,shipId);if(!ship)return{ok:false,launchEnabled:false,reason:"Player ship not found."};if(!["docked","home"].includes(ship.status))return{ok:false,launchEnabled:false,reason:"The ship is not ready to launch."};if(ship.status==="docked"&&!this.isAtActiveColony(state,ship.id))return{ok:false,launchEnabled:false,reason:"Switch to the colony where the ship is docked."};if(ship.crew<ship.minimumCrew)return{ok:false,launchEnabled:false,reason:`Load at least ${ship.minimumCrew} crew before launch.`};if(!ship.targetSystemId)return{ok:false,launchEnabled:false,reason:"Select a destination system first."};const p=this.travelProfile(state,ship.targetSystemId,null,ship.id);if(!p)return{ok:false,launchEnabled:false,reason:"Route unavailable."};const supplied=this.routeCanBeSupplied(state,p,ship.id);if(!supplied.ok)return{ok:false,launchEnabled:false,reason:supplied.reason};const headquarters=this.headquartersLaunchAssessment(state,ship);if(!headquarters.ok)return{ok:false,launchEnabled:true,headquarters,profile:p,reason:`DEPARTURE BLOCKED • ${headquarters.reason}`};return{ok:true,launchEnabled:true,profile:p,headquarters};}
+  launch(state,shipId=null){const r=this.canLaunch(state,shipId);if(!r.ok){return r;}const ship=this.ship(state,shipId),result=this.startTravel(state,r.profile,{shipId:ship.id,targetColonyId:ship.targetColonyId});if(result.ok&&r.headquarters?.required){state.colony.commandHandoverComplete=true;}return result;}
 
   consumeTransitFood(state,requested,shipId=null){const ship=this.ship(state,shipId),first=consumeContainerCategory(ship?.foodLots,"food",requested),remaining=Math.max(0,requested-first.consumed);if(remaining<=0)return{requested,consumed:first.consumed,ratio:1};const second=consumeContainerCategory(ship?.cargo,"food",remaining),consumed=first.consumed+second.consumed;return{requested,consumed,ratio:requested>0?Math.min(1,consumed/requested):1};}
 
