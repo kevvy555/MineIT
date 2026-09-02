@@ -17,6 +17,7 @@ import { SurveyService } from "../js/domain/survey-service.js";
 const contracts=new ContractService(),resources=new ResourceService(),inventory=new InventoryService(resources),technology=new TechnologyService(),collection=new CollectionService(resources,inventory,technology),colony=new ColonyService(inventory,technology),trade=new TradeService(resources,inventory),engine=new SimulationEngine(resources,technology,collection,trade,inventory,colony),land=new LandService(),development=new DevelopmentService(inventory,land),world=new WorldService(resources,contracts,land),survey=new SurveyService(world,contracts);
 const state=createGameState(contracts.first());
 state.company.tech={housing:5,power:5,food:5,industry:5,mining:5};
+state.colony.shipAccommodation={};
 land.ensure(state);technology.recompute(state);engine.recalculate(state);
 
 // Resurvey regression: a developed extraction site must not become "resource covered" and lose all output.
