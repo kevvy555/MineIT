@@ -36,9 +36,11 @@ Example: a colony restored at 60% efficiency has lost 40 percentage points and t
 
 ## Scope boundary
 
-A08b does not own the initial colony-ship departure gate. A08a owns the operational Headquarters definition used at departure and should provide the canonical operational assessment that A08b can later reuse.
+A08b does not own the initial colony-ship departure gate. A08a owns the operational Headquarters definition used at departure and provides the canonical command-availability assessment that A08b reuses.
 
-A08b is not part of the current A08a implementation scope.
+A08a also owns immediate emergency management transfer to a docked command-capable ship, loss and restoration of command capacity, and the resulting immediate command-efficiency effect when neither a Primary nor a command ship is available.
+
+A08b begins from that shared canonical no-command or Headquarters-outage state and owns conglomerate-network restrictions, subsequent daily degradation and the ten-day recovery lifecycle. Those A08b behaviours are not part of the current A08a implementation scope.
 
 ## Acceptance criteria preserved from A08
 
