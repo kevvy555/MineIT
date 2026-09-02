@@ -42,14 +42,14 @@ export const FACILITY_POWER_DEMAND=Object.freeze({
   "deep-mine":Object.freeze([7,16,31,54,86])
 });
 export const POWER_UPGRADE_GATES=Object.freeze({
-  farm:Object.freeze([0,0,90,190,340,550]),
-  ranch:Object.freeze([0,0,90,190,340,550]),
-  bio:Object.freeze([0,0,100,210,370,600]),
-  algae:Object.freeze([0,0,100,210,370,600]),
-  quarry:Object.freeze([0,0,110,225,400,650]),
-  rig:Object.freeze([0,0,115,235,420,680]),
-  mine:Object.freeze([0,0,125,250,440,710]),
-  "deep-mine":Object.freeze([0,0,140,280,470,750])
+  farm:Object.freeze([0,90,190,340,550]),
+  ranch:Object.freeze([0,90,190,340,550]),
+  bio:Object.freeze([0,100,210,370,600]),
+  algae:Object.freeze([0,100,210,370,600]),
+  quarry:Object.freeze([0,110,225,400,650]),
+  rig:Object.freeze([0,115,235,420,680]),
+  mine:Object.freeze([0,125,250,440,710]),
+  "deep-mine":Object.freeze([0,140,280,470,750])
 });
 
 export const BUILDING_MODEL=Object.freeze({
