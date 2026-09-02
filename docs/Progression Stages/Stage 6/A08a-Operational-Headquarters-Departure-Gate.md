@@ -190,9 +190,21 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 - The Primary Headquarters must independently satisfy A08a's minimum staffing departure gate; expansion staffing cannot be pooled to make an understaffed Primary operational.
 - The model must make one upgraded Headquarters and several low-level expansions meaningful alternatives without allowing cheap Headquarters spam to dominate.
 
+### Decision 11 — Soft command-capacity pressure and capped network bonuses
+
+- Command load is weighted by both facility type and facility level.
+- Exceeding total staffed Headquarters command capacity does not block construction or upgrades.
+- Before a command that would exceed capacity is confirmed, the game warns the player and previews the resulting capacity shortfall and efficiency effect.
+- While over capacity, the colony receives a progressive efficiency penalty that becomes more severe as load exceeds capacity.
+- Every staffed Headquarters contributes to the positive Headquarters-network efficiency bonus.
+- Positive contributions use diminishing returns and a global cap.
+- An understaffed Headquarters contributes neither capacity nor positive efficiency.
+- Over-capacity penalty and positive Headquarters bonus are separately visible and combine through one authoritative domain calculation.
+- Exact facility weights, capacity values, penalty curve, bonus scope and bonus cap remain to be balanced.
+
 ## Unresolved questions
 
-Discovery questions may now be asked in batches of up to three at the user's request. The current batch defines over-capacity behaviour, command-load calculation and efficiency-bonus stacking. Later questions will cover placement, numeric level balance, Primary eligibility/change restrictions, migration, scope split and failure presentation.
+Discovery questions may now be asked in batches of up to three at the user's request. The current batch defines temporary founding-ship command capacity, which facilities create command load and which operations receive Headquarters efficiency. Later questions will cover numeric capacity/weights/curves, placement, Primary eligibility/change restrictions, migration, scope split and failure presentation.
 
 ## Provisional acceptance criteria
 
