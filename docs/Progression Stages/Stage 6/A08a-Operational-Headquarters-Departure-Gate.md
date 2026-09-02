@@ -341,9 +341,23 @@ Combined factor:
 - A08a must expose the canonical command-availability assessment so A08b can later begin, continue and restore its outage state without duplicating Headquarters or ship eligibility rules.
 
 
+
+### Decision 19 — Immediate no-command effect and Primary demolition warning
+
+- When the colony has neither an eligible Primary Headquarters nor a docked command-capable ship, command capacity is zero and the existing command formula applies its maximum 50-percentage-point overload penalty.
+- Disconnected expansion Headquarters supply no capacity or positive bonus, so no separate no-command penalty is added on top of the zero-capacity result.
+- The resulting command-efficiency factor continues to affect production/extraction, processing and surveying only, as defined by Decision 12.
+- Demolishing the Primary remains permitted.
+- Before demolition, the authoritative domain assessment calculates the post-demolition command source, available capacity, command load, Headquarters bonus, overload penalty and combined efficiency.
+- The UI presents those projected consequences in a confirmation warning.
+- Confirming rechecks and performs the demolition; cancelling makes no state change.
+- If a command-capable ship is docked, the preview includes its temporary 16 capacity and zero positive bonus.
+- The presentation of missing Headquarters launch requirements remains unresolved because the latest answer may overturn the defining first-departure gate and requires explicit clarification.
+
+
 ## Unresolved questions
 
-Discovery questions may now be asked in batches of up to three at the user's request. The final batch defines the immediate no-command penalty, destructive-action warning and launch-failure presentation. The complete specification and behavioural boundaries can then be consolidated for final review.
+The no-command penalty and destructive-action warning are resolved. One defining clarification remains: whether a missing or understaffed Primary still blocks the founding colony ship's first departure, or whether only the Launch button presentation was being corrected.
 
 ## Provisional acceptance criteria
 
