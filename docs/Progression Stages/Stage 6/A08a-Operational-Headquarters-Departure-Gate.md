@@ -141,9 +141,21 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 - Purchased freight or other non-colony-establishment ships do not automatically qualify as the startup Industry source unless their canonical class capability explicitly introduces that feature in future work.
 - The ship-preparation UI should make any post-launch Industry reduction visible as information or warning, but it is not an A08a blocking requirement.
 
+### Decision 7 — Explicit resident transfer with warned Power shortage
+
+- Colonists are never moved automatically between ship and planetary accommodation.
+- The player explicitly chooses the quantity to transfer, preserving A07's manual accommodation-allocation rule.
+- Moving residents ashore is blocked when the colony has zero available Power generation, even when completed habitat capacity exists.
+- When the colony has some available Power but cannot fully support the requested post-transfer planetary population, the game presents a clear warning showing the projected Power demand, available generation and shortage.
+- If the player confirms, the full requested quantity is transferred subject to available habitat capacity. The game does not silently clamp the transfer to the fully powered population.
+- The confirmed transfer creates a real colony Power shortage and existing shortage consequences apply.
+- Cancelling the warning leaves accommodation assignments unchanged.
+- The authoritative domain action must calculate and recheck the post-transfer Power position; the UI displays that result but does not independently decide eligibility.
+- Residents remaining aboard continue using ship support and are excluded from colony Power demand and workforce.
+
 ## Unresolved questions
 
-Questions will be worked through one at a time. The next question is the Power-capacity check for moving residents ashore. Later questions will cover which ships/departures are gated, Headquarters count and placement, staffing/construction balance values, scope split, and presentation of multiple failures.
+Questions will be worked through one at a time. The next question is which colony-ship departures are subject to the Headquarters handover gate. Later questions will cover Headquarters count and placement, staffing/construction balance values, scope split, and presentation of multiple failures.
 
 ## Provisional acceptance criteria
 
