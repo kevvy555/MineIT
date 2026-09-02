@@ -9,7 +9,7 @@ export class SurveyService {
   isActive(state,x,y){return state.scans.some(s=>s.x===x&&s.y===y);}
   isQueued(state,x,y){return state.scanQueue.some(s=>s.x===x&&s.y===y);}
   isResurveyable(state,x,y){const tile=this.world.get(state,x,y),last=Math.max(0,Number(tile?.lastScannedAtLevel)||0);return !(x===0&&y===0)&&!!tile?.revealed&&last>0&&last<this.scanningLevel(state);}
-  baseDays(state,x,y){const a=this.contracts.archetype(state.contract);return Math.max(2,Math.round((8+Math.hypot(x,y)*.22)*a.scan*state.metrics.sf));}
+  baseDays(state,x,y){const a=this.contracts.archetype(state.contract);return Math.max(2,Math.round((8+Math.hypot(x,y)*.22)*a.scan*state.metrics.sf/Math.max(.5,Number(state.metrics?.commandEfficiency)||1)));}
   days(state,x,y,resurvey=this.isResurveyable(state,x,y)){const base=this.baseDays(state,x,y);return resurvey?Math.max(1,Math.round(base*RESURVEY_TIME_FACTOR)):base;}
   surveyable(state,x,y){if(state.contract?.ended||x===0&&y===0||this.isActive(state,x,y)||this.isQueued(state,x,y))return false;const tile=this.world.get(state,x,y);return !tile.revealed||this.isResurveyable(state,x,y);}
   fill(state){if(state.contract?.ended)return;while(state.scans.length<this.slots(state)&&state.scanQueue.length){const next=state.scanQueue.shift();if(!this.surveyable(state,next.x,next.y))continue;const resurvey=this.isResurveyable(state,next.x,next.y),scanningLevel=this.scanningLevel(state),total=this.days(state,next.x,next.y,resurvey);state.scans.push({...next,resurvey,scanningLevel,total,remaining:total});}}
