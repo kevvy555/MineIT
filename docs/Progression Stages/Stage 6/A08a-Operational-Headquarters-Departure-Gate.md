@@ -111,9 +111,17 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 - Conditions that reduce available workforce to zero, including colony loss or the existing starvation rule, also leave Headquarters understaffed.
 - The reserved minimum reduces free workforce and may reduce lower-priority production capacity through the existing workforce-network calculation.
 
+### Decision 4 — Immediate construction under the current lifecycle
+
+- Headquarters uses the same immediate construction lifecycle as current Housing, Power and Industry buildings.
+- Placement consumes the approved construction resources and immediately creates a fully constructed Headquarters.
+- A08a will not add a Headquarters-only timer or commissioning delay.
+- The departure assessment will use an explicit construction-complete predicate rather than assuming that any future placed building is complete.
+- When A05a later introduces timed construction generally, it can change the canonical building completion state without rewriting or duplicating the A08a launch gate.
+
 ## Unresolved questions
 
-Questions will be worked through one at a time. The next question is whether Headquarters uses the existing immediate construction lifecycle or introduces its own timer before A05a. Later questions will cover which ships/departures are gated, Headquarters count and placement, staffing/construction balance values, initial colony infrastructure after ship contributions are removed, and presentation of multiple failures.
+Questions will be worked through one at a time. The next question is what supplies the colony's starting baseline after the current ship-provided 30 Power and 50 Industry are removed. Later questions will cover which ships/departures are gated, Headquarters count and placement, staffing/construction balance values, and presentation of multiple failures.
 
 ## Provisional acceptance criteria
 
