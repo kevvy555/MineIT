@@ -80,11 +80,16 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 
 ## Product decisions
 
-No decisions have yet been recorded during this discovery pass.
+### Decision 1 — Initial command facility
+
+- The initial approved Headquarters replacement is a dedicated Headquarters building.
+- An existing Industry building cannot be nominated as Headquarters and does not satisfy the departure gate merely because it is present or upgraded.
+- Headquarters identity must be canonical building data, not UI state or a player-applied label.
+- Any future alternative or higher-tier command facility will qualify only if its canonical definition explicitly identifies it as an approved Headquarters replacement.
 
 ## Unresolved questions
 
-Questions will be worked through one at a time. The first question is whether Headquarters is a dedicated building or a capability assigned to an existing building. Later questions will cover construction completion, Power priority, staffing allocation, which ships/departures are gated, balance values and presentation of multiple failures.
+Questions will be worked through one at a time. The next question is how Headquarters receives Power when the colony has an aggregate Power network rather than per-building allocation. Later questions will cover construction completion, staffing allocation, post-departure projection, which ships/departures are gated, balance values and presentation of multiple failures.
 
 ## Provisional acceptance criteria
 
