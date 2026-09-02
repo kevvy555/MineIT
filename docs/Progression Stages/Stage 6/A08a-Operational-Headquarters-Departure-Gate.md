@@ -11,11 +11,14 @@
 
 ## Scope established before discovery
 
-A08a must prevent a colony ship from leaving a colony unless an approved Headquarters replacement is:
+The initial A08a scope required an approved Headquarters replacement to be fully constructed, receiving required Power and staffed to its defined minimum.
+
+Decision 2 below supersedes the initial Power condition. The final A08a departure gate requires the dedicated Headquarters to be:
 
 - fully constructed;
-- receiving its required Power;
 - staffed to its defined minimum.
+
+A colony ship supplies no colony Power or Industry while docked or after departure.
 
 The rule applies to the first colony and every later colony established by a colony ship. A blocked launch must explain exactly which requirement is missing.
 
@@ -44,7 +47,8 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 - `ColonyService.demand()`, `SimulationEngine` and `syncBuildingTotals()` own the current colony-wide Power calculation.
 - Power is represented as total capacity, total demand and a shared `powerFactor`; there is no per-building allocation or priority model.
 - The landed ship currently contributes fixed Power and Industry through `SHIP_INFRASTRUCTURE`, and those contributions are added unconditionally rather than being derived from whether a ship is docked. This is a related implementation conflict that must be resolved or explicitly isolated when A08a is implemented.
-- A08a therefore needs an agreed rule for what “receiving its required Power” means in the current aggregate Power model.
+- Decision 2 removes Power from the A08a departure gate.
+- Ships must contribute zero colony Power and zero colony Industry. A08a implementation must remove the current unconditional fixed ship contributions rather than project or preserve them.
 
 ### Staffing and workforce
 
@@ -63,7 +67,7 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 ## Proposed canonical ownership
 
 - Static command-building eligibility and balance data should extend the canonical building definition rather than live in the UI.
-- The authoritative Headquarters operational assessment should be a domain calculation over the active colony's canonical building, Power and staffing state.
+- The authoritative Headquarters departure assessment should be a domain calculation over the active colony's canonical construction and staffing state.
 - `ExpansionService.canLaunch()` should consume that assessment for docked colony departures and return structured missing requirements.
 - The ship-preparation UI should render the same domain result and must not recreate the gate.
 - `ExpansionService.launch()` must retain its second authoritative check so stale UI state cannot bypass the rule.
@@ -71,12 +75,12 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 ## Known dependencies and conflicts
 
 1. A05a timed construction is not yet implemented, so A08a needs a future-compatible completion rule without absorbing A05a.
-2. The existing aggregate Power model does not identify which facility receives limited Power.
-3. The existing workforce model does not assign staff to individual non-extraction buildings.
-4. Fixed ship-provided Power and Industry are currently counted even after departure; this may undermine the intended replacement handover.
-5. Purchased freight ships now share the fleet and launch service, so the gate must distinguish colony-establishment ships from unrelated vessels.
-6. The first colony and later colonies use the same local-state shape but are captured and switched through the portfolio; regression coverage must exercise both.
-7. Launch presentation currently exposes one `reason` string. A08a may have several simultaneous missing requirements and should return a structured list plus a clear combined message.
+2. The existing workforce model does not assign staff to individual non-extraction buildings.
+3. Fixed ship-provided Power and Industry are currently counted unconditionally. A08a must remove both contributions and strengthen regression coverage around colony totals.
+4. Purchased freight ships now share the fleet and launch service, so the gate must distinguish colony-establishment ships from unrelated vessels.
+5. The first colony and later colonies use the same local-state shape but are captured and switched through the portfolio; regression coverage must exercise both.
+6. Launch presentation currently exposes one `reason` string. A08a may have several simultaneous missing requirements and should return a structured list plus a clear combined message.
+7. A08b still treats Headquarters Power loss as a later outage condition. Because A08a now allows an unpowered Headquarters at launch, that interaction must be reviewed when A08b enters discovery or final review; it is not part of A08a implementation.
 
 ## Product decisions
 
@@ -87,27 +91,27 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 - Headquarters identity must be canonical building data, not UI state or a player-applied label.
 - Any future alternative or higher-tier command facility will qualify only if its canonical definition explicitly identifies it as an approved Headquarters replacement.
 
-### Decision 2 — Headquarters Power priority
+### Decision 2 — Power is not an A08a launch requirement
 
-- Headquarters is a protected priority Power load.
-- Its canonical building definition will specify a fixed required Power demand.
-- Headquarters counts as powered whenever the colony's currently available generation can supply that full demand, even if remaining generation cannot satisfy every other colony load.
-- A wider colony brownout therefore does not make Headquarters non-operational when its own full demand is covered.
-- Headquarters is unpowered when available generation is below its required demand; a partial proportional allocation does not satisfy the departure gate.
-- The authoritative calculation must allocate Headquarters Power before applying the existing shared shortage factor to remaining loads. The UI must consume the resulting operational assessment rather than interpret the general colony `powerFactor`.
+- Headquarters Power state does not block colony-ship launch.
+- A08a will not add a Headquarters Power demand, priority allocation or `powerFactor` threshold to departure eligibility.
+- Ships contribute zero Power and zero Industry to a colony. The current unconditional `SHIP_INFRASTRUCTURE.power` and `SHIP_INFRASTRUCTURE.industry` contributions must be removed from canonical colony totals.
+- Launch eligibility therefore does not need a projected “without ship Power” calculation: no ship provides colony Power before or after departure.
+- This decision intentionally overrides the Power condition in the initial A08a scope. The original backlog wording remains preserved above.
+- A08b remains separate and retains its previously documented post-departure Power-outage rules pending its own later review.
 
 ## Unresolved questions
 
-Questions will be worked through one at a time. The next question is whether the departure gate evaluates the colony's projected state after the selected ship leaves, excluding that ship's infrastructure and departing people. Later questions will cover construction completion, staffing allocation, which ships/departures are gated, balance values and presentation of multiple failures.
+Questions will be worked through one at a time. The next question is how Headquarters minimum staffing is supplied. Later questions will cover construction completion, which ships/departures are gated, staffing and construction balance values, and presentation of multiple failures.
 
 ## Provisional acceptance criteria
 
 These criteria contain only the scope already established by the user and will be completed after discovery.
 
-1. A colony ship docked at the first colony cannot launch until an approved Headquarters replacement is fully constructed, powered and minimally staffed.
+1. A colony ship docked at the first colony cannot launch until the dedicated Headquarters is fully constructed and minimally staffed.
 2. The same rule applies to every later colony established by a colony ship.
 3. A failed gate identifies each missing applicable requirement.
 4. Corporate-home departures and genuine in-transit reroutes are not incorrectly gated as colony departures.
 5. The UI and launch mutation consume the same authoritative domain calculation.
-6. Old and new saves preserve or correctly derive all state required by the gate.
+6. Ships contribute no colony Power or Industry in old or new saves, while all state required by the construction and staffing gate is preserved or correctly derived.
 7. Behavioural regression coverage includes the first colony, a later colony, each failure reason, successful launch and stale-UI/bypass protection.
