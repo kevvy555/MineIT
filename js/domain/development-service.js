@@ -55,6 +55,8 @@ export class DevelopmentService{
     const dev=tile?.development;if(!dev)return{ok:false,reason:"Nothing has been constructed on this tile."};
     const recoverBuild=Math.floor(Math.max(0,Number(dev.investedBuild)||0)*RECOVERY),recoverOre=Math.floor(Math.max(0,Number(dev.investedOre)||0)*RECOVERY),clearedExhaustedResource=dev.kind==="extract"&&this.clearExhaustedResource(tile);
     if(recoverBuild)this.inventory.store(state,"build","fiber","Construction Fibre",recoverBuild);if(recoverOre)this.inventory.store(state,"ore","surface-iron","Surface Iron Nodules",recoverOre);
-    if(dev.kind==="extract"){tile.developed=false;tile.level=0;}\n    if(dev.kind==="headquarters"){const id=Object.entries(state.tiles||{}).find(([,value])=>value===tile)?.[0];if(state.colony?.primaryHeadquartersId===id){state.colony.primaryHeadquartersId=null;state.colony.primaryHeadquartersEver=true;}}\n    tile.development=null;tile.resourceCovered=false;this.sync(state);return{ok:true,recover:recoverBuild,recoverBuild,recoverOre,clearedExhaustedResource};
+    if(dev.kind==="extract"){tile.developed=false;tile.level=0;}
+    if(dev.kind==="headquarters"){const id=Object.entries(state.tiles||{}).find(([,value])=>value===tile)?.[0];if(state.colony?.primaryHeadquartersId===id){state.colony.primaryHeadquartersId=null;state.colony.primaryHeadquartersEver=true;}}
+    tile.development=null;tile.resourceCovered=false;this.sync(state);return{ok:true,recover:recoverBuild,recoverBuild,recoverOre,clearedExhaustedResource};
   }
 }
