@@ -168,7 +168,7 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 ### Decision 9 — Multiple Headquarters with one explicit Primary Headquarters
 
 - A colony may construct multiple Headquarters buildings.
-- Exactly one Headquarters is the colony's Primary Headquarters.
+- A colony normally has exactly one Primary Headquarters, but may temporarily have none after the player deliberately demolishes it.
 - The Primary Headquarters must be explicitly and visibly identified in the map, building details and any command-status presentation so the player never has to infer which facility owns command.
 - Additional Headquarters are command-expansion facilities rather than additional primaries.
 - Headquarters buildings support upgrades through the canonical building-development model.
@@ -182,7 +182,7 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 - A larger or more developed building portfolio requires greater combined Headquarters capacity.
 - Staffed Headquarters also provide colony-efficiency benefits; the exact formula, stacking rule and cap remain to be decided.
 - This is intended to create gameplay pressure through construction resources, technology progression, land use and permanent workforce reservation.
-- The first Headquarters constructed becomes Primary automatically.
+- The first fully constructed and fully staffed Headquarters becomes Primary automatically.
 - The player can explicitly designate a different eligible Headquarters as Primary later.
 - Primary identity is persisted per colony and must be visibly marked wherever Headquarters are shown.
 - Every Headquarters reserves its own minimum workforce.
@@ -206,7 +206,7 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 
 - The docked founding colony ship provides temporary command capacity equal to an L1 Headquarters.
 - Its temporary command capacity is replaced when a fully constructed and staffed Primary Headquarters becomes operational; ship and Primary capacity do not stack.
-- After replacement, the ship does not regain or add command capacity merely because it remains docked or later returns.
+- After replacement, the ship does not normally regain or add command capacity merely because it remains docked or later returns. Decision 16 introduces an emergency management transfer when the Primary is demolished; the qualifying ship types and A08a/A08b implementation boundary remain to be finalised.
 - Every player-built operational facility consumes command capacity except Headquarters buildings and the fixed Basic Spaceport.
 - Command load is differentiated by facility type and level: Housing is lighter, while Industry and advanced production/extraction are heavier.
 - Headquarters efficiency applies to extraction and Food/Fuel/Build production, industrial processing and surveying speed.
@@ -295,9 +295,25 @@ Combined factor:
 - Construction is immediate under Decision 4; later upgrades likewise use the current canonical building-development lifecycle.
 
 
+
+### Decision 16 — Primary eligibility, departure responsibility and permitted demolition
+
+- Only a fully constructed and fully staffed Headquarters is eligible to be designated Primary.
+- The first Headquarters to become eligible is designated Primary automatically; later changes are explicit player actions.
+- When command handover is pending, the Primary Headquarters must independently be fully constructed and fully staffed before the founding colony ship may make its first departure.
+- An operational expansion Headquarters cannot substitute for an understaffed or missing Primary, and staff cannot be pooled across Headquarters to satisfy the gate.
+- The player may demolish the Primary Headquarters without first designating a replacement.
+- Demolishing the Primary clears its identity and does not automatically promote another Headquarters.
+- If the first-departure handover is still pending, the founding ship remains the temporary command centre while docked, but its departure is blocked until another eligible Headquarters has been explicitly designated Primary.
+- After handover, loss of the Primary causes major colony disruption and severe efficiency penalties.
+- If a qualifying ship is docked when the Primary is lost, colony management transfers to that ship temporarily. When that ship leaves without an eligible replacement Primary, the colony returns to the same disrupted state as a Headquarters-destroyed colony.
+- The outage, disruption and penalty lifecycle belongs to A08b rather than the initial A08a departure gate. A08a must preserve the canonical Primary identity and command-capability state needed by A08b.
+- Which ship classes can provide emergency management, and whether the emergency-transfer mechanics themselves are implemented now or deferred wholly to A08b, remain unresolved.
+
+
 ## Unresolved questions
 
-Discovery questions may now be asked in batches of up to three at the user's request. The current batch defines Primary eligibility, the multiple-Headquarters departure check and Primary demolition behaviour. Later questions will cover migration, scope split, failure presentation and test boundaries.
+Discovery questions may now be asked in batches of up to three at the user's request. The current batch defines emergency ship eligibility, the A08a/A08b implementation boundary and existing-save migration. Failure presentation and final behavioural test boundaries will then be consolidated for review.
 
 ## Provisional acceptance criteria
 
