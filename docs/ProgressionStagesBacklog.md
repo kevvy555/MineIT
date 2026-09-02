@@ -115,7 +115,7 @@ For traceability, references beginning with **A** correspond to the first number
 
 ## 6. Second Colony Establishment
 
-**Roadmap status:** Complete  
+**Roadmap status:** In Progress  
 **Purpose:** Prepare and execute the first colony expedition, establish a viable settlement and leave it capable of operating after the colony ship departs.
 
 ### Complete
@@ -123,11 +123,15 @@ For traceability, references beginning with **A** correspond to the first number
 - **A06 — Emergency use of landed colony-ship Food.** Prevent phantom production, consume colony Food first and require explicit approval before a colony can consume Food held by a landed player ship. **Status: Complete.** [Detailed specification](./Progression%20Stages/Stage%206/A06-Emergency-Colony-Ship-Food.md)
 - **A07 — Ship and colony accommodation allocation.** Use ship-class capacity and provide fully manual movement between ship accommodation and colony housing, including warned launch into homelessness. **Status: Complete.** [Detailed specification](./Progression%20Stages/Stage%206/A07-Ship-Accommodation-Allocation.md)
 
+### In Progress
+
+- **B03a — Global ship management.** Provide a persistent global ship list and state-aware Ship Control for navigation, journey preview, crew and accommodation. **Status: In Progress.** [Detailed specification](./Progression%20Stages/Stage%206/B03a-Global-Ship-Management.md)
+- **N04 — Colony and Ship Control surfaces.** Separate Colony Control from Ship Control, compose them only when a docked ship holds colony command, and keep Fleet Manager as the corporation-wide ship picker. **Status: In Progress.** [Detailed specification](./Progression%20Stages/Stage%206/N04-Colony-And-Ship-Control-Surfaces.md)
+
 ### Ready for Review
 
 - **A08 — Operational Headquarters gate.** Require a constructed, powered and staffed command facility before departure, with defined network and efficiency consequences for later outages. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/A08-Operational-Headquarters.md)
 - **A09 and B06a — System map and planetary navigation.** Support planet selection, rerouting, time-and-Fuel-consuming in-system travel, colonisation and temporary landings from a shared system map. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/A09-B06a-System-Navigation.md)
-- **B03a — Global ship management.** Provide a persistent global ship list and state-aware controls for navigation, journey preview, crew and accommodation. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/B03a-Global-Ship-Management.md)
 - **A22b — Spacecraft Fuel system.** Introduce separate Propellant and Fusion Fuel tanks, compatible drives, averaged distance consumption, spaceport refuelling, warned under-fuelled journeys, stranding and rescue. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/A22b-Spacecraft-Fuel-System.md)
 - **N01 — Veyrite lattice wear, failure and servicing.** Apply engagement and distance wear, approved risk curves, recoverable failures, collapse and external rescue to Vector Exchange Drives. This item was split from A22b. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/N01-Veyrite-Lattice-Wear-And-Failure.md)
 
@@ -162,6 +166,10 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** In Progress  
 **Purpose:** Give the player practical freight capacity when mining output grows beyond what the colony establishment ship and corporate collection services can transport.
 
+### In Progress
+
+- **N03 — Multi-ship selection and access.** Keep every owned ship selectable from the colony Spaceport and star map after additional ships are purchased or become active. **Status: In Progress.** [Detailed specification](./Progression%20Stages/Stage%208/N03-Multi-Ship-Selection-And-Access.md)
+
 ### Ready for Review
 
 - None currently identified.
@@ -170,7 +178,7 @@ For traceability, references beginning with **A** correspond to the first number
 
 - **A15 — Dedicated transport pricing.** Compare contracted transport with corporate purchases and rebalance fixed fees, distance, capacity, urgency and commodity costs.
 - **A19 — Export quota and stockpile pressure.** Decide whether excess production should drive player freight, additional storage, discounted buyers, quota upgrades or temporary production reduction.
-- **B03b — Fleet manager.** Define a corporation-wide ship list containing location, state, cargo, orders, availability and appropriate command controls.
+- **B03b — Advanced fleet dispatch.** Extend the Stage 6 global Ships foundation (**B03a**) with logistics-stage dispatch, availability and command controls needed for freight routes. The first corporation-wide list and Ship Control entry points are owned by **B03a** / **N04**.
 - **B07a — Point-to-point colony transfers.** Create the first manual import/export route screen, assign a ship and define cargo, source, destination and dispatch behaviour.
 
 ---
@@ -394,8 +402,8 @@ For traceability, references beginning with **A** correspond to the first number
 
 1. **Food behaviour:** A06 defines the authoritative colony-versus-ship Food source rules. A02 must read the same domain Food calculation used by the live simulation.
 2. **Ship capability data:** A07 and A22b require canonical ship-class accommodation, drive, tank-capacity and consumption-rate fields.
-3. **Navigation and ship control:** A09/B06a and B03a must share route, ship-state and Fuel-preview services before later fleet automation and recurring logistics.
-4. **Headquarters state:** A08 requires authoritative Power, staffing, network-service and colony-efficiency state with save/load support.
+3. **Navigation and ship control:** A09/B06a share route services with **B03a**. **N03** restores multi-ship access; **N04** separates Colony Control from Ship Control; **B03a** owns the global Ships list. Advanced logistics dispatch remains **B03b** / **B07a**.
+4. **Headquarters state:** A08 requires authoritative Power, staffing, network-service and colony-efficiency state with save/load support. **N04** provides the command-authority UI split that A08 later moves from ship to Headquarters.
 5. **Veyrite condition:** N01 extends A22b but remains a separate maintained-drive system rather than another Fuel.
 6. **Gas-giant production:** N02 provides a later source of atmospheric feedstock and manufactured Fusion Fuel. It does not block the first A22b release because Fuel can be purchased from the conglomerate.
 7. **Corporation reporting:** A12 should precede B02 and A23.
@@ -403,8 +411,8 @@ For traceability, references beginning with **A** correspond to the first number
 
 ## Roadmap review notes
 
-- Stage 6 should be reviewed for a possible temporary return to **In Progress** because several ready-for-review items affect the end-to-end second-colony loop.
+- Stage 6 is temporarily **In Progress** for **B03a** and **N04** ship/colony control work on `feature/fleet-colony-ship-control`.
 - Stage 7 should be reviewed if a colony without the colony ship currently lacks a valid export route.
-- Stage 8 is based on purchasing and operating factory-new freight ships. Player-designed and player-built ships belong to later progression.
+- Stage 8 remains **In Progress**. **N03** multi-ship selection/access is active on the same branch so purchased ships remain operable beside the starter vessel. Player-designed and player-built ships belong to later progression.
 - Gas-giant orbital colonies are placed in Stage 10 as later logistics and Fuel-production infrastructure, not as a prerequisite for Stage 6 travel.
 - The present backlog is concentrated in Stages 1–11. Stages 12–17 and 19–22 remain available for future discovery work.

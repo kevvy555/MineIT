@@ -2,7 +2,8 @@
 
 **Progression stage:** 6 — Second Colony Establishment  
 **Type:** Feature  
-**Status:** Ready for Review
+**Status:** In Progress  
+**Branch:** `feature/fleet-colony-ship-control`
 
 ## Original backlog text
 
@@ -14,8 +15,8 @@ Give the player one consistent place to inspect and command every owned ship wit
 
 ## Approved first release
 
-- A global Ships screen lists every owned ship.
-- Selecting a ship opens controls and information for that ship.
+- A global Ships screen lists every owned ship. This is the Fleet Manager surface described with **N04**.
+- Selecting a ship opens Ship Control for that ship.
 - The screen is accessible through:
   - a persistent global button;
   - relevant star-map and system-map shortcuts;
@@ -31,13 +32,14 @@ Give the player one consistent place to inspect and command every owned ship wit
   - Fuel requirement and range preview;
   - crew management;
   - accommodation management.
-- Cargo loading and unloading remain owned by the cargo-bay or cargo-management interface. The Ships screen may summarise cargo but does not duplicate authoritative cargo operations.
+- Cargo loading and unloading remain owned by the cargo-bay / Ship Control cargo interface. The Ships screen may summarise cargo but does not duplicate authoritative cargo operations.
 - Navigation commands use the same domain route service as the star and system maps.
 - The screen remains available while ships are landed, orbiting or in transit.
+- Colony command actions are not owned by this screen. Colony Control composition is defined by **N04** and Headquarters rules by **A08**.
 
 ## Fleet boundary
 
-This creates the initial global fleet-management foundation. Automated routing, recurring trade routes, dispatch priorities and advanced fleet automation remain later backlog items.
+This creates the initial global fleet-management foundation. Automated routing, recurring trade routes, dispatch priorities and advanced fleet automation remain later backlog items (**B03b**, **B07a**).
 
 ## Acceptance criteria
 
@@ -53,4 +55,4 @@ This creates the initial global fleet-management foundation. Automated routing, 
 
 ## Review state
 
-No unresolved product questions remain. Advanced automation remains B03b/B07 and is not part of this item.
+Ready-for-review content retained. Implementation authorised on `feature/fleet-colony-ship-control` together with **N03** and **N04**.
