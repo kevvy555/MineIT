@@ -4,7 +4,7 @@ import { getLoadedViewTemplate,loadViewTemplate,preloadViewTemplates } from "../
 import { buildingCapacity,syncBuildingTotals } from "../domain/building-model.js";
 import { supportsOverdrive } from "../domain/extraction-overdrive.js";
 
-const LOCAL_KINDS=new Set(["housing","power","industry"]);
+const LOCAL_KINDS=new Set(["housing","power","industry","headquarters"]);
 const RESOURCE_LABEL={food:"FOOD",build:"BUILD",fuel:"FUEL",ore:"ORE"};
 const MAP_FIRST_HELP_VIEW="./views/map-first-help-controls.html";
 const cap=(v,min=0,max=1)=>Math.max(min,Math.min(max,Number(v)||0));
