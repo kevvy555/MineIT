@@ -13,6 +13,7 @@ function normalizeHeadquartersState(state,previousVersion){
     local.colony.commandHandoverComplete=!!local.colony.commandHandoverComplete;
     local.colony.foundingShipId??=null;
     local.colony.primaryHeadquartersId??=null;
+    local.colony.primaryHeadquartersEver=!!local.colony.primaryHeadquartersEver;
   };
   apply(state);
   for(const entry of state.portfolio?.colonies||[])apply(entry?.data);
@@ -82,7 +83,8 @@ export function createGameState(contract){
   normalizeTechnologyAcrossPortfolio(state);
   normalizeSurveyHistoryAcrossPortfolio(state);
   normalizeBuyerRoot(state);
-  normalizeHeadquartersState(state,A08A_STATE_VERSION);\n  state.version=A08A_STATE_VERSION;
+  normalizeHeadquartersState(state,A08A_STATE_VERSION);
+  state.version=A08A_STATE_VERSION;
   return state;
 }
 
@@ -92,6 +94,7 @@ export function normalizeState(state){
   normalizeTechnologyAcrossPortfolio(normalized);
   normalizeSurveyHistoryAcrossPortfolio(normalized);
   normalizeBuyerRoot(normalized);
-  normalizeHeadquartersState(normalized,previousVersion);\n  normalized.version=A08A_STATE_VERSION;
+  normalizeHeadquartersState(normalized,previousVersion);
+  normalized.version=A08A_STATE_VERSION;
   return normalized;
 }
