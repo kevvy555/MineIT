@@ -493,9 +493,79 @@ The initial recommendation was to preserve non-Headquarters values and fix corre
 - Exact fixed Housing, Industry, facility-family and Power Plant tables remain proposed balance values until explicitly approved.
 
 
+### Decision 26 — Spaceport priority and proportional partial-Power operation
+
+- The fixed Basic Spaceport has a medium Power demand.
+- Its demand is allocated after Headquarters, planetary life support and Food/Fuel survival operations, but before commercial Industry and Build/Ore extraction.
+- When the Spaceport is not fully powered, trade services, cargo loading/unloading, passenger and accommodation transfers, and Engineering Ship services are unavailable.
+- Lack of Spaceport Power never blocks a ship from arriving or making an emergency departure and therefore cannot trap a ship or override A08a's defined first-handover gate.
+- Spaceport service rejection is authoritative domain behaviour with a clear missing-Power reason, not a UI-only disabled state.
+- Ordinary facilities receiving partial Power scale throughput by their delivered fraction; zero delivered Power means zero output.
+- Within each ordinary priority band, available Power is shared proportionally across every active consumer in that band.
+- Tile order does not decide which same-priority facility operates.
+- Headquarters remain all-or-nothing under Decision 22 because partial command Power contributes nothing.
+- The Spaceport is also a binary service consumer: if its complete fixed demand cannot be met, its restricted services remain offline and the unused partial allocation is released to the next band.
+
+## Proposed rebalanced Power tables — awaiting approval
+
+These values implement the agreed hierarchy and are documentation proposals only. They do not change gameplay until the complete specification is approved and implemented.
+
+### Generation and non-extraction demand
+
+| Level | Power Plant generation | Housing fixed demand | Full-Housing resident support at 0.07 each | HQ demand | Industry idle demand | Industry variable demand at full staffed capacity | Total full Industry demand |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| L1 | 75 | 1 | 11.2 | 1 | 3 | 25.0 | 28.0 |
+| L2 | 165 | 2 | 25.2 | 2 | 7 | 57.5 | 64.5 |
+| L3 | 300 | 4 | 45.5 | 4 | 14 | 105.0 | 119.0 |
+| L4 | 500 | 7 | 73.5 | 7 | 24 | 175.0 | 199.0 |
+| L5 | 800 | 11 | 112.0 | 11 | 38 | 275.0 | 313.0 |
+
+- Planetary resident support remains `0.07 × scenario support load` per resident.
+- Industry variable demand is 0.25 Power per unit of staffed operational Industry capacity.
+- The Basic Spaceport has a fixed demand of 10 Power.
+- Power Plants have no parasitic electrical demand because their Fuel burn is charged against complete online generation capacity.
+
+### Facility-family demand
+
+| Level | Farm | Ranch | Bio facility | Algae facility | Quarry | Rig | Mine | Deep Mine |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| L1 | 2 | 2 | 3 | 3 | 4 | 4 | 5 | 7 |
+| L2 | 5 | 5 | 7 | 7 | 9 | 10 | 12 | 16 |
+| L3 | 10 | 9 | 13 | 13 | 17 | 19 | 23 | 31 |
+| L4 | 18 | 16 | 22 | 22 | 29 | 33 | 40 | 54 |
+| L5 | 30 | 26 | 35 | 35 | 46 | 52 | 64 | 86 |
+
+### Installed-generation upgrade gates
+
+The value is the required online installed generation before upgrading that family to the target level. L1 construction remains permitted without generation but cannot operate until Power is delivered.
+
+| Target level | Farm/Ranch | Bio/Algae | Quarry | Rig | Mine | Deep Mine |
+|---|---:|---:|---:|---:|---:|---:|
+| L2 | 90 | 100 | 110 | 115 | 125 | 140 |
+| L3 | 190 | 210 | 225 | 235 | 250 | 280 |
+| L4 | 340 | 370 | 400 | 420 | 440 | 470 |
+| L5 | 550 | 600 | 650 | 680 | 710 | 750 |
+
+Every target exceeds one previous-level Power Plant but fits within one same-level plant. Players may instead combine multiple lower-level plants, trading tiles, construction resources, Fuel burn and Headquarters command load for capacity.
+
+### Representative utilisation
+
+The representative colony contains one full same-level Housing building, one fully staffed same-level Industry building, one same-level Headquarters, the Basic Spaceport and five same-level facilities: Farm, Bio, Quarry, Rig and Mine.
+
+| Level | Proposed generation | Temperate demand | Utilisation | Maximum-support demand | Utilisation | Full-capacity Fuel burn per day | Base same-level Fuel-site output |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| L1 | 75 | 69.2 | 92.3% | 80.4 | 107.2% | 7.5 | 10 |
+| L2 | 165 | 146.7 | 88.9% | 171.9 | 104.2% | 14.0 | 18 |
+| L3 | 300 | 264.5 | 88.2% | 310.0 | 103.3% | 21.0 | 30 |
+| L4 | 500 | 438.5 | 87.7% | 512.0 | 102.4% | 25.0 | 48 |
+| L5 | 800 | 684.0 | 85.5% | 796.0 | 99.5% | 28.0 | 72 |
+
+Fuel burn uses the deployed Power technology's existing intensity curve of 0.10/0.085/0.070/0.050/0.035 multiplied by complete online generation capacity. One baseline same-level Fuel site can therefore sustain one same-level Power Plant before resource quality, terrain, workforce, Industry and Power-delivery effects.
+
+
 ## Unresolved questions
 
-A08a now includes the full Power-economy rebalance. Housing, Industry and facility-family demand models are resolved. Remaining discovery must define Spaceport effects and partial-shortage behaviour, then approve the proposed generation, demand and installed-capacity tables.
+Spaceport and partial-shortage behaviour are resolved. The proposed generation, non-extraction demand, facility-family demand and installed-generation gate tables now require explicit approval or revision.
 
 ## Provisional acceptance criteria
 
