@@ -6,10 +6,10 @@ import { ensureSpaceport,hasFreeBerth } from "./spaceport-model.js";
 
 /** Canonical corporate trade service, including service radius and shared Spaceport berth rules. */
 export class TradeService {
-  constructor(resourceService,inventoryService,colonyService=null){this.resources=resourceService;this.inventory=inventoryService;this.colony=colonyService||new ColonyService(inventoryService,null);this.expansion=new ExpansionService(inventoryService,resourceService);}
+  constructor(resourceService,inventoryService,colonyService=null){this.resources=resourceService;this.inventory=inventoryService;this.colony=colonyService;this.fallbackColony=new ColonyService(inventoryService,null);this.expansion=new ExpansionService(inventoryService,resourceService);}
   absoluteDay(state){return(Math.max(1,state.year)-1)*CONFIG.DAYS_PER_YEAR+Math.max(1,state.day);}
   serviceAvailable(state){return this.expansion.corporateServiceAvailable(state);}
-  spaceportServicesAvailable(state){const network=this.colony?.powerNetwork?.(state,{fuelStock:this.inventory?.amount?.(state,"fuel")||0});const row=network?.bandRows?.find(item=>item.priority==="spaceport");return !row||row.delivered>=row.requested;}
+  spaceportServicesAvailable(state){if(!this.colony?.powerNetwork)return true;const network=this.colony.powerNetwork(state,{fuelStock:this.inventory?.amount?.(state,"fuel")||0}),row=network?.bandRows?.find(item=>item.priority==="spaceport");return !row||row.delivered>=row.requested;}
   spaceportServiceFailure(state){return this.spaceportServicesAvailable(state)?null:"Basic Spaceport services are offline: provide its full 10 Power to enable trade, cargo, passenger and Engineering services.";}
   catalog(){return this.resources.catalog().map(def=>({key:this.inventory.key(def.type,def.id),type:def.type,resourceId:def.id,name:def.name,category:def.category,rarity:def.rarity,sellPrice:def.sellPrice})).sort((a,b)=>a.category.localeCompare(b.category)||a.name.localeCompare(b.name));}
   stock(state){return this.inventory.stock(state);}
@@ -50,7 +50,7 @@ export class TradeService {
   passengerRemaining(state){return Math.max(0,CONFIG.TRADE_PASSENGER_CAPACITY-(Number(state.trade.passengersUsed)||0));}
   pendingTransportPopulation(state){return(state.colony?.transportOrders||[]).reduce((sum,o)=>sum+Math.max(0,Number(o.amount)||0),0);}
   colonistCapacity(state){const planetaryCapacity=Number.isFinite(Number(state.colony?.housingBuildingCapacity))?Math.max(0,Number(state.colony.housingBuildingCapacity)):Math.max(0,Number(state.colony?.housingCapacity)||0),planetaryResidents=this.expansion.planetaryAccommodationResidentCount(state),supported=Math.min(planetaryCapacity,Number(state.metrics.powerPopulationCap)||planetaryCapacity);return Math.max(0,Math.floor(supported-planetaryResidents-this.pendingTransportPopulation(state)));}
-  colonistProjection(state,amount=0){return this.colony.foodForecast(state,{additionalPopulation:Math.max(0,Number(amount)||0),production:state.metrics?.food});}
+  colonistProjection(state,amount=0){return(this.colony||this.fallbackColony).foodForecast(state,{additionalPopulation:Math.max(0,Number(amount)||0),production:state.metrics?.food});}
   colonistFoodSurplus(state){return this.colonistProjection(state).net;}
   colonistFoodSupportedCapacity(state){return Math.max(0,Math.floor(this.colonistFoodSurplus(state)/Math.max(.0001,CONFIG.FOOD_PER_COLONIST)));}
   colonistSafeCapacity(state){return Math.max(0,Math.min(this.colonistCapacity(state),this.passengerRemaining(state),this.colonistFoodSupportedCapacity(state)));}
