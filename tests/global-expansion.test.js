@@ -13,7 +13,7 @@ import { TransportService } from "../js/domain/transport-service.js";
 import { PortfolioService } from "../js/domain/portfolio-service.js";
 
 const contracts=new ContractService(),resources=new ResourceService(),inventory=new InventoryService(resources),tech=new TechnologyService(),colony=new ColonyService(inventory,tech),trade=new TradeService(resources,inventory),transport=new TransportService(),portfolio=new PortfolioService(),sites=new SiteService(contracts,tech,inventory,colony,resources);
-const fresh=()=>{const state=createGameState(contracts.first());state.company.cash=1e9;tech.recompute(state);return state;};
+const fresh=()=>{const state=createGameState(contracts.first());state.colony.shipAccommodation={};state.company.cash=1e9;tech.recompute(state);return state;};
 const finite=(quality,size="Large",level=1,requiredMiningLevel=1)=>({x:1,y:1,revealed:true,developed:true,depleted:false,level,type:"ore",resourceId:"surface-iron",name:"Surface Iron Nodules",quality,requiredMiningLevel,sustainability:"finite",depositScale:size,reserve:1e6,initialReserve:1e6});
 
 const low=finite(20),high=finite(9000);assert.equal(resources.sitePotentialRate(low),resources.sitePotentialRate(high),"Quality must not change extraction throughput");assert.ok(trade.sellPrice("ore","gold","extraordinary")>trade.sellPrice("ore","gold","common")*3,"Quality must remain economically valuable");assert.ok(resources.sitePotentialRate(finite(100,"Colossal"))>resources.sitePotentialRate(finite(100,"Small")));assert.ok(resources.sitePotentialRate(finite(100,"Colossal"))/resources.sitePotentialRate(finite(100,"Small"))<2,"Deposit size bias should be material but modest");
