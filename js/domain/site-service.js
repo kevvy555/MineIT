@@ -1,9 +1,10 @@
 import { CONFIG } from "../core/config.js";
+import { POWER_UPGRADE_GATES } from "./building-model.js";
 import { isAccidentShutdown } from "./extraction-overdrive.js";
 
 const MAX_SITE_LEVEL=5;
 const INDUSTRY_REQ={food:[0,0,100,230,420,700],industrial:[0,0,150,300,550,900]};
-const POWER_REQ={food:[0,0,45,90,160,260],industrial:[0,0,60,120,220,360]};
+const POWER_REQ=POWER_UPGRADE_GATES;
 const ORE_COST={food:[0,0,5,15,35,65],industrial:[0,0,10,30,70,130]};
 function siteFamily(tile){if(tile?.type==="food"){if(tile.resourceId==="herd")return"ranch";if(tile.resourceId==="thermal")return"algae";if(["fungal","protein"].includes(tile.resourceId))return"bio";return"farm";}if(tile?.type==="fuel"&&["oil","gas","brine"].includes(tile.resourceId))return"rig";if(tile?.type==="build")return"quarry";if(tile?.type==="ore"&&["diamond","exotic","crystal","advanced"].includes(tile.resourceId))return"deep-mine";return"mine";}
 
@@ -25,7 +26,7 @@ export class SiteService {
   syncDevelopment(tile){if(!tile?.developed)return;const existing=tile.development?.kind==="extract"?tile.development:{kind:"extract",family:siteFamily(tile),level:tile.level||1,investedBuild:0,investedOre:0};existing.family=siteFamily(tile);existing.level=Math.max(1,Math.min(MAX_SITE_LEVEL,Number(tile.level)||1));tile.development=existing;}
   upgradeOreCost(tile,nextLevel){return ORE_COST[this.profile(tile)][Math.max(1,Math.min(MAX_SITE_LEVEL,Number(nextLevel)||1))]||0;}
   upgradeIndustryRequirement(tile,nextLevel){return INDUSTRY_REQ[this.profile(tile)][Math.max(1,Math.min(MAX_SITE_LEVEL,Number(nextLevel)||1))]||0;}
-  upgradePowerRequirement(tile,nextLevel){return POWER_REQ[this.profile(tile)][Math.max(1,Math.min(MAX_SITE_LEVEL,Number(nextLevel)||1))]||0;}
+  upgradePowerRequirement(tile,nextLevel){const family=tile?.development?.family||siteFamily(tile);return POWER_REQ[family]?.[Math.max(1,Math.min(MAX_SITE_LEVEL,Number(nextLevel)||1))]||0;}
   developRequirements(state,tile){
     if(!tile?.resourceId)return{ok:false,cash:0,build:0,requiredLevel:0,workforce:0,freeWorkforce:this.colony?.freeWorkforce(state)??Infinity,reason:"No exploitable surface resource on this tile."};
     const cash=0,build=this.developBuildCost(state,tile),requiredLevel=tile.requiredMiningLevel||1,techOk=this.technology.canExploit(state,tile),workforce=this.colony?.siteWorkforce(state,{...tile,level:1})||0,freeWorkforce=this.colony?.freeWorkforce(state)??Infinity;
@@ -47,7 +48,7 @@ export class SiteService {
     if(!this.technology.canExploit(state,tile))return{ok:false,cash:0,build,ore,industryRequired,powerRequired,workforce,freeWorkforce,reason:`Requires Mining L${tile.requiredMiningLevel||1}: ${tile.requiredMiningTech||"Extraction technology"}.`};
     if(tile.type==="food"&&this.technology.level(state,"food")<nextLevel)return{ok:false,cash:0,build,ore,industryRequired,powerRequired,workforce,freeWorkforce,techRequired:nextLevel,reason:`Food Production Tech L${nextLevel} is required to upgrade this ${tile.development?.family||"food facility"} to L${nextLevel}.`};
     if((totals.industry||0)<industryRequired)return{ok:false,cash:0,build,ore,industryRequired,powerRequired,workforce,freeWorkforce,reason:`Site L${nextLevel} needs ${industryRequired} installed Industry; colony has ${Math.round(totals.industry||0)}.`};
-    if((totals.power||0)<powerRequired)return{ok:false,cash:0,build,ore,industryRequired,powerRequired,workforce,freeWorkforce,reason:`Site L${nextLevel} needs ${powerRequired} Power capacity; colony has ${Math.round(totals.power||0)}.`};
+    if((totals.power||0)<powerRequired)return{ok:false,cash:0,build,ore,industryRequired,powerRequired,workforce,freeWorkforce,reason:`${tile.development?.family||siteFamily(tile)} L${nextLevel} needs ${powerRequired} installed Power; colony has ${Math.round(totals.power||0)}.`};
     if(freeWorkforce<workforce)return{ok:false,cash:0,build,ore,industryRequired,powerRequired,workforce,freeWorkforce,reason:`Upgrade needs ${workforce} additional operational workers; only ${Math.floor(freeWorkforce)} are free.`};
     if(this.inventory.amount(state,"build")<build)return{ok:false,cash:0,build,ore,industryRequired,powerRequired,workforce,freeWorkforce,reason:`Need ${build} Build materials.`};
     if(ore>0&&this.inventory.amount(state,"ore")<ore)return{ok:false,cash:0,build,ore,industryRequired,powerRequired,workforce,freeWorkforce,reason:`Need ${ore} Ore.`};
