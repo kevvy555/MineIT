@@ -18,7 +18,7 @@ Decision 2 below supersedes the initial Power condition. The final A08a departur
 - fully constructed;
 - staffed to its defined minimum.
 
-A colony ship supplies no colony Power while docked or after departure. Ownership of the existing 50 Industry baseline remains an explicit discovery question.
+A colony ship supplies no colony Power. It supplies 50 Industry only while it remains docked at that colony.
 
 The rule applies to the first colony and every later colony established by a colony ship. A blocked launch must explain exactly which requirement is missing.
 
@@ -48,7 +48,7 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 - Power is represented as total capacity, total demand and a shared `powerFactor`; there is no per-building allocation or priority model.
 - The landed ship currently contributes fixed Power and Industry through `SHIP_INFRASTRUCTURE`, and those contributions are added unconditionally rather than being derived from whether a ship is docked. This is a related implementation conflict that must be resolved or explicitly isolated when A08a is implemented.
 - Decision 2 removes Power from the A08a departure gate.
-- Ships must contribute zero colony Power. A08a implementation must remove the current unconditional fixed ship Power contribution. The existing 50 Industry baseline is being considered separately and must not be silently removed or attributed.
+- Ships must contribute zero colony Power. A08a implementation must remove the current unconditional fixed ship Power contribution. The existing 50 Industry contribution must become conditional on the colony-establishment ship actually being docked at that colony.
 
 ### Staffing and workforce
 
@@ -76,7 +76,7 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 
 1. A05a timed construction is not yet implemented, so A08a needs a future-compatible completion rule without absorbing A05a.
 2. The existing workforce model does not assign staff to individual non-extraction buildings.
-3. Fixed ship-provided Power and Industry are currently counted unconditionally. A08a must remove the Power contribution and strengthen regression coverage around colony totals; the Industry baseline's canonical owner is unresolved.
+3. Fixed ship-provided Power and Industry are currently counted unconditionally. A08a must remove the Power contribution and make the 50 Industry contribution conditional on the colony-establishment ship being docked at the evaluated colony.
 4. Purchased freight ships now share the fleet and launch service, so the gate must distinguish colony-establishment ships from unrelated vessels.
 5. The first colony and later colonies use the same local-state shape but are captured and switched through the portfolio; regression coverage must exercise both.
 6. Launch presentation currently exposes one `reason` string. A08a may have several simultaneous missing requirements and should return a structured list plus a clear combined message.
@@ -95,7 +95,7 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 
 - Headquarters Power state does not block colony-ship launch.
 - A08a will not add a Headquarters Power demand, priority allocation or `powerFactor` threshold to departure eligibility.
-- Ships contribute zero Power to a colony. The current unconditional `SHIP_INFRASTRUCTURE.power` contribution must be removed from canonical colony totals. No decision has yet removed the existing 50 Industry baseline.
+- Ships contribute zero Power to a colony. The current unconditional `SHIP_INFRASTRUCTURE.power` contribution must be removed from canonical colony totals. The existing 50 Industry contribution is handled by Decision 6.
 - Launch eligibility therefore does not need a projected “without ship Power” calculation: no ship provides colony Power before or after departure.
 - This decision intentionally overrides the Power condition in the initial A08a scope. The original backlog wording remains preserved above.
 - A08b remains separate and retains its previously documented post-departure Power-outage rules pending its own later review.
@@ -128,12 +128,22 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 - A deployed mine or other colony production site produces nothing when no colony Power is available.
 - The current demand, Food-consumption, accommodation-transfer and production calculations must be aligned with these ownership rules rather than treating all `state.pop` as planetary residents.
 - Existing A06 emergency ship-Food behaviour remains relevant for planetary residents seeking access to ship Food. Normal ship-resident consumption must be distinguished from that emergency transfer path.
-- The exact Power-capacity check for moving residents ashore and the canonical owner of the existing 50 Industry baseline remain unresolved.
+- The exact Power-capacity check for moving residents ashore remains unresolved. Decision 6 defines the existing 50 Industry baseline.
 - Because these rules are required to establish the staff who operate Headquarters, they are currently treated as an A08a dependency. Final discovery will determine whether their implementation remains a coherent prerequisite within A08a or is captured as a linked independent backlog item.
+
+### Decision 6 — Docked colony-ship Industry support
+
+- The colony-establishment ship supplies 50 Industry to the colony only while that ship is docked there.
+- The contribution is derived from the live ship/colony relationship and is not an unconditional colony baseline.
+- The 50 Industry contribution is removed immediately when the ship launches, is lost or otherwise ceases to be docked at that colony.
+- A newly founded colony may use this temporary Industry after it constructs colony Power.
+- A08a does not require the colony to replace that 50 Industry before launch. Launch may reduce operational Industry and stop or throttle affected production under the normal Industry rules.
+- Purchased freight or other non-colony-establishment ships do not automatically qualify as the startup Industry source unless their canonical class capability explicitly introduces that feature in future work.
+- The ship-preparation UI should make any post-launch Industry reduction visible as information or warning, but it is not an A08a blocking requirement.
 
 ## Unresolved questions
 
-Questions will be worked through one at a time. The next question is who owns the existing 50 Industry startup baseline now that ship Power is removed. Later questions will cover the Power-capacity check for moving residents ashore, which ships/departures are gated, Headquarters count and placement, staffing/construction balance values, scope split, and presentation of multiple failures.
+Questions will be worked through one at a time. The next question is the Power-capacity check for moving residents ashore. Later questions will cover which ships/departures are gated, Headquarters count and placement, staffing/construction balance values, scope split, and presentation of multiple failures.
 
 ## Provisional acceptance criteria
 
