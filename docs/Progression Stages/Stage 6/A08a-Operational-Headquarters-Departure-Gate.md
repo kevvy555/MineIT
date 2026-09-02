@@ -213,9 +213,44 @@ Headquarters outage effects, conglomerate-network restrictions, progressive effi
 - Headquarters efficiency does not change survival consumption, resource sale prices, storage capacity, physical building/ship capacity, transport time or ship travel.
 - The same authoritative command-efficiency factor must be consumed by each affected domain calculation rather than separately approximated by UI or individual systems.
 
+### Decision 13 — Command-load, capacity and minimum-staff tables
+
+Facility command load equals the facility's current level multiplied by its type weight:
+
+| Facility type | Command points per level |
+|---|---:|
+| Housing | 1 |
+| Power | 2 |
+| Food extraction/production | 2 |
+| Fuel extraction/production | 2 |
+| Build extraction/production | 2 |
+| Industry | 3 |
+| Ore extraction/mining | 3 |
+| Headquarters | Excluded |
+| Basic Spaceport | Excluded |
+
+Headquarters progression is:
+
+| Headquarters level | Command capacity | Minimum reserved staff |
+|---|---:|---:|
+| L1 | 16 | 5 |
+| L2 | 36 | 10 |
+| L3 | 64 | 18 |
+| L4 | 100 | 28 |
+| L5 | 150 | 40 |
+
+Additional rules:
+
+- Only fully constructed and fully staffed Headquarters contribute their level's command capacity.
+- Capacity from multiple staffed Headquarters is additive.
+- Every staffed Headquarters reserves its full level-specific workforce before ordinary production allocation.
+- The temporary founding-ship command centre supplies 16 command capacity, matching L1.
+- Command load follows the current facility level immediately after placement, upgrade, demolition, depletion or other canonical level/state change.
+- Stopped but intact facilities continue to create administrative command load; demolished facilities do not. Depleted extraction sites stop contributing when their developed facility ceases to operate under the canonical depletion lifecycle.
+
 ## Unresolved questions
 
-Discovery questions may now be asked in batches of up to three at the user's request. The current batch proposes facility command weights, Headquarters capacity by level and minimum staff by level. Later questions will cover penalty/bonus curves, construction and upgrade costs, technology gates, placement, Primary change restrictions, migration, scope split and failure presentation.
+Discovery questions may now be asked in batches of up to three at the user's request. The current batch defines the over-capacity penalty curve, positive Headquarters bonus formula and whether temporary ship command grants a positive bonus. Later questions will cover construction and upgrade costs, technology gates, placement, Primary change restrictions, migration, scope split and failure presentation.
 
 ## Provisional acceptance criteria
 
