@@ -325,9 +325,25 @@ Combined factor:
 - The user selected A08a to own emergency takeover and disruption. The exact meaning of “disruption” still requires clarification because absorbing A08b's already-separated network restrictions, progressive degradation and ten-day recovery would conflict with the original scope instruction.
 
 
+
+### Decision 18 — Emergency command continuity and A08b boundary
+
+- A08a implements the immediate management transfer after the Primary Headquarters is demolished or otherwise absent.
+- If one or more command-capable ships are docked, one supplies temporary management using the same canonical command-centre contribution as the founding ship: 16 command capacity, equivalent to L1.
+- A temporary command ship provides no positive Headquarters efficiency bonus.
+- The ship prevents the colony from entering the immediate no-command disruption state while it remains docked.
+- Temporary ship command does not reproduce the destroyed Primary's former level, capacity or bonus.
+- If the ship leaves and no eligible Primary exists, temporary command is removed immediately and the colony enters no-command disruption.
+- Without a Primary or docked command-capable ship, all expansion Headquarters are disconnected: they reserve no staff and contribute no command capacity or positive bonus until command is restored.
+- Restoring a staffed Primary or docking a command-capable ship reconnects eligible staffed expansion Headquarters through the normal authoritative command-network calculation.
+- A08a owns this immediate takeover, loss and restoration of command capacity and the resulting immediate command-efficiency effect.
+- A08b remains separate and retains conglomerate-network restrictions, subsequent daily efficiency degradation and the ten-day recovery lifecycle.
+- A08a must expose the canonical command-availability assessment so A08b can later begin, continue and restore its outage state without duplicating Headquarters or ship eligibility rules.
+
+
 ## Unresolved questions
 
-Discovery questions may now be asked in batches of up to three at the user's request. The current batch clarifies whether A08a absorbs the full A08b lifecycle and defines command behaviour after Primary loss. Failure presentation and final behavioural test boundaries will then be consolidated for review.
+Discovery questions may now be asked in batches of up to three at the user's request. The final batch defines the immediate no-command penalty, destructive-action warning and launch-failure presentation. The complete specification and behavioural boundaries can then be consolidated for final review.
 
 ## Provisional acceptance criteria
 
