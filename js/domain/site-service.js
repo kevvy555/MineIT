@@ -26,7 +26,7 @@ export class SiteService {
   syncDevelopment(tile){if(!tile?.developed)return;const existing=tile.development?.kind==="extract"?tile.development:{kind:"extract",family:siteFamily(tile),level:tile.level||1,investedBuild:0,investedOre:0};existing.family=siteFamily(tile);existing.level=Math.max(1,Math.min(MAX_SITE_LEVEL,Number(tile.level)||1));tile.development=existing;}
   upgradeOreCost(tile,nextLevel){return ORE_COST[this.profile(tile)][Math.max(1,Math.min(MAX_SITE_LEVEL,Number(nextLevel)||1))]||0;}
   upgradeIndustryRequirement(tile,nextLevel){return INDUSTRY_REQ[this.profile(tile)][Math.max(1,Math.min(MAX_SITE_LEVEL,Number(nextLevel)||1))]||0;}
-  upgradePowerRequirement(tile,nextLevel){const family=tile?.development?.family||siteFamily(tile);return POWER_REQ[family]?.[Math.max(1,Math.min(MAX_SITE_LEVEL,Number(nextLevel)||1))]||0;}
+  upgradePowerRequirement(tile,nextLevel){const family=tile?.development?.family||siteFamily(tile),level=Math.max(1,Math.min(MAX_SITE_LEVEL,Number(nextLevel)||1));return POWER_REQ[family]?.[level-1]||0;}
   developRequirements(state,tile){
     if(!tile?.resourceId)return{ok:false,cash:0,build:0,requiredLevel:0,workforce:0,freeWorkforce:this.colony?.freeWorkforce(state)??Infinity,reason:"No exploitable surface resource on this tile."};
     const cash=0,build=this.developBuildCost(state,tile),requiredLevel=tile.requiredMiningLevel||1,techOk=this.technology.canExploit(state,tile),workforce=this.colony?.siteWorkforce(state,{...tile,level:1})||0,freeWorkforce=this.colony?.freeWorkforce(state)??Infinity;
