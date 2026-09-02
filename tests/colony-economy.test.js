@@ -23,13 +23,13 @@ assert.ok(inventory.amount(state,"food")>0&&inventory.amount(state,"build")>0&&i
 const cats=new Set();for(let y=-30;y<=30;y++)for(let x=-30;x<=30;x++){const tile=world.reveal(state,x,y);if(tile.type)cats.add(tile.type);}
 assert.deepEqual([...cats].sort(),["build","food","fuel","ore"]);
 
-const stone={x:1,y:1,terrain:"hill",terrainYieldFactor:1,revealed:true,developed:false,depleted:false,type:"build",resourceId:"stone",name:"Stone",quality:100,resourceMult:1,requiredScanningLevel:2,requiredMiningLevel:2,requiredMiningTech:"Quarrying",sustainability:"finite",reserve:100000,initialReserve:100000};
+const stone={x:1,y:1,terrain:"hill",terrainYieldFactor:1,revealed:true,developed:false,depleted:false,type:"build",family:"quarry",resourceId:"stone",name:"Stone",quality:100,resourceCovered:false,level:1,resourceMult:1,requiredScanningLevel:2,requiredMiningLevel:2,requiredMiningTech:"Quarrying",sustainability:"finite",reserve:100000,initialReserve:100000};
 assert.equal(sites.developRequirements(state,stone).ok,false);assert.match(sites.developRequirements(state,stone).reason,/Mining L2/);
 state.company.cash=1e9;state.company.tech.mining=2;state.colony.tech.mining=2;tech.recompute(state);assert.equal(tech.level(state,"mining"),2);
 const buildBefore=inventory.amount(state,"build"),cashBeforeDevelop=state.company.cash;const developed=sites.develop(state,stone);assert.equal(developed.ok,true);assert.ok(inventory.amount(state,"build")<buildBefore);assert.equal(state.company.cash,cashBeforeDevelop,"local extraction construction must not spend corporate cash");
 state.tiles["1,1"]=stone;
 
-const rowsBefore=collection.current(state).filter(row=>row.tile?.resourceId);assert.equal(rowsBefore.length,1);assert.equal(rowsBefore[0].stock,0);
+const rowsBefore=collection.current(state).filter(row=>row.tile?.resourceId);console.log("A08A DEBUG BEFORE",JSON.stringify({rows:rowsBefore.map(r=>({key:r.key,name:r.name,stock:r.stock})),stone,can:tech.canExploit(state,stone)}));assert.equal(rowsBefore.length,1);assert.equal(rowsBefore[0].stock,0);
 engine.tick(state);const rowsAfter=collection.current(state).filter(row=>row.tile?.resourceId);console.log("A08A DEBUG ECON",JSON.stringify({stock:rowsAfter[0]?.stock,rate:resources.collectionRate(state,stone),factors:{workforceAvailable:state.metrics.workforceAvailable,workforceCommercialFactor:state.metrics.workforceCommercialFactor,industryCommercialFactor:state.metrics.industryCommercialFactor,powerFactor:state.metrics.powerFactor,commandEfficiency:state.metrics.commandEfficiency,powerFactors:state.metrics.powerFactors},tile:{type:stone.type,resourceId:stone.resourceId,level:stone.level,development:stone.development,depleted:stone.depleted}}));assert.ok(rowsAfter[0].stock>0,"collection popup stock should rise after collection");
 
 const foodBefore=inventory.amount(state,"food"),fuelBefore=inventory.amount(state,"fuel"),oreBefore=inventory.amount(state,"ore");
