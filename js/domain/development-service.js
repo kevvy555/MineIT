@@ -51,6 +51,15 @@ export class DevelopmentService{
     Object.assign(tile,{resourceExhausted:true,exhaustedResourceId,empty:true,type:null,family:null,resourceId:null,name:"Clear Land",quality:null,resourceRarity:null,resourceMult:null,requiredScanningLevel:0,requiredMiningLevel:0,requiredMiningTech:null,terrainYieldFactor:null,sustainability:null,abundance:null,abundanceLabel:null,depositScale:null,reserve:null,initialReserve:null,renewableOriginalRank:null,renewableHealth:null,renewableWiped:false,harvestIntensity:null,depleted:false,resourceCovered:false});
     return true;
   }
+  demolishPreview(state,tile){
+    const dev=tile?.development;if(!dev)return{ok:false,reason:"Nothing has been constructed on this tile."};
+    const id=Object.entries(state.tiles||{}).find(([,value])=>value===tile)?.[0];
+    if(dev.kind!=="headquarters"||state.colony?.primaryHeadquartersId!==id)return{ok:true,requiresConfirmation:false};
+    const before=this.colony?.commandStatus?.(state)||null,clone=JSON.parse(JSON.stringify(state)),cloneTile=clone.tiles?.[id];
+    if(cloneTile)cloneTile.development=null;
+    const after=this.colony?.commandStatus?.(clone)||null;
+    return{ok:true,requiresConfirmation:true,primary:true,capacity:before?.capacity||0,load:before?.load||0,efficiency:before?.efficiency||1,bonus:before?.bonus||0,overloadPenalty:before?.overloadPenalty||0,projectedCapacity:after?.capacity||0,projectedLoad:after?.load||0,projectedEfficiency:after?.efficiency||1,projectedBonus:after?.bonus||0,projectedOverloadPenalty:after?.overloadPenalty||0};
+  }
   demolish(state,tile){
     const dev=tile?.development;if(!dev)return{ok:false,reason:"Nothing has been constructed on this tile."};
     const recoverBuild=Math.floor(Math.max(0,Number(dev.investedBuild)||0)*RECOVERY),recoverOre=Math.floor(Math.max(0,Number(dev.investedOre)||0)*RECOVERY),clearedExhaustedResource=dev.kind==="extract"&&this.clearExhaustedResource(tile);
