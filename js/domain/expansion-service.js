@@ -379,7 +379,7 @@ export class ExpansionService{
 
   headquartersLaunchAssessment(state,ship=null){
     ship=ship||this.ship(state);
-    const pending=!!state.colony&&!state.colony.commandHandoverComplete&&(!state.colony.foundingShipId||state.colony.foundingShipId===ship?.id)&&ship?.status==="docked"&&ship?.id===state.colony?.foundingShipId;
+    const foundingId=state.colony?.foundingShipId||ship?.id;const pending=!!state.colony&&!state.colony.commandHandoverComplete&&ship?.status==="docked"&&ship?.id===foundingId;
     if(!pending)return{required:false,ok:true,failures:[]};
     const colony=this.colonyService,failures=[];
     if(!colony)return{required:true,ok:false,failures:["Primary Headquarters status is unavailable."]};
