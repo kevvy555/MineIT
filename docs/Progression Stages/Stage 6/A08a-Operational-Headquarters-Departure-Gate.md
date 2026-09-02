@@ -448,13 +448,9 @@ This comparison uses one full Housing building, one fully staffed Industry build
 6. Current life-support demand uses total colony population rather than planetary residents, so colonists assigned to docked ship accommodation incorrectly consume colony Power. A08a already requires this ownership error to be corrected.
 7. The current 30 ship Power and 50 ship Industry are unconditional static baselines. A08a removes ship Power and makes the founding ship's Industry conditional on docking.
 
-### Audit recommendation
+### Initial audit recommendation — superseded
 
-- Keep the existing Power Plant, resident, Industry and extraction demand values unchanged in A08a.
-- Implement the agreed Headquarters curve, correct ship/planetary ownership and make zero Power stop planetary facilities.
-- Apply authoritative Power availability to affected production instead of merely displaying a `powerFactor` that extraction ignores.
-- Add focused behavioural tests for no Power, partial shortage, Headquarters priority, ship-resident exclusion and removal of docked-ship infrastructure.
-- Treat any broader generator/demand rebalance as a separately approved balance item after corrected telemetry can measure real colony configurations.
+The initial recommendation was to preserve non-Headquarters values and fix correctness only. Decision 23 explicitly supersedes that recommendation and expands A08a to a complete Power-economy rebalance. The identified correctness defects and required regression coverage remain applicable.
 
 
 ### Decision 23 — Expand A08a to rebalance the complete Power economy
@@ -468,9 +464,24 @@ This comparison uses one full Housing building, one fully staffed Industry build
 - The implementation must replace disconnected scalar approximations with one authoritative domain Power assessment consumed by production, processing, survival, upgrade checks and UI presentation.
 
 
+### Decision 24 — Realistic demand hierarchy, survival-first allocation and online-capacity Fuel burn
+
+- The existing Power economy is too easy and must increase overall facility usage rather than only trimming generation.
+- Demand curves should express a clear relative hierarchy: Housing uses comparatively little facility Power; Headquarters is small-to-medium; the Basic Spaceport is medium; production and extraction rise by resource type; Ore extraction is high; and Industry is the dominant consumer.
+- Every upgrade level must materially increase the facility's operational Power demand.
+- Planetary resident life support remains separate from the Housing building's own facility demand.
+- After Headquarters priority, limited delivered Power is allocated to planetary life support, then Food/Fuel operations and their required Industry support, then commercial Industry and Build/Ore operations.
+- Power is not shared proportionally across all consumers before those priority bands are satisfied.
+- Every online Power Plant consumes Fuel for its complete available generation capacity, even when colony demand is lower.
+- Players may stop Power Plant production through the existing canonical control to remove both its generation and Fuel burn.
+- Fuel shortage reduces the generation actually available from the online fleet; unserved generation capacity cannot supply downstream consumers.
+- Fuel consumption must be zero when no Power Plant is online, correcting the current behaviour that can burn Fuel against demand with zero generation.
+- Exact facility curves, generator capacities, Spaceport consequences and installed-capacity upgrade gates remain to be approved.
+
+
 ## Unresolved questions
 
-A08a now includes the full Power-economy rebalance. Remaining discovery must set the target operating headroom, shortage priorities, Fuel-use basis and the final generation, demand and installed-capacity tables.
+A08a now includes the full Power-economy rebalance. Shortage priority and Fuel-use basis are resolved. Remaining discovery must approve the facility-demand hierarchy details, Spaceport effects, final generation/demand curves and installed-capacity gates.
 
 ## Provisional acceptance criteria
 
