@@ -8,7 +8,7 @@ const esc=value=>String(value??"").replace(/[&<>\"]/g,ch=>({"&":"&amp;","<":"&lt
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,Number(value)||0));
 
 export class UIController extends V5100UIController{
-  constructor(opts){super(opts);this.expansion=new ExpansionService(this.inventory,this.resources,this.contracts);this.expansion.ensure(this.state);this.starView={x:0,y:0,scale:18};this.expeditionCategory="food";this.expeditionPage=0;this.homeCategory="food";this.homePage=0;}
+  constructor(opts){super(opts);this.expansion=new ExpansionService(this.inventory,this.resources,this.contracts);this.expansion.colonyService=this.colony;this.expansion.ensure(this.state);this.starView={x:0,y:0,scale:18};this.expeditionCategory="food";this.expeditionPage=0;this.homeCategory="food";this.homePage=0;}
 
   contractBoard(){this.starMap();}
 
