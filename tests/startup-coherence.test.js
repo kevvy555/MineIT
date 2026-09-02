@@ -26,7 +26,7 @@ assert.match(simulation,/ExpansionService/);assert.match(simulation,/ShipMarketS
 assert.match(tech,/syncBuildingTotals/);assert.match(tech,/maxBuildingLevel/);assert.match(tech,/canExploit/);assert.match(tech,/scanning/);assert.match(tech,/orderUpgrade/);assert.match(tech,/engineeringTravelDays/);
 assert.match(spaceport,/BASIC_SPACEPORT_BERTHS/);assert.match(spaceport,/corporate-trade-ship/);assert.match(spaceport,/engineering-ship/);assert.match(spaceport,/buyer-collection-ship/);
 assert.match(development,/BUILDING_MODEL/);assert.match(development,/kind==="power"/);assert.doesNotMatch(development,/company\.cash-=/);
-assert.match(model,/SHIP_INFRASTRUCTURE/);assert.doesNotMatch(model,/housing:180/);assert.match(model,/landedShipHousing/);assert.match(model,/power:30/);assert.match(model,/industry:50/);
+assert.match(model,/SHIP_INFRASTRUCTURE/);assert.doesNotMatch(model,/housing:180/);assert.match(model,/landedShipHousing/);assert.match(model,/power:0/);assert.match(model,/industry:50/);
 assert.match(events,/recovered/);assert.match(events,/contract-decision/);assert.match(events,/legacyPendingDecision/);assert.match(events,/queueBuyer/);
 assert.match(expansion,/PLAYER_SHIP_CAPACITY/);assert.match(expansion,/CORPORATE_SERVICE_RADIUS_LY/);assert.match(expansion,/awaitingDestination/);assert.match(expansion,/createPurchasedShip/);assert.match(expansion,/loadCrew/);
 
