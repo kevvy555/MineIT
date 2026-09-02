@@ -72,7 +72,7 @@ const findMetric=(root,label)=>[...root.querySelectorAll(".metric")].find(m=>m.q
 
 export class UIController extends LegacyUIController{
   localCost(req){return`${formatNumber(req?.build||0)} Build${(req?.ore||0)>0?` + ${formatNumber(req.ore)} Ore`:""}`;}
-  capacityText(kind,value){return kind==="housing"?`${formatNumber(value)} housing`:kind==="power"?`${formatNumber(value)} power`:`${formatNumber(value)} Industry`;}
+  capacityText(kind,value){return kind==="housing"?`${formatNumber(value)} housing`:kind==="power"?`${formatNumber(value)} power`:kind==="headquarters"?`${formatNumber(value)} command capacity`:`${formatNumber(value)} Industry`;}
   setPresentationText(root,selector,value){const node=root?.querySelector(selector);if(node)node.textContent=String(value??"");}
   cloneViewTemplate(root,selector){return root?.querySelector(selector)?.content.cloneNode(true)||null;}
   async loadPresentationView(path,label){try{return await loadViewTemplate(path);}catch(error){this.diagnostics?.error?.(`${label} view failed`,error);this.toast(`Unable to open ${label}.`);return null;}}
