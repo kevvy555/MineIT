@@ -27,6 +27,7 @@ inventory.store(state,"food","fungal","Fungal Shelf",350,120);
 inventory.store(state,"food","fungal","Fungal Shelf",75,6000);
 inventory.store(state,"fuel","biomass","Biomass",500,900);
 inventory.store(state,"build","fiber","Construction Fibre",250,300);
+state.metrics.powerCapacity=75;state.metrics.powerFactor=1;
 const fuelKey=Object.keys(state.inventory).find(k=>state.inventory[k]?.type==="fuel"&&state.inventory[k]?.amount>100);
 const foodKey=Object.keys(state.inventory).find(k=>state.inventory[k]?.type==="food"&&state.inventory[k]?.amount>100);
 const buildKey=Object.keys(state.inventory).find(k=>state.inventory[k]?.type==="build"&&state.inventory[k]?.amount>100);
