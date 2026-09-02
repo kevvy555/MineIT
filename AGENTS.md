@@ -191,6 +191,41 @@ If a test fails after an intentional architecture change:
 
 The architecture baseline must continue to reject versioned production JS/CSS, version-query JS imports, import maps, application globals, document-level app events, and large embedded HTML template debt.
 
+## Progression-stage backlog workflow
+
+The progression backlog is the canonical route from an unrefined idea or bug report to approved development work.
+
+### Canonical locations
+
+- docs/ProgressionStagesBacklog.md is the master index across all player-progression stages.
+- docs/Progression Stages/Stage N/ contains the detailed file for each item assigned to that stage.
+- Each detailed item file preserves the original backlog wording, current status, approved decisions, acceptance criteria, dependencies and any explicitly deferred balancing work.
+- Substantial independent systems discovered while refining an item must be split into newly identified backlog items, linked to their source and placed in the earliest appropriate stage.
+
+### Status lifecycle
+
+Use these item statuses consistently:
+
+1. **Not Started** — captured and staged, but discovery has not been completed.
+2. **In Discovery** — questions or analysis are actively being worked through.
+3. **Ready for Review** — discovery is complete, no product questions remain, and the detailed specification awaits the user’s final review.
+4. **Approved** — the user has completed final review and authorised the specification as development-ready.
+5. **In Progress** — implementation has started on an approved item.
+6. **Complete** — implementation, tests and documentation satisfy the repository definition of done.
+
+Do not use **Complete** to mean that an idea is merely well formed.
+
+### Working procedure
+
+1. Add every new feature or bug to the master index under its earliest relevant progression stage with status **Not Started**.
+2. Create or update its dedicated file in the matching stage folder and preserve the original report verbatim.
+3. Work through discovery one item at a time unless the user requests a different approach.
+4. Record each agreed decision in the detailed file; do not rely on conversation history as the only specification.
+5. Mark an item **Ready for Review** only after all material product questions have been answered.
+6. Mark it **Approved** only after explicit user approval.
+7. Do not implement a backlog item merely because it is ready or approved; begin implementation when the user asks for that work.
+8. Keep the detailed file and master index status aligned whenever either changes.
+
 ## Definition of done
 
 A change is not complete until all applicable items are true:

@@ -1,14 +1,21 @@
 # MineIT Progression Stages Backlog
 
-This document is the companion backlog to [PLAYER_PROGRESSION_STAGES.md](./PLAYER_PROGRESSION_STAGES.md). It organises proposed features and reported bugs by the earliest player-progression stage in which they become relevant.
+This document is the master backlog index for [PLAYER_PROGRESSION_STAGES.md](./PLAYER_PROGRESSION_STAGES.md). It organises features and bugs by the earliest player-progression stage in which they become relevant.
 
-The roadmap status describes whether a stage is implemented. The maturity headings in this backlog describe how ready an individual backlog item is for development:
+Detailed specifications live in the matching docs/Progression Stages/Stage N/ folder. Each item begins as **Not Started** and moves through discovery, final review, approval, implementation and completion. The full workflow is defined in [AGENTS.md](../AGENTS.md).
 
-- **Complete** — the intended outcome is sufficiently formed to move into implementation. This does not mean the work has already been implemented.
-- **Discovery** — the direction is reasonably clear, but gameplay rules, balance, user experience or acceptance criteria still require investigation.
-- **Idea** — an early concept or problem statement that needs a deeper design exercise before implementation can be planned.
+Item statuses are:
 
-For traceability, references beginning with **A** correspond to the first numbered source list and references beginning with **B** correspond to the second list, where numbering restarted.
+- **Not Started** — captured but not yet fully defined.
+- **In Discovery** — currently being analysed and clarified.
+- **Ready for Review** — fully defined and awaiting the user’s final review.
+- **Approved** — reviewed and authorised as development-ready.
+- **In Progress** — implementation has begun.
+- **Complete** — implemented and verified against the definition of done.
+
+The roadmap status shown for each stage describes implementation of the overall progression stage; it is separate from individual backlog-item status.
+
+For traceability, references beginning with **A** correspond to the first numbered source list and references beginning with **B** correspond to the second list, where numbering restarted. References beginning with **N** are new independent items discovered while refining an existing source item.
 
 ---
 
@@ -17,18 +24,15 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** Complete  
 **Purpose:** Establish the immediate survival loop. The player must keep the starting population alive while shortages in Food, Fuel, Power, housing and workforce create urgent pressure.
 
-### Complete
-
-- **A05b — Construction progress presentation.** Display a tile-wide black construction mask or progress overlay that gradually reveals the completed building.
-
-### Discovery
-
-- **A03a — Colonist calorie requirement.** Establish one authoritative per-colonist calorie-consumption model shared by simulation, forecasting and the user interface.
-- **A05a — Timed building construction.** Define construction duration, when a building becomes operational, interruption and cancellation rules, save/load behaviour, and whether workforce or materials affect build speed.
-
-### Idea
+### Ready for Review
 
 - None currently identified.
+
+### Not Started
+
+- **A05b — Construction progress presentation.** Display a tile-wide black construction mask or progress overlay that gradually reveals the completed building.
+- **A03a — Colonist calorie requirement.** Establish one authoritative per-colonist calorie-consumption model shared by simulation, forecasting and the user interface.
+- **A05a — Timed building construction.** Define construction duration, when a building becomes operational, interruption and cancellation rules, save/load behaviour, and whether workforce or materials affect build speed.
 
 ---
 
@@ -37,11 +41,11 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** Complete  
 **Purpose:** Move the colony away from finite starting supplies by establishing dependable local production of the resources required for continued survival.
 
-### Complete
+### Ready for Review
 
 - None currently identified.
 
-### Discovery
+### Not Started
 
 - **A03b — Food nutritional model.** Give each food type and quality a calorie value so different foods have meaningful nutritional benefits.
 - **A04 — Hydroponics Centre.** Define its technology unlock, Power and Water consumption, workforce, seeds or growing medium, production rate and suitability for hostile planets.
@@ -50,10 +54,6 @@ For traceability, references beginning with **A** correspond to the first number
 - **A25a — Food and fuel quality benefits.** Define how food quality affects nutrition and how fuel type and quality affect energy output or duration.
 - **B04a — Resource model audit.** Review the current resource catalogue, remove inconsistencies and establish canonical raw-resource categories before expanding the economy.
 
-### Idea
-
-- None currently identified.
-
 ---
 
 ## 3. Contract Viability
@@ -61,17 +61,13 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** Complete  
 **Purpose:** Turn the surviving colony into a commercially useful operation that fulfils the reason the conglomerate funded it.
 
-### Complete
+### Ready for Review
 
 - None currently identified.
 
-### Discovery
+### Not Started
 
 - **B05a — Core contract redesign.** Redefine contract objectives, success levels, monetary rewards, penalties and failure consequences so the original contract still fits the expanded game.
-
-### Idea
-
-- None currently identified.
 
 ---
 
@@ -82,17 +78,18 @@ For traceability, references beginning with **A** correspond to the first number
 
 ### Complete
 
-- **A02 — Colonist food projection bug.** Food forecasting during colonist onboarding must use the same consumption and reserve calculation as the live simulation.
+- **A02 — Colonist Food projection bug.** Make the pre-transfer forecast and live simulation use the same authoritative calculation, including post-transfer consumption, operational production, net balance and days remaining. **Status: Complete.** [Detailed specification](./Progression%20Stages/Stage%204/A02-Colonist-Food-Projection.md)
+
+### Ready for Review
+
+- None currently identified.
+
+### Not Started
+
 - **A24 — Upgrade targeting.** Only highlight tiles containing eligible, unblocked upgrades and remove the highlight immediately after an upgrade. Verify the existing implementation and close this item if regression coverage confirms the behaviour.
-
-### Discovery
-
 - **A01 — Conglomerate interaction terminal.** Replace the current colonist transport control with a dedicated Conglomerate Access terminal and decide which current and future conglomerate services belong there.
 - **A16 — Upgraded housing Power.** Decide which accommodation levels consume Power and what happens to occupants during a Power deficit.
 - **A18 — Multiple mine sites per world.** Decide limits, ownership, colony association, travel implications, infrastructure requirements and how deposits are selected.
-
-### Idea
-
 - **A17 — Housing adjacency bonuses.** Explore possible residential clustering bonuses without creating one mandatory optimal colony layout.
 - **A20a — Mine depletion.** Explore resource reserves, declining output, closure, rehabilitation and whether improved technology can recover additional material.
 - **A25b — Construction-material benefits.** Explore how different construction resources might affect cost, durability, construction time or building efficiency.
@@ -104,16 +101,14 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** Complete  
 **Purpose:** Move from basic commercial viability to meaningful surplus cash while balancing reinvestment against short-term profit.
 
-### Complete
+### Ready for Review
+
+- None currently identified.
+
+### Not Started
 
 - **A12a — Colony stock valuation.** Provide a current-colony inventory view showing quantity, unit price, total value and whether each resource can currently be sold.
-
-### Discovery
-
 - **A11 — Food profitability balance.** Review high-quality farm yields, labour, operating costs and sale prices so food does not become an effortless dominant source of income.
-
-### Idea
-
 - **B01 — Bank interest.** Explore whether positive credit balances earn interest, which balances qualify, the rate calculation and appropriate unlock conditions. Consider introducing it later if early passive interest makes profit growth snowball too quickly.
 
 ---
@@ -125,20 +120,20 @@ For traceability, references beginning with **A** correspond to the first number
 
 ### Complete
 
-- **A06 — Phantom food production bug.** A new colony without food production must consume ship food first and then colony food without generating additional food.
-- **A07 — Ship accommodation.** Replace the fixed 180-person assumption with the ship class's actual accommodation capacity and separately track colonists living aboard and in colony housing.
-- **A08 — Operational Headquarters gate.** Prevent the colony ship from leaving until an operational headquarters has taken over the colony's command function.
-- **A09 and B06a — System map and planetary navigation.** Provide a system map accessible from the star map and colony, allow selection of any planet in the current system, and support both landing and colonisation.
-- **B03a — Dedicated ship control.** Move launch and navigation out of the cargo bay into a ship-control surface accessible from anywhere.
-- **A22b — Spacecraft fuel restriction.** Allow ships to consume only compatible propulsion fuels; biomass must not function as spacecraft fuel.
+- **A06 — Emergency use of landed colony-ship Food.** Prevent phantom production, consume colony Food first and require explicit approval before a colony can consume Food held by a landed player ship. **Status: Complete.** [Detailed specification](./Progression%20Stages/Stage%206/A06-Emergency-Colony-Ship-Food.md)
+- **A07 — Ship and colony accommodation allocation.** Use ship-class capacity and provide fully manual movement between ship accommodation and colony housing, including warned launch into homelessness. **Status: Complete.** [Detailed specification](./Progression%20Stages/Stage%206/A07-Ship-Accommodation-Allocation.md)
 
-### Discovery
+### Ready for Review
+
+- **A08 — Operational Headquarters gate.** Require a constructed, powered and staffed command facility before departure, with defined network and efficiency consequences for later outages. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/A08-Operational-Headquarters.md)
+- **A09 and B06a — System map and planetary navigation.** Support planet selection, rerouting, time-and-Fuel-consuming in-system travel, colonisation and temporary landings from a shared system map. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/A09-B06a-System-Navigation.md)
+- **B03a — Global ship management.** Provide a persistent global ship list and state-aware controls for navigation, journey preview, crew and accommodation. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/B03a-Global-Ship-Management.md)
+- **A22b — Spacecraft Fuel system.** Introduce separate Propellant and Fusion Fuel tanks, compatible drives, averaged distance consumption, spaceport refuelling, warned under-fuelled journeys, stranding and rescue. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/A22b-Spacecraft-Fuel-System.md)
+- **N01 — Veyrite lattice wear, failure and servicing.** Apply engagement and distance wear, approved risk curves, recoverable failures, collapse and external rescue to Vector Exchange Drives. This item was split from A22b. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/N01-Veyrite-Lattice-Wear-And-Failure.md)
+
+### Not Started
 
 - **B05b — New-colony contract approval.** Define the proposal, conglomerate approval, contract generation, success targets, rewards and penalties associated with founding another colony.
-
-### Idea
-
-- None currently identified.
 
 ---
 
@@ -147,19 +142,17 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** Complete  
 **Purpose:** Keep several separated colonies stable while coordinating their different shortages, strengths, infrastructure and investment needs.
 
-### Complete
+### Ready for Review
+
+- None currently identified.
+
+### Not Started
 
 - **A12b — Corporation-wide stock view.** Aggregate resource quantity and value across all colonies while retaining colony-level drill-down.
-
-### Discovery
-
 - **A10 — Automated export policy.** Define per-colony sale rules, reserves, priorities, price limits and behaviour when a corporate collection ship arrives.
 - **A13 — Selling without the colony ship.** Decide whether exports use buyer collection, contracted freight, player ships or another corporate service.
 - **B02 — Asset register and net worth.** Track buildings, ships, colony infrastructure and other assets, including valuation, ownership and any depreciation rules.
 - **B09 — Automated corporate purchases.** Define minimum stock thresholds, spending limits, resource priorities and safeguards for automatic Food and Fuel purchasing.
-
-### Idea
-
 - **A23 — Global and colony analytics.** Determine which management decisions analytics should support before choosing metrics, reports and charts.
 
 ---
@@ -169,20 +162,16 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** In Progress  
 **Purpose:** Give the player practical freight capacity when mining output grows beyond what the colony establishment ship and corporate collection services can transport.
 
-### Complete
+### Ready for Review
 
 - None currently identified.
 
-### Discovery
+### Not Started
 
 - **A15 — Dedicated transport pricing.** Compare contracted transport with corporate purchases and rebalance fixed fees, distance, capacity, urgency and commodity costs.
 - **A19 — Export quota and stockpile pressure.** Decide whether excess production should drive player freight, additional storage, discounted buyers, quota upgrades or temporary production reduction.
 - **B03b — Fleet manager.** Define a corporation-wide ship list containing location, state, cargo, orders, availability and appropriate command controls.
 - **B07a — Point-to-point colony transfers.** Create the first manual import/export route screen, assign a ship and define cargo, source, destination and dispatch behaviour.
-
-### Idea
-
-- None currently identified.
 
 ---
 
@@ -191,18 +180,14 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** Not Started  
 **Purpose:** Introduce the choice between exporting bulky raw ore and investing Power, Industry and capital to create more valuable, transport-efficient refined materials.
 
-### Complete
+### Ready for Review
 
 - None currently identified.
 
-### Discovery
+### Not Started
 
 - **A25c — Ore and quality effects in refining.** Define how ore type and quality affect refined yield, value, waste and freight efficiency.
 - **B04b — Refining resource chain.** Establish raw-to-refined recipes, facilities, Power and Industry requirements, throughput, storage and economic balance.
-
-### Idea
-
-- None currently identified.
 
 ---
 
@@ -211,18 +196,15 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** Not Started  
 **Purpose:** Expand individual freight journeys into a reusable interstellar network supported by longer-range ships, recurring routes, storage and transfer locations.
 
-### Complete
+### Ready for Review
 
-- None currently identified.
+- **N02 — Gas-giant harvesting and orbital colonies.** Establish independent orbital colonies, persistent atmospheric sectors, skimmers, processing, reactor survival and long-term Fusion Fuel manufacture. This item was discovered through A22b. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%2010/N02-Gas-Giant-Orbital-Colonies.md)
 
-### Discovery
+### Not Started
 
 - **A26 — Long-range ship progression.** Define larger ship classes, construction or purchase requirements, range, Fuel, crew and technology needed to reach outer systems.
 - **B06b — Inter-system ship transfers.** Define interstellar orders, route selection, arrival state, diversions, Fuel validation and access through the star and system maps.
 - **B07b — Automated logistics routes.** Expand manual transfers into recurring routes with loading rules, minimum reserves, delivery thresholds, priorities and disruption handling.
-
-### Idea
-
 - **B07c — Warehouse and logistics-hub colonies.** Explore transfer hubs, bulk storage, load consolidation, refuelling and hub-and-spoke freight networks.
 
 ---
@@ -232,16 +214,13 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** Not Started  
 **Purpose:** Broaden commercial options beyond the conglomerate's basic buying service by introducing more demanding buyers and access to external supply.
 
-### Complete
+### Ready for Review
 
 - None currently identified.
 
-### Discovery
+### Not Started
 
 - **B08 — Seller marketplace.** Create the inverse of the buyer system, including availability, quantity, quality, delivery method, reputation access and pricing.
-
-### Idea
-
 - **A14 — Variable market prices.** Explore price movement, regional markets, supply and demand, volatility, forecasting and anti-exploit protections.
 
 ---
@@ -251,15 +230,11 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** Not Started  
 **Purpose:** Make the player allocate finite production, refining and freight capacity across multiple simultaneous commercial commitments.
 
-### Complete
+### Ready for Review
 
 - None currently identified.
 
-### Discovery
-
-- None currently identified.
-
-### Idea
+### Not Started
 
 - None currently identified.
 
@@ -270,15 +245,11 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** Not Started  
 **Purpose:** Reward dependable contract performance with commercial credibility and access to more valuable opportunities.
 
-### Complete
+### Ready for Review
 
 - None currently identified.
 
-### Discovery
-
-- None currently identified.
-
-### Idea
+### Not Started
 
 - None currently identified.
 
@@ -289,15 +260,11 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** Not Started  
 **Purpose:** Turn repeated dealings with named contacts into trusted relationships that can later support direct independent trade.
 
-### Complete
+### Ready for Review
 
 - None currently identified.
 
-### Discovery
-
-- None currently identified.
-
-### Idea
+### Not Started
 
 - None currently identified.
 
@@ -308,15 +275,11 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** Not Started  
 **Purpose:** Accumulate the capital, independently owned assets, mining rights, reputation and buyer commitments needed to operate without conglomerate support.
 
-### Complete
+### Ready for Review
 
 - None currently identified.
 
-### Discovery
-
-- None currently identified.
-
-### Idea
+### Not Started
 
 - None currently identified.
 
@@ -327,15 +290,11 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** Not Started  
 **Purpose:** Establish the first genuinely player-owned mining operation without conglomerate-funded startup assets or supplies.
 
-### Complete
+### Ready for Review
 
 - None currently identified.
 
-### Discovery
-
-- None currently identified.
-
-### Idea
+### Not Started
 
 - None currently identified.
 
@@ -346,15 +305,11 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** Not Started  
 **Purpose:** Transition from selling through the conglomerate to negotiating and fulfilling direct agreements with buyers.
 
-### Complete
+### Ready for Review
 
 - None currently identified.
 
-### Discovery
-
-- None currently identified.
-
-### Idea
+### Not Started
 
 - None currently identified.
 
@@ -365,15 +320,11 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** Not Started  
 **Purpose:** Reinvest independent profit into a growing network of player-owned colonies, ships, refineries, hubs and supporting infrastructure.
 
-### Complete
+### Ready for Review
 
 - None currently identified.
 
-### Discovery
-
-- None currently identified.
-
-### Idea
+### Not Started
 
 - **B04c — Full manufacturing economy.** Explore production chains capable of turning raw resources into components, habitats and player-manufactured ships. This is a long-term manufacturing extension rather than a prerequisite for purchasing factory-new Stage 8 freight ships.
 
@@ -384,15 +335,11 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** Not Started  
 **Purpose:** Compete with the original conglomerate and other major corporations for buyers, contracts, resources and strategic locations.
 
-### Complete
+### Ready for Review
 
 - None currently identified.
 
-### Discovery
-
-- None currently identified.
-
-### Idea
+### Not Started
 
 - None currently identified.
 
@@ -403,15 +350,11 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** Not Started  
 **Purpose:** Coordinate production, refining, finance, logistics and commercial relationships across a large multi-system business.
 
-### Complete
+### Ready for Review
 
 - None currently identified.
 
-### Discovery
-
-- None currently identified.
-
-### Idea
+### Not Started
 
 - None currently identified.
 
@@ -422,15 +365,11 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** Not Started  
 **Purpose:** Surpass the original sponsor in revenue, profit, assets, production, freight capacity, relationships and major contracts.
 
-### Complete
+### Ready for Review
 
 - None currently identified.
 
-### Discovery
-
-- None currently identified.
-
-### Idea
+### Not Started
 
 - None currently identified.
 
@@ -441,15 +380,11 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** Not Started  
 **Purpose:** Sustain open-ended growth by repeatedly identifying and removing the corporation's most important economic or operational bottleneck.
 
-### Complete
+### Ready for Review
 
 - None currently identified.
 
-### Discovery
-
-- None currently identified.
-
-### Idea
+### Not Started
 
 - None currently identified.
 
@@ -457,17 +392,19 @@ For traceability, references beginning with **A** correspond to the first number
 
 ## Cross-stage dependencies
 
-The backlog contains several connected groups that should be designed and implemented in dependency order:
-
-1. **Food economy:** A03 before A02, A04, A06, A11, the food portion of A20/A21 and B09.
-2. **Resource economy:** B04a before A22, A25, refining, seller markets and variable pricing.
-3. **Navigation and logistics:** A09/B06a and B03a before the fleet manager, freight routes, recurring logistics and warehouse hubs.
-4. **Corporation reporting:** A12 before B02 and A23.
-5. **Contract expansion:** B05a before new-colony contracts and the later contract-portfolio stages.
+1. **Food behaviour:** A06 defines the authoritative colony-versus-ship Food source rules. A02 must read the same domain Food calculation used by the live simulation.
+2. **Ship capability data:** A07 and A22b require canonical ship-class accommodation, drive, tank-capacity and consumption-rate fields.
+3. **Navigation and ship control:** A09/B06a and B03a must share route, ship-state and Fuel-preview services before later fleet automation and recurring logistics.
+4. **Headquarters state:** A08 requires authoritative Power, staffing, network-service and colony-efficiency state with save/load support.
+5. **Veyrite condition:** N01 extends A22b but remains a separate maintained-drive system rather than another Fuel.
+6. **Gas-giant production:** N02 provides a later source of atmospheric feedstock and manufactured Fusion Fuel. It does not block the first A22b release because Fuel can be purchased from the conglomerate.
+7. **Corporation reporting:** A12 should precede B02 and A23.
+8. **Contract expansion:** B05a should precede new-colony contracts and the later contract-portfolio stages.
 
 ## Roadmap review notes
 
-- Stage 6 should be reviewed for a possible temporary return to **In Progress** because several items affect the end-to-end second-colony loop.
+- Stage 6 should be reviewed for a possible temporary return to **In Progress** because several ready-for-review items affect the end-to-end second-colony loop.
 - Stage 7 should be reviewed if a colony without the colony ship currently lacks a valid export route.
 - Stage 8 is based on purchasing and operating factory-new freight ships. Player-designed and player-built ships belong to later progression.
+- Gas-giant orbital colonies are placed in Stage 10 as later logistics and Fuel-production infrastructure, not as a prerequisite for Stage 6 travel.
 - The present backlog is concentrated in Stages 1–11. Stages 12–17 and 19–22 remain available for future discovery work.
