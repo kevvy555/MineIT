@@ -5,7 +5,7 @@
     <button class="buyers-close" data-buyers-close aria-label="Close Conglomerate Buyers Service">✕</button>
   </header>
   <div class="buyers-terminal-status" data-buyers-terminal-status aria-label="Commercial network status">
-    <span class="buyers-terminal-online"><i aria-hidden="true"></i> NETWORK ONLINE</span><span>NODE KPL-CN08</span><span>SECURE COMMERCIAL INDEX</span>
+    <span class="buyers-terminal-online" data-buyers-network-state><i aria-hidden="true"></i><span data-buyers-network-state-label>NETWORK ONLINE</span></span><span data-buyers-network-node>NODE KPL-CN08</span><span data-buyers-network-detail>SECURE COMMERCIAL INDEX</span>
   </div>
   <section class="buyers-filters" aria-label="Buyer catalogue filters">
     <div class="buyers-query-bar" data-buyers-query-bar><span>&gt; DIRECTORY.SEARCH</span><small>FILTER LIVE BUYER RECORDS</small></div>
@@ -34,7 +34,7 @@
       </div>
     </template>
   </section>
-  <div class="buyers-legend"><span class="buyers-terminal-prompt">&gt; CONTACT = available • VIEW = current • REP LOCKED = restricted</span><span data-buyer-count></span></div>
+  <div class="buyers-legend"><span class="buyers-terminal-prompt">&gt; CONTACT = available • VIEW = current • NETWORK OFFLINE = new commitments blocked</span><span data-buyer-count></span></div>
 
   <div class="buyers-profile-overlay hidden" data-buyer-profile>
     <section class="buyers-profile-dialog" role="dialog" aria-modal="true" aria-label="Buyer contract profile">

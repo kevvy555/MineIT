@@ -54,7 +54,7 @@ const legacy=JSON.parse(JSON.stringify(state));
 legacy.version=14;
 legacy.colony.commandHandoverComplete=false;
 const migrated=normalizeState(legacy);
-assert.equal(migrated.version,15);
+assert.equal(migrated.version,16);
 assert.equal(migrated.colony.commandHandoverComplete,true,"pre-A08a colonies migrate complete");
 assert.equal(typeof migrated.colony.primaryHeadquartersId,"string");
 

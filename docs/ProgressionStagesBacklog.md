@@ -21,7 +21,7 @@ For traceability, references beginning with **A** correspond to the first number
 
 ## 1. Initial Survival
 
-**Roadmap status:** Complete  
+**Roadmap status:** In Progress  
 **Purpose:** Establish the immediate survival loop. The player must keep the starting population alive while shortages in Food, Fuel, Power, housing and workforce create urgent pressure.
 
 ### Ready for Review
@@ -123,6 +123,11 @@ For traceability, references beginning with **A** correspond to the first number
 - **A06 — Emergency use of landed colony-ship Food.** Prevent phantom production, consume colony Food first and require explicit approval before a colony can consume Food held by a landed player ship. **Status: Complete.** [Detailed specification](./Progression%20Stages/Stage%206/A06-Emergency-Colony-Ship-Food.md)
 - **A07 — Ship and colony accommodation allocation.** Use ship-class capacity and provide fully manual movement between ship accommodation and colony housing, including warned launch into homelessness. **Status: Complete.** [Detailed specification](./Progression%20Stages/Stage%206/A07-Ship-Accommodation-Allocation.md)
 - **A08a — Operational Headquarters departure gate.** Prevent a colony ship from leaving a colony until a dedicated Headquarters is fully constructed and staffed to its defined minimum; add the Headquarters command network and emergency ship takeover; remove ship-provided colony Power; make founding-ship Industry conditional on docking; separate ship-supported residents from planetary demand; and rebalance the authoritative Power generation, consumption, Fuel-use and shortage curves. **Status: Complete.** [Detailed specification](./Progression%20Stages/Stage%206/A08a-Operational-Headquarters-Departure-Gate.md)
+- **A08b — Headquarters outage and recovery.** Disable new conglomerate-network orders during an established Primary Headquarters outage while existing commitments continue; apply immediate and daily colony-efficiency loss, complete down-tools, and exact ten-day recovery after restoration. **Status: Complete.** [Detailed specification](./Progression%20Stages/Stage%206/A08b-Headquarters-Outage-And-Recovery.md)
+
+### In Progress
+
+- None currently identified.
 
 ### In Discovery
 
@@ -135,7 +140,6 @@ For traceability, references beginning with **A** correspond to the first number
 
 ### Ready for Review
 
-- **A08b — Headquarters outage and recovery.** Apply conglomerate-network restrictions, progressive colony-efficiency loss and ten-day recovery after an established Headquarters becomes non-operational. This item was split from A08 and retains its previously agreed decisions. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/A08b-Headquarters-Outage-And-Recovery.md)
 - **A09 and B06a — System map and planetary navigation.** Support planet selection, rerouting, time-and-Fuel-consuming in-system travel, colonisation and temporary landings from a shared system map. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/A09-B06a-System-Navigation.md)
 - **A22b — Spacecraft Fuel system.** Introduce separate Propellant and Fusion Fuel tanks, compatible drives, averaged distance consumption, spaceport refuelling, warned under-fuelled journeys, stranding and rescue. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/A22b-Spacecraft-Fuel-System.md)
 - **N01 — Veyrite lattice wear, failure and servicing.** Apply engagement and distance wear, approved risk curves, recoverable failures, collapse and external rescue to Vector Exchange Drives. This item was split from A22b. **Status: Ready for Review.** [Detailed specification](./Progression%20Stages/Stage%206/N01-Veyrite-Lattice-Wear-And-Failure.md)

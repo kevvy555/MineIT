@@ -29,6 +29,8 @@ export function normalizeTechnologyState(state){
 
 /** Canonical corporate-capability rules, including colony deployment by Engineering Ship. */
 export class TechnologyService{
+  constructor(colonyService=null){this.colonyService=colonyService;}
+  networkStatus(state){if(!this.colonyService?.headquartersContinuity)return{networkAvailable:true};return this.colonyService.headquartersContinuity(state);}
   ensure(state){return normalizeTechnologyState(state);}
   absoluteDay(state){return(Math.max(1,Number(state.year)||1)-1)*CONFIG.DAYS_PER_YEAR+Math.max(1,Number(state.day)||1);}
   get(id){return TECHNOLOGIES.find(t=>t.id===id)||null;}
@@ -38,8 +40,8 @@ export class TechnologyService{
   current(state,category){return this.tree(category)[this.level(state,category)-1]||null;}
   next(state,category){return this.tree(category)[this.level(state,category)]||null;}
   accessMode(){return"engineering";}
-  canAccessStore(state){return state.status!=="dead"&&!state.contract?.ended;}
-  accessText(state){return this.canAccessStore(state)?"Corporate engineering support online. Capability packages prepare for five days, then arrive by dedicated Engineering Ship.":"Corporate engineering support is unavailable for this colony.";}
+  canAccessStore(state){return state.status!=="dead"&&!state.contract?.ended&&this.networkStatus(state).networkAvailable;}
+  accessText(state){if(state.status==="dead"||state.contract?.ended)return"Corporate engineering support is unavailable for this colony.";if(!this.networkStatus(state).networkAvailable)return"Conglomerate network offline: restore the Primary Headquarters before ordering a new Engineering Deployment.";return"Corporate engineering support online. Capability packages prepare for five days, then arrive by dedicated Engineering Ship.";}
   maxBuildingLevel(state,category){return BUILDING_TECHS.has(category)?Math.min(MAX_BUILDING_LEVEL,this.level(state,category)):0;}
   canBuildLevel(state,category,level){return Math.max(1,Number(level)||1)<=this.maxBuildingLevel(state,category);}
   canExploit(state,tile){return this.level(state,"mining")>=Math.max(1,Number(tile?.requiredMiningLevel)||1);}

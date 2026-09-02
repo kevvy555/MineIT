@@ -5,6 +5,7 @@ import { normalizeReputation } from "./reputation-service.js";
 
 const expansion=new ExpansionService();
 export const A08A_STATE_VERSION=15;
+export const A08B_STATE_VERSION=16;
 function normalizeHeadquartersState(state,previousVersion){
   const apply=local=>{
     if(!local)return;
@@ -16,6 +17,8 @@ function normalizeHeadquartersState(state,previousVersion){
     local.colony.primaryHeadquartersEver=!!local.colony.primaryHeadquartersEver;
     const shipStarvation=local.colony.shipResidentStarvationDays;
     local.colony.shipResidentStarvationDays=shipStarvation&&typeof shipStarvation==="object"?Object.fromEntries(Object.entries(shipStarvation).map(([shipId,days])=>[shipId,Math.max(0,Math.floor(Number(days)||0))])):{};
+    const outage=local.colony.headquartersOutage&&typeof local.colony.headquartersOutage==="object"?local.colony.headquartersOutage:{},phase=["online","outage","recovery"].includes(outage.phase)?outage.phase:"online",date=value=>value===null||value===undefined||value===""?null:Number.isFinite(Number(value))?Math.max(1,Math.floor(Number(value))):null,ratio=value=>Math.max(0,Math.min(1,Number(value)||0));
+    local.colony.headquartersOutage={phase,penalty:ratio(outage.penalty),offlineDays:Math.max(0,Math.floor(Number(outage.offlineDays)||0)),outageStartedAbsoluteDay:date(outage.outageStartedAbsoluteDay),outageStartPenalty:ratio(outage.outageStartPenalty),recoveryStartedAbsoluteDay:date(outage.recoveryStartedAbsoluteDay),recoveryInitialPenalty:ratio(outage.recoveryInitialPenalty),recoveryDaysElapsed:Math.max(0,Math.min(10,Math.floor(Number(outage.recoveryDaysElapsed)||0))),recoveryDaysRemaining:Math.max(0,Math.min(10,Math.floor(Number(outage.recoveryDaysRemaining)||0))),lastOutageDays:Math.max(0,Math.floor(Number(outage.lastOutageDays)||0))};
   };
   apply(state);
   for(const entry of state.portfolio?.colonies||[])apply(entry?.data);
@@ -85,8 +88,8 @@ export function createGameState(contract){
   normalizeTechnologyAcrossPortfolio(state);
   normalizeSurveyHistoryAcrossPortfolio(state);
   normalizeBuyerRoot(state);
-  normalizeHeadquartersState(state,A08A_STATE_VERSION);
-  state.version=A08A_STATE_VERSION;
+  normalizeHeadquartersState(state,A08B_STATE_VERSION);
+  state.version=A08B_STATE_VERSION;
   return state;
 }
 
@@ -98,6 +101,6 @@ export function normalizeState(state){
   normalizeSurveyHistoryAcrossPortfolio(normalized);
   normalizeBuyerRoot(normalized);
   normalizeHeadquartersState(normalized,previousVersion);
-  normalized.version=A08A_STATE_VERSION;
+  normalized.version=A08B_STATE_VERSION;
   return normalized;
 }

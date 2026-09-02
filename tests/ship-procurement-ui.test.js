@@ -4,7 +4,7 @@ const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),"utf8");
 
 const ui=read("js/ui/ship-preparation-ui.js"),market=read("views/ship-market.html"),contract=read("views/ship-purchase-contract.html"),orders=read("views/ship-market-orders.html"),compare=read("views/ship-market-compare.html"),people=read("views/player-ship-passengers.html"),fleet=read("views/player-fleet-spaceport.html"),index=read("index.html");
 
-assert.match(ui,/new ShipMarketService\(this\.shipCatalogue,this\.expansion\)/,"active ship controller must dispatch procurement to ShipMarketService");
+assert.match(ui,/new ShipMarketService\(this\.shipCatalogue,this\.expansion,this\.colony\)/,"active ship controller must dispatch procurement to ShipMarketService with the authoritative Headquarters network owner");
 assert.match(ui,/this\.shipMarketService\.placeOrder\(/,"purchase execution must use the domain owner");
 assert.doesNotMatch(ui,/state\.company\.cash\s*[-+]?=/,"procurement UI must not mutate cash directly");
 assert.doesNotMatch(ui,/PLAYER_SHIP_(?:CAPACITY|CARGO_CAPACITY|FOOD_CAPACITY|FUEL_CAPACITY|PASSENGERS)/,"ship preparation must resolve active-ship capacities rather than starter constants");
