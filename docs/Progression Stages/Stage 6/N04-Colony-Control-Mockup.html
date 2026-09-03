@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>MineIT — Colony Control Mockup (N04) • implementation target</title>
+<style>
+:root{--bg:#050708;--panel:#0b1116;--line:#273741;--text:#eef5f7;--muted:#8fa1ab;--accent:#76c6ff;--good:#82dda0;--warn:#ffd166;--bad:#ff7777;--koplin:#c9a46a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#020405;color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button,select,input{font:inherit;color:inherit}button{border:1px solid var(--line);background:#111a20;border-radius:7px;touch-action:manipulation}
+#frame{height:100vh;height:100dvh;max-width:430px;margin:auto;padding:calc(env(safe-area-inset-top) + 4px) 5px calc(env(safe-area-inset-bottom) + 4px);display:grid;grid-template-rows:auto auto minmax(0,1fr);gap:4px;background:#020405}
+.review{padding:4px 5px;border:1px solid #355062;border-radius:7px;background:#0a1014}
+.review small{display:block;font-size:5px;color:var(--muted);letter-spacing:.08em;font-weight:900;margin-bottom:2px}
+.review select{width:100%;height:26px;border:0;background:#081015;font-size:6.5px;outline:0}
+.panel{min-height:0;overflow:auto;padding:7px;background:linear-gradient(180deg,#0f1821,#091119);border:1px solid #436376;border-radius:13px}
+.shell{display:grid;gap:7px}
+.hero{display:grid;grid-template-columns:112px minmax(0,1fr);gap:9px;align-items:center;padding:6px;background:linear-gradient(135deg,#111a20,#0a1014);border:1px solid #263844;border-radius:9px;min-width:0}
+.art{position:relative;width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:8px;background:radial-gradient(circle at 50% 45%,rgba(47,198,255,.14),rgba(5,8,10,.1) 64%);box-shadow:inset 0 0 0 1px rgba(47,198,255,.16);font-size:28px;color:var(--accent)}
+.copy{display:grid;gap:5px;min-width:0}
+.kicker{font-size:7px;font-weight:900;letter-spacing:.12em;color:var(--muted)}
+.name{display:flex;align-items:center;gap:6px;min-width:0}
+.name strong{font-size:17px;line-height:1.05;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.name>span{display:inline-flex;align-items:center;justify-content:center;min-height:22px;padding:0 7px;border-radius:999px;background:#152a35;border:1px solid #355062;color:var(--accent);font-size:8px;font-weight:900;white-space:nowrap}
+.badges{display:flex;flex-wrap:wrap;gap:4px}
+.badges span{display:inline-flex;align-items:center;min-height:21px;padding:0 6px;border-radius:6px;border:1px solid #355062;background:#0c151b;color:#b7c7d2;font-size:7px;font-weight:900;letter-spacing:.04em;white-space:nowrap}
+.alert{display:grid;gap:2px;padding:6px 7px;border-radius:7px}
+.alert strong{font-size:8px;letter-spacing:.05em}.alert span{font-size:8px;line-height:1.25}
+.alert.warn{border:1px solid #6f5723;background:#17140d;color:#e7c379}
+.alert.bad{border:1px solid #71373c;background:#1d0e10;color:#ef9a9f}
+.alert[hidden],.hidden{display:none!important}
+.section{display:grid;gap:5px}
+.section-title{display:flex;align-items:center;gap:7px;font-size:8px;font-weight:900;letter-spacing:.07em}
+.section-title i{height:1px;background:#1da8d6;flex:1;opacity:.75}
+.section-title.koplin i{background:#c9a46a}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.card{min-width:0;padding:6px;background:#0a1014;border:1px solid var(--line);border-radius:7px}
+.card.ready{border-color:#28583a}.card.blocked{border-color:#71373c;background:#1d0e10}.card.warn{border-color:#695324;background:#17140d}
+.card small{display:block;font-size:7px;color:var(--muted);letter-spacing:.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card strong{display:block;margin-top:2px;font-size:11px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card span{display:block;margin-top:2px;font-size:7px;color:var(--muted);line-height:1.2;white-space:normal}
+.service-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.service{min-height:52px;padding:7px;text-align:left;border:1px solid #405866;border-radius:7px;background:#0d171e;display:grid;align-content:center;gap:2px}
+.service strong{font-size:9px}.service small{font-size:6.5px;color:var(--muted);line-height:1.2}
+.koplin-port{padding:8px;border:1px solid #6a5630;border-radius:8px;background:linear-gradient(180deg,#1a160e,#0d1114);display:grid;gap:6px}
+.koplin-port .head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:start}
+.koplin-port small.tag{display:block;font-size:5.5px;letter-spacing:.12em;font-weight:900;color:var(--koplin)}
+.koplin-port h2{margin:2px 0 0;font-size:10px}
+.koplin-port p{margin:3px 0 0;font-size:6.5px;color:#cbb892;line-height:1.3}
+.koplin-port .status{font-size:6px;font-weight:950;padding:4px 6px;border-radius:4px;border:1px solid #6a5630;background:#241c10;color:#e7c379}
+.koplin-port .status.online{border-color:#3d6a52;background:#102418;color:#a8e6bc}
+.koplin-port .status.offline{border-color:#71373c;background:#1d0e10;color:#ef9a9f}
+.creds{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.creds label{display:grid;gap:2px;padding:4px;border:1px solid #4a3d28;border-radius:5px;background:#100e0a}
+.creds small{font-size:5px;color:#a8946a;letter-spacing:.08em;font-weight:900}
+.creds input{border:0;background:transparent;font-size:7.5px;font-family:ui-monospace,Consolas,monospace;color:#f0dfb8;outline:0}
+.connect{min-height:40px;border-color:#b08a3a;background:#3a2c12;color:#ffe0a3;font-size:8.5px;font-weight:950}
+.connect:disabled{opacity:.4}
+.upgrade{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.requirements{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+.req{min-width:0;padding:6px;background:#0a1014;border:1px solid var(--line);border-radius:7px}
+.req.ready{border-color:#28583a}.req.blocked{border-color:#695324;background:#17140d}
+.req small{display:block;font-size:7px;color:var(--muted)}.req strong{display:block;margin-top:1px;font-size:12px}.req span{display:block;margin-top:2px;font-size:7px;color:var(--muted)}
+.req.ready span{color:#8fdca3}.req.blocked span{color:#e3bc72}
+.ready-state{padding:5px 6px;border-radius:6px;font-size:8px;font-weight:900;line-height:1.25}
+.ready-state.ready{border:1px solid #275b37;background:#0b160f;color:#8fdca3}
+.actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 74px 66px;gap:5px}
+.actions button{margin:0;min-height:38px;font-size:8px;font-weight:900}
+.actions .action{border-color:#118fbb;background:#0d2631;color:#62ddff}
+.actions .bad{border-color:#71373c;background:#1d0e10;color:#ef9a9f}
+.actions .close{border:1px solid #435969;background:#0c161d;color:#b9c8d2}
+.note{font-size:6.5px;line-height:1.3;color:#9eb0ba;padding:5px 6px;border-left:2px solid #1da8d6;background:#0a1218}
+/* Koplin OS overlay */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:40;display:grid;place-items:center;padding:8px}
+.overlay.hidden{display:none!important}
+.os{width:min(96vw,420px);height:min(92dvh,760px);background:linear-gradient(180deg,#14110c,#07090b);border:1px solid #7a6235;border-radius:10px;display:grid;grid-template-rows:auto auto auto minmax(0,1fr) auto;overflow:hidden;box-shadow:0 20px 70px rgba(0,0,0,.7)}
+.os-top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;padding:7px 8px;border-bottom:1px solid #4a3d28;background:#1a160f}
+.os-top small{display:block;font-size:5.5px;letter-spacing:.14em;font-weight:900;color:var(--koplin)}
+.os-top strong{display:block;font-size:10px;color:#f2e2b8}
+.os-top button{width:34px;height:34px;border-color:#6a5630;background:#241c10;color:#e7c379}
+.os-term{display:flex;flex-wrap:wrap;gap:6px;padding:5px 8px;border-bottom:1px solid #3a3224;background:#100e0a;font-size:6px;font-weight:900;color:#d7c49a}
+.os-term .ok{color:#a8e6bc}.os-term .bad{color:#ef9a9f}
+.os-login{padding:10px;display:grid;gap:7px;align-content:start}
+.os-login .prompt{font-family:ui-monospace,Consolas,monospace;font-size:6.5px;color:#c9a46a;line-height:1.4;padding:6px;border:1px solid #4a3d28;background:#0c0a07;border-radius:5px}
+.os-login .field{display:grid;gap:2px}.os-login .field small{font-size:5.5px;color:#a8946a;letter-spacing:.1em;font-weight:900}
+.os-login .field input{min-height:34px;padding:0 8px;border:1px solid #6a5630;border-radius:5px;background:#16120a;font-family:ui-monospace,Consolas,monospace;font-size:8px;color:#f0dfb8}
+.os-login .auth{min-height:42px;border-color:#b08a3a;background:#3a2c12;color:#ffe0a3;font-size:9px;font-weight:950}
+.os-body{min-height:0;overflow:auto;padding:8px;display:grid;gap:6px;align-content:start}
+.os-body .hello{font-size:6.5px;color:#cbb892;line-height:1.35}
+.os-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.os-tile{min-height:64px;padding:8px;text-align:left;border:1px solid #6a5630;border-radius:7px;background:linear-gradient(180deg,#221b10,#12100c);display:grid;align-content:space-between;gap:4px}
+.os-tile strong{font-size:8.5px;color:#f2e2b8}.os-tile small{font-size:6px;color:#b8a57a;line-height:1.25}
+.os-tile:disabled{opacity:.4}
+.os-foot{padding:6px 8px;border-top:1px solid #4a3d28;font-size:5.5px;color:#a8946a;font-family:ui-monospace,Consolas,monospace}
+@media(max-width:370px){.hero{grid-template-columns:94px minmax(0,1fr)}.name strong{font-size:14px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.actions{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div id="frame">
+  <label class="review">
+    <small>REVIEW SCENARIO • IMPLEMENTATION TARGET</small>
+    <select id="scenario">
+      <option value="online">Primary HQ operational • network online</option>
+      <option value="outage">A08b outage • Primary offline • emergency ship cmd</option>
+      <option value="recovery">A08b recovery • network restored</option>
+      <option value="overloaded">Primary online • command overload</option>
+      <option value="not-primary">Expansion HQ tile • not Primary (Set Primary visible)</option>
+    </select>
+  </label>
+
+  <p class="note">Colony Control keeps live HQ overview/operations cards. Local colony tools stay here. Conglomerate services open through a separate Koplin Deep Reach Corporation terminal session (same OS wherever you connect).</p>
+
+  <div class="panel">
+    <div class="shell">
+      <section class="hero">
+        <div class="art" aria-hidden="true">◆</div>
+        <div class="copy">
+          <div class="kicker">COLONY CONTROL • HEADQUARTERS</div>
+          <div class="name"><strong id="heroName">Headquarters L2</strong><span id="heroStatus">ACTIVE</span></div>
+          <div class="badges" id="badges"></div>
+        </div>
+      </section>
+
+      <div class="alert" id="alert" hidden><strong id="alertTitle"></strong><span id="alertText"></span></div>
+
+      <section class="section">
+        <div class="section-title"><span>OVERVIEW</span><i></i></div>
+        <div class="grid" id="overview"></div>
+      </section>
+
+      <section class="section">
+        <div class="section-title"><span>OPERATIONS</span><i></i></div>
+        <div class="grid" id="operations"></div>
+      </section>
+
+      <section class="section">
+        <div class="section-title"><span>COLONY SERVICES</span><i></i></div>
+        <div class="service-grid">
+          <button class="service" type="button"><strong>COLONY SUMMARY</strong><small>Population, workforce, Industry, transport</small></button>
+          <button class="service" type="button"><strong>CORPORATION</strong><small>Player company overview and cash</small></button>
+          <button class="service" type="button"><strong>COLONIES</strong><small>Portfolio colony operations</small></button>
+          <button class="service" type="button"><strong>SPACEPORT</strong><small>Local berths, landed ships, orbital hold</small></button>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title koplin"><span>KOPLIN DEEP REACH CORPORATION</span><i></i></div>
+        <div class="koplin-port">
+          <div class="head">
+            <div>
+              <small class="tag">EXTERNAL CHARTER NODE • KPL-CN08</small>
+              <h2>Conglomerate computer system</h2>
+              <p>Connect to the Koplin Deep Reach Corporation terminal. Buyers, Technology, Fleet Procurement and corporate Star Map are served from this remote system — same login and same menu wherever the session is opened.</p>
+            </div>
+            <div class="status" id="koplinStatus">LINK ONLINE</div>
+          </div>
+          <div class="creds">
+            <label><small>USERNAME</small><input value="deepreach.ops" readonly></label>
+            <label><small>PASSWORD</small><input type="password" value="charter-access" readonly></label>
+          </div>
+          <button class="connect" type="button" id="connectBtn">CONNECT</button>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title"><span>UPGRADE TO NEXT LEVEL</span><i></i></div>
+        <div class="upgrade">
+          <div class="card"><small>NEXT LEVEL</small><strong>HEADQUARTERS L3</strong></div>
+          <div class="card"><small>IMPROVEMENT</small><strong>+28 COMMAND</strong></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title"><span>REQUIREMENTS</span><i></i></div>
+        <div class="requirements">
+          <div class="req ready"><small>BUILD</small><strong>180</strong><span>412 available</span></div>
+          <div class="req ready"><small>ORE</small><strong>90</strong><span>1,240 available</span></div>
+        </div>
+        <div class="ready-state ready">READY TO UPGRADE</div>
+      </section>
+
+      <div class="actions">
+        <button class="action" type="button" id="upgradeBtn">UPGRADE TO L3</button>
+        <button class="action" type="button" id="primaryBtn">SET PRIMARY</button>
+        <button class="bad" type="button">DEMOLISH</button>
+        <button class="close" type="button">CLOSE</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="koplinOverlay">
+  <div class="os" role="dialog" aria-modal="true" aria-label="Koplin Deep Reach Corporation system">
+    <header class="os-top">
+      <div>
+        <small>KOPLIN DEEP REACH CORPORATION // CHARTER OS</small>
+        <strong id="osTitle">SECURE TERMINAL</strong>
+      </div>
+      <button type="button" id="osClose">✕</button>
+    </header>
+    <div class="os-term">
+      <span id="osNet" class="ok">● NETWORK ONLINE</span>
+      <span>NODE KPL-CN08</span>
+      <span>CHARTER ACCESS</span>
+      <span id="osSession">SESSION IDLE</span>
+    </div>
+    <div class="os-login" id="osLogin">
+      <div class="prompt">&gt; AUTH.REQUEST<br>&gt; CHANNEL = COLONY.HEADQUARTERS<br>&gt; CREDENTIALS PRELOADED FROM CHARTER PROFILE<br>&gt; AWAITING OPERATOR CONFIRMATION…</div>
+      <label class="field"><small>OPERATOR ID</small><input value="deepreach.ops" readonly></label>
+      <label class="field"><small>ACCESS KEY</small><input type="password" value="charter-access" readonly></label>
+      <button class="auth" type="button" id="osAuth">AUTHENTICATE • CONNECT</button>
+    </div>
+    <div class="os-body hidden" id="osBody">
+      <p class="hello">&gt; WELCOME deepreach.ops<br>&gt; LINKED COLONY: Deep Reach<br>&gt; Select a conglomerate service. This menu is identical from Headquarters or any authorised colony terminal.</p>
+      <div class="os-grid">
+        <button class="os-tile" type="button" id="svcBuyers"><strong>BUYERS SERVICE</strong><small>External market node • recurring contracts</small></button>
+        <button class="os-tile" type="button"><strong>TECHNOLOGY</strong><small>Engineering Ship capability packages</small></button>
+        <button class="os-tile" type="button"><strong>FLEET PROCUREMENT</strong><small>Factory-new vessels • charter framework rate</small></button>
+        <button class="os-tile" type="button"><strong>STAR MAP</strong><small>Corporate survey / route directory</small></button>
+      </div>
+    </div>
+    <div class="os-foot" id="osFoot">&gt; DISCONNECT RETURNS TO COLONY CONTROL • SESSION DOES NOT GRANT SHIP CONTROL</div>
+  </div>
+</div>
+
+<script>
+const scenarios = {
+  online: {
+    status:"ACTIVE", badges:["HEADQUARTERS","PLAINS","PRIMARY"], primary:true, network:true,
+    alert:null,
+    overview:[["COMMAND CAPACITY","36","","ready"],["STAFF","10 / 10","Fully staffed","ready"],["POWER","8 / 8","Operational","ready"],["ROLE","PRIMARY","Selected command centre","ready"]],
+    operations:[["NETWORK SOURCE","HEADQUARTERS","",""],["CONGLOMERATE LINK","ONLINE","Headquarters network online.","ready"],["TOTAL CAPACITY","36","",""],["COMMAND LOAD","22","",""],["COMMAND EFFICIENCY","104%","4% bonus • 0% penalty","ready"],["OUTAGE CONTINUITY","100%","No continuity penalty","ready"],["EFFECTIVE OUTPUT","104%","Command × outage continuity","ready"]]
+  },
+  outage: {
+    status:"HQ OUTAGE", badges:["HEADQUARTERS","PLAINS","PRIMARY"], primary:true, network:false,
+    alert:{level:"bad",title:"CONGLOMERATE NETWORK OFFLINE",text:"New conglomerate orders are blocked. Existing commitments continue. Colony work is operating at 90%. Emergency ship command cannot restore the Koplin link."},
+    overview:[["COMMAND CAPACITY","36","","blocked"],["STAFF","10 / 10","Fully staffed","ready"],["POWER","0 / 8","No command contribution","blocked"],["ROLE","PRIMARY","Selected command centre","ready"]],
+    operations:[["NETWORK SOURCE","SHIP","Emergency command","warn"],["CONGLOMERATE LINK","OFFLINE","Primary Headquarters offline; emergency ship command cannot access the conglomerate network.","blocked"],["TOTAL CAPACITY","16","Ship base capacity","warn"],["COMMAND LOAD","22","",""],["COMMAND EFFICIENCY","100%","0% bonus • 0% penalty","ready"],["OUTAGE CONTINUITY","90%","0 full offline days","blocked"],["EFFECTIVE OUTPUT","90%","Command × outage continuity","blocked"]]
+  },
+  recovery: {
+    status:"RECOVERING", badges:["HEADQUARTERS","PLAINS","PRIMARY"], primary:true, network:true,
+    alert:{level:"warn",title:"HEADQUARTERS RECOVERY",text:"Conglomerate access is restored. Colony work is operating at 76% and will recover over 6 more days."},
+    overview:[["COMMAND CAPACITY","36","","ready"],["STAFF","10 / 10","Fully staffed","ready"],["POWER","8 / 8","Operational","ready"],["ROLE","PRIMARY","Selected command centre","ready"]],
+    operations:[["NETWORK SOURCE","HEADQUARTERS","",""],["CONGLOMERATE LINK","ONLINE","6 recovery days remain","ready"],["TOTAL CAPACITY","36","",""],["COMMAND LOAD","22","",""],["COMMAND EFFICIENCY","104%","4% bonus • 0% penalty","ready"],["OUTAGE CONTINUITY","76%","6 days to full recovery","warn"],["EFFECTIVE OUTPUT","79%","Command × outage continuity","warn"]]
+  },
+  overloaded: {
+    status:"ACTIVE", badges:["HEADQUARTERS","PLAINS","PRIMARY"], primary:true, network:true,
+    alert:null,
+    overview:[["COMMAND CAPACITY","36","","ready"],["STAFF","10 / 10","Fully staffed","ready"],["POWER","8 / 8","Operational","ready"],["ROLE","PRIMARY","Selected command centre","ready"]],
+    operations:[["NETWORK SOURCE","HEADQUARTERS","",""],["CONGLOMERATE LINK","ONLINE","Headquarters network online.","ready"],["TOTAL CAPACITY","36","",""],["COMMAND LOAD","58","Over capacity","blocked"],["COMMAND EFFICIENCY","87%","4% bonus • 17% penalty","blocked"],["OUTAGE CONTINUITY","100%","No continuity penalty","ready"],["EFFECTIVE OUTPUT","87%","Command × outage continuity","blocked"]]
+  },
+  "not-primary": {
+    status:"ACTIVE", badges:["HEADQUARTERS","HILLS","EXPANSION"], primary:false, network:true,
+    alert:null,
+    overview:[["COMMAND CAPACITY","16","","ready"],["STAFF","5 / 5","Fully staffed","ready"],["POWER","4 / 4","Operational","ready"],["ROLE","EXPANSION","Eligible when staffed","ready"]],
+    operations:[["NETWORK SOURCE","HEADQUARTERS","Via Primary","ready"],["CONGLOMERATE LINK","ONLINE","Headquarters network online.","ready"],["TOTAL CAPACITY","52","Primary + expansion","ready"],["COMMAND LOAD","22","",""],["COMMAND EFFICIENCY","106%","6% bonus • 0% penalty","ready"],["OUTAGE CONTINUITY","100%","No continuity penalty","ready"],["EFFECTIVE OUTPUT","106%","Command × outage continuity","ready"]]
+  }
+};
+
+function card([label,value,sub,cls]){return `<div class="card ${cls||""}"><small>${label}</small><strong>${value}</strong>${sub?`<span>${sub}</span>`:""}</div>`}
+
+function render(){
+  const data=scenarios[document.getElementById("scenario").value];
+  document.getElementById("heroStatus").textContent=data.status;
+  document.getElementById("badges").innerHTML=data.badges.map(b=>`<span>${b}</span>`).join("");
+  const alert=document.getElementById("alert");
+  if(data.alert){alert.hidden=false;alert.className=`alert ${data.alert.level}`;document.getElementById("alertTitle").textContent=data.alert.title;document.getElementById("alertText").textContent=data.alert.text;}
+  else alert.hidden=true;
+  document.getElementById("overview").innerHTML=data.overview.map(card).join("");
+  document.getElementById("operations").innerHTML=data.operations.map(card).join("");
+  const primaryBtn=document.getElementById("primaryBtn");
+  primaryBtn.hidden=data.primary;primaryBtn.disabled=false;
+  const status=document.getElementById("koplinStatus");
+  const connect=document.getElementById("connectBtn");
+  if(data.network){status.textContent="LINK ONLINE";status.className="status online";connect.disabled=false;connect.textContent="CONNECT";}
+  else{status.textContent="LINK OFFLINE";status.className="status offline";connect.disabled=true;connect.textContent="CONNECT BLOCKED • NETWORK OFFLINE";}
+  closeOs(true);
+}
+
+function openOs(){
+  document.getElementById("koplinOverlay").classList.remove("hidden");
+  document.getElementById("osLogin").classList.remove("hidden");
+  document.getElementById("osBody").classList.add("hidden");
+  document.getElementById("osTitle").textContent="SECURE TERMINAL";
+  document.getElementById("osSession").textContent="SESSION IDLE";
+  document.getElementById("osFoot").textContent="> DISCONNECT RETURNS TO COLONY CONTROL • SESSION DOES NOT GRANT SHIP CONTROL";
+  const online=scenarios[document.getElementById("scenario").value].network;
+  document.getElementById("osNet").className=online?"ok":"bad";
+  document.getElementById("osNet").textContent=online?"● NETWORK ONLINE":"● NETWORK OFFLINE";
+  document.getElementById("svcBuyers").disabled=!online;
+}
+function authOs(){
+  document.getElementById("osLogin").classList.add("hidden");
+  document.getElementById("osBody").classList.remove("hidden");
+  document.getElementById("osTitle").textContent="SERVICE DIRECTORY";
+  document.getElementById("osSession").textContent="SESSION deepreach.ops";
+  document.getElementById("osFoot").textContent="> AUTH OK • BUYERS • TECHNOLOGY • FLEET PROCUREMENT • STAR MAP";
+}
+function closeOs(silent){
+  document.getElementById("koplinOverlay").classList.add("hidden");
+}
+
+document.getElementById("scenario").onchange=render;
+document.getElementById("connectBtn").onclick=openOs;
+document.getElementById("osAuth").onclick=authOs;
+document.getElementById("osClose").onclick=()=>closeOs();
+document.getElementById("koplinOverlay").addEventListener("click",e=>{if(e.target.id==="koplinOverlay")closeOs();});
+render();
+</script>
+</body>
+</html>

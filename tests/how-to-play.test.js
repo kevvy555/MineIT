@@ -14,7 +14,8 @@ assert.ok(expansionUi.includes("Koplin Corporate Home"),"missing active corporat
 assert.ok(starMapView.includes("starMapCanvas"),"missing star-map canvas view");
 assert.ok(shipNavUi.includes("BUILD + LAUNCH SURVEY PROBE"),"missing active survey-probe workflow");
 assert.ok(shipPrepView.includes("SHIP FUEL TANK"),"missing active ship fuel workflow");
-for(const rule of["TECHNOLOGY","BUYERS SERVICE","STAR MAP","COLONIES","CARGO BAY","COLONY SUMMARY","CORPORATION"])assert.ok(shipNavUi.includes(rule)||playerShipUi.includes(rule),`missing player-ship action: ${rule}`);
+for(const rule of["CARGO BAY","ACCOMMODATION","STAR MAP","FLEET MANAGER","SHIP STATUS","COLONY SUPPORT MODULE"])assert.ok(shipNavUi.includes(rule)||read("views/ship-control.html").includes(rule),`missing ship-control action: ${rule}`);
+for(const rule of["COLONY SUMMARY","CORPORATION","COLONIES","SPACEPORT","BUYERS SERVICE","TECHNOLOGY","FLEET PROCUREMENT"])assert.ok(shipPrepUi.includes(rule)||read("views/colony-control.html").includes(rule)||read("views/koplin-terminal.html").includes(rule),`missing colony/Koplin service: ${rule}`);
 for(const rule of["starSystemDetailMarkup","full-screen-panel","demolitionPanel","ship-panel-back","REROUTE TO","SHIP_HIT_ID"])assert.ok(shipNavUi.includes(rule),`missing ship navigation workflow marker: ${rule}`);
 for(const rule of["exp-planet-table","planetSortHeader","availableCargoCategories","SHIP LOAD","ROUTE FUEL","ROUTE FOOD","TRANSIT FOOD STORE","GENERAL HOLD"])assert.ok(shipPrepUi.includes(rule)||shipPrepView.includes(rule),`missing ship preparation marker: ${rule}`);
 assert.ok(shipPrepUi.includes("COLONY INDUSTRY AFTER LAUNCH"),"ship preparation must disclose loss of founding-ship Industry");

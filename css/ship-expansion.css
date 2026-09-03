@@ -13,3 +13,142 @@
 .exp-load-overview{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;padding:4px;border:1px solid #203038;background:#061015}.exp-load-overview>.exp-section-head{grid-column:1/-1}.exp-load-meter{display:grid;gap:2px;min-width:0;padding:4px;border:1px solid #1c2a31;background:#050a0d}.exp-load-meter-head{display:flex;justify-content:space-between;gap:4px;align-items:center}.exp-load-meter-head small{font-size:7px;letter-spacing:.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.exp-load-meter-head strong{font-size:8px;white-space:nowrap}.exp-load-meter-track,.exp-resource-load{height:4px;background:#121d22;overflow:hidden}.exp-load-meter-track i,.exp-resource-load i{display:block;height:100%;background:#69c9a9}.exp-load-meter.blocked .exp-load-meter-track i{background:#d56363}.exp-load-meter.ready .exp-load-meter-track i{background:#69c9a9}.exp-load-meter>span{font-size:6.5px;color:#8fa0a7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.exp-resource-load{margin-top:2px;width:min(160px,100%);height:3px}.exp-load-row.compact>span{flex:1 1 auto}.exp-load-row.compact>div{flex:0 0 auto}.compact-route strong{font-size:10px}.compact-tabs{grid-template-columns:repeat(auto-fit,minmax(62px,1fr))}
 @media(max-width:700px){.exp-load-overview{grid-template-columns:repeat(2,minmax(0,1fr))}.exp-load-overview>.exp-section-head{grid-column:1/-1}}
 @media(max-width:520px){.compact-ship-prep.full-screen-panel{padding:calc(env(safe-area-inset-top) + 3px) 3px calc(env(safe-area-inset-bottom) + 3px)!important}.compact-ship-prep>.panel-title{margin-bottom:2px}.compact-prep .exp-load-row{flex-direction:row;align-items:center}.compact-prep .exp-load-row>div{width:auto;justify-content:flex-end}.compact-prep .exp-load-row button{flex:0 0 auto}.compact-prep .exp-passengers{grid-template-columns:repeat(3,1fr)}.exp-load-overview{grid-template-columns:repeat(2,minmax(0,1fr));padding:3px}.exp-load-meter{padding:3px}.exp-resource-load{width:100%}}
+
+/* N04 Ship Control / Colony Control / Koplin OS */
+.ship-control-modal .modal-body,.colony-control-modal .modal-body,.koplin-terminal-modal .modal-body{padding:8px;overflow:auto}
+.ship-control-shell{display:grid;gap:7px}
+.ship-control-hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;padding:8px;border:1px solid #2f4a5c;border-radius:9px;background:linear-gradient(135deg,#102030,#0a1418)}
+.ship-control-hero h1{margin:0;font-size:13px}.ship-control-hero p{margin:3px 0 0;font-size:10px;color:#8fa1ab;line-height:1.3}
+.ship-control-status{align-self:start;padding:5px 8px;border-radius:5px;border:1px solid #3d6a52;background:#102418;color:#a8e6bc;font-size:9px;font-weight:950;text-align:center;white-space:nowrap}
+.ship-control-status.warn{border-color:#6e5926;background:#211b0c;color:#ffe39a}
+.ship-control-status.transit{border-color:#4c88aa;background:#14344a;color:#b7e0ff}
+.ship-control-section-title{display:flex;align-items:center;gap:6px;font-size:9px;letter-spacing:.1em;font-weight:900;color:#9db8c9}
+.ship-control-section-title i{flex:1;height:1px;background:#243642}
+.ship-control-section-title.module{color:#5ec4a8}.ship-control-section-title.module i{background:#3d8a6e}
+.ship-control-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.ship-control-grid .ship-action-tile{aspect-ratio:auto;min-height:58px;align-items:flex-start;text-align:left;justify-content:space-between;padding:8px;background:linear-gradient(180deg,#152430,#0d171b);border-color:#35586c}
+.csm-module-bay{border:1px solid #2d564a;border-radius:8px;background:linear-gradient(180deg,#0d221c,#0a1418);overflow:hidden}
+.csm-module-bay.offline{border-color:#3a4550;opacity:.9;filter:saturate(.55)}
+.csm-module-rail{display:flex;align-items:stretch}
+.csm-module-slot{flex:0 0 16px;background:repeating-linear-gradient(180deg,#1a3d34 0 4px,#0c1a18 4px 8px);border-right:1px solid #2d564a;position:relative}
+.csm-module-slot::after{content:"";position:absolute;left:50%;top:12px;bottom:12px;width:4px;transform:translateX(-50%);border-radius:2px;background:linear-gradient(#5ec4a8,#1a3d34)}
+.csm-module-bay.offline .csm-module-slot::after{background:linear-gradient(#5a6670,#2a3238)}
+.csm-module-body{flex:1;min-width:0;padding:8px;display:grid;gap:6px}
+.csm-module-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:start}
+.csm-module-body h2{margin:0;font-size:12px;color:#b8f0d8}
+.csm-module-body p{margin:2px 0 0;font-size:10px;color:#9ec9ba;line-height:1.3}
+.csm-module-pill{font-size:8px;font-weight:950;padding:4px 6px;border-radius:4px;border:1px solid #3d8a6e;background:#14382c;color:#b8f0d8;white-space:nowrap}
+.csm-module-bay.offline .csm-module-pill{border-color:#5a6670;background:#1a2026;color:#b0b8c0}
+.csm-module-meta{display:flex;flex-wrap:wrap;gap:3px}
+.csm-module-meta span{font-size:8px;font-weight:900;padding:2px 5px;border-radius:3px;border:1px solid #35564c;color:#b8e8d6}
+.csm-module-bay.offline .csm-module-meta span{border-color:#45505a;color:#a8b0b8}
+.csm-module-open{width:100%;min-height:40px;border-color:#3d8a6e;background:#14382c;color:#b8f0d8;font-size:11px;font-weight:950}
+.csm-module-open:disabled{opacity:.45;border-color:#5a6670;background:#1a2026;color:#b0b8c0}
+.ship-control-route{padding:7px;border:1px solid #293b45;border-radius:6px;background:#0a1217;display:grid;gap:4px}
+.ship-control-route-row{display:grid;grid-template-columns:1fr auto;gap:4px;font-size:11px}
+.ship-control-route-row span{color:#8fa1ab}.ship-control-route-row b{text-align:right}
+.ship-control-note{margin:0;font-size:10px;line-height:1.35;color:#aebcc3;padding:6px;border-left:2px solid #4c88aa;background:#091116}
+.ship-control-actions{display:grid}
+.ship-control-launch{min-height:42px;border-color:#6e5926;background:#211b0c;color:#ffe39a;font-size:12px;font-weight:950}
+.colony-control-shell{display:grid;gap:8px}
+.adaptive-building-section-title.koplin i{background:#c9a46a}
+.colony-service-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.colony-service{min-height:52px;padding:8px;text-align:left;border:1px solid #405866;border-radius:7px;background:#0d171e;display:grid;align-content:center;gap:2px}
+.colony-service strong{font-size:11px}.colony-service small{font-size:9px;color:#8fa1ab;line-height:1.2}
+.koplin-port{padding:9px;border:1px solid #6a5630;border-radius:8px;background:linear-gradient(180deg,#1a160e,#0d1114);display:grid;gap:7px}
+.koplin-port-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:start}
+.koplin-tag{display:block;font-size:8px;letter-spacing:.12em;font-weight:900;color:#c9a46a}
+.koplin-port h2{margin:3px 0 0;font-size:13px}
+.koplin-port p{margin:4px 0 0;font-size:10px;color:#cbb892;line-height:1.3}
+.koplin-status{font-size:8px;font-weight:950;padding:4px 6px;border-radius:4px;border:1px solid #6a5630;background:#241c10;color:#e7c379;white-space:nowrap}
+.koplin-status.online{border-color:#3d6a52;background:#102418;color:#a8e6bc}
+.koplin-status.offline{border-color:#71373c;background:#1d0e10;color:#ef9a9f}
+.koplin-creds{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.koplin-creds label{display:grid;gap:2px;padding:5px;border:1px solid #4a3d28;border-radius:5px;background:#100e0a}
+.koplin-creds small{font-size:8px;color:#a8946a;letter-spacing:.08em;font-weight:900}
+.koplin-creds input{border:0;background:transparent;font-size:11px;font-family:ui-monospace,Consolas,monospace;color:#f0dfb8;outline:0}
+.koplin-connect{min-height:40px;border-color:#b08a3a;background:#3a2c12;color:#ffe0a3;font-size:12px;font-weight:950}
+.koplin-connect:disabled{opacity:.4}
+.colony-control-close-only{display:grid}
+.koplin-os{display:grid;gap:0;min-height:min(80dvh,640px);border:1px solid #7a6235;border-radius:10px;background:linear-gradient(180deg,#14110c,#07090b);overflow:hidden}
+.koplin-os-top{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;padding:8px;border-bottom:1px solid #4a3d28;background:#1a160f}
+.koplin-os-top small{display:block;font-size:8px;letter-spacing:.14em;font-weight:900;color:#c9a46a}
+.koplin-os-top strong{display:block;font-size:13px;color:#f2e2b8}
+.koplin-os-term{display:flex;flex-wrap:wrap;gap:8px;padding:6px 8px;border-bottom:1px solid #3a3224;background:#100e0a;font-size:9px;font-weight:900;color:#d7c49a}
+.koplin-os-term .ok{color:#a8e6bc}.koplin-os-term .bad{color:#ef9a9f}
+.koplin-os-login{padding:12px;display:grid;gap:8px;align-content:start}
+.koplin-os-prompt{font-family:ui-monospace,Consolas,monospace;font-size:10px;color:#c9a46a;line-height:1.4;padding:8px;border:1px solid #4a3d28;background:#0c0a07;border-radius:5px}
+.koplin-os-field{display:grid;gap:3px}.koplin-os-field small{font-size:8px;color:#a8946a;letter-spacing:.1em;font-weight:900}
+.koplin-os-field input{min-height:34px;padding:0 8px;border:1px solid #6a5630;border-radius:5px;background:#16120a;font-family:ui-monospace,Consolas,monospace;font-size:12px;color:#f0dfb8}
+.koplin-os-auth{min-height:42px;border-color:#b08a3a;background:#3a2c12;color:#ffe0a3;font-size:12px;font-weight:950}
+.koplin-os-body{padding:10px;display:grid;gap:8px;align-content:start}
+.koplin-os-hello{margin:0;font-size:10px;color:#cbb892;line-height:1.4;white-space:pre-line}
+.koplin-os-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.koplin-os-tile{min-height:68px;padding:9px;text-align:left;border:1px solid #6a5630;border-radius:7px;background:linear-gradient(180deg,#221b10,#12100c);display:grid;align-content:space-between;gap:4px}
+.koplin-os-tile strong{font-size:11px;color:#f2e2b8}.koplin-os-tile small{font-size:9px;color:#b8a57a;line-height:1.25}
+.koplin-os-foot{padding:8px;border-top:1px solid #4a3d28;font-size:9px;color:#a8946a;font-family:ui-monospace,Consolas,monospace}
+.fleet-manager-modal .modal-body{padding:8px;overflow:hidden}
+.fleet-manager{height:100%;min-height:0;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:6px}
+.fleet-command{padding:6px 7px;border:1px solid #2f4a3a;border-radius:6px;background:#0a1612;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center}
+.fleet-command small{display:block;font-size:8px;color:#8fa1ab;letter-spacing:.08em;font-weight:900}
+.fleet-command strong{font-size:11px;color:#a8e6bc}
+.fleet-command-badge{font-size:9px;font-weight:950;padding:4px 6px;border-radius:4px;border:1px solid #3d6a52;background:#102418;color:#a8e6bc;align-self:start}
+.fleet-command.ship-cmd{border-color:#4a3d2f;background:#16120a}.fleet-command.ship-cmd strong{color:#ffd166}.fleet-command.ship-cmd .fleet-command-badge{border-color:#6e5926;background:#211b0c;color:#ffe39a}
+.fleet-command.none{border-color:#5a3030;background:#160c0c}.fleet-command.none strong{color:#ff7777}.fleet-command.none .fleet-command-badge{border-color:#6e3a3a;background:#211010;color:#ffb0b0}
+.fleet-filters{padding:6px;border:1px solid #273741;border-radius:6px;background:#081015;display:grid;gap:5px}
+.fleet-filters-label{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.fleet-filters-label small{font-size:8px;color:#8fa1ab;letter-spacing:.08em;font-weight:900}
+.fleet-filters-label button{min-height:26px;padding:0 8px;font-size:8px;font-weight:900}
+.fleet-chips{display:flex;flex-wrap:wrap;gap:4px}
+.fleet-chip{min-height:28px;padding:0 8px;font-size:9px;font-weight:950;text-transform:uppercase;border-radius:999px;border:1px solid #334650;background:#0c151b;color:#b8c6cc}
+.fleet-chip.on{border-color:#4c88aa;background:#14344a;color:#76c6ff}
+.fleet-chip[data-fleet-status="docked"].on{border-color:#3d6a52;background:#102418;color:#a8e6bc}
+.fleet-chip[data-fleet-status="travelling"].on{border-color:#4c88aa;background:#14344a;color:#b7e0ff}
+.fleet-chip[data-fleet-status="orbiting"].on{border-color:#6e5926;background:#211b0c;color:#ffe39a}
+.fleet-chip[data-fleet-status="arrived"].on,.fleet-chip[data-fleet-status="home"].on{border-color:#6a4f88;background:#1a1224;color:#d7b7ff}
+.fleet-chip[data-fleet-status="lost"].on{border-color:#6e3a3a;background:#211010;color:#ffb0b0}
+.fleet-list-wrap{min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr)}
+.fleet-list-head{display:grid;grid-template-columns:minmax(0,1.4fr) 64px minmax(0,1fr) 72px;gap:4px;padding:0;background:#101820;border:1px solid #273741;border-radius:5px 5px 0 0}
+.fleet-list-head button{min-height:32px;padding:4px 5px;border:0;border-radius:0;background:transparent;font-size:8px;color:#b8c6cc;font-weight:900;text-transform:uppercase;text-align:left}
+.fleet-list-head button:nth-child(2),.fleet-list-head button:nth-child(4){text-align:center}
+.fleet-list-head button:disabled{opacity:.55}
+.fleet-sort-arrow{color:#76c6ff;margin-left:2px}
+.fleet-rows{min-height:0;overflow:auto;border:1px solid #273741;border-top:0;border-radius:0 0 7px 7px;background:#080d11}
+.fleet-row{display:grid;grid-template-columns:minmax(0,1.4fr) 64px minmax(0,1fr) 72px;gap:4px;align-items:center;min-height:72px;padding:6px;border-bottom:1px solid #162129}
+.fleet-row.active{background:#0c1b13;box-shadow:inset 2px 0 0 #82dda0}
+.fleet-row.lost{opacity:.55}
+.fleet-row.commanding{box-shadow:inset 2px 0 0 #ffd166}
+.fleet-row.active.commanding{box-shadow:inset 2px 0 0 #82dda0,inset 4px 0 0 #ffd166}
+.fleet-empty{padding:16px 8px;text-align:center;font-size:11px;color:#8fa1ab}
+.fleet-name strong{display:block;font-size:11px;line-height:1.15}
+.fleet-name small{display:block;font-size:9px;color:#8fa1ab;margin-top:2px;line-height:1.2}
+.fleet-tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+.fleet-tag{font-size:8px;font-weight:900;letter-spacing:.04em;padding:2px 4px;border-radius:3px;border:1px solid #334650;color:#c5d4db}
+.fleet-tag.active{border-color:#3d6a52;background:#102418;color:#a8e6bc}
+.fleet-tag.cmd{border-color:#6e5926;background:#211b0c;color:#ffe39a}
+.fleet-tag.lost{border-color:#6e3a3a;background:#211010;color:#ffb0b0}
+.fleet-status{text-align:center}
+.fleet-status b{display:block;font-size:9px;font-weight:950;text-transform:uppercase}
+.fleet-status.docked b{color:#82dda0}.fleet-status.travelling b{color:#76c6ff}.fleet-status.orbiting b{color:#ffd166}
+.fleet-status.arrived b,.fleet-status.home b{color:#c69cff}.fleet-status.lost b{color:#ff7777}
+.fleet-status small{display:block;font-size:8px;color:#8fa1ab;margin-top:2px;line-height:1.15}
+.fleet-loc{font-size:9px;line-height:1.25;color:#c9d6dc}
+.fleet-loc small{display:block;font-size:8px;color:#8fa1ab;margin-top:2px}
+.fleet-metrics{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-top:4px}
+.fleet-metric{padding:3px 4px;background:#0e171d;border:1px solid #1d2b34;border-radius:3px}
+.fleet-metric small{display:block;font-size:7px;color:#8fa1ab}.fleet-metric strong{font-size:9px;font-variant-numeric:tabular-nums}
+.fleet-actions{display:grid}
+.fleet-actions button{min-height:40px;padding:3px 4px;font-size:9px;font-weight:950;border-color:#39714d;background:#10271a;color:#b6efc8}
+.fleet-legend{font-size:9px;color:#8fa1ab;padding:0 2px;line-height:1.35;margin:0}
+.player-fleet-spaceport{display:grid;gap:8px}
+.player-fleet-spaceport-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:start}
+.player-fleet-spaceport-actions{display:grid;gap:4px}
+.player-fleet-spaceport-actions button{min-height:34px;padding:4px 8px;font-size:9px;font-weight:900;white-space:nowrap}
+.player-fleet-row{width:100%;display:grid;gap:3px;padding:8px;text-align:left;border:1px solid #33444d;background:#0a1217}
+.player-fleet-row.active{border-color:#3d6a52;background:#0c1b13}
+.player-fleet-row strong{display:block;font-size:12px}.player-fleet-row small{display:block;font-size:9px;color:#8fa1ab}
+.player-fleet-status{font-size:9px;font-weight:900;color:#a8e6bc}
+.player-fleet-metrics{font-size:9px;color:#9fb0b8;line-height:1.3}
+.exp-map-footer-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.exp-map-footer-actions button{min-width:96px}
+@media(max-width:420px){.ship-control-grid,.colony-service-grid,.koplin-os-grid{grid-template-columns:1fr}.koplin-creds{grid-template-columns:1fr}.fleet-list-head,.fleet-row{grid-template-columns:minmax(0,1.2fr) 52px minmax(0,1fr) 64px}.fleet-actions button{font-size:8px}}

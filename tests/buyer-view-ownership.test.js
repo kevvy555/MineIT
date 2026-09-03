@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),"utf8");
-const ui=read("js/ui/buyer-ui.js"),catalogue=read("views/conglomerate-buyers.html"),collection=read("views/buyer-collection-event.html"),css=read("css/conglomerate-buyers.css"),playerShip=read("js/ui/player-ship-ui.js"),shipNavigation=read("js/ui/ship-navigation-ui.js");
+const ui=read("js/ui/buyer-ui.js"),catalogue=read("views/conglomerate-buyers.html"),collection=read("views/buyer-collection-event.html"),css=read("css/conglomerate-buyers.css"),shipNavigation=read("js/ui/ship-navigation-ui.js"),shipPrep=read("js/ui/ship-preparation-ui.js"),koplinView=read("views/koplin-terminal.html"),colonyView=read("views/colony-control.html");
 assert.match(ui,/loadViewTemplate\(CATALOG_VIEW\)/);assert.match(ui,/loadViewTemplate\(COLLECTION_VIEW\)/);assert.doesNotMatch(ui,/\.company\.buyers\s*=/,"BuyerUI must not own buyer state mutation");assert.doesNotMatch(ui,/\.happiness\s*=/,"BuyerUI must not mutate relationship happiness");assert.doesNotMatch(ui,/qualityBands\[[^\]]+\]\.amount\s*[-+]?=/,"BuyerUI must not mutate inventory lots");
 assert.match(ui,/profileView\(offerId\)/);assert.match(ui,/this\.buyers\.offer\(this\.state,offerId\)/);assert.match(ui,/this\.openProfile\(root,this\.profileView\(row\.id\)\)/);assert.match(ui,/this\.openProfile\(root,this\.profileView\(view\.id\)\)/);assert.doesNotMatch(ui,/offerView\(this\.state,(?:row|view)\.id\)/,"BuyerUI must resolve an offer object before calling BuyerService.offerView");
 assert.match(ui,/\[data-buyer-quality\]",this\.qualityLabel\(row\.minQuality\)\|\|"—"/,"buyer directory must render full quality labels rather than one-letter abbreviations");
@@ -10,6 +10,10 @@ assert.match(catalogue,/Buyer \/ Co\./);assert.match(catalogue,/<span>Quality<\/
 for(const marker of["data-buyer-collection-screen","data-collection-ship-image","data-collection-portrait","data-collection-alert","data-collection-transfer","data-collection-wait","data-collection-score"])assert.ok(collection.includes(marker),`missing collection marker ${marker}`);
 assert.doesNotMatch(collection,/data-collection-scenario|<select/i,"production collection view must not retain mockup-only scenario controls");
 assert.match(css,/\.buyers-service-screen\{[^}]*font-family:ui-monospace/);assert.match(css,/\.buyers-profile-dialog\{[^}]*height:min\(50dvh,480px\)/);assert.match(css,/\.modal:has\(\.buyers-service-screen\)/);assert.match(css,/\.modal:has\(\.buyer-collection-screen\)/);assert.match(css,/@media\(pointer:coarse\)/);
-assert.match(playerShip,/BUYERS SERVICE/);assert.match(playerShip,/buyerUI\?\.openCatalog/);
-assert.match(shipNavigation,/playerShipPanel\(\)/,"active ship-navigation layer must own the live player ship panel");assert.match(shipNavigation,/BUYERS SERVICE/);assert.match(shipNavigation,/action==="buyers"/);assert.match(shipNavigation,/buyerUI\?\.openCatalog/);
-console.log("Conglomerate Buyers Service terminal directory, full-quality labels, profile resolution, external views and mobile ship entry contract passed");
+assert.match(shipNavigation,/playerShipPanel\(\)/,"active ship-navigation layer must own the live player ship panel");
+assert.doesNotMatch(shipNavigation,/BUYERS SERVICE/,"Buyers must leave Ship Control for the Koplin OS directory");
+assert.doesNotMatch(shipNavigation,/action==="buyers"/);
+assert.match(shipPrep,/koplinTerminal\(/);assert.match(shipPrep,/buyerUI\?\.openCatalog/);
+assert.match(koplinView,/BUYERS SERVICE/);assert.match(koplinView,/data-koplin-service="buyers"/);
+assert.match(colonyView,/data-koplin-connect/);assert.match(colonyView,/KOPLIN DEEP REACH CORPORATION/);
+console.log("Conglomerate Buyers Service terminal directory, full-quality labels, profile resolution, external views and Koplin entry contract passed");

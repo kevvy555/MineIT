@@ -2,8 +2,11 @@
 
 **Progression stage:** 6 — Second Colony Establishment  
 **Type:** Feature  
-**Status:** In Progress  
-**Branch:** `feature/fleet-colony-ship-control`
+**Status:** Ready for Testing  
+**Branch:** `feature/fleet-colony-ship-control`  
+**Proof mockup:** [B03a-Fleet-Manager-Mockup.html](./B03a-Fleet-Manager-Mockup.html)
+
+Mockup approved. Implementation and regression coverage ready for player testing.
 
 ## Original backlog text
 
@@ -11,31 +14,61 @@
 
 ## Purpose
 
-Give the player one consistent place to inspect and command every owned ship without navigating through a colony cargo bay.
+Give the player one consistent place to inspect every owned ship and open Ship Control without navigating through a colony cargo bay.
 
-## Approved first release
+## Approved first release — Fleet Manager
 
-- A global Ships screen lists every owned ship. This is the Fleet Manager surface described with **N04**.
-- Selecting a ship opens Ship Control for that ship.
-- The screen is accessible through:
-  - a persistent global button;
-  - relevant star-map and system-map shortcuts;
-  - colony shortcuts.
-- Controls are state-aware and only expose actions valid for the selected ship’s current state.
-- The initial control panel includes:
-  - launch;
-  - land;
-  - enter or remain in orbit;
-  - choose a destination;
-  - change a destination;
-  - journey distance and time;
-  - Fuel requirement and range preview;
-  - crew management;
-  - accommodation management.
-- Cargo loading and unloading remain owned by the cargo-bay / Ship Control cargo interface. The Ships screen may summarise cargo but does not duplicate authoritative cargo operations.
-- Navigation commands use the same domain route service as the star and system maps.
-- The screen remains available while ships are landed, orbiting or in transit.
-- Colony command actions are not owned by this screen. Colony Control composition is defined by **N04** and Headquarters rules by **A08**.
+Fleet Manager is the corporation-wide list surface described with **N04**. It is **not** Colony Control and does not embed launch/cargo editors.
+
+### List contents
+
+Every owned ship appears once and shows:
+
+- vessel name;
+- class / model;
+- status (`docked`, `travelling`, `orbiting`, `arrived`, `home`, `lost`);
+- location summary (colony name, system, transit target, orbital hold target, corporate home, or lost reason);
+- cargo used/capacity, fuel used/capacity, food used/capacity, crew / minimum crew;
+- whether the ship is the current `activeShipId`;
+- optional command badge when `commandStatus.source` is that ship (informational only; includes A08b emergency takeover).
+
+### List controls
+
+- Column headers (**Vessel**, **Status**, **Location / stocks**) are sortable on tap; tap again reverses direction.
+- A multi-select **status filter** above the list lets the player show any combination of statuses present in the fleet (Show All clears the filter).
+- The Fleet Manager panel does not include persistent world/colony/corp footer chrome; those remain app chrome outside this panel.
+
+### Actions on the list
+
+- **OPEN SHIP CONTROLS** selects the ship (`activeShipId`) and opens Ship Control.
+- Lost ships remain listed; opening them shows the existing lost-ship Ship Control / status path.
+- The list may summarise cargo; it does not mutate cargo, Fuel, Food, crew or routes.
+- A08b conglomerate-network lockouts do not hide ships or block opening Ship Control.
+
+### Accessibility
+
+Fleet Manager is available from:
+
+- a persistent global footer control (**FLEET**);
+- star-map shortcut;
+- Spaceport shortcut;
+- Ship Control tile / CSM path.
+
+It remains available while ships are landed, orbiting or in transit and does not depend on which colony is active.
+
+### Ship Control (selected vessel)
+
+State-aware Ship Control (opened from Fleet Manager, Spaceport, map or star map) owns:
+
+- launch / land / orbit as valid for state;
+- destination set / change;
+- journey distance, time, Fuel and Food preview;
+- crew and accommodation management;
+- path into the cargo-bay loader;
+- ship Star Map navigation;
+- Fleet Manager entry (in-panel).
+
+When **N04** says the ship holds command, Ship Control shows a linked Colony Support Module that opens Colony Control. It does not embed colony service tiles or Koplin OS actions.
 
 ## Fleet boundary
 
@@ -45,14 +78,16 @@ This creates the initial global fleet-management foundation. Automated routing, 
 
 1. Every owned ship appears once in the global list.
 2. Ship state and location are visible without entering a colony.
-3. Selecting ships updates the panel without stale controls or data.
-4. All approved initial actions are reachable from the selected-ship panel.
-5. Invalid actions are disabled or omitted with an explanation.
+2b. Column headers sort the list; status multi-filter narrows visible rows.
+3. Selecting ships / Open Ship Controls updates the active ship without stale controls or data.
+4. Approved Ship Control actions are reachable after opening the selected ship.
+5. Invalid Ship Control actions are disabled or omitted with an explanation.
 6. Route time, Fuel and range match the navigation domain calculation.
-7. Cargo mutation remains in its canonical owner.
+7. Cargo mutation remains in its canonical owner (not the Fleet Manager list).
 8. The layout is usable on the target mobile viewport.
 9. Relevant async views reject stale writes when the selected ship changes.
+10. Fleet Manager never presents Colony Control actions.
 
 ## Review state
 
-Ready-for-review content retained. Implementation authorised on `feature/fleet-colony-ship-control` together with **N03** and **N04**.
+Discovery completed with A08a/A08b Complete and a standalone Fleet Manager mockup for review. Ready for final review before implementation.

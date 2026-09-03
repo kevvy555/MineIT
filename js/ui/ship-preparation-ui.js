@@ -9,6 +9,8 @@ const BAND_ORDER={"Very Low":1,"Low":2,"Moderate":3,"High":4,"Very High":5,"Extr
 const PLANET_COLUMNS=[["name","PLANET"],["environment","ENVIRONMENT"],["food","FOOD"],["build","BUILD"],["fuel","FUEL"],["ore","ORE"],["habitability","HABITABILITY"],["confidence","CONF."],["tech","TECH"],["colony","COLONY"]];
 const MARKET_ROLES=["","Courier","Freighter","Survey","Passenger","Heavy Freight","Utility"];
 const FLEET_HIT_PREFIX="__fleet_ship__:";
+const FLEET_STATUS_ORDER=["docked","orbiting","travelling","arrived","home","lost"];
+const FLEET_STATUS_HINT={docked:"Live",travelling:"In transit",orbiting:"Holding",arrived:"Arrived",home:"Home",lost:"Unrecoverable"};
 const esc=value=>String(value??"").replace(/[&<>\"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;"}[ch]));
 const pct=(value,max)=>max>0?Math.max(0,Math.min(100,(Number(value)||0)/max*100)):0;
 const credits=value=>`cc ${formatNumber(value)}`;
@@ -18,14 +20,17 @@ export class UIController extends ShipNavigationUIController{
   constructor(opts){
     super(opts);this.planetSort={key:"name",dir:1};this.shipPrepRevision=0;this.prepClickHandler=null;this.planetClickHandler=null;
     this.shipCatalogue=universeShipCatalogue;this.shipMarketService=new ShipMarketService(this.shipCatalogue,this.expansion,this.colony);this.shipMarketService.ensure(this.state);this.shipMarketRevision=0;this.marketClickHandler=null;this.marketPointerCleanup=null;this.shipMarketManufacturerId=null;this.shipMarketShipClassId=null;this.shipMarketRole="";this.shipMarketColonyId=null;this.shipCompareIds=[];this.shipRetargetOrderId=null;this.shipSignatureDirty=false;this.shipContractCanOrder=false;
+    this.colonyControlRevision=0;this.koplinTerminalRevision=0;this.colonyControlTile=null;
+    this.fleetManagerRevision=0;this.fleetClickHandler=null;this.fleetSort={key:"name",dir:1};this.fleetStatusFilter=new Set();
   }
 
-  bind(){super.bind();this.bindClick?.("#starMapBtn",()=>this.starMap());}
-  open(title,body){this.releasePrepActions();this.releasePlanetActions();this.releaseMarketActions();super.open(title,body);}
-  dispose(){this.releasePrepActions();this.releasePlanetActions();this.releaseMarketActions();super.dispose?.();}
+  bind(){super.bind();this.bindClick?.("#starMapBtn",()=>this.starMap());this.bindClick?.("#fleetBtn",()=>this.fleetManager());}
+  open(title,body){this.releasePrepActions();this.releasePlanetActions();this.releaseMarketActions();this.releaseFleetActions();super.open(title,body);}
+  dispose(){this.releasePrepActions();this.releasePlanetActions();this.releaseMarketActions();this.releaseFleetActions();super.dispose?.();}
   releasePrepActions(){if(!this.prepClickHandler)return;this.modal?.removeEventListener("click",this.prepClickHandler);this.prepClickHandler=null;}
   releasePlanetActions(){if(!this.planetClickHandler)return;this.modal?.removeEventListener("click",this.planetClickHandler);this.planetClickHandler=null;}
   releaseMarketActions(){if(this.marketClickHandler)this.modal?.removeEventListener("click",this.marketClickHandler);this.marketClickHandler=null;if(this.marketPointerCleanup)this.marketPointerCleanup();this.marketPointerCleanup=null;}
+  releaseFleetActions(){if(!this.fleetClickHandler)return;this.modal?.removeEventListener("click",this.fleetClickHandler);this.fleetClickHandler=null;}
 
   planetSortValue(planet,key,system){
     if(key==="name")return planet.name||"";if(key==="environment")return planet.environment||"";
@@ -54,7 +59,7 @@ export class UIController extends ShipNavigationUIController{
   bindPlanetActions(){this.releasePlanetActions();this.planetClickHandler=event=>{const button=event.target.closest?.("button[data-planet-sort]");if(!button||!this.modal.contains(button))return;this.changePlanetSort(button.dataset.planetSort);};this.modal.addEventListener("click",this.planetClickHandler);}
   bindStarMapDetailActions(system){const rendered=this.renderPlanetTable(system);super.bindStarMapDetailActions(system);if(rendered)this.bindPlanetActions();}
 
-  shipLocation(){const ship=this.expansion.ship(this.state),ex=this.state.company.expansion;if(!ship)return"NO ACTIVE SHIP";if(ship.status==="travelling"){const target=this.expansion.system(ex,ship.targetSystemId);return`IN TRANSIT → ${target?.name||"UNKNOWN"}`;}if(ship.status==="lost")return"SHIP LOST";if(ship.status==="home")return"KOPLIN CORPORATE HOME";if(ship.status==="orbiting"){const entry=this.state.portfolio?.colonies?.find(e=>e.id===ship.targetColonyId);return`ORBITAL HOLD • ${entry?.data?.contract?.colonyName||"DESTINATION COLONY"}`;}const system=this.expansion.system(ex,ship.systemId);if(ship.status==="arrived")return`ARRIVED • ${system?.name||"SYSTEM"}`;const entry=this.state.portfolio?.colonies?.find(e=>e.id===ship.colonyId);return`${entry?.data?.contract?.colonyName||"DOCKED"} • ${system?.name||"SYSTEM"}`;}
+  shipLocation(shipOrId){const ship=shipOrId&&typeof shipOrId==="object"?shipOrId:this.expansion.ship(this.state,shipOrId),ex=this.state.company.expansion;if(!ship)return"NO ACTIVE SHIP";if(ship.status==="travelling"){const target=this.expansion.system(ex,ship.targetSystemId);return`IN TRANSIT → ${target?.name||"UNKNOWN"}`;}if(ship.status==="lost")return"SHIP LOST";if(ship.status==="home")return"KOPLIN CORPORATE HOME";if(ship.status==="orbiting"){const entry=this.state.portfolio?.colonies?.find(e=>e.id===ship.targetColonyId);return`ORBITAL HOLD • ${entry?.data?.contract?.colonyName||"DESTINATION COLONY"}`;}const system=this.expansion.system(ex,ship.systemId);if(ship.status==="arrived")return`ARRIVED • ${system?.name||"SYSTEM"}`;const entry=this.state.portfolio?.colonies?.find(e=>e.id===ship.colonyId);return`${entry?.data?.contract?.colonyName||"DOCKED"} • ${system?.name||"SYSTEM"}`;}
   shipStatusMarkup(){const ship=this.expansion.ship(this.state);if(!ship)return"";const used=this.expansion.capacityUsed(this.state,ship.id),total=this.expansion.shipTotalCapacity(ship),fuel=this.expansion.fuelAmount(this.state,ship.id),cargo=this.expansion.cargoAmount(this.state,ship.id),food=this.expansion.foodAmount(this.state,ship.id),target=ship.targetSystemId?this.expansion.system(this.state.company.expansion,ship.targetSystemId):null,days=ship.status==="travelling"?Math.max(0,(Number(ship.arrivalAbsoluteDay)||0)-this.expansion.absoluteDay(this.state)):null;return`<section class="exp-ship-strip"><div><small>${esc(ship.name||"PLAYER SHIP")}</small><strong>${esc(this.shipLocation())}</strong></div><div class="exp-ship-metrics"><span><small>LOAD</small><b>${formatNumber(used)} / ${formatNumber(total)}</b></span><span><small>FUEL</small><b>${formatNumber(fuel)} / ${formatNumber(ship.fuelCapacity)}</b></span><span><small>CARGO</small><b>${formatNumber(cargo)} / ${formatNumber(ship.cargoCapacity)}</b></span><span><small>FOOD</small><b>${formatNumber(food)} / ${formatNumber(ship.foodCapacity)}</b></span><span><small>CREW</small><b>${formatNumber(ship.crew)} / ${formatNumber(ship.minimumCrew)} MIN</b></span><span><small>COLONISTS</small><b>${formatNumber(ship.passengers)} / ${formatNumber(ship.passengerCapacity)}</b></span>${days!==null?`<span><small>ARRIVAL</small><b>${formatNumber(days)}d</b></span>`:""}</div>${target?`<div class="exp-target">TARGET • <strong>${esc(target.name)}</strong></div>`:""}</section>`;}
 
   availableCargoCategories(){const ship=this.expansion.ship(this.state),has=(container,type)=>Object.values(container||{}).some(entry=>entry?.type===type&&(Number(entry.amount)||0)>0);return CATEGORIES.filter(type=>has(this.state.inventory,type)||has(ship.cargo,type));}
@@ -94,7 +99,155 @@ export class UIController extends ShipNavigationUIController{
     if(revision!==this.shipPrepRevision)return;this.open(`Prepare ${ship.name||"Player Ship"}`,body);this.modal.classList.add("ship-prep-modal","full-screen-panel","compact-ship-prep");this.renderManifestRows(categories.length>0);this.bindPrep();
   }
 
-  playerShipPanel(){super.playerShipPanel();const grid=this.modal?.querySelector(".ship-action-grid");if(!grid||grid.querySelector("[data-fleet-procurement]"))return;const button=document.createElement("button");button.className="ship-action-tile";button.dataset.fleetProcurement="1";const title=document.createElement("strong"),sub=document.createElement("small");title.textContent="FLEET PROCUREMENT";sub.textContent="Approved shipbuilders, capital orders and delivery queue";button.append(title,sub);button.onclick=()=>this.shipMarket();grid.insertBefore(button,grid.children[2]||null);}
+  fleetManager(){return this.openFleetManager();}
+
+  fleetShipDetail(ship){
+    if(ship.status==="travelling"){const days=Math.max(0,(Number(ship.arrivalAbsoluteDay)||0)-this.expansion.absoluteDay(this.state));return`ETA ${formatNumber(days)}d`;}
+    if(ship.status==="lost")return ship.lostReason||"Signal lost";
+    if(ship.status==="orbiting")return"Holding for berth";
+    if(ship.status==="arrived")return"Awaiting approach order";
+    if(ship.status==="home")return"Corporate logistics";
+    if(ship.status==="docked"){const entry=this.state.portfolio?.colonies?.find(e=>e.id===ship.colonyId);return entry?.data?.contract?.colonyName?`Docked • ${entry.data.contract.colonyName}`:"Docked berth";}
+    return"";
+  }
+  fleetCommandBanner(){
+    const command=this.colony?.commandStatus?.(this.state),continuity=this.colony?.headquartersContinuity?.(this.state,{command}),ship=command?.source?.type==="ship"?this.expansion.ship(this.state,command.source.id):null;
+    if(command?.source?.type==="headquarters")return{mode:"hq",text:continuity?.networkAvailable===false?"Primary Headquarters • network offline":"Primary Headquarters • operational",badge:"HQ"};
+    if(command?.source?.type==="ship")return{mode:"ship",text:continuity?.networkAvailable===false?`Emergency ship command • ${ship?.name||"vessel"} • network offline`:`${ship?.name||"Ship"} holds colony command`,badge:"SHIP"};
+    return{mode:"none",text:"No active colony command source",badge:"NONE"};
+  }
+  fleetSortedShips(){
+    const activeId=this.state.company?.expansion?.activeShipId,sort=this.fleetSort||{key:"name",dir:1},dir=sort.dir<0?-1:1,filter=this.fleetStatusFilter,ships=this.expansion.ships(this.state).filter(ship=>!filter?.size||filter.has(ship.status));
+    const statusRank=status=>{const idx=FLEET_STATUS_ORDER.indexOf(status);return idx<0?99:idx;};
+    return[...ships].sort((a,b)=>{
+      let cmp=0;
+      if(sort.key==="status")cmp=statusRank(a.status)-statusRank(b.status);
+      else if(sort.key==="location")cmp=String(this.shipLocation(a)).localeCompare(String(this.shipLocation(b)),undefined,{numeric:true,sensitivity:"base"});
+      else cmp=String(a.name||"").localeCompare(String(b.name||""),undefined,{numeric:true,sensitivity:"base"});
+      if(cmp)return cmp*dir;
+      return String(a.name||"").localeCompare(String(b.name||""),undefined,{numeric:true,sensitivity:"base"});
+    }).map(ship=>({ship,active:ship.id===activeId}));
+  }
+  fleetSortIndicator(key){if(this.fleetSort?.key!==key)return"↕";return this.fleetSort.dir<0?"▼":"▲";}
+  renderFleetManager(){
+    const root=this.modal?.querySelector("[data-fleet-manager]");if(!root)return false;
+    const banner=this.fleetCommandBanner(),command=root.querySelector("[data-fleet-command]"),setText=(sel,value)=>{const node=root.querySelector(sel);if(node)node.textContent=String(value??"");};
+    if(command){command.classList.toggle("ship-cmd",banner.mode==="ship");command.classList.toggle("none",banner.mode==="none");}
+    setText("[data-fleet-command-text]",banner.text);setText("[data-fleet-command-badge]",banner.badge);
+    const statuses=FLEET_STATUS_ORDER.filter(status=>this.expansion.ships(this.state).some(ship=>ship.status===status)),chips=root.querySelector("[data-fleet-status-chips]"),chipFrag=document.createDocumentFragment();
+    for(const status of statuses){const chip=document.createElement("button");chip.type="button";chip.className=`fleet-chip${this.fleetStatusFilter.has(status)?" on":""}`;chip.dataset.fleetStatus=status;chip.textContent=status;chipFrag.append(chip);}
+    chips?.replaceChildren(chipFrag);
+    for(const key of["name","status","location"]){const arrow=root.querySelector(`[data-fleet-arrow="${key}"]`);if(arrow)arrow.textContent=this.fleetSortIndicator(key);}
+    const rows=this.fleetSortedShips(),host=root.querySelector("[data-fleet-rows]"),template=root.querySelector("[data-fleet-row-template]"),commandSource=this.colony?.commandStatus?.(this.state)?.source,commandShipId=commandSource?.type==="ship"?commandSource.id:null,frag=document.createDocumentFragment();
+    if(!rows.length){const empty=document.createElement("div");empty.className="fleet-empty";empty.textContent=this.fleetStatusFilter.size?"No ships match the selected status filters.":"No owned ships in the corporation fleet.";host?.replaceChildren(empty);setText("[data-fleet-legend]","OPEN SHIP CONTROLS selects the vessel and opens Ship Control only.");return true;}
+    for(const{ship,active} of rows){
+      const row=template?.content?.firstElementChild?.cloneNode(true);if(!row)continue;
+      const commanding=commandShipId===ship.id,record=this.shipCatalogue.classById?.(ship.shipClassId),klass=record?.name||ship.shipClassName||ship.className||ship.role||"Player vessel";
+      row.dataset.fleetShip=ship.id;row.classList.toggle("active",active);row.classList.toggle("lost",ship.status==="lost");row.classList.toggle("commanding",commanding);
+      row.querySelector("[data-fleet-name]").textContent=ship.name||"Player ship";
+      row.querySelector("[data-fleet-class]").textContent=klass;
+      const tags=row.querySelector("[data-fleet-tags]");tags.replaceChildren();
+      if(active){const tag=document.createElement("span");tag.className="fleet-tag active";tag.textContent="ACTIVE";tags.append(tag);}
+      if(commanding){const tag=document.createElement("span");tag.className="fleet-tag cmd";tag.textContent="COMMAND";tags.append(tag);}
+      if(ship.status==="lost"){const tag=document.createElement("span");tag.className="fleet-tag lost";tag.textContent="LOST";tags.append(tag);}
+      const statusHost=row.querySelector("[data-fleet-status]");statusHost.className=`fleet-status ${ship.status||""}`;
+      row.querySelector("[data-fleet-status-label]").textContent=ship.status||"unknown";
+      row.querySelector("[data-fleet-status-hint]").textContent=FLEET_STATUS_HINT[ship.status]||"";
+      row.querySelector("[data-fleet-location]").textContent=this.shipLocation(ship);
+      row.querySelector("[data-fleet-detail]").textContent=this.fleetShipDetail(ship);
+      if(ship.status==="lost"){row.querySelector("[data-fleet-cargo]").textContent="—";row.querySelector("[data-fleet-fuel]").textContent="—";row.querySelector("[data-fleet-food]").textContent="—";row.querySelector("[data-fleet-crew]").textContent="—";}
+      else{
+        row.querySelector("[data-fleet-cargo]").textContent=`${formatNumber(this.expansion.cargoAmount(this.state,ship.id))}/${formatNumber(ship.cargoCapacity)}`;
+        row.querySelector("[data-fleet-fuel]").textContent=`${formatNumber(this.expansion.fuelAmount(this.state,ship.id))}/${formatNumber(ship.fuelCapacity)}`;
+        row.querySelector("[data-fleet-food]").textContent=`${formatNumber(this.expansion.foodAmount(this.state,ship.id))}/${formatNumber(ship.foodCapacity)}`;
+        row.querySelector("[data-fleet-crew]").textContent=`${formatNumber(ship.crew)}/${formatNumber(ship.minimumCrew)}`;
+      }
+      frag.append(row);
+    }
+    host?.replaceChildren(frag);
+    setText("[data-fleet-legend]",`${rows.length} vessel${rows.length===1?"":"s"} listed. OPEN SHIP CONTROLS selects the vessel and opens Ship Control only.`);
+    return true;
+  }
+  bindFleetManager(){
+    this.releaseFleetActions();
+    this.fleetClickHandler=event=>{
+      const button=event.target.closest?.("button");if(!button||button.disabled||!this.modal.contains(button))return;
+      if("fleetSort" in button.dataset){const key=button.dataset.fleetSort;if(this.fleetSort?.key===key)this.fleetSort.dir*=-1;else this.fleetSort={key,dir:1};this.renderFleetManager();return;}
+      if("fleetStatus" in button.dataset){const status=button.dataset.fleetStatus;if(this.fleetStatusFilter.has(status))this.fleetStatusFilter.delete(status);else this.fleetStatusFilter.add(status);this.renderFleetManager();return;}
+      if(button.hasAttribute("data-fleet-clear-filters")){this.fleetStatusFilter.clear();this.renderFleetManager();return;}
+      if(button.hasAttribute("data-fleet-open")){const row=button.closest("[data-fleet-ship]"),shipId=row?.dataset?.fleetShip;if(!shipId)return;const selected=this.expansion.selectShip(this.state,shipId);if(!selected.ok){this.toast(selected.reason);return;}this.repo.save(this.state);this._panelReturn="fleet";this.playerShipPanel();}
+    };
+    this.modal.addEventListener("click",this.fleetClickHandler);
+  }
+  async openFleetManager(){
+    const revision=++this.fleetManagerRevision,source=await this.loadPresentationView("./views/fleet-manager.html","fleet manager");
+    if(!source||revision!==this.fleetManagerRevision)return false;
+    this.open("Fleet Manager",source);this.modal.classList.add("fleet-manager-modal","full-screen-panel");
+    if(!this.renderFleetManager()||revision!==this.fleetManagerRevision)return false;
+    this.bindFleetManager();return true;
+  }
+
+  primaryHeadquartersTile(preferred=null){
+    if(preferred?.development?.kind==="headquarters")return preferred;
+    const id=this.state.colony?.primaryHeadquartersId;return id?this.state.tiles?.[id]||null:null;
+  }
+
+  async colonyControl({tile=null}={}){
+    const revision=++this.colonyControlRevision,hqTile=this.primaryHeadquartersTile(tile),source=await this.loadPresentationView("./views/colony-control.html","colony control");
+    if(!source||revision!==this.colonyControlRevision)return false;
+    const returnTo=this._panelReturn;this._panelReturn=null;this.colonyControlTile=hqTile;this.open(`${this.state.contract?.colonyName||"Colony"} — Colony Control`,source);this.modal.classList.add("colony-control-modal","full-screen-panel");
+    if(returnTo==="ship"){this._panelReturn="ship";const bar=this.modal.querySelector(".panel-title"),close=this.modal.querySelector("[data-close]");if(bar&&close&&!bar.querySelector("[data-ship-back]")){const back=document.createElement("button");back.type="button";back.className="ship-panel-back";back.dataset.shipBack="1";back.textContent="‹ BACK";back.onclick=()=>{this._panelReturn=null;this.playerShipPanel();};bar.insertBefore(back,close);}}
+    const root=this.modal.querySelector("[data-colony-control]");if(!root||revision!==this.colonyControlRevision)return false;
+    const command=this.colony.commandStatus(this.state),continuity=this.colony.headquartersContinuity(this.state,{command});
+    const setText=(sel,value)=>{const node=root.querySelector(sel);if(node)node.textContent=String(value??"");};
+    if(hqTile&&this.isAdaptiveBuilding?.(hqTile)){
+      const data=this.localBuildingData(hqTile),heroLabel=`${data.label} L${data.level}`;
+      this.populateAdaptiveArt?.(root,data,heroLabel);this.populateAdaptiveBadges?.(root,[...data.meta,"COLONY CONTROL"]);this.populateAdaptiveAlert?.(root,data.alert);
+      setText("[data-adaptive-kicker]","COLONY CONTROL • HEADQUARTERS");
+      const overview=root.querySelector("[data-colony-overview]"),operations=root.querySelector("[data-colony-operations]");
+      if(overview)overview.innerHTML=data.overview;if(operations)operations.innerHTML=data.operations||"";
+      root.querySelector("[data-colony-hq-overview]")?.removeAttribute("hidden");
+      const opsSection=root.querySelector("[data-colony-hq-operations]");if(opsSection)opsSection.hidden=!data.operations;
+      const upgradeHost=root.querySelector("[data-colony-upgrade]"),reqHost=root.querySelector("[data-colony-requirements]");
+      if(upgradeHost)upgradeHost.innerHTML=data.upgrade;if(reqHost)reqHost.innerHTML=data.requirements;
+      root.querySelector("[data-colony-hq-upgrade]")?.removeAttribute("hidden");root.querySelector("[data-colony-hq-requirements]")?.removeAttribute("hidden");
+      const actions=root.querySelector("[data-colony-hq-actions]");if(actions){actions.hidden=false;root.querySelector("[data-colony-close-only]")?.setAttribute("hidden","");}
+      const primaryAction=root.querySelector("[data-colony-primary]");
+      if(primaryAction){primaryAction.hidden=!!data.primary;primaryAction.disabled=!data.primaryEligible;primaryAction.onclick=()=>{const result=this.colony.setPrimaryHeadquarters(this.state,hqTile);if(!result.ok){this.toast(result.reason);this.colonyControl({tile:hqTile});return;}this.onRecalculate?.();this.repo.save(this.state);this.toast("Primary Headquarters selected.");this.renderContext?.();this.colonyControl({tile:hqTile});};}
+      const upgrade=root.querySelector("[data-colony-upgrade-action]");
+      if(upgrade){upgrade.disabled=!(data.next.ok&&!data.max);upgrade.textContent=data.upgradeLabel;if(data.next.ok&&!data.max)upgrade.onclick=()=>{const before=data.level,result=this.development.upgrade(this.state,hqTile);if(!result.ok){this.toast(result.reason);this.colonyControl({tile:hqTile});return;}this.onRecalculate?.();this.logEvent?.("land-development-upgraded",`${data.label} at ${hqTile.x},${hqTile.y} upgraded to L${hqTile.development.level}.`,{x:hqTile.x,y:hqTile.y,kind:hqTile.development?.kind,fromLevel:before,level:hqTile.development.level,buildCost:result.build,oreCost:result.ore||0});this.repo.save(this.state);this.toast(`${data.label} upgraded.`);this.renderContext?.();this.colonyControl({tile:hqTile});};}
+      root.querySelector("[data-colony-demolish]")?.addEventListener("click",()=>{if(data.primary||confirm(`Demolish ${data.label} L${data.level}?`))this.onDemolishDevelopment?.(hqTile);});
+    }else{
+      setText("[data-adaptive-kicker]","COLONY CONTROL");setText("[data-adaptive-name]",this.state.contract?.colonyName||"Colony");setText("[data-adaptive-status]",command.source?.type==="ship"?"SHIP COMMAND":command.source?"ACTIVE":"NO COMMAND");
+      this.populateAdaptiveBadges?.(root,["COLONY SERVICES",command.source?.type?.toUpperCase()||"UNLINKED"]);
+      if(continuity.phase==="outage")this.populateAdaptiveAlert?.(root,{level:"bad",title:"CONGLOMERATE NETWORK OFFLINE",text:continuity.reason});
+      else if(continuity.phase==="recovery")this.populateAdaptiveAlert?.(root,{level:"warn",title:"HEADQUARTERS RECOVERY",text:continuity.reason});
+      else this.populateAdaptiveAlert?.(root,null);
+      root.querySelector("[data-colony-hq-actions]")?.setAttribute("hidden","");root.querySelector("[data-colony-close-only]")?.removeAttribute("hidden");
+    }
+    const networkOnline=continuity.networkAvailable!==false,koplinStatus=root.querySelector("[data-koplin-status]"),connect=root.querySelector("[data-koplin-connect]");
+    if(koplinStatus){koplinStatus.textContent=networkOnline?"LINK ONLINE":"LINK OFFLINE";koplinStatus.className=`koplin-status${networkOnline?" online":" offline"}`;}
+    if(connect){connect.disabled=!networkOnline;connect.textContent=networkOnline?"CONNECT":"CONNECT BLOCKED • NETWORK OFFLINE";connect.onclick=()=>{if(connect.disabled)return;this._panelReturn="colony";this.koplinTerminal();};}
+    root.querySelectorAll("[data-colony-service]").forEach(button=>button.onclick=()=>{const action=button.dataset.colonyService;this._panelReturn="colony";if(action==="summary")this.landColonyPanel();else if(action==="corporation")this.company();else if(action==="colonies")this.coloniesPanel();else if(action==="spaceport")this.spaceportPanel();});
+    root.querySelectorAll("[data-colony-close]").forEach(button=>button.onclick=()=>{this._panelReturn=null;this.modal.classList.add("hidden");});
+    return true;
+  }
+
+  async koplinTerminal(){
+    const revision=++this.koplinTerminalRevision,continuity=this.colony.headquartersContinuity(this.state);
+    if(continuity.networkAvailable===false){this.toast("Conglomerate network offline. New Koplin sessions are blocked.");return false;}
+    const source=await this.loadPresentationView("./views/koplin-terminal.html","Koplin terminal");
+    if(!source||revision!==this.koplinTerminalRevision)return false;
+    this.open("Koplin Deep Reach Corporation",source);this.modal.classList.add("koplin-terminal-modal","full-screen-panel");
+    const root=this.modal.querySelector("[data-koplin-terminal]");if(!root||revision!==this.koplinTerminalRevision)return false;
+    const setText=(sel,value)=>{const node=root.querySelector(sel);if(node)node.textContent=String(value??"");};
+    const net=root.querySelector("[data-koplin-net]");if(net){net.className="ok";net.textContent="● NETWORK ONLINE";}
+    setText("[data-koplin-hello]",`> WELCOME deepreach.ops\n> LINKED COLONY: ${this.state.contract?.colonyName||"Colony"}\n> Select a conglomerate service. This menu is identical from Headquarters or any authorised colony terminal.`);
+    const showDirectory=()=>{root.querySelector("[data-koplin-login]")?.classList.add("hidden");root.querySelector("[data-koplin-body]")?.classList.remove("hidden");setText("[data-koplin-title]","SERVICE DIRECTORY");setText("[data-koplin-session]","SESSION deepreach.ops");setText("[data-koplin-foot]","> AUTH OK • BUYERS • TECHNOLOGY • FLEET PROCUREMENT • STAR MAP");};
+    root.querySelector("[data-koplin-auth]")?.addEventListener("click",showDirectory);
+    root.querySelectorAll("[data-koplin-service]").forEach(button=>button.onclick=()=>{const service=button.dataset.koplinService;this._panelReturn="colony";if(service==="buyers")this.buyerUI?.openCatalog?.();else if(service==="tech")this.tech();else if(service==="fleet")this.shipMarket();else if(service==="star-map")this.starMap();});
+    return true;
+  }
 
   marketRole(record){const role=`${record.role||""} ${record.capacityClass||""}`.toLowerCase();if(/courier|packet/.test(role))return"Courier";if(/survey|scientific|science/.test(role))return"Survey";if(/diplomatic|executive|passenger|shuttle|habitat/.test(role))return"Passenger";if(/very large|mega|mass|super|bulk|heavy|carrier/.test(role))return"Heavy Freight";if(/freight|cargo|hauler|lifter|container|merchant/.test(role))return"Freighter";return"Utility";}
   marketArt(record){return record?.image?.generated&&record.image.key?`https://kevvy555.github.io/MineIT-Universe/${record.image.key}`:"./assets/art/colony-ship.webp";}
@@ -131,7 +284,7 @@ export class UIController extends ShipNavigationUIController{
 
   bindMarketActions(){this.releaseMarketActions();this.marketClickHandler=event=>{const button=event.target.closest?.("button");if(!button||button.disabled||!this.modal.contains(button))return;if("marketManufacturer" in button.dataset){this.shipMarketManufacturerId=button.dataset.marketManufacturer;this.shipMarketRole="";this.shipMarketShipClassId=null;this.renderShipMarket();return;}if("marketShipClass" in button.dataset){this.shipMarketShipClassId=button.dataset.marketShipClass;this.renderShipMarket();return;}if(button.hasAttribute("data-market-role-picker")){this.showMarketRolePicker();return;}if("marketRoleValue" in button.dataset){this.shipMarketRole=button.dataset.marketRoleValue;this.shipMarketShipClassId=null;this.hideMarketPopup();this.renderShipMarket();return;}if(button.hasAttribute("data-market-colony-picker")){this.showMarketColonyPicker();return;}if("marketColonyValue" in button.dataset){this.shipMarketColonyId=button.dataset.marketColonyValue;this.hideMarketPopup();this.renderShipMarket();return;}if(button.hasAttribute("data-market-popup-close")){this.hideMarketPopup();return;}if(button.hasAttribute("data-market-compare-toggle")){this.toggleMarketCompare();return;}if(button.hasAttribute("data-market-open-compare")){if(this.shipCompareIds.length<2){this.toast("Add at least two vessels to compare.");return;}this.shipMarketComparison();return;}if("marketCompareRemove" in button.dataset){this.shipCompareIds=this.shipCompareIds.filter(id=>id!==button.dataset.marketCompareRemove);this.renderMarketComparison();return;}if(button.hasAttribute("data-market-open-orders")){this.shipMarketOrders();return;}if(button.hasAttribute("data-market-review")){this.shipPurchaseContract();return;}if(button.hasAttribute("data-market-back")){this.shipMarket({refresh:false});return;}if("orderCancel" in button.dataset){const result=this.shipMarketService.cancelOrder(this.state,button.dataset.orderCancel);if(!result.ok){this.toast(result.reason);return;}this.gameLog?.event?.(this.state,"ship-capital-order-cancelled",`${result.order.vesselName} order cancelled; ${credits(result.refund)} refunded.`,{orderId:result.order.id,refund:result.refund,fee:result.fee});this.repo.save(this.state);this.toast(`Order cancelled • ${credits(result.refund)} refunded.`);this.renderMarketOrders();return;}if("orderRetarget" in button.dataset){this.showMarketColonyPicker({retargetOrderId:button.dataset.orderRetarget});return;}if("marketRetargetColonyValue" in button.dataset){const orderId=this.shipRetargetOrderId,result=this.shipMarketService.retargetBlockedOrder(this.state,orderId,button.dataset.marketRetargetColonyValue);if(!result.ok){this.toast(result.reason);return;}this.repo.save(this.state);this.hideMarketPopup();this.toast(`${result.order.vesselName} commissioned into the fleet.`);this.shipMarketOrders();return;}if(button.hasAttribute("data-contract-clear")){this.clearContractSignature();return;}if(button.hasAttribute("data-contract-cancel")){this.shipMarket({refresh:false});return;}if(button.hasAttribute("data-contract-sign")){this.placeSignedShipOrder();}};this.modal.addEventListener("click",this.marketClickHandler);}
 
-  async spaceportPanel(){const rendered=await super.spaceportPanel();if(!rendered)return false;const body=this.modal.querySelector(".modal-body"),source=await this.loadPresentationView("./views/player-fleet-spaceport.html","player fleet");if(!source||!body?.isConnected||body!==this.modal.querySelector(".modal-body"))return rendered;const fragment=document.createRange().createContextualFragment(source),card=fragment.querySelector("[data-player-fleet-card]");if(!card)return rendered;const actions=body.querySelector(":scope > .grid2");if(actions)body.insertBefore(card,actions);else body.append(card);const fleet=this.expansion.ships(this.state).filter(ship=>(ship.status==="docked"&&ship.colonyId===this.state.colonyId)||(ship.status==="orbiting"&&ship.targetColonyId===this.state.colonyId)),dockedNames=new Set(fleet.filter(ship=>ship.status==="docked").map(ship=>ship.name));for(const row of body.querySelectorAll("[data-spaceport-landed] [data-spaceport-ship-row]")){const name=row.querySelector("[data-spaceport-ship-name]")?.textContent;if(dockedNames.has(name))row.remove();}const legacy=body.querySelector("[data-spaceport-player-ship]");if(legacy)legacy.hidden=true;const host=card.querySelector("[data-player-fleet-list]"),empty=card.querySelector("[data-player-fleet-empty]"),rowTemplate=card.querySelector("[data-player-fleet-row-template]"),rows=document.createDocumentFragment();if(empty)empty.hidden=fleet.length>0;for(const ship of fleet){const row=rowTemplate?.content?.firstElementChild?.cloneNode(true);if(!row)continue;const record=this.shipCatalogue.classById(ship.shipClassId);row.dataset.playerFleetShip=ship.id;row.classList.toggle("active",ship.id===this.state.company.expansion.activeShipId);this.marketText(row,"[data-fleet-name]",ship.name);this.marketText(row,"[data-fleet-class]",record?.name||ship.shipClassId||"Player vessel");this.marketText(row,"[data-fleet-status]",ship.status==="orbiting"?"ORBITAL HOLD":"DOCKED");this.marketText(row,"[data-fleet-metrics]",`Cargo ${formatNumber(this.expansion.cargoAmount(this.state,ship.id))}/${formatNumber(ship.cargoCapacity)} • Fuel ${formatNumber(this.expansion.fuelAmount(this.state,ship.id))}/${formatNumber(ship.fuelCapacity)} • Food ${formatNumber(this.expansion.foodAmount(this.state,ship.id))}/${formatNumber(ship.foodCapacity)} • Crew ${formatNumber(ship.crew)}/${formatNumber(ship.minimumCrew)} min`);row.onclick=()=>{const result=this.expansion.selectShip(this.state,ship.id);if(!result.ok){this.toast(result.reason);return;}this.repo.save(this.state);this.playerShipPanel();};rows.append(row);}host?.replaceChildren(rows);card.querySelector("[data-open-fleet-procurement]")?.addEventListener("click",()=>this.shipMarket());return true;}
+  async spaceportPanel(){const rendered=await super.spaceportPanel();if(!rendered)return false;const body=this.modal.querySelector(".modal-body"),source=await this.loadPresentationView("./views/player-fleet-spaceport.html","player fleet");if(!source||!body?.isConnected||body!==this.modal.querySelector(".modal-body"))return rendered;const fragment=document.createRange().createContextualFragment(source),card=fragment.querySelector("[data-player-fleet-card]");if(!card)return rendered;const actions=body.querySelector(":scope > .grid2");if(actions)body.insertBefore(card,actions);else body.append(card);const fleet=this.expansion.ships(this.state).filter(ship=>(ship.status==="docked"&&ship.colonyId===this.state.colonyId)||(ship.status==="orbiting"&&ship.targetColonyId===this.state.colonyId)),dockedNames=new Set(fleet.filter(ship=>ship.status==="docked").map(ship=>ship.name));for(const row of body.querySelectorAll("[data-spaceport-landed] [data-spaceport-ship-row]")){const name=row.querySelector("[data-spaceport-ship-name]")?.textContent;if(dockedNames.has(name))row.remove();}const legacy=body.querySelector("[data-spaceport-player-ship]");if(legacy)legacy.hidden=true;const host=card.querySelector("[data-player-fleet-list]"),empty=card.querySelector("[data-player-fleet-empty]"),rowTemplate=card.querySelector("[data-player-fleet-row-template]"),rows=document.createDocumentFragment();if(empty)empty.hidden=fleet.length>0;for(const ship of fleet){const row=rowTemplate?.content?.firstElementChild?.cloneNode(true);if(!row)continue;const record=this.shipCatalogue.classById(ship.shipClassId);row.dataset.playerFleetShip=ship.id;row.classList.toggle("active",ship.id===this.state.company.expansion.activeShipId);this.marketText(row,"[data-fleet-name]",ship.name);this.marketText(row,"[data-fleet-class]",record?.name||ship.shipClassId||"Player vessel");this.marketText(row,"[data-fleet-status]",ship.status==="orbiting"?"ORBITAL HOLD":"DOCKED");this.marketText(row,"[data-fleet-metrics]",`Cargo ${formatNumber(this.expansion.cargoAmount(this.state,ship.id))}/${formatNumber(ship.cargoCapacity)} • Fuel ${formatNumber(this.expansion.fuelAmount(this.state,ship.id))}/${formatNumber(ship.fuelCapacity)} • Food ${formatNumber(this.expansion.foodAmount(this.state,ship.id))}/${formatNumber(ship.foodCapacity)} • Crew ${formatNumber(ship.crew)}/${formatNumber(ship.minimumCrew)} min`);row.onclick=()=>{const result=this.expansion.selectShip(this.state,ship.id);if(!result.ok){this.toast(result.reason);return;}this.repo.save(this.state);this.playerShipPanel();};rows.append(row);}host?.replaceChildren(rows);card.querySelector("[data-open-fleet-procurement]")?.addEventListener("click",()=>this.shipMarket());card.querySelector("[data-open-fleet-manager]")?.addEventListener("click",()=>this.fleetManager());return true;}
 
   openSystem(systemId){if(String(systemId).startsWith(FLEET_HIT_PREFIX)){const shipId=String(systemId).slice(FLEET_HIT_PREFIX.length),selected=this.expansion.selectShip(this.state,shipId);if(selected.ok){this.repo.save(this.state);this.playerShipPanel();}return;}super.openSystem(systemId);}
   starHit(canvas,pos){const rect=canvas.getBoundingClientRect(),x=pos.x-rect.left,y=pos.y-rect.top;for(const ship of this.expansion.ships(this.state)){if(ship.status==="lost")continue;const position=this.expansion.shipPosition(this.state,ship.id);if(!position)continue;const point=this.starScreen(canvas,position);if(Math.hypot(point.x-x,point.y-y)<18)return{id:`${FLEET_HIT_PREFIX}${ship.id}`};}return super.starHit(canvas,pos);}

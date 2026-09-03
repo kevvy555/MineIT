@@ -14,7 +14,7 @@ for(const selector of["data-market-manufacturers","data-market-models","data-mar
 assert.doesNotMatch(market,/<select\b/i,"immersive market controls must not use browser-native selects");
 assert.match(contract,/data-contract-signature/);assert.match(contract,/SIGN & PLACE ORDER/);assert.match(contract,/Factory-New Vessel Purchase Contract/);assert.match(contract,/Cancellation before manufacturing lock/);
 assert.match(orders,/PRODUCTION & DELIVERY QUEUE/);assert.match(compare,/FLEET COMPARISON/);
-assert.match(people,/data-load-crew/);assert.match(people,/data-load-pax/);assert.match(fleet,/data-player-fleet-ship/);
+assert.match(people,/data-load-crew/);assert.match(people,/data-load-pax/);assert.match(fleet,/data-player-fleet-ship/);assert.match(fleet,/data-open-fleet-manager/);
 assert.match(index,/css\/ship-market\.css/);assert.match(index,/id="cash">cc 0/);
 
 console.log("ship procurement UI ownership and V14 interaction contract passed");

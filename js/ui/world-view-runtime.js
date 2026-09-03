@@ -32,7 +32,14 @@ export class WorldView extends CanvasWorldView{
   filterDisabledCount(){return this.controls?.disabledCount()??0;}
   view(){return"resource";}
   resize(){const rect=this.shell.getBoundingClientRect(),width=Math.max(1,rect.width),height=Math.max(1,rect.height),dpr=Math.min(2,Math.max(1,devicePixelRatio||1));this.canvas.width=Math.max(1,Math.round(width*dpr));this.canvas.height=Math.max(1,Math.round(height*dpr));this.canvas.style.removeProperty("width");this.canvas.style.removeProperty("height");this.ctx.setTransform(dpr,0,0,dpr,0,0);this.width=width;this.height=height;this.cell=Math.max(1,Math.min(width,height)/CONFIG.GRID_SIZE);this.safeDraw();}
-  isShipTile(x,y){const landing=this.land?.isShipTile?this.land.isShipTile(x,y):x===0&&y===0;if(!landing)return false;const ship=this.state.company?.expansion?.ship;if(!ship)return super.isShipTile(x,y);return ship.status==="docked"&&ship.colonyId===this.state.colonyId;}
+  isShipTile(x,y){
+    const landing=this.land?.isShipTile?this.land.isShipTile(x,y):x===0&&y===0;
+    if(!landing)return false;
+    if(this.expansion?.shipsAtColony)return this.expansion.shipsAtColony(this.state,this.state.colonyId).length>0;
+    const ship=this.state.company?.expansion?.ship;
+    if(!ship)return super.isShipTile(x,y);
+    return ship.status==="docked"&&ship.colonyId===this.state.colonyId;
+  }
   isUpgradeable(tile){if(!tile?.development)return false;const level=Math.max(1,Number(tile.development.level??tile.level)||1);if(level>=5)return false;if(LOCAL_BUILDINGS.has(tile.development.kind))return this.technology.level(this.state,tile.development.kind)>level;if(tile.type==="food")return this.technology.level(this.state,"food")>level;return this.technology.canExploit(this.state,tile);}
   hasProblem(tile){if(!tile?.revealed)return false;if(tile.accidentShutdownDays>0||tile.depleted||tile.renewableWiped)return true;if(this.resources.isRenewable(tile)&&tile.developed&&(Number(tile.harvestIntensity)||1)>1)return true;if(tile.development?.kind==="power"&&(this.state.metrics?.powerFactor??1)<.95)return true;if(tile.development?.kind==="housing"){const cap=Math.max(1,Number(this.state.colony?.housingCapacity)||1);if((Number(this.state.pop)||0)/cap>.9)return true;}if(tile.developed&&(tile.type==="build"||tile.type==="ore"))return(this.state.metrics?.industryCommercialFactor??1)<.999||(this.state.metrics?.workforceCommercialFactor??1)<.999;if(tile.developed&&(tile.type==="food"||tile.type==="fuel"))return(this.state.metrics?.workforceSurvivalFactor??1)<.999;return false;}
   matchesFocus(tile,x,y){const mode=this.focusMode||"all";if(mode==="all")return true;if(mode==="problems")return this.hasProblem(tile);if(mode==="buildings")return!!tile?.development||this.isShipTile(x,y);if(mode==="upgradeable")return this.isUpgradeable(tile);if(["food","build","fuel","ore"].includes(mode))return tile?.type===mode;if(mode==="power")return tile?.development?.kind==="power";if(mode==="housing")return tile?.development?.kind==="housing";if(mode==="industry")return tile?.development?.kind==="industry";return true;}

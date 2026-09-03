@@ -1,0 +1,77 @@
+<div class="colony-control-shell" data-colony-control>
+  <section class="adaptive-building-hero colony-control-hero" data-colony-hq-hero>
+    <div class="adaptive-building-art" role="img" data-adaptive-art>
+      <span class="adaptive-building-art-fallback" data-adaptive-art-fallback>◆</span>
+      <img data-adaptive-art-image decoding="async">
+    </div>
+    <div class="adaptive-building-copy">
+      <div class="adaptive-building-kicker" data-adaptive-kicker>COLONY CONTROL</div>
+      <div class="adaptive-building-name"><strong data-adaptive-name>Colony Control</strong><span data-adaptive-status>ACTIVE</span></div>
+      <div class="adaptive-building-badges" data-adaptive-badges></div>
+    </div>
+  </section>
+
+  <div class="adaptive-building-alert" data-adaptive-alert hidden><strong data-adaptive-alert-title></strong><span data-adaptive-alert-text></span></div>
+
+  <section class="adaptive-building-section" data-colony-hq-overview hidden>
+    <div class="adaptive-building-section-title"><span>OVERVIEW</span><i></i></div>
+    <div class="adaptive-building-grid" data-colony-overview></div>
+  </section>
+
+  <section class="adaptive-building-section" data-colony-hq-operations hidden>
+    <div class="adaptive-building-section-title"><span>OPERATIONS</span><i></i></div>
+    <div class="adaptive-building-grid" data-colony-operations></div>
+  </section>
+
+  <section class="adaptive-building-section">
+    <div class="adaptive-building-section-title"><span>COLONY SERVICES</span><i></i></div>
+    <div class="colony-service-grid">
+      <button class="colony-service" type="button" data-colony-service="summary"><strong>COLONY SUMMARY</strong><small>Population, workforce, Industry, transport</small></button>
+      <button class="colony-service" type="button" data-colony-service="corporation"><strong>CORPORATION</strong><small>Player company overview and cash</small></button>
+      <button class="colony-service" type="button" data-colony-service="colonies"><strong>COLONIES</strong><small>Portfolio colony operations</small></button>
+      <button class="colony-service" type="button" data-colony-service="spaceport"><strong>SPACEPORT</strong><small>Local berths, landed ships, orbital hold</small></button>
+    </div>
+  </section>
+
+  <section class="adaptive-building-section">
+    <div class="adaptive-building-section-title koplin"><span>KOPLIN DEEP REACH CORPORATION</span><i></i></div>
+    <div class="koplin-port">
+      <div class="koplin-port-head">
+        <div>
+          <small class="koplin-tag">EXTERNAL CHARTER NODE • KPL-CN08</small>
+          <h2>Conglomerate computer system</h2>
+          <p>Connect to the Koplin Deep Reach Corporation terminal. Buyers, Technology, Fleet Procurement and corporate Star Map are served from this remote system.</p>
+        </div>
+        <div class="koplin-status" data-koplin-status>LINK ONLINE</div>
+      </div>
+      <div class="koplin-creds">
+        <label><small>USERNAME</small><input value="deepreach.ops" readonly></label>
+        <label><small>PASSWORD</small><input type="password" value="charter-access" readonly></label>
+      </div>
+      <button class="koplin-connect" type="button" data-koplin-connect>CONNECT</button>
+    </div>
+  </section>
+
+  <section class="adaptive-building-section" data-colony-hq-upgrade hidden>
+    <div class="adaptive-building-section-title"><span>UPGRADE TO NEXT LEVEL</span><i></i></div>
+    <div data-colony-upgrade></div>
+  </section>
+
+  <section class="adaptive-building-section" data-colony-hq-requirements hidden>
+    <div class="adaptive-building-section-title"><span>REQUIREMENTS</span><i></i></div>
+    <div data-colony-requirements></div>
+  </section>
+
+  <div class="adaptive-building-actions" data-colony-hq-actions hidden>
+    <button class="action" data-colony-primary hidden>SET PRIMARY</button>
+    <button class="action" data-colony-upgrade-action disabled>UPGRADE</button>
+    <button class="bad" data-colony-demolish>DEMOLISH</button>
+    <button data-colony-close>CLOSE</button>
+  </div>
+
+  <div class="colony-control-close-only" data-colony-close-only>
+    <button data-colony-close>CLOSE</button>
+  </div>
+
+  <template data-adaptive-badge-template><span data-adaptive-badge></span></template>
+</div>

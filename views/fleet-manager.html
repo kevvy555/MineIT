@@ -1,0 +1,56 @@
+<div class="fleet-manager" data-fleet-manager>
+  <section class="fleet-command" data-fleet-command>
+    <div>
+      <small>COLONY COMMAND SOURCE</small>
+      <strong data-fleet-command-text>Primary Headquarters</strong>
+    </div>
+    <div class="fleet-command-badge" data-fleet-command-badge>HQ</div>
+  </section>
+
+  <section class="fleet-filters" aria-label="Ship status filters">
+    <div class="fleet-filters-label">
+      <small>STATUS FILTER • MULTI-SELECT</small>
+      <button type="button" data-fleet-clear-filters>SHOW ALL</button>
+    </div>
+    <div class="fleet-chips" data-fleet-status-chips></div>
+  </section>
+
+  <section class="fleet-list-wrap">
+    <div class="fleet-list-head" role="row">
+      <button type="button" data-fleet-sort="name">Vessel<span class="fleet-sort-arrow" data-fleet-arrow="name"></span></button>
+      <button type="button" data-fleet-sort="status">Status<span class="fleet-sort-arrow" data-fleet-arrow="status"></span></button>
+      <button type="button" data-fleet-sort="location">Location / stocks<span class="fleet-sort-arrow" data-fleet-arrow="location"></span></button>
+      <button type="button" disabled>Open</button>
+    </div>
+    <div class="fleet-rows" data-fleet-rows></div>
+  </section>
+
+  <p class="fleet-legend" data-fleet-legend>OPEN SHIP CONTROLS selects the vessel and opens Ship Control only.</p>
+
+  <template data-fleet-row-template>
+    <article class="fleet-row" data-fleet-row>
+      <div class="fleet-name">
+        <strong data-fleet-name></strong>
+        <small data-fleet-class></small>
+        <div class="fleet-tags" data-fleet-tags></div>
+      </div>
+      <div class="fleet-status" data-fleet-status>
+        <b data-fleet-status-label></b>
+        <small data-fleet-status-hint></small>
+      </div>
+      <div class="fleet-loc">
+        <span data-fleet-location></span>
+        <small data-fleet-detail></small>
+        <div class="fleet-metrics">
+          <div class="fleet-metric"><small>CARGO</small><strong data-fleet-cargo></strong></div>
+          <div class="fleet-metric"><small>FUEL</small><strong data-fleet-fuel></strong></div>
+          <div class="fleet-metric"><small>FOOD</small><strong data-fleet-food></strong></div>
+          <div class="fleet-metric"><small>CREW</small><strong data-fleet-crew></strong></div>
+        </div>
+      </div>
+      <div class="fleet-actions">
+        <button type="button" data-fleet-open>OPEN SHIP CONTROLS</button>
+      </div>
+    </article>
+  </template>
+</div>

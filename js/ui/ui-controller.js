@@ -18,7 +18,7 @@ export class UIController {
   }
   bindClick(selector,handler){const element=document.querySelector(selector);if(!element)return null;element.onclick=handler;this.boundClickElements.push(element);return element;}
   bind(){
-    this.bindClick("#companyBtn",()=>this.company());this.bindClick("#collectionBtn",()=>this.currentCollection());this.bindClick("#colonyBtn",()=>this.landColonyPanel());this.bindClick("#coloniesBtn",()=>this.coloniesPanel());this.bindClick("#techBtn",()=>this.tech());this.bindClick("#goalsBtn",()=>this.goals());this.bindClick("#menuBtn",()=>this.menu());
+    this.bindClick("#companyBtn",()=>this.company());this.bindClick("#collectionBtn",()=>this.currentCollection());this.bindClick("#colonyBtn",()=>(this.colonyControl?.()??this.landColonyPanel()));this.bindClick("#coloniesBtn",()=>this.coloniesPanel());this.bindClick("#techBtn",()=>this.tech());this.bindClick("#goalsBtn",()=>this.goals());this.bindClick("#menuBtn",()=>this.menu());
     this.bindSpeedInputs();
     if(this.errorBadge){this.errorBadge.onclick=()=>this.diagnosticsPanel();this.boundClickElements.push(this.errorBadge);}this.diagnosticsUnsubscribe=this.diagnostics.subscribe(()=>this.updateErrorBadge());
   }

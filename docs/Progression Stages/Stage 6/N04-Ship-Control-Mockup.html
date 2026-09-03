@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>MineIT — Ship Control Mockup (N04) • implementation target</title>
+<style>
+:root{--bg:#050708;--panel:#0b1116;--line:#273741;--text:#eef5f7;--muted:#8fa1ab;--accent:#76c6ff;--good:#82dda0;--warn:#ffd166;--bad:#ff7777;--module:#5ec4a8}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#020405;color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button,select{font:inherit;color:inherit}button{border:1px solid var(--line);background:#111a20;border-radius:7px;touch-action:manipulation}
+#app{height:100vh;height:100dvh;max-width:430px;margin:auto;padding:calc(env(safe-area-inset-top) + 5px) 5px calc(env(safe-area-inset-bottom) + 5px);display:grid;grid-template-rows:auto auto auto auto minmax(0,1fr) auto;gap:5px;background:linear-gradient(180deg,#0a1520 0%,#071015 30%,#050708 100%)}
+.head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px;align-items:center}
+.head small{display:block;font-size:5.5px;color:var(--accent);letter-spacing:.14em;font-weight:900}
+.head strong{display:block;font-size:12px}.head .close{width:34px;height:34px}
+.control{padding:3px 4px;border:1px solid var(--line);background:#081015;border-radius:5px}
+.control small{display:block;font-size:4.4px;color:var(--muted)}.control select{width:100%;height:24px;border:0;background:#081015;font-size:6px;outline:0}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;padding:7px;border:1px solid #2f4a5c;border-radius:9px;background:linear-gradient(135deg,#102030,#0a1418)}
+.hero h1{margin:0;font-size:11px}.hero p{margin:2px 0 0;font-size:5.8px;color:var(--muted);line-height:1.3}
+.status{align-self:start;padding:5px 7px;border-radius:5px;border:1px solid #3d6a52;background:#102418;color:#a8e6bc;font-size:6px;font-weight:950;text-align:center}
+.status.warn{border-color:#6e5926;background:#211b0c;color:#ffe39a}
+.status.transit{border-color:#4c88aa;background:#14344a;color:#b7e0ff}
+.strip{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}
+.metric{min-width:0;padding:4px;background:#0e171d;border:1px solid #1d2b34;border-radius:5px}
+.metric small{display:block;font-size:4.4px;color:var(--muted)}.metric strong{display:block;font-size:7px}
+.scroll{min-height:0;overflow:auto;display:flex;flex-direction:column;gap:6px;align-content:start}
+.scroll>*{flex:0 0 auto;min-height:min-content}
+.section-title{display:flex;align-items:center;gap:6px;font-size:5.5px;letter-spacing:.1em;font-weight:900;color:#9db8c9}
+.section-title i{flex:1;height:1px;background:#243642}
+.section-title.module{color:var(--module)}.section-title.module i{background:#3d8a6e}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.tile{min-height:58px;padding:7px;text-align:left;border-color:#35586c;background:linear-gradient(180deg,#152430,#0d171b);display:grid;align-content:space-between;gap:4px}
+.tile strong{font-size:8px}.tile small{font-size:5.4px;color:#a7b8c0;line-height:1.25}
+.tile:disabled{opacity:.38}
+.module-bay{border:1px solid #2d564a;border-radius:8px;background:linear-gradient(180deg,#0d221c,#0a1418);overflow:visible;min-height:min-content}
+.module-bay.offline{border-color:#3a4550;opacity:.85;filter:saturate(.55)}
+.module-rail{display:flex;align-items:stretch;min-height:min-content}
+.module-rail .slot{flex:0 0 18px;align-self:stretch;background:repeating-linear-gradient(180deg,#1a3d34 0 4px,#0c1a18 4px 8px);border-right:1px solid #2d564a;border-radius:8px 0 0 8px;position:relative}
+.module-rail .slot::after{content:"";position:absolute;left:50%;top:12px;bottom:12px;width:4px;transform:translateX(-50%);border-radius:2px;background:linear-gradient(#5ec4a8,#1a3d34)}
+.module-bay.offline .slot::after{background:linear-gradient(#5a6670,#2a3238)}
+.module-body{flex:1 1 auto;min-width:0;padding:8px;display:flex;flex-direction:column;gap:6px}
+.module-body .row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:start}
+.module-body h2{margin:0;font-size:9px;color:#b8f0d8}
+.module-body p{margin:2px 0 0;font-size:5.8px;color:#9ec9ba;line-height:1.3}
+.module-pill{font-size:5.5px;font-weight:950;padding:4px 6px;border-radius:4px;border:1px solid #3d8a6e;background:#14382c;color:#b8f0d8;white-space:nowrap}
+.module-bay.offline .module-pill{border-color:#5a6670;background:#1a2026;color:#b0b8c0}
+.module-meta{display:flex;flex-wrap:wrap;gap:3px}
+.module-meta span{font-size:4.8px;font-weight:900;padding:2px 4px;border-radius:3px;border:1px solid #35564c;color:#b8e8d6}
+.module-bay.offline .module-meta span{border-color:#45505a;color:#a8b0b8}
+.module-open{display:block;width:100%;min-height:40px;margin-top:2px;border-color:#3d8a6e;background:#14382c;color:#b8f0d8;font-size:7.5px;font-weight:950;flex:0 0 auto}
+.module-open:disabled{opacity:.45;border-color:#5a6670;background:#1a2026;color:#b0b8c0}
+.route{padding:6px;border:1px solid #293b45;border-radius:6px;background:#0a1217;display:grid;gap:4px}
+.route .row{display:grid;grid-template-columns:1fr auto;gap:4px;font-size:6px}
+.route .row span{color:var(--muted)}.route .row b{text-align:right}
+.note{font-size:5.2px;line-height:1.35;color:#aebcc3;padding:5px;border-left:2px solid #4c88aa;background:#091116}
+.actions{display:grid;grid-template-columns:1fr;gap:4px}
+.actions button{min-height:40px;font-size:6.4px;font-weight:950}
+.actions .launch{border-color:#6e5926;background:#211b0c;color:#ffe39a}
+.toast{position:fixed;left:50%;bottom:18%;transform:translateX(-50%);max-width:90vw;padding:8px 10px;background:#102030;border:1px solid #4c88aa;border-radius:7px;font-size:6.5px;z-index:30;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="head">
+    <div>
+      <small>N04 IMPLEMENTATION TARGET • SHIP CONTROL</small>
+      <strong id="title">CSV Deep Reach</strong>
+    </div>
+    <button class="close" type="button" id="closeBtn">✕</button>
+  </header>
+
+  <label class="control">
+    <small>REVIEW STATE</small>
+    <select id="state">
+      <option value="command">Docked • colony support module active (founding / emergency cmd)</option>
+      <option value="docked-hq">Docked • HQ holds command • module offline</option>
+      <option value="transit">Travelling • ship navigation only</option>
+      <option value="orbit">Orbiting • waiting berth</option>
+    </select>
+  </label>
+
+  <section class="hero">
+    <div>
+      <h1 id="klass">Colony Founder</h1>
+      <p id="blurb">Ship systems only. Colony management is not mixed into these tiles — it rides the Colony Support Module when installed and linked.</p>
+    </div>
+    <div class="status" id="statusBadge">DOCKED</div>
+  </section>
+
+  <section class="strip">
+    <div class="metric"><small>CARGO</small><strong id="mCargo">510 / 800</strong></div>
+    <div class="metric"><small>FUEL</small><strong id="mFuel">92 / 100</strong></div>
+    <div class="metric"><small>FOOD</small><strong id="mFood">260 / 300</strong></div>
+    <div class="metric"><small>CREW</small><strong id="mCrew">52 / 12</strong></div>
+  </section>
+
+  <main class="scroll">
+    <div class="section-title module"><span>AUX BAY • COLONY SUPPORT MODULE</span><i></i></div>
+    <section class="module-bay" id="moduleBay">
+      <div class="module-rail">
+        <div class="slot" aria-hidden="true"></div>
+        <div class="module-body">
+          <div class="row">
+            <div>
+              <h2 id="moduleTitle">CSM-01 Colony Support Module</h2>
+              <p id="moduleText">Hard-mounted colony command interface. Opens the same Colony Control surface used at Headquarters, linked to the managed colony.</p>
+            </div>
+            <div class="module-pill" id="modulePill">LINKED</div>
+          </div>
+          <div class="module-meta" id="moduleMeta"></div>
+          <button class="module-open" type="button" id="moduleOpen">OPEN COLONY CONTROL</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="section-title"><span>SHIP SYSTEMS</span><i></i></div>
+    <div class="grid">
+      <button class="tile" type="button" id="cargoBtn"><strong>CARGO BAY</strong><small>Load / unload while docked</small></button>
+      <button class="tile" type="button"><strong>ACCOMMODATION</strong><small>Crew and colonist transfers</small></button>
+      <button class="tile" type="button"><strong>ROUTE</strong><small>Destination, distance, ETA preview</small></button>
+      <button class="tile" type="button" id="starMapBtn"><strong>STAR MAP</strong><small>Ship navigation system</small></button>
+      <button class="tile" type="button"><strong>FLEET MANAGER</strong><small>All owned ships • B03a</small></button>
+      <button class="tile" type="button"><strong>SHIP STATUS</strong><small>Class, drive, tanks, condition</small></button>
+    </div>
+
+    <div class="section-title"><span>JOURNEY PREVIEW</span><i></i></div>
+    <section class="route">
+      <div class="row"><span>Destination</span><b id="dest">Veyra Gate</b></div>
+      <div class="row"><span>Distance</span><b id="dist">14.2 ly</b></div>
+      <div class="row"><span>Travel time</span><b id="eta">3d 14h</b></div>
+      <div class="row"><span>Fuel / Food burn</span><b id="burn">Fuel 22 • Food 9</b></div>
+    </section>
+    <p class="note" id="note">No Spaceport tile on Ship Control — berths are colony infrastructure. Star Map here is the ship’s own navigation system, not the Koplin corporate directory.</p>
+  </main>
+
+  <footer class="actions">
+    <button class="launch" type="button" id="launchBtn">LAUNCH</button>
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const $=id=>document.getElementById(id);const toast=$("toast");let t;
+function ping(msg){toast.textContent=msg;toast.classList.add("show");clearTimeout(t);t=setTimeout(()=>toast.classList.remove("show"),1600)}
+function render(){
+  const s=$("state").value;
+  const bay=$("moduleBay"), open=$("moduleOpen");
+  if(s==="command"){
+    $("statusBadge").className="status";$("statusBadge").textContent="DOCKED";
+    $("title").textContent="CSV Deep Reach";$("klass").textContent="Colony Founder";
+    $("blurb").textContent="Ship systems only. Colony management rides the plugged-in Colony Support Module while this vessel holds colony command.";
+    bay.classList.remove("offline");$("moduleTitle").textContent="CSM-01 Colony Support Module";
+    $("moduleText").textContent="Hard-mounted colony command interface. Opens the same Colony Control surface used at Headquarters, linked to the managed colony.";
+    $("modulePill").textContent="LINKED";$("moduleMeta").innerHTML="<span>PORT A3 SEATED</span><span>MANAGING • DEEP REACH</span><span>COMMAND SOURCE • SHIP</span>";
+    open.disabled=false;open.textContent="OPEN COLONY CONTROL";
+    $("cargoBtn").disabled=false;$("launchBtn").textContent="LAUNCH";$("launchBtn").disabled=false;
+    $("note").textContent="Founding / emergency command: module is seated and linked. It does not duplicate colony tiles into Ship Systems — it opens Colony Control.";
+  }else if(s==="docked-hq"){
+    $("statusBadge").className="status";$("statusBadge").textContent="DOCKED";
+    $("title").textContent="CSV Halcyon Reach";$("klass").textContent="Dart Courier";
+    $("blurb").textContent="After Headquarters handover, ordinary docked ships are Ship Control only. Colony Support Module is offline / not linked.";
+    bay.classList.add("offline");$("moduleTitle").textContent="CSM BAY EMPTY / MODULE OFFLINE";
+    $("moduleText").textContent="No active colony command link from this vessel. Colony Control is opened from Primary Headquarters on the map.";
+    $("modulePill").textContent="OFFLINE";$("moduleMeta").innerHTML="<span>PORT A3 IDLE</span><span>HQ HOLDS COMMAND</span><span>SHIP-ONLY MODE</span>";
+    open.disabled=true;open.textContent="COLONY CONTROL UNAVAILABLE";
+    $("mCargo").textContent="120 / 250";$("mFuel").textContent="64 / 80";$("mFood").textContent="40 / 60";$("mCrew").textContent="6 / 4";
+    $("cargoBtn").disabled=false;$("launchBtn").textContent="LAUNCH";$("launchBtn").disabled=false;
+    $("note").textContent="No Spaceport on Ship Control. Use Fleet Manager in the panel; footer only needs Launch / land actions.";
+  }else if(s==="transit"){
+    $("statusBadge").className="status transit";$("statusBadge").textContent="TRAVELLING";
+    $("title").textContent="CSV Halcyon Reach";$("klass").textContent="Dart Courier";
+    $("blurb").textContent="In transit. Ship navigation remains available. Colony Support Module cannot manage a colony while away.";
+    bay.classList.add("offline");$("moduleTitle").textContent="CSM BAY • NO COLONY LINK";
+    $("moduleText").textContent="Module cannot hold a colony command link while the vessel is travelling.";
+    $("modulePill").textContent="UNLINKED";$("moduleMeta").innerHTML="<span>EN ROUTE</span><span>NO COLONY SESSION</span>";
+    open.disabled=true;open.textContent="COLONY CONTROL UNAVAILABLE";
+    $("dest").textContent="Veyra Gate";$("dist").textContent="8.1 ly remaining";$("eta").textContent="1d 22h";$("burn").textContent="Fuel left OK";
+    $("cargoBtn").disabled=true;$("launchBtn").textContent="IN TRANSIT";$("launchBtn").disabled=true;
+    $("note").textContent="Star Map remains the ship’s navigation system during transit.";
+  }else{
+    $("statusBadge").className="status warn";$("statusBadge").textContent="ORBITING";
+    $("title").textContent="CSV Iron Ledger";$("klass").textContent="Bulk Hauler";
+    $("blurb").textContent="Holding for a Spaceport berth. Ship Control can request approach; berth list itself is colony-side.";
+    bay.classList.add("offline");$("moduleTitle").textContent="CSM BAY • NO COLONY LINK";
+    $("moduleText").textContent="Orbital hold does not grant colony command. Open Colony Control from HQ once docked and authorised.";
+    $("modulePill").textContent="UNLINKED";$("moduleMeta").innerHTML="<span>ORBITAL HOLD</span><span>WAITING BERTH</span>";
+    open.disabled=true;open.textContent="COLONY CONTROL UNAVAILABLE";
+    $("dest").textContent="Deep Reach";$("dist").textContent="Orbital hold";$("eta").textContent="Waiting berth";$("burn").textContent="Idle burn low";
+    $("cargoBtn").disabled=true;$("launchBtn").textContent="REQUEST LANDING";$("launchBtn").disabled=false;
+    $("note").textContent="Spaceport management stays under Colony Services — not a Ship Control tile.";
+  }
+}
+$("state").onchange=render;$("closeBtn").onclick=()=>ping("Mock: close Ship Control");
+$("launchBtn").onclick=()=>ping("Mock: "+$("launchBtn").textContent);
+$("moduleOpen").onclick=()=>ping("Mock: open Colony Control (same N04 Colony Control surface)");
+$("starMapBtn").onclick=()=>ping("Mock: open ship Star Map navigation");
+render();
+</script>
+</body>
+</html>

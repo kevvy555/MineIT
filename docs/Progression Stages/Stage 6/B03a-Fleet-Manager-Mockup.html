@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>MineIT — Fleet Manager Mockup (B03a)</title>
+<style>
+:root{
+  --bg:#050708;--panel:#0b1116;--panel2:#111a20;--line:#273741;--text:#eef5f7;--muted:#8fa1ab;
+  --accent:#76c6ff;--good:#82dda0;--warn:#ffd166;--bad:#ff7777;--violet:#c69cff;--active:#0c1b13;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#020405;color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button,select{font:inherit;color:inherit}button{border:1px solid var(--line);background:var(--panel2);border-radius:6px;touch-action:manipulation}
+#app{height:100vh;height:100dvh;max-width:430px;margin:auto;padding:calc(env(safe-area-inset-top) + 5px) 5px calc(env(safe-area-inset-bottom) + 5px);display:grid;grid-template-rows:auto auto auto auto minmax(0,1fr) auto;gap:4px;background:linear-gradient(#071015,#050708)}
+.head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px;align-items:center}
+.head small{display:block;font-size:5.5px;color:var(--muted);letter-spacing:.12em;font-weight:900}
+.head strong{display:block;font-size:11px}
+.head .close{width:34px;height:34px}
+.command{padding:5px 6px;border:1px solid #2f4a3a;border-radius:6px;background:#0a1612;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center}
+.command small{display:block;font-size:4.8px;color:var(--muted);letter-spacing:.08em;font-weight:900}
+.command strong{font-size:7.2px;color:var(--good)}
+.command .badge{font-size:5.5px;font-weight:950;padding:4px 6px;border-radius:4px;border:1px solid #3d6a52;background:#102418;color:#a8e6bc}
+.command.ship-cmd{border-color:#4a3d2f;background:#16120a}.command.ship-cmd strong{color:var(--warn)}.command.ship-cmd .badge{border-color:#6e5926;background:#211b0c;color:#ffe39a}
+.command.none{border-color:#5a3030;background:#160c0c}.command.none strong{color:var(--bad)}.command.none .badge{border-color:#6e3a3a;background:#211010;color:#ffb0b0}
+.scenarios{display:grid;grid-template-columns:1fr;gap:3px}
+.control{min-width:0;padding:3px 4px;border:1px solid var(--line);background:#081015;border-radius:5px}
+.control small{display:block;font-size:4.4px;color:var(--muted);margin-bottom:1px}
+.control select{width:100%;height:24px;border:0;background:#081015;font-size:6px;outline:0}
+.filters{padding:5px;border:1px solid var(--line);border-radius:6px;background:#081015;display:grid;gap:4px}
+.filters .label{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.filters .label small{font-size:4.8px;color:var(--muted);letter-spacing:.08em;font-weight:900}
+.filters .label button{min-height:22px;padding:0 7px;font-size:5px;font-weight:900}
+.chips{display:flex;flex-wrap:wrap;gap:3px}
+.chip{min-height:24px;padding:0 7px;font-size:5.5px;font-weight:950;text-transform:uppercase;border-radius:999px;border:1px solid #334650;background:#0c151b;color:#b8c6cc}
+.chip.on{border-color:#4c88aa;background:#14344a;color:var(--accent)}
+.chip[data-status="docked"].on{border-color:#3d6a52;background:#102418;color:#a8e6bc}
+.chip[data-status="travelling"].on{border-color:#4c88aa;background:#14344a;color:#b7e0ff}
+.chip[data-status="orbiting"].on{border-color:#6e5926;background:#211b0c;color:#ffe39a}
+.chip[data-status="arrived"].on,.chip[data-status="home"].on{border-color:#6a4f88;background:#1a1224;color:#d7b7ff}
+.chip[data-status="lost"].on{border-color:#6e3a3a;background:#211010;color:#ffb0b0}
+.listWrap{min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr);gap:0}
+.listHead{display:grid;grid-template-columns:minmax(0,1.4fr) 58px minmax(0,1fr) 58px;gap:3px;padding:0;background:#101820;border:1px solid var(--line);border-radius:5px 5px 0 0}
+.listHead button{min-height:28px;padding:4px 5px;border:0;border-radius:0;background:transparent;font-size:5px;color:#b8c6cc;font-weight:900;text-transform:uppercase;text-align:left}
+.listHead button:nth-child(2),.listHead button:nth-child(4){text-align:center}
+.listHead button .arrow{color:var(--accent);margin-left:2px}
+.listHead button:disabled{opacity:.55}
+.rows{min-height:0;overflow:auto;border:1px solid var(--line);border-top:0;border-radius:0 0 7px 7px;background:#080d11}
+.shipRow{display:grid;grid-template-columns:minmax(0,1.4fr) 58px minmax(0,1fr) 58px;gap:3px;align-items:center;min-height:64px;padding:5px;border-bottom:1px solid #162129}
+.shipRow.active{background:var(--active);box-shadow:inset 2px 0 0 var(--good)}
+.shipRow.lost{opacity:.55}
+.shipRow.commanding{box-shadow:inset 2px 0 0 var(--warn)}
+.shipRow.active.commanding{box-shadow:inset 2px 0 0 var(--good),inset 4px 0 0 var(--warn)}
+.empty{padding:14px 8px;text-align:center;font-size:6.5px;color:var(--muted)}
+.name strong{display:block;font-size:7px;line-height:1.1}
+.name small{display:block;font-size:5.2px;color:var(--muted);margin-top:2px;line-height:1.15}
+.name .tags{display:flex;flex-wrap:wrap;gap:2px;margin-top:3px}
+.tag{font-size:4.5px;font-weight:900;letter-spacing:.04em;padding:2px 3px;border-radius:3px;border:1px solid #334650;color:#c5d4db}
+.tag.active{border-color:#3d6a52;background:#102418;color:#a8e6bc}
+.tag.cmd{border-color:#6e5926;background:#211b0c;color:#ffe39a}
+.tag.lost{border-color:#6e3a3a;background:#211010;color:#ffb0b0}
+.status{text-align:center}
+.status b{display:block;font-size:5.8px;font-weight:950;text-transform:uppercase}
+.status.docked b{color:var(--good)}.status.travelling b{color:var(--accent)}.status.orbiting b{color:var(--warn)}
+.status.arrived b,.status.home b{color:var(--violet)}.status.lost b{color:var(--bad)}
+.status small{display:block;font-size:4.8px;color:var(--muted);margin-top:2px;line-height:1.15}
+.loc{font-size:5.5px;line-height:1.2;color:#c9d6dc}
+.loc small{display:block;font-size:4.8px;color:var(--muted);margin-top:2px}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-top:3px}
+.metric{padding:2px 3px;background:#0e171d;border:1px solid #1d2b34;border-radius:3px}
+.metric small{display:block;font-size:4.2px;color:var(--muted)}.metric strong{font-size:5.4px;font-variant-numeric:tabular-nums}
+.actionCol{display:grid;gap:3px}
+.actionCol button{min-height:36px;padding:2px 3px;font-size:5.4px;font-weight:950;border-color:#39714d;background:#10271a;color:#b6efc8}
+.actionCol button:disabled{opacity:.4;border-color:#5c4530;background:#20170e;color:#e7b56e}
+.legend{font-size:5px;color:var(--muted);padding:0 2px;line-height:1.35}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);display:grid;place-items:end center;z-index:20;padding:8px}
+.overlay.hidden{display:none!important}
+.sheet{width:min(96vw,420px);max-height:55dvh;background:#091016;border:1px solid #47606f;border-radius:10px 10px 0 0;padding:8px;display:grid;gap:6px;overflow:auto}
+.sheet h2{margin:0;font-size:10px}.sheet p{margin:0;font-size:6.2px;color:var(--muted);line-height:1.35}
+.sheet .hub{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.sheet .hub button{min-height:52px;font-size:6.5px;font-weight:950}
+.sheet .hub .colony{border-color:#4c88aa;background:#14344a}
+.sheet .hub .ship{border-color:#39714d;background:#10271a}
+.sheet .only button{min-height:52px;font-size:6.5px;font-weight:950;border-color:#39714d;background:#10271a}
+.sheet .dismiss{min-height:34px}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="head">
+    <div>
+      <small>CORPORATION FLEET • B03A MOCKUP</small>
+      <strong>Fleet Manager</strong>
+    </div>
+    <button class="close" type="button" id="closeBtn" aria-label="Close">✕</button>
+  </header>
+
+  <section class="command" id="commandBanner">
+    <div>
+      <small>COLONY COMMAND SOURCE</small>
+      <strong id="commandText">Primary Headquarters — operational</strong>
+    </div>
+    <div class="badge" id="commandBadge">HQ</div>
+  </section>
+
+  <section class="scenarios">
+    <label class="control">
+      <small>REVIEW SCENARIO</small>
+      <select id="scenario">
+        <option value="hq-multi">HQ commanding • multi-ship fleet</option>
+        <option value="early-ship">Early game • founding ship holds command</option>
+        <option value="emergency-ship">A08b outage • emergency ship command</option>
+        <option value="transit">Mixed statuses • transit / orbit / docked</option>
+        <option value="lost">Includes lost vessel</option>
+        <option value="no-command">No command source (disconnected)</option>
+      </select>
+    </label>
+  </section>
+
+  <section class="filters" aria-label="Ship status filters">
+    <div class="label">
+      <small>STATUS FILTER • MULTI-SELECT</small>
+      <button type="button" id="clearFilters">SHOW ALL</button>
+    </div>
+    <div class="chips" id="statusChips"></div>
+  </section>
+
+  <section class="listWrap">
+    <div class="listHead" role="row">
+      <button type="button" data-sort="name">Vessel<span class="arrow" data-arrow="name"></span></button>
+      <button type="button" data-sort="status">Status<span class="arrow" data-arrow="status"></span></button>
+      <button type="button" data-sort="location">Location / stocks<span class="arrow" data-arrow="location"></span></button>
+      <button type="button" disabled>Open</button>
+    </div>
+    <div class="rows" id="rows"></div>
+  </section>
+
+  <p class="legend" id="legend">Fleet Manager lists every owned ship. OPEN SHIP CONTROLS selects the vessel and opens Ship Control only.</p>
+</div>
+
+<div class="overlay hidden" id="overlay">
+  <div class="sheet" role="dialog" aria-modal="true">
+    <h2 id="sheetTitle">Ship Control</h2>
+    <p id="sheetBlurb">Mock preview of what Open Ship Controls leads into.</p>
+    <div id="sheetActions"></div>
+    <button class="dismiss" type="button" id="sheetDismiss">CLOSE PREVIEW</button>
+  </div>
+</div>
+
+<script>
+const STATUS_ORDER = ["docked","orbiting","travelling","arrived","home","lost"];
+const STATUS_HINT = {
+  docked: "Live",
+  travelling: "In transit",
+  orbiting: "Holding",
+  arrived: "Arrived",
+  home: "Home",
+  lost: "Unrecoverable"
+};
+
+const scenarios = {
+  "hq-multi": {
+    command: { mode: "hq", text: "Primary Headquarters — Deep Reach • operational", badge: "HQ" },
+    legend: "Tap column headers to sort. Status chips multi-filter the list. Footer chrome is not part of this panel.",
+    ships: [
+      { id: "s1", name: "CSV Deep Reach", klass: "Colony Founder", status: "docked", location: "Deep Reach Spaceport", detail: "Berth 1 • active colony", cargo: "420/800", fuel: "88/100", food: "210/300", crew: "48/12", active: true, commanding: false },
+      { id: "s2", name: "CSV Halcyon Reach", klass: "Dart Courier", status: "docked", location: "Deep Reach Spaceport", detail: "Berth 2", cargo: "120/250", fuel: "64/80", food: "40/60", crew: "6/4", active: false, commanding: false },
+      { id: "s3", name: "CSV Iron Ledger", klass: "Bulk Hauler", status: "orbiting", location: "Deep Reach orbit", detail: "Holding for berth", cargo: "1800/2200", fuel: "70/120", food: "90/140", crew: "14/10", active: false, commanding: false }
+    ]
+  },
+  "early-ship": {
+    command: { mode: "ship", text: "Founding ship holds temporary colony command", badge: "SHIP" },
+    legend: "Founding ship listed alone. Fleet Manager still only opens Ship Control; linked CSM opens Colony Control from Ship Control.",
+    ships: [
+      { id: "s1", name: "CSV Deep Reach", klass: "Colony Founder", status: "docked", location: "Deep Reach Spaceport", detail: "Berth 1 • founding vessel", cargo: "510/800", fuel: "92/100", food: "260/300", crew: "52/12", active: true, commanding: true }
+    ]
+  },
+  "emergency-ship": {
+    command: { mode: "ship", text: "Primary HQ offline • emergency ship command • network offline", badge: "SHIP" },
+    legend: "Emergency command ship remains filterable as docked. Fleet Manager never embeds Colony Control actions.",
+    ships: [
+      { id: "s1", name: "CSV Deep Reach", klass: "Colony Founder", status: "docked", location: "Deep Reach Spaceport", detail: "Berth 1 • emergency command", cargo: "300/800", fuel: "90/100", food: "200/300", crew: "48/12", active: true, commanding: true },
+      { id: "s2", name: "CSV Halcyon Reach", klass: "Dart Courier", status: "docked", location: "Deep Reach Spaceport", detail: "Berth 2 • ship-only", cargo: "40/250", fuel: "70/80", food: "30/60", crew: "6/4", active: false, commanding: false }
+    ]
+  },
+  "transit": {
+    command: { mode: "hq", text: "Primary Headquarters — Deep Reach • operational", badge: "HQ" },
+    legend: "Mixed statuses exercise multi-filter and status-column sort.",
+    ships: [
+      { id: "s1", name: "CSV Deep Reach", klass: "Colony Founder", status: "docked", location: "Deep Reach Spaceport", detail: "Berth 1", cargo: "200/800", fuel: "95/100", food: "240/300", crew: "48/12", active: false, commanding: false },
+      { id: "s2", name: "CSV Halcyon Reach", klass: "Dart Courier", status: "travelling", location: "En route • Veyra Gate", detail: "ETA 3d 14h • Fuel OK", cargo: "80/250", fuel: "41/80", food: "28/60", crew: "6/4", active: true, commanding: false },
+      { id: "s3", name: "CSV Iron Ledger", klass: "Bulk Hauler", status: "arrived", location: "Kestrel Reach system", detail: "Awaiting approach order", cargo: "2100/2200", fuel: "55/120", food: "70/140", crew: "14/10", active: false, commanding: false }
+    ]
+  },
+  "lost": {
+    command: { mode: "hq", text: "Primary Headquarters — Deep Reach • operational", badge: "HQ" },
+    legend: "Lost ships remain listed and can be isolated with the Lost filter chip.",
+    ships: [
+      { id: "s1", name: "CSV Deep Reach", klass: "Colony Founder", status: "docked", location: "Deep Reach Spaceport", detail: "Berth 1", cargo: "300/800", fuel: "90/100", food: "200/300", crew: "48/12", active: true, commanding: false },
+      { id: "s4", name: "CSV Night Quill", klass: "Survey Scout", status: "lost", location: "Signal lost", detail: "Last fix • Outer belt", cargo: "—", fuel: "—", food: "—", crew: "—", active: false, commanding: false, lost: true }
+    ]
+  },
+  "no-command": {
+    command: { mode: "none", text: "No colony command source • disconnected", badge: "NONE" },
+    legend: "Fleet Manager still lists ships and opens Ship Control while colony command is disconnected.",
+    ships: [
+      { id: "s1", name: "CSV Deep Reach", klass: "Colony Founder", status: "travelling", location: "En route • Veyra Gate", detail: "Cannot hold colony command while away", cargo: "300/800", fuel: "60/100", food: "180/300", crew: "48/12", active: true, commanding: false },
+      { id: "s2", name: "CSV Halcyon Reach", klass: "Dart Courier", status: "home", location: "Corporate home berth", detail: "Standby", cargo: "0/250", fuel: "80/80", food: "60/60", crew: "4/4", active: false, commanding: false }
+    ]
+  }
+};
+
+const $ = (id) => document.getElementById(id);
+const rows = $("rows");
+const overlay = $("overlay");
+let sortKey = "name";
+let sortDir = 1;
+let selectedStatuses = new Set();
+
+function currentData(){ return scenarios[$("scenario").value]; }
+
+function availableStatuses(ships){
+  return STATUS_ORDER.filter((status) => ships.some((ship) => ship.status === status));
+}
+
+function renderChips(){
+  const ships = currentData().ships;
+  const available = availableStatuses(ships);
+  selectedStatuses = new Set([...selectedStatuses].filter((status) => available.includes(status)));
+  $("statusChips").innerHTML = available.map((status) => {
+    const on = selectedStatuses.size === 0 || selectedStatuses.has(status);
+    return `<button type="button" class="chip ${on && selectedStatuses.size ? "on" : selectedStatuses.size === 0 ? "" : ""} ${selectedStatuses.has(status) ? "on" : ""}" data-status="${status}">${status}</button>`;
+  }).join("");
+  $("statusChips").querySelectorAll("[data-status]").forEach((chip) => {
+    chip.onclick = () => {
+      const status = chip.dataset.status;
+      if (selectedStatuses.has(status)) selectedStatuses.delete(status);
+      else selectedStatuses.add(status);
+      render();
+    };
+  });
+}
+
+function sortedShips(ships){
+  const filtered = selectedStatuses.size
+    ? ships.filter((ship) => selectedStatuses.has(ship.status))
+    : ships.slice();
+  return filtered.sort((a, b) => {
+    let av = a[sortKey] || "";
+    let bv = b[sortKey] || "";
+    if (sortKey === "status") {
+      av = STATUS_ORDER.indexOf(a.status);
+      bv = STATUS_ORDER.indexOf(b.status);
+      return (av - bv) * sortDir || a.name.localeCompare(b.name);
+    }
+    return String(av).localeCompare(String(bv), undefined, { sensitivity: "base" }) * sortDir || a.name.localeCompare(b.name);
+  });
+}
+
+function updateSortArrows(){
+  document.querySelectorAll("[data-arrow]").forEach((node) => {
+    node.textContent = node.dataset.arrow === sortKey ? (sortDir > 0 ? "▲" : "▼") : "";
+  });
+}
+
+function renderRows(){
+  const data = currentData();
+  const list = sortedShips(data.ships);
+  if (!list.length) {
+    rows.innerHTML = `<div class="empty">No ships match the selected status filters.</div>`;
+    return;
+  }
+  rows.innerHTML = list.map((ship) => {
+    const tags = [];
+    if (ship.active) tags.push('<span class="tag active">ACTIVE</span>');
+    if (ship.commanding) tags.push('<span class="tag cmd">COMMAND</span>');
+    if (ship.lost) tags.push('<span class="tag lost">LOST</span>');
+    const rowClass = ["shipRow", ship.active ? "active" : "", ship.lost ? "lost" : "", ship.commanding ? "commanding" : ""].filter(Boolean).join(" ");
+    return `<article class="${rowClass}" data-id="${ship.id}">
+      <div class="name">
+        <strong>${ship.name}</strong>
+        <small>${ship.klass}</small>
+        <div class="tags">${tags.join("")}</div>
+      </div>
+      <div class="status ${ship.status}"><b>${ship.status}</b><small>${STATUS_HINT[ship.status] || "Live"}</small></div>
+      <div class="loc">${ship.location}<small>${ship.detail}</small>
+        <div class="metrics">
+          <div class="metric"><small>CARGO</small><strong>${ship.cargo}</strong></div>
+          <div class="metric"><small>FUEL</small><strong>${ship.fuel}</strong></div>
+          <div class="metric"><small>FOOD</small><strong>${ship.food}</strong></div>
+          <div class="metric"><small>CREW</small><strong>${ship.crew}</strong></div>
+        </div>
+      </div>
+      <div class="actionCol">
+        <button type="button" data-open="${ship.id}">OPEN SHIP CONTROLS</button>
+      </div>
+    </article>`;
+  }).join("");
+
+  rows.querySelectorAll("[data-open]").forEach((btn) => {
+    btn.onclick = () => openShip(data.ships.find((s) => s.id === btn.dataset.open), data.command.mode);
+  });
+}
+
+function render() {
+  const data = currentData();
+  const banner = $("commandBanner");
+  banner.className = "command" + (data.command.mode === "ship" ? " ship-cmd" : data.command.mode === "none" ? " none" : "");
+  $("commandText").textContent = data.command.text;
+  $("commandBadge").textContent = data.command.badge;
+  $("legend").textContent = data.legend;
+  renderChips();
+  updateSortArrows();
+  renderRows();
+}
+
+function openShip(ship, commandMode) {
+  if (!ship) return;
+  $("sheetTitle").textContent = ship.name;
+  const canComposeColony = ship.commanding && commandMode === "ship" && ship.status === "docked";
+  $("sheetBlurb").textContent = canComposeColony
+    ? "Mock: commanding ship — Ship Control with linked Colony Support Module opens Colony Control."
+    : ship.lost
+      ? "Mock: lost-ship status path. Fleet Manager only selected the vessel."
+      : "Mock: Ship Control only — cargo, crew, Fuel/Food, route, launch/land as valid for state.";
+
+  const actions = $("sheetActions");
+  if (canComposeColony) {
+    actions.className = "hub";
+    actions.innerHTML = `<button class="colony" type="button">OPEN COLONY CONTROL</button><button class="ship" type="button">OPEN SHIP CONTROL</button>`;
+  } else {
+    actions.className = "only";
+    actions.innerHTML = `<button type="button" ${ship.lost ? "disabled" : ""}>${ship.lost ? "SHIP STATUS • LIMITED" : "CONTINUE TO SHIP CONTROL"}</button>`;
+  }
+  overlay.classList.remove("hidden");
+}
+
+document.querySelectorAll("[data-sort]").forEach((btn) => {
+  btn.onclick = () => {
+    const key = btn.dataset.sort;
+    if (sortKey === key) sortDir *= -1;
+    else { sortKey = key; sortDir = 1; }
+    render();
+  };
+});
+
+$("scenario").onchange = () => { selectedStatuses = new Set(); render(); };
+$("clearFilters").onclick = () => { selectedStatuses = new Set(); render(); };
+$("closeBtn").onclick = () => alert("Mockup: closes Fleet Manager and returns to previous surface.");
+$("sheetDismiss").onclick = () => overlay.classList.add("hidden");
+overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.classList.add("hidden"); });
+render();
+</script>
+</body>
+</html>

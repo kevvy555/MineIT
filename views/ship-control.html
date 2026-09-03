@@ -1,0 +1,52 @@
+<div class="ship-control-shell" data-ship-control>
+  <section class="ship-control-hero">
+    <div>
+      <h1 data-ship-class></h1>
+      <p data-ship-blurb>Ship systems only. Colony management rides the Colony Support Module when linked.</p>
+    </div>
+    <div class="ship-control-status" data-ship-status-badge>DOCKED</div>
+  </section>
+
+  <div data-ship-status-strip></div>
+
+  <div class="ship-control-section-title module"><span>AUX BAY • COLONY SUPPORT MODULE</span><i></i></div>
+  <section class="csm-module-bay" data-csm-bay>
+    <div class="csm-module-rail">
+      <div class="csm-module-slot" aria-hidden="true"></div>
+      <div class="csm-module-body">
+        <div class="csm-module-row">
+          <div>
+            <h2 data-csm-title>CSM-01 Colony Support Module</h2>
+            <p data-csm-text>Hard-mounted colony command interface. Opens the same Colony Control surface used at Headquarters.</p>
+          </div>
+          <div class="csm-module-pill" data-csm-pill>OFFLINE</div>
+        </div>
+        <div class="csm-module-meta" data-csm-meta></div>
+        <button class="csm-module-open" type="button" data-csm-open disabled>COLONY CONTROL UNAVAILABLE</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="ship-control-section-title"><span>SHIP SYSTEMS</span><i></i></div>
+  <div class="ship-control-grid">
+    <button class="ship-action-tile" type="button" data-ship-action="cargo"><strong>CARGO BAY</strong><small>Load / unload while docked</small></button>
+    <button class="ship-action-tile" type="button" data-ship-action="accommodation"><strong>ACCOMMODATION</strong><small>Crew and colonist transfers</small></button>
+    <button class="ship-action-tile" type="button" data-ship-action="route"><strong>ROUTE</strong><small>Destination, distance, ETA preview</small></button>
+    <button class="ship-action-tile" type="button" data-ship-action="star-map"><strong>STAR MAP</strong><small>Ship navigation system</small></button>
+    <button class="ship-action-tile" type="button" data-ship-action="fleet"><strong>FLEET MANAGER</strong><small>All owned ships</small></button>
+    <button class="ship-action-tile" type="button" data-ship-action="status"><strong>SHIP STATUS</strong><small>Class, drive, tanks, condition</small></button>
+  </div>
+
+  <div class="ship-control-section-title"><span>JOURNEY PREVIEW</span><i></i></div>
+  <section class="ship-control-route" data-ship-route>
+    <div class="ship-control-route-row"><span>Destination</span><b data-route-dest>—</b></div>
+    <div class="ship-control-route-row"><span>Distance</span><b data-route-dist>—</b></div>
+    <div class="ship-control-route-row"><span>Travel time</span><b data-route-eta>—</b></div>
+    <div class="ship-control-route-row"><span>Fuel / Food burn</span><b data-route-burn>—</b></div>
+  </section>
+  <p class="ship-control-note">No Spaceport tile on Ship Control — berths are colony infrastructure. Star Map here is the ship’s own navigation system, not the Koplin corporate directory.</p>
+
+  <footer class="ship-control-actions">
+    <button class="ship-control-launch" type="button" data-ship-launch disabled>LAUNCH</button>
+  </footer>
+</div>

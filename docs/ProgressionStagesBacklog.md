@@ -11,6 +11,7 @@ Item statuses are:
 - **Ready for Review** — fully defined and awaiting the user’s final review.
 - **Approved** — reviewed and authorised as development-ready.
 - **In Progress** — implementation has begun.
+- **Ready for Testing** — implementation and regression coverage are ready for player testing.
 - **Complete** — implemented and verified against the definition of done.
 
 The roadmap status shown for each stage describes implementation of the overall progression stage; it is separate from individual backlog-item status.
@@ -125,18 +126,18 @@ For traceability, references beginning with **A** correspond to the first number
 - **A08a — Operational Headquarters departure gate.** Prevent a colony ship from leaving a colony until a dedicated Headquarters is fully constructed and staffed to its defined minimum; add the Headquarters command network and emergency ship takeover; remove ship-provided colony Power; make founding-ship Industry conditional on docking; separate ship-supported residents from planetary demand; and rebalance the authoritative Power generation, consumption, Fuel-use and shortage curves. **Status: Complete.** [Detailed specification](./Progression%20Stages/Stage%206/A08a-Operational-Headquarters-Departure-Gate.md)
 - **A08b — Headquarters outage and recovery.** Disable new conglomerate-network orders during an established Primary Headquarters outage while existing commitments continue; apply immediate and daily colony-efficiency loss, complete down-tools, and exact ten-day recovery after restoration. **Status: Complete.** [Detailed specification](./Progression%20Stages/Stage%206/A08b-Headquarters-Outage-And-Recovery.md)
 
-### In Progress
-
-- None currently identified.
-
 ### In Discovery
 
 - None currently identified.
 
 ### In Progress
 
-- **B03a — Global ship management.** Provide a persistent global ship list and state-aware Ship Control for navigation, journey preview, crew and accommodation. **Status: In Progress.** [Detailed specification](./Progression%20Stages/Stage%206/B03a-Global-Ship-Management.md)
-- **N04 — Colony and Ship Control surfaces.** Separate Colony Control from Ship Control, compose them only when a docked ship holds colony command, and keep Fleet Manager as the corporation-wide ship picker. **Status: In Progress.** [Detailed specification](./Progression%20Stages/Stage%206/N04-Colony-And-Ship-Control-Surfaces.md)
+- None currently identified.
+
+### Ready for Testing
+
+- **B03a — Global ship management.** Provide a persistent global Fleet Manager list and path into state-aware Ship Control for navigation, journey preview, crew and accommodation. Proof mockup: [B03a-Fleet-Manager-Mockup.html](./Progression%20Stages/Stage%206/B03a-Fleet-Manager-Mockup.html). **Status: Ready for Testing.** [Detailed specification](./Progression%20Stages/Stage%206/B03a-Global-Ship-Management.md)
+- **N04 — Colony and Ship Control surfaces.** Separate Colony Control from Ship Control using A08a `commandStatus.source`. Primary HQ opens Colony Control (live HQ cards + local Colony Services + Koplin Deep Reach CONNECT terminal). Commanding ships use a Colony Support Module link into the same Colony Control. Proof mockups: [Colony Control](./Progression%20Stages/Stage%206/N04-Colony-Control-Mockup.html), [Ship Control](./Progression%20Stages/Stage%206/N04-Ship-Control-Mockup.html). **Status: Ready for Testing.** [Detailed specification](./Progression%20Stages/Stage%206/N04-Colony-And-Ship-Control-Surfaces.md)
 
 ### Ready for Review
 
@@ -177,7 +178,11 @@ For traceability, references beginning with **A** correspond to the first number
 
 ### In Progress
 
-- **N03 — Multi-ship selection and access.** Keep every owned ship selectable from the colony Spaceport and star map after additional ships are purchased or become active. **Status: In Progress.** [Detailed specification](./Progression%20Stages/Stage%208/N03-Multi-Ship-Selection-And-Access.md)
+- None currently identified.
+
+### Ready for Testing
+
+- **N03 — Multi-ship selection and access.** Keep every owned ship selectable from the colony Spaceport and star map after additional ships are purchased or become active. Aligns with A08a Spaceport Power rules without hiding the fleet list. **Status: Ready for Testing.** [Detailed specification](./Progression%20Stages/Stage%208/N03-Multi-Ship-Selection-And-Access.md)
 
 ### Ready for Review
 
@@ -412,15 +417,16 @@ For traceability, references beginning with **A** correspond to the first number
 1. **Food behaviour:** A06 defines the authoritative colony-versus-ship Food source rules. A02 must read the same domain Food calculation used by the live simulation.
 2. **Ship capability data:** A07 and A22b require canonical ship-class accommodation, drive, tank-capacity and consumption-rate fields.
 3. **Navigation and ship control:** A09/B06a share route services with **B03a**. **N03** restores multi-ship access; **N04** separates Colony Control from Ship Control; **B03a** owns the global Ships list. Advanced logistics dispatch remains **B03b** / **B07a**.
-4. **Headquarters state:** A08a requires authoritative construction and staffing eligibility for colony-ship departure, removes ship-provided colony Power, makes the colony ship's 50 Industry conditional on it being docked, and aligns ship-resident/planetary operational ownership during establishment. A08b separately owns network-service restrictions, Headquarters outage degradation and recovery state with save/load support. **N04** provides the Colony Control / Ship Control UI split that moves colony command from a commanding docked ship to Headquarters once A08a is satisfied.5. **Veyrite condition:** N01 extends A22b but remains a separate maintained-drive system rather than another Fuel.
+4. **Headquarters state:** A08a and A08b are Complete. A08a owns departure gating, Primary Headquarters command source and emergency ship takeover (`commandStatus.source`). A08b owns conglomerate-network lockouts, continuity efficiency loss and ten-day recovery after handover. **N04** reads `commandStatus.source` for Colony Control vs Ship Control: Primary HQ / linked Colony Support Module open Colony Control; Koplin Deep Reach services open through a shared CONNECT terminal (Buyers, Technology, Fleet Procurement, corporate Star Map).
+5. **Veyrite condition:** N01 extends A22b but remains a separate maintained-drive system rather than another Fuel.
 6. **Gas-giant production:** N02 provides a later source of atmospheric feedstock and manufactured Fusion Fuel. It does not block the first A22b release because Fuel can be purchased from the conglomerate.
 7. **Corporation reporting:** A12 should precede B02 and A23.
 8. **Contract expansion:** B05a should precede new-colony contracts and the later contract-portfolio stages.
 
 ## Roadmap review notes
 
-- Stage 6 is temporarily **In Progress** for **B03a** and **N04** ship/colony control discovery on `feature/fleet-colony-ship-control`, now including completed **A08a** from `feature/next-priority-items`. **A08b** remains Ready for Review.
+- Stage 6 ship/colony control (**B03a**, **N04**) is **Ready for Testing** on `feature/fleet-colony-ship-control`, including Fleet Manager list UI and Colony/Ship Control surfaces after **A08a** / **A08b**.
 - Stage 7 should be reviewed if a colony without the colony ship currently lacks a valid export route.
-- Stage 8 remains **In Progress**. **N03** multi-ship selection/access is active on the same branch so purchased ships remain operable beside the starter vessel. Player-designed and player-built ships belong to later progression.
+- Stage 8 **N03** multi-ship selection/access is **Ready for Testing** on the same branch. Player-designed and player-built ships belong to later progression.
 - Gas-giant orbital colonies are placed in Stage 10 as later logistics and Fuel-production infrastructure, not as a prerequisite for Stage 6 travel.
 - The present backlog is concentrated in Stages 1–11. Stages 12–17 and 19–22 remain available for future discovery work.

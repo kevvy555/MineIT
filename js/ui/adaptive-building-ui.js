@@ -108,7 +108,18 @@ export class UIController extends ResourceDevelopmentUIController{
     return true;
   }
 
-  localBuildingPanel(tile){this.activeAdaptiveTile=tile;this.renderAdaptiveBuilding(tile);}
-  tile(tile){this.tilePanel?.classList.remove("adaptive-building-panel");if(this.isAdaptiveBuilding(tile)){this.activeAdaptiveTile=tile;this.renderAdaptiveBuilding(tile);return;}this.activeAdaptiveTile=null;super.tile(tile);}
-  landTile(tile){if(this.isAdaptiveBuilding(tile)){this.activeAdaptiveTile=tile;this.renderAdaptiveBuilding(tile);return;}this.activeAdaptiveTile=null;super.landTile(tile);}
+  isPrimaryHeadquarters(tile){
+    if(tile?.development?.kind!=="headquarters")return false;
+    const tileKey=Object.entries(this.state.tiles||{}).find(([,value])=>value===tile)?.[0];
+    return !!tileKey&&this.state.colony?.primaryHeadquartersId===tileKey;
+  }
+
+  openPrimaryHeadquarters(tile){
+    if(!this.isPrimaryHeadquarters(tile)||typeof this.colonyControl!=="function")return false;
+    this.activeAdaptiveTile=tile;this.tilePanel?.classList.add("hidden");this.colonyControl({tile});return true;
+  }
+
+  localBuildingPanel(tile){if(this.openPrimaryHeadquarters(tile))return;this.activeAdaptiveTile=tile;this.renderAdaptiveBuilding(tile);}
+  tile(tile){this.tilePanel?.classList.remove("adaptive-building-panel");if(this.openPrimaryHeadquarters(tile))return;if(this.isAdaptiveBuilding(tile)){this.activeAdaptiveTile=tile;this.renderAdaptiveBuilding(tile);return;}this.activeAdaptiveTile=null;super.tile(tile);}
+  landTile(tile){if(this.openPrimaryHeadquarters(tile))return;if(this.isAdaptiveBuilding(tile)){this.activeAdaptiveTile=tile;this.renderAdaptiveBuilding(tile);return;}this.activeAdaptiveTile=null;super.landTile(tile);}
 }
