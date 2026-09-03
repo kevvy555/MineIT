@@ -57,3 +57,4 @@ The authorisation must survive save/load while its conditions remain valid and m
 - When colony Food is exhausted, the simulation creates a persisted corporate event and waits for explicit approval before consuming the selected landed ship's Food.
 - Approval, decline, colony-Food recovery, ship departure and save/load all reconcile the authorisation through the domain service.
 - Behavioural regression coverage is provided by `tests/priority-colony-bug-fixes.test.js` and the strengthened expansion/save tests.
+- [N05](../Stage%201/N05-Ship-To-Colony-Establishment-Transition.md) now places all founding Food aboard the ship. Normal ship-resident consumption remains distinct from A06: A06 applies only when planetary residents request explicit emergency access to that separate ship inventory.

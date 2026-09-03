@@ -24,6 +24,10 @@ export const MIN_NEARBY_FRONTIER_SYSTEMS=2;
 export const SHIP_SPEED_LY_PER_YEAR=5;
 export const SHIP_FUEL_PER_LY=260;
 export const PROBE_DAYS_PER_LY=32;
+export const SHIP_FOOD_WARNING_DAYS=30;
+export const SHIP_FOOD_CRITICAL_DAYS=10;
+export const INITIAL_SHIP_FUEL=675;
+const INITIAL_SHIP_FOOD_DAYS=90;
 
 export const STARTER_SHIP_CLASS_ID="ship-class-asterion-pioneer-colony-transport";
 export const STARTER_SHIP_ID="player-ship-1";
@@ -199,6 +203,51 @@ export class ExpansionService{
     };
   }
 
+  provisionInitialColony(state){
+    const ex=this.ensure(state),ship=ex.ships.find(item=>item.source==="charter-issued"&&item.status==="docked"&&item.colonyId===state.colonyId)||ex.ships[0];
+    if(!ship||state.colony?.initialManifestProvisioned)return{ok:false,reason:"Initial founding manifest is already provisioned."};
+    for(const [key,entry] of Object.entries(state.inventory||{})){
+      const amount=Math.max(0,Number(entry?.amount)||0);
+      if(amount<=0)continue;
+      const target=entry.type==="food"?ship.foodLots:entry.type==="fuel"?ship.fuelLots:ship.cargo;
+      transferExact(state.inventory,target,key,amount);
+    }
+    const fuelSource=Object.values(state.inventory||{}).find(entry=>entry?.type==="fuel"),fuelShortfall=Math.max(0,INITIAL_SHIP_FUEL-this.fuelAmount(state,ship.id));
+    if(fuelSource&&fuelShortfall>0)addBand(ensureCargoEntry(ship.fuelLots,fuelSource),"excellent",fuelShortfall);
+    ship.crew=Math.max(ship.minimumCrew,ship.crew);
+    state.colony||={};
+    state.colony.foundingShipId=ship.id;
+    state.colony.commandHandoverComplete=false;
+    state.colony.establishmentAcknowledged=false;
+    state.colony.initialManifestProvisioned=true;
+    state.colony.shipAccommodation={[ship.id]:Math.min(Math.max(0,Number(state.pop)||0),Math.max(0,Number(ship.accommodationCapacity)||0))};
+    state.colony.planetaryAccommodationResidents=0;
+    return{ok:true,ship};
+  }
+
+  normalizeN05Local(root,local,previousVersion=Infinity){
+    if(!local?.colony)return local;
+    const colony=local.colony;
+    colony.establishmentAcknowledged=colony.establishmentAcknowledged===undefined?true:!!colony.establishmentAcknowledged;
+    colony.initialManifestProvisioned=colony.initialManifestProvisioned===undefined?true:!!colony.initialManifestProvisioned;
+    colony.shipFoodCriticalPauses=colony.shipFoodCriticalPauses&&typeof colony.shipFoodCriticalPauses==="object"?colony.shipFoodCriticalPauses:{};
+    if(previousVersion>=17)return local;
+    const ships=root.company?.expansion?.ships||[],founding=ships.find(ship=>ship.id===colony.foundingShipId)||ships.find(ship=>ship.source==="charter-issued"&&ship.status==="docked"&&ship.colonyId===local.colonyId);
+    const aboard=Object.values(colony.shipAccommodation||{}).reduce((sum,value)=>sum+Math.max(0,Number(value)||0),0);
+    if(colony.commandHandoverComplete||!founding||founding.status!=="docked"||founding.colonyId!==local.colonyId||aboard<=0)return local;
+    colony.foundingShipId||=founding.id;
+    founding.crew=Math.max(founding.minimumCrew,founding.crew);
+    let foodDeficit=Math.min(this.foodCapacityRemaining(root,founding.id),Math.max(0,aboard*CONFIG.FOOD_PER_COLONIST*INITIAL_SHIP_FOOD_DAYS-this.transitFoodAmount(root,founding.id)));
+    if(foodDeficit>.0001){
+      for(const [key,entry] of Object.entries(local.inventory||{})){
+        if(foodDeficit<=.0001)break;
+        if(entry?.type!=="food"||Math.max(0,Number(entry.amount)||0)<=0)continue;
+        foodDeficit-=transferExact(local.inventory,founding.foodLots,key,Math.min(entry.amount,foodDeficit));
+      }
+    }
+    return local;
+  }
+
   createPurchasedShip(state,classRecord,{id=null,name=null,colonyId=null,orderId=null,purchase=null,status="docked"}={}){
     const ex=this.ensure(state),capacity=classRecord?.capacity||classRecord?.capacities||{},crew=classRecord?.crew||{},performance=classRecord?.performance||{},transit=classRecord?.transit||{};
     const nextId=id||`player-ship-${Math.max(1,Number(state.company?.nextShipSequence)||ex.ships.length+1)}`;
@@ -246,6 +295,12 @@ export class ExpansionService{
   }
   shipsAtColony(state,colonyId=state.colonyId){return this.ships(state).filter(ship=>ship.status==="docked"&&ship.colonyId===colonyId);}
   shipsInSystem(state,systemId){return this.ships(state).filter(ship=>ship.systemId===systemId||ship.targetSystemId===systemId);}
+  hudShip(state){
+    const docked=this.shipsAtColony(state),foundingId=state.colony?.foundingShipId,founding=docked.find(ship=>ship.id===foundingId);
+    if(founding&&!state.colony?.commandHandoverComplete)return founding;
+    const activeId=state.company?.expansion?.activeShipId;
+    return docked.find(ship=>ship.id===activeId)||founding||docked[0]||null;
+  }
 
   accommodationAssignments(state){state.colony||={};state.colony.shipAccommodation=state.colony.shipAccommodation&&typeof state.colony.shipAccommodation==="object"?state.colony.shipAccommodation:{};return state.colony.shipAccommodation;}
   planetaryAccommodationResidentCount(state){state.colony||={};state.colony.planetaryAccommodationResidents=Math.max(0,Math.floor(Number(state.colony.planetaryAccommodationResidents)||0));return state.colony.planetaryAccommodationResidents;}
@@ -344,13 +399,16 @@ export class ExpansionService{
   isAtActiveColony(state,shipId=null){const ship=this.ship(state,shipId);return!!ship&&ship.status==="docked"&&ship.colonyId===state.colonyId;}
   spaceportServicesAvailable(state){if(!this.colonyService?.powerNetwork)return true;const network=this.colonyService.powerNetwork(state,{fuelStock:this.inventory?.amount?.(state,"fuel")||0}),row=network.bandRows?.find(item=>item.priority==="spaceport");return !row||row.delivered>=row.requested;}
   spaceportServiceFailure(state){return this.spaceportServicesAvailable(state)?null:"Basic Spaceport services are offline: provide its full 10 Power before loading or transferring.";}
+  bootstrapUnloadAllowed(state,ship){
+    return !!ship&&ship.status==="docked"&&ship.colonyId===state.colonyId&&state.colony?.commandHandoverComplete===false&&state.colony?.foundingShipId===ship.id;
+  }
 
   loadCargo(state,...args){const parsed=parseShipArgs(args,2),[key,amount]=parsed.values,ship=this.ship(state,parsed.shipId);if(!ship||!this.isAtActiveColony(state,ship.id))return{ok:false,reason:"The selected player ship is not docked at this colony."};const powerReason=this.spaceportServiceFailure(state);if(powerReason)return{ok:false,reason:powerReason};const room=this.cargoCapacityRemaining(state,ship.id),qty=Math.min(room,Math.max(0,Math.floor(Number(amount)||0)));if(qty<=0)return{ok:false,reason:"No general cargo capacity remains."};const moved=transferExact(state.inventory,ship.cargo,key,qty);return moved>0?{ok:true,qty:moved}:{ok:false,reason:"No stock available."};}
-  unloadCargo(state,...args){const parsed=parseShipArgs(args,2),[key,amount=Infinity]=parsed.values,ship=this.ship(state,parsed.shipId);if(!ship||!this.isAtActiveColony(state,ship.id))return{ok:false,reason:"The selected player ship is not docked at this colony."};const powerReason=this.spaceportServiceFailure(state);if(powerReason)return{ok:false,reason:powerReason};const entry=ship.cargo?.[key];if(!entry)return{ok:false,reason:"That resource is not aboard."};const qty=Math.min(Math.max(0,Number(entry.amount)||0),Number.isFinite(amount)?Math.max(0,Number(amount)||0):Infinity),moved=transferExact(ship.cargo,state.inventory,key,qty);return moved>0?{ok:true,qty:moved}:{ok:false,reason:"Nothing to unload."};}
+  unloadCargo(state,...args){const parsed=parseShipArgs(args,2),[key,amount=Infinity]=parsed.values,ship=this.ship(state,parsed.shipId);if(!ship||!this.isAtActiveColony(state,ship.id))return{ok:false,reason:"The selected player ship is not docked at this colony."};const powerReason=this.bootstrapUnloadAllowed(state,ship)?null:this.spaceportServiceFailure(state);if(powerReason)return{ok:false,reason:powerReason};const entry=ship.cargo?.[key];if(!entry)return{ok:false,reason:"That resource is not aboard."};const qty=Math.min(Math.max(0,Number(entry.amount)||0),Number.isFinite(amount)?Math.max(0,Number(amount)||0):Infinity),moved=transferExact(ship.cargo,state.inventory,key,qty);return moved>0?{ok:true,qty:moved}:{ok:false,reason:"Nothing to unload."};}
   loadFood(state,...args){const parsed=parseShipArgs(args,2),[key,amount]=parsed.values,ship=this.ship(state,parsed.shipId);if(!ship||!this.isAtActiveColony(state,ship.id))return{ok:false,reason:"The selected player ship is not docked at this colony."};const powerReason=this.spaceportServiceFailure(state);if(powerReason)return{ok:false,reason:powerReason};const entry=state.inventory?.[key];if(entry?.type!=="food")return{ok:false,reason:"Only Food can be loaded into the transit food store."};const room=this.foodCapacityRemaining(state,ship.id),qty=Math.min(room,Math.max(0,Math.floor(Number(amount)||0)));if(qty<=0)return{ok:false,reason:"The transit food store is full."};const moved=transferExact(state.inventory,ship.foodLots,key,qty);return moved>0?{ok:true,qty:moved}:{ok:false,reason:"No food stock available."};}
-  unloadFood(state,...args){const parsed=parseShipArgs(args,2),[key,amount=Infinity]=parsed.values,ship=this.ship(state,parsed.shipId);if(!ship||!this.isAtActiveColony(state,ship.id))return{ok:false,reason:"The selected player ship is not docked at this colony."};const powerReason=this.spaceportServiceFailure(state);if(powerReason)return{ok:false,reason:powerReason};const entry=ship.foodLots?.[key];if(!entry)return{ok:false,reason:"That food is not in the transit store."};const qty=Math.min(Math.max(0,Number(entry.amount)||0),Number.isFinite(amount)?Math.max(0,Number(amount)||0):Infinity),moved=transferExact(ship.foodLots,state.inventory,key,qty);return moved>0?{ok:true,qty:moved}:{ok:false,reason:"Nothing to unload."};}
+  unloadFood(state,...args){const parsed=parseShipArgs(args,2),[key,amount=Infinity]=parsed.values,ship=this.ship(state,parsed.shipId);if(!ship||!this.isAtActiveColony(state,ship.id))return{ok:false,reason:"The selected player ship is not docked at this colony."};const powerReason=this.bootstrapUnloadAllowed(state,ship)?null:this.spaceportServiceFailure(state);if(powerReason)return{ok:false,reason:powerReason};const entry=ship.foodLots?.[key];if(!entry)return{ok:false,reason:"That food is not in the transit store."};const qty=Math.min(Math.max(0,Number(entry.amount)||0),Number.isFinite(amount)?Math.max(0,Number(amount)||0):Infinity),moved=transferExact(ship.foodLots,state.inventory,key,qty);return moved>0?{ok:true,qty:moved}:{ok:false,reason:"Nothing to unload."};}
   loadFuel(state,...args){const parsed=parseShipArgs(args,2),[key,amount]=parsed.values,ship=this.ship(state,parsed.shipId);if(!ship||!this.isAtActiveColony(state,ship.id))return{ok:false,reason:"The selected player ship is not docked at this colony."};const powerReason=this.spaceportServiceFailure(state);if(powerReason)return{ok:false,reason:powerReason};const entry=state.inventory?.[key];if(entry?.type!=="fuel")return{ok:false,reason:"Only Fuel resources can be loaded into the ship fuel tank."};const room=this.fuelCapacityRemaining(state,ship.id),qty=Math.min(room,Math.max(0,Math.floor(Number(amount)||0)));if(qty<=0)return{ok:false,reason:"The ship fuel tank is full."};const moved=transferExact(state.inventory,ship.fuelLots,key,qty);return moved>0?{ok:true,qty:moved}:{ok:false,reason:"No fuel stock available."};}
-  unloadFuel(state,...args){const parsed=parseShipArgs(args,2),[key,amount=Infinity]=parsed.values,ship=this.ship(state,parsed.shipId);if(!ship||!this.isAtActiveColony(state,ship.id))return{ok:false,reason:"The selected player ship is not docked at this colony."};const powerReason=this.spaceportServiceFailure(state);if(powerReason)return{ok:false,reason:powerReason};const entry=ship.fuelLots?.[key];if(!entry)return{ok:false,reason:"That fuel is not in the tank."};const qty=Math.min(Math.max(0,Number(entry.amount)||0),Number.isFinite(amount)?Math.max(0,Number(amount)||0):Infinity),moved=transferExact(ship.fuelLots,state.inventory,key,qty);return moved>0?{ok:true,qty:moved}:{ok:false,reason:"Nothing to unload."};}
+  unloadFuel(state,...args){const parsed=parseShipArgs(args,2),[key,amount=Infinity]=parsed.values,ship=this.ship(state,parsed.shipId);if(!ship||!this.isAtActiveColony(state,ship.id))return{ok:false,reason:"The selected player ship is not docked at this colony."};const powerReason=this.bootstrapUnloadAllowed(state,ship)?null:this.spaceportServiceFailure(state);if(powerReason)return{ok:false,reason:powerReason};const entry=ship.fuelLots?.[key];if(!entry)return{ok:false,reason:"That fuel is not in the tank."};const qty=Math.min(Math.max(0,Number(entry.amount)||0),Number.isFinite(amount)?Math.max(0,Number(amount)||0):Infinity),moved=transferExact(ship.fuelLots,state.inventory,key,qty);return moved>0?{ok:true,qty:moved}:{ok:false,reason:"Nothing to unload."};}
 
   loadCrew(state,...args){const parsed=parseShipArgs(args,1),[amount]=parsed.values,ship=this.ship(state,parsed.shipId);if(!ship||!this.isAtActiveColony(state,ship.id))return{ok:false,reason:"The selected player ship is not docked at this colony."};const powerReason=this.spaceportServiceFailure(state);if(powerReason)return{ok:false,reason:powerReason};const qty=Math.min(Math.max(0,Math.floor(Number(amount)||0)),this.travelResidentCount(state,ship.id),this.crewRemaining(state,ship.id));if(qty<=0)return{ok:false,reason:"No crew can be loaded."};this.removeResidentsForTravel(state,ship.id,qty);ship.crew+=qty;return{ok:true,qty};}
   unloadCrew(state,...args){const parsed=parseShipArgs(args,1),[amount=Infinity]=parsed.values,ship=this.ship(state,parsed.shipId);if(!ship||!this.isAtActiveColony(state,ship.id))return{ok:false,reason:"The selected player ship is not docked at this colony."};const powerReason=this.spaceportServiceFailure(state);if(powerReason)return{ok:false,reason:powerReason};const room=Math.max(0,this.accommodationCapacity(state,ship.id)-this.shipResidentCount(state,ship.id)),qty=Math.min(ship.crew,room,Number.isFinite(amount)?Math.max(0,Math.floor(Number(amount)||0)):Infinity);if(qty<=0)return{ok:false,reason:room<=0?"Ship accommodation is full.":"No crew aboard."};state.pop=Number(state.pop||0)+qty;ship.crew-=qty;this.accommodationAssignments(state)[ship.id]=this.shipResidentCount(state,ship.id)+qty;return{ok:true,qty};}
@@ -404,17 +462,51 @@ export class ExpansionService{
   consumeTransitFood(state,requested,shipId=null){const ship=this.ship(state,shipId),first=consumeContainerCategory(ship?.foodLots,"food",requested),remaining=Math.max(0,requested-first.consumed);if(remaining<=0)return{requested,consumed:first.consumed,ratio:1};const second=consumeContainerCategory(ship?.cargo,"food",remaining),consumed=first.consumed+second.consumed;return{requested,consumed,ratio:requested>0?Math.min(1,consumed/requested):1};}
 
   shipResidentFoodStatus(state){
-    const rows=this.shipsAtColony(state).map(ship=>{const residents=this.shipResidentCount(state,ship.id),requested=residents*CONFIG.FOOD_PER_COLONIST,available=this.transitFoodAmount(state,ship.id);return{shipId:ship.id,shipName:ship.name,residents,requested,available,consumed:0,ratio:requested>0?Math.min(1,available/requested):1,starvationDays:Math.max(0,Math.floor(Number(state.colony?.shipResidentStarvationDays?.[ship.id])||0))};}).filter(row=>row.residents>0);
+    const rows=this.shipsAtColony(state).map(ship=>{const residents=this.shipResidentCount(state,ship.id),requested=residents*CONFIG.FOOD_PER_COLONIST,available=this.transitFoodAmount(state,ship.id),daysRemaining=requested>0?available/requested:null;return{shipId:ship.id,shipName:ship.name,residents,requested,consumption:requested,production:0,surplus:-requested,available,daysRemaining,consumed:0,ratio:requested>0?Math.min(1,available/requested):1,starvationDays:Math.max(0,Math.floor(Number(state.colony?.shipResidentStarvationDays?.[ship.id])||0))};}).filter(row=>row.residents>0);
     const requested=rows.reduce((sum,row)=>sum+row.requested,0),available=rows.reduce((sum,row)=>sum+row.available,0);
-    return{rows,requested,available,consumed:0,ratio:requested>0?Math.min(1,available/requested):1};
+    const shortest=rows.reduce((lowest,row)=>lowest===null||row.daysRemaining<lowest.daysRemaining?row:lowest,null);
+    return{rows,requested,available,consumed:0,ratio:requested>0?Math.min(1,available/requested):1,shortest,shortestDays:shortest?.daysRemaining??null};
   }
 
   consumeShipResidentFood(state){
     state.colony||={};state.colony.shipResidentStarvationDays=state.colony.shipResidentStarvationDays&&typeof state.colony.shipResidentStarvationDays==="object"?state.colony.shipResidentStarvationDays:{};
     const status=this.shipResidentFoodStatus(state),activeIds=new Set();let consumed=0;
-    for(const row of status.rows){activeIds.add(row.shipId);const use=this.consumeTransitFood(state,row.requested,row.shipId);row.consumed=use.consumed;row.ratio=use.ratio;const noFood=row.requested>0&&row.consumed<=.0001,rowDays=noFood?(row.starvationDays+1):0;row.starvationDays=rowDays;state.colony.shipResidentStarvationDays[row.shipId]=rowDays;consumed+=row.consumed;}
+    for(const row of status.rows){activeIds.add(row.shipId);const use=this.consumeTransitFood(state,row.requested,row.shipId);row.consumed=use.consumed;row.ratio=use.ratio;row.available=this.transitFoodAmount(state,row.shipId);row.daysRemaining=row.requested>0?row.available/row.requested:null;const noFood=row.requested>0&&row.consumed<=.0001,rowDays=noFood?(row.starvationDays+1):0;row.starvationDays=rowDays;state.colony.shipResidentStarvationDays[row.shipId]=rowDays;consumed+=row.consumed;}
     for(const shipId of Object.keys(state.colony.shipResidentStarvationDays))if(!activeIds.has(shipId))delete state.colony.shipResidentStarvationDays[shipId];
-    return{...status,consumed,ratio:status.requested>0?Math.min(1,consumed/status.requested):1};
+    const shortest=status.rows.reduce((lowest,row)=>lowest===null||row.daysRemaining<lowest.daysRemaining?row:lowest,null);
+    return{...status,shortest,shortestDays:shortest?.daysRemaining??null,consumed,ratio:status.requested>0?Math.min(1,consumed/status.requested):1};
+  }
+
+  reconcileShipFoodCriticalPause(state,status=this.shipResidentFoodStatus(state)){
+    state.colony||={};const paused=state.colony.shipFoodCriticalPauses=state.colony.shipFoodCriticalPauses&&typeof state.colony.shipFoodCriticalPauses==="object"?state.colony.shipFoodCriticalPauses:{},active=new Set(),triggered=[];
+    for(const row of status.rows){active.add(row.shipId);const critical=row.daysRemaining!==null&&row.daysRemaining<SHIP_FOOD_CRITICAL_DAYS;if(critical&&!paused[row.shipId]){paused[row.shipId]=true;triggered.push(row);}else if(!critical)delete paused[row.shipId];}
+    for(const shipId of Object.keys(paused))if(!active.has(shipId))delete paused[shipId];
+    if(triggered.length)state.speed=0;
+    return{triggered,critical:status.rows.filter(row=>row.daysRemaining!==null&&row.daysRemaining<SHIP_FOOD_CRITICAL_DAYS),status};
+  }
+
+  establishmentAssessment(state){
+    const ship=this.hudShip(state),totals=this.colonyService?.totals?.(state)||{},stock=type=>this.inventory?.amount?.(state,type)??categoryAmount(state.inventory,type),shipStock=type=>type==="food"?this.transitFoodAmount(state,ship?.id):type==="fuel"?this.fuelAmount(state,ship?.id):this.cargoCategory(state,type,ship?.id),shipFood=this.shipResidentFoodStatus(state).rows.find(row=>row.shipId===ship?.id)||null,planetaryResidents=this.planetaryResidentCount(state),shipResidents=ship?this.shipResidentCount(state,ship.id):0,headquarters=ship?this.headquartersLaunchAssessment(state,ship):{required:false,ok:true,failures:[]},externalPower=Math.max(0,Number(totals.builtPower)||0),externalHousing=Math.max(0,Number(totals.builtHousing)||0),externalIndustry=Math.max(0,Number(totals.builtIndustry)||0),foodProduction=Math.max(0,Number(state.metrics?.food)||0),fuelProduction=Math.max(0,Number(state.metrics?.fuelProduction)||0);
+    const resourceSplit=Object.fromEntries(["food","build","fuel","ore"].map(type=>[type,{ship:ship?shipStock(type):0,colony:stock(type)}]));
+    const support={
+      supplies:resourceSplit.build.colony>0||resourceSplit.fuel.colony>0?"HYBRID":"SHIP",
+      survey:Object.values(state.tiles||{}).some(tile=>tile.revealed)?"READY":"SHIP",
+      housing:externalPower>0&&externalHousing>0?"READY":externalPower>0||externalHousing>0?"HYBRID":"SHIP",
+      residents:planetaryResidents<=0?"SHIP":shipResidents>0?"HYBRID":"COLONY",
+      food:foodProduction>0?"READY":resourceSplit.food.colony>0?"HYBRID":"SHIP",
+      fuel:fuelProduction>0?"READY":resourceSplit.fuel.colony>0?"HYBRID":"SHIP",
+      industry:externalIndustry>0?"READY":ship&&Math.max(0,Number(totals.shipIndustry)||0)>0?"SHIP":"COLONY",
+      headquarters:headquarters.ok?"READY":"SHIP"
+    };
+    const required=!!state.colony?.foundingShipId&&!state.colony?.commandHandoverComplete,acknowledged=state.colony?.establishmentAcknowledged===true,phase=!required?"INDEPENDENT":planetaryResidents<=0?"SHIP":shipResidents>0?"HYBRID":headquarters.ok?"READY":"COLONY";
+    return{required,acknowledged,phase,ship,shipResidents,planetaryResidents,resourceSplit,shipFood,externalPower,externalHousing,externalIndustry,foodProduction,fuelProduction,headquarters,support};
+  }
+
+  acknowledgeEstablishment(state){
+    const assessment=this.establishmentAssessment(state);
+    if(!assessment.required)return{ok:false,reason:"This colony is not awaiting a founding handover.",assessment};
+    state.colony.establishmentAcknowledged=true;
+    return{ok:true,assessment:this.establishmentAssessment(state)};
   }
 
   applyShipResidentDeaths(state,losses=[]){
@@ -469,8 +561,8 @@ export class ExpansionService{
   dockAtColony(state,colonyId,shipId=null){const ship=this.ship(state,shipId),entry=state.portfolio?.colonies?.find(e=>e.id===colonyId);if(!ship)return{ok:false,reason:"Player ship not found."};if(!entry)return{ok:false,reason:"Colony not found."};if(entry.data.contract?.systemId!==ship.systemId)return{ok:false,reason:"That colony is in another system."};if(!this.colonyHasFreeBerth(state,colonyId)){ship.status="orbiting";ship.targetColonyId=colonyId;ship.colonyId=null;return{ok:false,orbiting:true,reason:"No free berth. Ship is holding in orbit."};}ship.status="docked";ship.colonyId=colonyId;ship.targetColonyId=null;ship.awaitingDestination=false;ship.arrivalPromptedFor=null;return{ok:true,entry};}
 
   makePlanetContract(state,systemId,planetId){const system=this.system(this.ensure(state),systemId),planet=system?.planets?.find(p=>p.id===planetId);if(!system||!planet)return null;const a=archById(planet.arch),progress=Math.max(1,Number(state.company.wins)||1)+1,base=this.contracts?.make?this.contracts.make(a,progress,planet.index||0):{arch:a.id,colonyTier:a.colonyTier,name:a.name,environment:a.environment,hazard:a.hazard,supportSystem:a.supportSystem,supportLoad:a.supportLoad,techAccess:a.techAccess,requiredTech:{...a.requiredTech},naturalFood:a.naturalFood,years:10,ext:0,extUsed:0,renewals:0,completed:false,completionAwarded:false,ended:false,goals:{food:120,industry:520,pop:1050},bands:{silver:450000,gold:1000000,plat:2200000},localRevenue:0,localCosts:0};base.uid=`exp-${systemId}-${planetId}-${Date.now()}`;base.name=`${planet.name} Mining Charter`;base.advance=0;base.systemId=systemId;base.systemName=system.name;base.planetId=planetId;base.planetName=planet.name;base.distanceLy=this.distanceFromHome(state,systemId);base.expeditionArrival=true;return base;}
-  expeditionManifest(state,shipId=null){const ship=this.ship(state,shipId);return{passengers:Math.max(0,Math.floor(Number(ship?.passengers)||0)),crew:Math.max(0,Math.floor(Number(ship?.crew)||0)),cargo:clone(ship?.cargo||{})};}
-  consumeManifestForNewColony(state,newColonyId,shipId=null){const ship=this.ship(state,shipId),manifest=this.expeditionManifest(state,ship?.id),system=this.system(this.ensure(state),ship?.systemId);ship.cargo=Object.fromEntries(Object.entries(ship.cargo||{}).filter(([,entry])=>entry?.type==="food"));ship.crew=0;ship.passengers=0;ship.status="docked";ship.colonyId=newColonyId;ship.targetColonyId=null;ship.awaitingDestination=false;ship.arrivalPromptedFor=null;if(system){system.surveyed=true;system.status="colonized";}return manifest;}
+  expeditionManifest(state,shipId=null){const ship=this.ship(state,shipId);return{passengers:Math.max(0,Math.floor(Number(ship?.passengers)||0)),crew:Math.max(0,Math.floor(Number(ship?.crew)||0)),cargo:clone(ship?.cargo||{}),foodLots:clone(ship?.foodLots||{}),fuelLots:clone(ship?.fuelLots||{})};}
+  consumeManifestForNewColony(state,newColonyId,shipId=null){const ship=this.ship(state,shipId),manifest=this.expeditionManifest(state,ship?.id),system=this.system(this.ensure(state),ship?.systemId);ship.passengers=0;ship.status="docked";ship.colonyId=newColonyId;ship.targetColonyId=null;ship.awaitingDestination=false;ship.arrivalPromptedFor=null;if(system){system.surveyed=true;system.status="colonized";}return manifest;}
 
   sellCargoAtHome(state,shipId=null){const ship=this.ship(state,shipId);if(!ship||ship.status!=="home")return{ok:false,reason:"The ship is not at the corporate homeworld."};let revenue=0,qty=0;for(const entry of Object.values(ship.cargo||{})){for(const[bandKey,band]of Object.entries(entry.qualityBands||{})){const amount=Math.max(0,Number(band.amount)||0);if(!amount)continue;const unit=this.resources?.sellPrice?.(entry.type,entry.resourceId,bandKey)||0;revenue+=amount*unit;qty+=amount;}}ship.cargo={};state.company.cash=Number(state.company.cash||0)+revenue;state.company.earn=Number(state.company.earn||0)+revenue;return{ok:qty>0,qty,revenue,reason:qty>0?null:"No cargo to sell."};}
   homeCatalog(){return this.resources?.catalog?.()||[];}

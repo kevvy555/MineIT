@@ -689,3 +689,13 @@ Discovery and final review are complete. The user approved the complete specific
 - Updated Headquarters, Power, facility and ship-preparation presentation without duplicating domain calculations in UI modules.
 - Updated package and visible application versions together to `5.13.14`.
 - Passed the focused A08a regression commands and the complete `npm test` suite, including the 9,000-day simulation soak.
+
+## N05 establishment alignment
+
+[N05](../Stage%201/N05-Ship-To-Colony-Establishment-Transition.md) preserves A08a's Headquarters departure gate while correcting the founding manifest and handover phase:
+
+- founding cargo, Food, Fuel and crew remain aboard until explicit transfer or launch;
+- passengers become ship-accommodated colony residents, while crew remain vessel crew;
+- the 50 founding-ship Industry contribution is self-powered and therefore creates no colony Power demand;
+- before first handover, outbound founding unload is allowed without Spaceport Power so external Power and Housing can be bootstrapped;
+- loading, reverse transfers and ordinary visiting-ship services retain the normal powered-Spaceport requirement.

@@ -10,22 +10,25 @@ import { TradeService } from "../js/domain/trade-service.js";
 import {
   ExpansionService,EXPANSION_VERSION,HOME_SYSTEM_ID,PROBE_UNLOCK_INDUSTRY_LEVEL,
   PLAYER_SHIP_CAPACITY,PLAYER_SHIP_CARGO_CAPACITY,PLAYER_SHIP_FOOD_CAPACITY,PLAYER_SHIP_FUEL_CAPACITY,
-  PLAYER_SHIP_MIN_CREW,CORPORATE_SERVICE_RADIUS_LY,MIN_NEARBY_FRONTIER_SYSTEMS
+  PLAYER_SHIP_MIN_CREW,CORPORATE_SERVICE_RADIUS_LY,MIN_NEARBY_FRONTIER_SYSTEMS,INITIAL_SHIP_FUEL
 } from "../js/domain/expansion-service.js";
 
 const contracts=new ContractService(),resources=new ResourceService(),inventory=new InventoryService(resources),trade=new TradeService(resources,inventory);
-const fresh=()=>{const state=createGameState(contracts.first()),portfolio=new PortfolioService(),expansion=new ExpansionService(inventory,resources,contracts);portfolio.ensure(state);expansion.ensure(state);state.colony.commandHandoverComplete=true;return{state,portfolio,expansion};};
+const fresh=(preserveManifest=false)=>{const state=createGameState(contracts.first()),portfolio=new PortfolioService(),expansion=new ExpansionService(inventory,resources,contracts);portfolio.ensure(state);expansion.ensure(state);state.colony.commandHandoverComplete=true;if(!preserveManifest){const ship=expansion.ship(state);ship.cargo={};ship.foodLots={};ship.fuelLots={};ship.crew=0;}return{state,portfolio,expansion};};
 const setAbsolute=(s,day)=>{s.year=Math.floor((day-1)/CONFIG.DAYS_PER_YEAR)+1;s.day=(day-1)%CONFIG.DAYS_PER_YEAR+1;};
 const stock=(state)=>{inventory.store(state,"food","fungal","Fungal Shelf",20000,500);inventory.store(state,"fuel","biomass","Biomass",20000,500);inventory.store(state,"build","stone","Stone",20000,500);inventory.store(state,"ore","surface-iron","Surface Iron Nodules",20000,500);};
 const stockedKey=(type,resourceId)=>inventory.key(type,resourceId);
 
-const {state,portfolio,expansion}=fresh();
-assert.equal(state.version,16);
+const {state,portfolio,expansion}=fresh(true);
+assert.equal(state.version,17);
 assert.equal(state.company.expansion.version,EXPANSION_VERSION);
 assert.equal(EXPANSION_VERSION,3);
 assert.equal(state.company.expansion.ships.length,1);
 assert.equal(expansion.ship(state).status,"docked");
-assert.equal(expansion.capacityRemaining(state),PLAYER_SHIP_CAPACITY);
+assert.equal(expansion.capacityRemaining(state),PLAYER_SHIP_CAPACITY-CONFIG.START_FOOD-INITIAL_SHIP_FUEL-CONFIG.START_BUILD-CONFIG.START_ORE);
+assert.equal(expansion.ship(state).crew,PLAYER_SHIP_MIN_CREW);
+assert.equal(expansion.transitFoodAmount(state),CONFIG.START_FOOD);
+assert.equal(expansion.fuelAmount(state),INITIAL_SHIP_FUEL);
 assert.equal(PLAYER_SHIP_CAPACITY,12000);
 assert.equal(PLAYER_SHIP_CARGO_CAPACITY,8000);
 assert.equal(PLAYER_SHIP_FOOD_CAPACITY,2000);
@@ -98,21 +101,21 @@ assert.equal(te.ship(ts).status,"arrived");
 assert.equal(te.ship(ts).systemId,target.id);
 assert.equal(te.ship(ts).awaitingDestination,true);
 
-// Ship Food remains aboard after founding; non-Food cargo and Fuel become initial colony stock.
+// Every loaded resource and the required crew remain aboard after founding.
 ts.company.tech={housing:5,power:5,food:5,industry:5,mining:10,scanning:10};
-const planet=target.planets[0],contract=te.makePlanetContract(ts,target.id,planet.id),beforeFood=te.transitFoodAmount(ts),beforeFuel=te.fuelAmount(ts);
+const planet=target.planets[0],contract=te.makePlanetContract(ts,target.id,planet.id),beforeFood=te.transitFoodAmount(ts),beforeFuel=te.fuelAmount(ts),beforeCargo=te.cargoAmount(ts);
 assert.ok(beforeFood>0);
 assert.ok(beforeFuel>0);
 const entry=tp.addColony(ts,contract);
 assert.equal(ts.colonyId,entry.id);
-assert.equal(Math.floor(ts.pop),PLAYER_SHIP_MIN_CREW+10);
-assert.ok(inventory.amount(ts,"build")>=800);
+assert.equal(Math.floor(ts.pop),10);
+assert.equal(inventory.amount(ts,"build"),0);
 assert.equal(inventory.amount(ts,"food"),0,"founding must not turn ship Food into colony stock");
-assert.ok(inventory.amount(ts,"fuel")>=beforeFuel-.001,"remaining Fuel must disembark into colony stock");
+assert.equal(inventory.amount(ts,"fuel"),0,"founding must not turn ship Fuel into colony stock");
 assert.equal(te.transitFoodAmount(ts),beforeFood,"all dedicated/general-hold Food must remain aboard the landed ship");
-assert.equal(te.cargoAmount(ts),te.cargoCategory(ts,"food"),"only general-hold Food may remain after founding");
-assert.equal(te.fuelAmount(ts),0);
-assert.equal(te.ship(ts).crew,0);
+assert.equal(te.cargoAmount(ts),beforeCargo,"all general cargo must remain aboard after founding");
+assert.equal(te.fuelAmount(ts),beforeFuel);
+assert.equal(te.ship(ts).crew,PLAYER_SHIP_MIN_CREW);
 assert.equal(te.ship(ts).passengers,0);
 assert.equal(te.ship(ts).status,"docked");
 assert.equal(te.ship(ts).colonyId,entry.id);
@@ -181,6 +184,7 @@ assert.match(operational,/canAdjustHarvestIntensity/);
 assert.match(operational,/critical-resource-warning\.html/);
 assert.match(failure,/CORPORATION FAILED — CONTRACT DEFAULT/);
 assert.match(index,/id="starMapBtn"/);
-assert.match(portfolioSource,/entry\?\.type!=="food"/,"expedition founding must keep every ship Food lot out of colony inventory");
+assert.match(portfolioSource,/local\.inventory/,"expedition founding must explicitly create empty colony stock");
+assert.match(portfolioSource,/manifest\.passengers/,"expedition passengers must become the new colony population");
 assert.equal(existsSync(new URL("../js/ui/ship-gameplay-extension.js",import.meta.url)),false,"temporary parallel ship gameplay controller must be removed");
 console.log("MineIT ShipExpansion gameplay regression test passed");

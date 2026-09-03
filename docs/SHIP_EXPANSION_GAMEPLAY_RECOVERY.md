@@ -54,7 +54,7 @@ Stage 8 now has physical technology delivery, Spaceport berth handling, scanning
   - 2,000 dedicated Food store.
   - 2,000 dedicated Fuel tank.
 - Food may also occupy the general hold and supplements transit Food.
-- Minimum 10 colonists before launch/interstellar continuation.
+- Minimum 10 ship crew before launch/interstellar continuation; transported colonists remain separate passengers.
 - Mid-transit reroute uses the live interpolated position; consumed supplies remain consumed and the new route must be supportable by remaining Food/Fuel.
 - One colony-wide stock reserve amount applies to every resource.
 - Zero Food immediately removes workforce; Food mortality begins only after 30 complete zero-Food days.
@@ -69,8 +69,19 @@ Stage 8 now has physical technology delivery, Spaceport berth handling, scanning
 - Ship preparation supports loading and decrement/unloading controls for cargo, Food, Fuel and colonists.
 - Persistent Star Map footer action exists.
 - In-transit ship is selected and rerouted through the Star Map.
-- New-colony founding transfers all remaining cargo, dedicated Food, dedicated Fuel and passengers into the new colony.
+- New-colony founding keeps cargo, Food, Fuel and crew aboard the docked founding ship. Passengers become colony residents assigned to ship accommodation until explicitly moved ashore.
 - Temporary parallel `ship-gameplay-extension.js` was removed; canonical controllers own the behavior.
+
+## N05 ship-to-colony establishment alignment
+
+The authoritative current transition specification is [`docs/Progression Stages/Stage 1/N05-Ship-To-Colony-Establishment-Transition.md`](./Progression%20Stages/Stage%201/N05-Ship-To-Colony-Establishment-Transition.md).
+
+- Colony 01 and expedition colonies begin ship-supported, with separate ship and colony inventories.
+- The initial charter manifest is 1,300 Food, 675 Fuel, 520 Build and 260 Ore aboard the founding ship, plus its required 10 crew.
+- Founding-ship outbound unload is permitted before Spaceport Power while command handover is pending; loading and ordinary visiting-ship transfers retain the normal Spaceport gate.
+- Ship residents consume ship Food and remain outside planetary Power and workforce calculations.
+- The docked founding ship's 50 Industry is self-powered and creates no colony Power demand.
+- The production HUD uses the approved stacked S/C rows from the N05 dual-HUD mock.
 
 ---
 

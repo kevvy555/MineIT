@@ -41,9 +41,9 @@ The canvas element remains CSS-contained with `inset: 0; width: 100%; height: 10
 - tile filtering rules
 - redraw scheduling
 
-### v5.6 presentation composition
+### Current presentation composition
 
-`world-view-v56.js` is the application-facing map composition. It adapts the canvas renderer to the v5.6 presentation layer and delegates controls to `MapControls`.
+`world-view-runtime.js` is the application-facing map composition. It adapts the canvas renderer and delegates controls to `MapControls`.
 
 It must not inject CSS or mutate prototypes.
 
@@ -74,7 +74,7 @@ The overlay root itself does not accept pointer events. Interactive overlay chil
 
 ## Footer input ownership
 
-`ui-controller-v56.js` is the application-level owner of footer navigation and speed input.
+`ui-controller.js` is the application-level owner of footer navigation and speed input. Feature controllers extend the semantic controller chain and call this owner rather than binding competing speed handlers.
 
 Feature UIs may render button state (for example disabled/active trade state), but they must not become the final owner of shared footer click behavior.
 
@@ -82,11 +82,22 @@ The v5.6 trade adapter removes legacy direct speed-button handlers after legacy 
 
 New feature modules must not assign new `onclick` handlers to `[data-speed]`.
 
-## Version composition
+## Runtime composition
 
-The v5.6 presentation layer is selected explicitly in `index.html` using an import map. The stable v5.5 domain/simulation graph remains unchanged.
+`app.js` imports `colony-establishment-ui.js` as the single final UI controller. That controller extends the canonical ship-preparation/navigation chain; it does not duplicate existing ship, map or footer ownership.
 
-This is intentional: presentation architecture can evolve without forcing a broad domain rewrite or cache-version churn across unrelated game services.
+Production JavaScript uses direct semantic module imports. Import maps, version-suffixed production modules and version-query module imports are prohibited.
+
+## Dual ship/colony HUD
+
+While a player ship is docked, each operational and resource card owns two bounded presentation rows:
+
+1. `S` — the selected local ship, preferring the pending founding ship;
+2. `C` — the active colony.
+
+The row, rather than the card shell, owns its state tint so opposing ship/colony conditions stay visible. Resource rows retain `stock +production −use S±surplus` and a days chip. Ship Food uses the domain-computed occupied-ship runway; colony rows use simulation metrics. The ship row is removed from layout when no player ship is docked.
+
+The authoritative visual reference is [`N05-Dual-HUD-Flow-Mockup.html`](./Progression%20Stages/Stage%201/N05-Dual-HUD-Flow-Mockup.html).
 
 ## Required regression coverage
 

@@ -12,7 +12,7 @@ import { TechnologyService } from "../js/domain/technology-service.js";
 import { TransportService } from "../js/domain/transport-service.js";
 import { ShipMarketService } from "../js/domain/ship-market-service.js";
 import { UniverseShipCatalogue } from "../js/data/universe-ship-catalogue.js";
-import { createGameState,normalizeState,A08B_STATE_VERSION } from "../js/domain/game-state-runtime.js";
+import { createGameState,normalizeState,N05_STATE_VERSION } from "../js/domain/game-state-runtime.js";
 
 const contracts=new ContractService();
 const resources=new ResourceService();
@@ -99,7 +99,7 @@ function establishedColony(){
 {
   const {state,inventory,colony}=establishedColony(),portfolio=new PortfolioService();clearFuel(state,inventory);colony.headquartersContinuity(state);state.day+=7;const outage=colony.headquartersContinuity(state),outageLoaded=normalizeState(JSON.parse(JSON.stringify(state)));assert.equal(outageLoaded.colony.headquartersOutage.phase,"outage");approx(outageLoaded.colony.headquartersOutage.penalty,outage.penalty);
   inventory.store(state,"fuel","biomass","Biomass",100000,500);const before=colony.headquartersContinuity(state);assert.equal(before.phase,"recovery");portfolio.ensure(state);portfolio.captureActive(state,true);
-  const loaded=normalizeState(JSON.parse(JSON.stringify(state)));assert.equal(loaded.version,A08B_STATE_VERSION);assert.equal(loaded.colony.headquartersOutage.phase,"recovery");approx(loaded.colony.headquartersOutage.recoveryInitialPenalty,before.recoveryInitialPenalty);assert.equal(loaded.colony.headquartersOutage.lastOutageDays,7);assert.equal(loaded.portfolio.colonies[0].data.colony.headquartersOutage.phase,"recovery");
+  const loaded=normalizeState(JSON.parse(JSON.stringify(state)));assert.equal(loaded.version,N05_STATE_VERSION);assert.equal(loaded.colony.headquartersOutage.phase,"recovery");approx(loaded.colony.headquartersOutage.recoveryInitialPenalty,before.recoveryInitialPenalty);assert.equal(loaded.colony.headquartersOutage.lastOutageDays,7);assert.equal(loaded.portfolio.colonies[0].data.colony.headquartersOutage.phase,"recovery");
   const legacy=JSON.parse(JSON.stringify(state));legacy.version=15;delete legacy.colony.headquartersOutage;delete legacy.portfolio.colonies[0].data.colony.headquartersOutage;const migrated=normalizeState(legacy);assert.equal(migrated.colony.headquartersOutage.phase,"online");assert.equal(migrated.portfolio.colonies[0].data.colony.headquartersOutage.phase,"online");
 }
 

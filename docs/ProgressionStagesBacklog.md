@@ -25,6 +25,10 @@ For traceability, references beginning with **A** correspond to the first number
 **Roadmap status:** In Progress  
 **Purpose:** Establish the immediate survival loop. The player must keep the starting population alive while shortages in Food, Fuel, Power, housing and workforce create urgent pressure.
 
+### Complete
+
+- **N05 — Ship-to-colony establishment transition.** Begin ship-founded colonies with residents, crew and starter resources aboard the founding ship; support an explicit hybrid handover to planetary infrastructure; and preserve the approved compact dual ship/colony HUD encoding. Approved mock: [dual HUD flow](./Progression%20Stages/Stage%201/N05-Dual-HUD-Flow-Mockup.html). **Status: Complete.** [Detailed specification](./Progression%20Stages/Stage%201/N05-Ship-To-Colony-Establishment-Transition.md)
+
 ### Ready for Review
 
 - None currently identified.

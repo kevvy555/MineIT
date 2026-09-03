@@ -6,6 +6,7 @@ import { normalizeReputation } from "./reputation-service.js";
 const expansion=new ExpansionService();
 export const A08A_STATE_VERSION=15;
 export const A08B_STATE_VERSION=16;
+export const N05_STATE_VERSION=17;
 function normalizeHeadquartersState(state,previousVersion){
   const apply=local=>{
     if(!local)return;
@@ -85,11 +86,14 @@ function normalizeBuyerRoot(state){
 export function createGameState(contract){
   const state=Base.createGameState(contract);
   expansion.ensure(state);
+  expansion.provisionInitialColony(state);
+  const active=state.portfolio?.colonies?.find(entry=>entry.id===state.colonyId);
+  if(active)active.data=Base.cloneColonyState(state);
   normalizeTechnologyAcrossPortfolio(state);
   normalizeSurveyHistoryAcrossPortfolio(state);
   normalizeBuyerRoot(state);
-  normalizeHeadquartersState(state,A08B_STATE_VERSION);
-  state.version=A08B_STATE_VERSION;
+  normalizeHeadquartersState(state,N05_STATE_VERSION);
+  state.version=N05_STATE_VERSION;
   return state;
 }
 
@@ -97,10 +101,14 @@ export function normalizeState(state){
   const previousVersion=Number(state?.version)||0;
   const normalized=Base.normalizeState(state);
   expansion.ensure(normalized);
+  expansion.normalizeN05Local(normalized,normalized,previousVersion);
+  const active=normalized.portfolio?.colonies?.find(entry=>entry.id===normalized.colonyId);
+  if(active)active.data=Base.cloneColonyState(normalized);
+  for(const entry of normalized.portfolio?.colonies||[])if(entry?.id!==normalized.colonyId)expansion.normalizeN05Local(normalized,entry?.data,previousVersion);
   normalizeTechnologyAcrossPortfolio(normalized);
   normalizeSurveyHistoryAcrossPortfolio(normalized);
   normalizeBuyerRoot(normalized);
   normalizeHeadquartersState(normalized,previousVersion);
-  normalized.version=A08B_STATE_VERSION;
+  normalized.version=N05_STATE_VERSION;
   return normalized;
 }

@@ -24,7 +24,7 @@ import { SaveRepository } from "./persistence/save-repository.js";
 import { DevelopmentTaskRepository } from "./persistence/development-task-repository.js";
 import { ResourceIcons } from "./ui/resource-icons.js";
 import { WorldView } from "./ui/world-view-runtime.js";
-import { UIController } from "./ui/ship-preparation-ui.js";
+import { UIController } from "./ui/colony-establishment-ui.js";
 import { TradeUI } from "./ui/corporate-trade-ui.js";
 import { BuyerUI } from "./ui/buyer-ui.js";
 
@@ -76,7 +76,7 @@ class MineITApp {
     this.development.sync(this.state);
     this.portfolio.captureActive(this.state,true);
     this.gameLog.ensure(this.state);
-    if(!this.state.gameLog.events.length)this.gameLog.event(this.state,saved?"save-migrated":"corporation-founded",saved?"Save migrated to the synchronized v5.5 colony-land corporation simulation.":"Mining corporation founded and Contract 01 established.",{build:"5.8.1",saveVersion:this.state.version});
+    if(!this.state.gameLog.events.length)this.gameLog.event(this.state,saved?"save-migrated":"corporation-founded",saved?"Save migrated to the synchronized colony-land corporation simulation.":"Mining corporation founded and Contract 01 established.",{build:"5.13.22",saveVersion:this.state.version});
     this.repo.setBeforeSave(()=>this.portfolio.captureActive(this.state,true));
     this.prepareActive();
 
@@ -116,6 +116,7 @@ class MineITApp {
       if(this.state.company.gameOver)this.ui.gameOver?.();
       else if(this.state.company.pendingEvents?.length)this.beginCorporateEventQueueIfNeeded(this.state.speed);
       else if(this.state.status==="site-selection")this.ui.landSelection();
+      else if(this.beginEstablishmentIfRequired())return;
       else this.checkInitialDeadline();
     });
   }
@@ -123,6 +124,11 @@ class MineITApp {
   absoluteDay(){return(this.state.year-1)*CONFIG.DAYS_PER_YEAR+this.state.day;}
   advanceGlobalDate(){this.state.day++;if(this.state.day>CONFIG.DAYS_PER_YEAR){this.state.day=1;this.state.year++;}}
   prepareActive(){this.land.ensure(this.state);this.development.sync(this.state);this.technology.recompute(this.state);this.engine.recalculate(this.state);if(this.state.status!=="site-selection"&&this.state.status!=="contract-decision")this.survey.fill(this.state);}
+  beginEstablishmentIfRequired(){
+    const assessment=this.engine.expansion.establishmentAssessment(this.state);
+    if(!assessment.required||assessment.acknowledged)return false;
+    this.state.speed=0;this.ui.syncSpeed();this.repo.save(this.state);this.ui.colonyEstablishment?.();return true;
+  }
   renderAll(){this.ui?.render();this.tradeUI?.render();this.ui?.syncSpeed();this.view?.syncView?.();this.view?.safeDraw();}
   inspect(x,y){if(this.state.status==="site-selection"){this.ui.landSelection();return;}const tile=this.world.get(this.state,x,y);this.ui.landTile(tile);}
 
@@ -160,6 +166,7 @@ class MineITApp {
     this.gameLog.event(this.state,abandon?"landing-site-relocated":"landing-site-selected",abandon?`${this.state.contract.colonyName} abandoned landing site ${Number(from)+1} and relocated to site ${index+1}.`:`${this.state.contract.colonyName} established landing site ${index+1}.`,{fromIndex:from,toIndex:index,abandon,moves:this.state.colony.land.moves||0});
     this.ui.modal.classList.add("hidden");this.ui.tilePanel.classList.add("hidden");this.portfolio.captureActive(this.state,true);this.renderAll();this.repo.save(this.state);
     this.ui.toast(abandon?`Relocated to landing site ${index+1}. Most local stock and all development were left behind.`:`Landing site ${index+1} established. Survey the land to find resources and building space.`);
+    if(!abandon)queueMicrotask(()=>this.beginEstablishmentIfRequired());
     return true;
   }
 
@@ -263,7 +270,7 @@ class MineITApp {
     if(!confirm("Erase all MineIT saves on this browser?"))return;
     this.repo.clearAll();this.store.replaceState(createGameState(this.contracts.first()),{label:"hard-reset",notify:false});this.buyers.ensure(this.state);this.events.ensure(this.state.company);this.afterEventQueueAction=null;
     this.portfolio.ensure(this.state);this.land.ensure(this.state);this.development.sync(this.state);this.portfolio.captureActive(this.state,true);this.gameLog.ensure(this.state);
-    this.gameLog.event(this.state,"corporation-founded","Mining corporation reset and Contract 01 established.",{build:"5.8.1"});
+    this.gameLog.event(this.state,"corporation-founded","Mining corporation reset and Contract 01 established.",{build:"5.13.22"});
     this.prepareActive();this.ui.modal.classList.add("hidden");this.ui.tilePanel.classList.add("hidden");this.renderAll();this.repo.save(this.state);this.ui.landSelection();
   }
 

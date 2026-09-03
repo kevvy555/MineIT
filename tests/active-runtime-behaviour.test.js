@@ -18,6 +18,7 @@ const contracts=new ContractService(),resources=new ResourceService(),inventory=
 const state=createGameState(contracts.first());
 state.company.tech={housing:5,power:5,food:5,industry:5,mining:5};
 state.colony.shipAccommodation={};
+inventory.store(state,"food","fungal","Fungal Shelf",1000,500);
 land.ensure(state);technology.recompute(state);engine.recalculate(state);
 
 // Resurvey regression: a developed extraction site must not become "resource covered" and lose all output.

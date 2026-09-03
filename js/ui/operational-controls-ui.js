@@ -4,7 +4,7 @@ import { formatNumber } from "../core/utils.js";
 import { renderViewTemplate } from "../core/view-template.js";
 
 const NEXT_MODE={normal:"pushed",pushed:"hard",hard:"normal"};
-const displayDays=days=>days===null||days===undefined?"SAFE":`${Math.max(0,Math.ceil(Number(days)||0))} DAYS`;
+const displayDays=days=>days===null||days===undefined?"SAFE":`${Math.max(0,Math.floor(Number(days)||0))} DAYS`;
 const FLOW_EPSILON=.0001;
 const RESOURCE_FLOW_METRICS={
   food:{production:"food",consumption:"foodDemand"},
@@ -16,7 +16,7 @@ const RESOURCE_FLOW_METRICS={
 /** Direct renewable harvest, extraction operating-mode, critical warnings and contextual map controls. */
 export class UIController extends BaseUIController{
   constructor(options){
-    super(options);this.attentionElement=document.querySelector("#attentionStrip");this.criticalResourceWarnings={food:false,fuel:false};this.criticalWarningRevision=0;
+    super(options);this.attentionElement=document.querySelector("#attentionStrip");this.criticalResourceWarnings={food:false,fuel:false,shipFood:false};this.criticalWarningRevision=0;
     this.attentionKeydownHandler=event=>{if(event.key!=="Enter"&&event.key!==" ")return;event.preventDefault();this.runAttentionAction();};
     this.attentionElement?.addEventListener("keydown",this.attentionKeydownHandler);
   }
@@ -40,18 +40,27 @@ export class UIController extends BaseUIController{
     const metrics=this.state.metrics||{},keys=RESOURCE_FLOW_METRICS[type]||{},stock=Math.max(0,Number(this.inventory.amount(this.state,type))||0),production=Math.max(0,Number(metrics[keys.production])||0),consumption=Math.max(0,Number(metrics[keys.consumption])||0),surplus=production-consumption,declining=surplus<-FLOW_EPSILON,days=declining?stock/Math.abs(surplus):null;return{stock,production,consumption,surplus,declining,days};
   }
   resourceFlowText(flow){const sign=flow.surplus>FLOW_EPSILON?"+":flow.surplus<-FLOW_EPSILON?"-":"";return`${formatNumber(flow.stock)} +${formatNumber(flow.production)} -${formatNumber(flow.consumption)} S${sign}${formatNumber(Math.abs(flow.surplus))}`;}
-  resourceDaysText(days){return days===null||days===undefined?"∞d":days<=0?"0d":`${Math.max(1,Math.ceil(Number(days)||0))}d`;}
+  resourceDaysText(days){return days===null||days===undefined?"∞d":`${Math.max(0,Math.floor(Number(days)||0))}d`;}
+  shipResourceFlow(type,ship){
+    const foodStatus=type==="food"?this.expansion.shipResidentFoodStatus(this.state).rows.find(row=>row.shipId===ship.id):null,stock=type==="food"?this.expansion.transitFoodAmount(this.state,ship.id):type==="fuel"?this.expansion.fuelAmount(this.state,ship.id):this.expansion.cargoCategory(this.state,type,ship.id),production=0,consumption=foodStatus?.consumption||0,surplus=production-consumption,declining=surplus<-FLOW_EPSILON,days=declining?stock/Math.abs(surplus):null;
+    return{stock,production,consumption,surplus,declining,days};
+  }
+  renderFlowRow(type,scope,flow,tone){
+    const value=document.querySelector(`#${type}${scope}Stock`),days=document.querySelector(`#${type}${scope}DaysHud`),row=document.querySelector(`#${type}${scope}Row`);
+    if(value)value.textContent=this.resourceFlowText(flow);if(days)days.textContent=this.resourceDaysText(flow.days);if(row){row.hidden=false;row.classList.toggle("good",tone==="good");row.classList.toggle("bad",tone==="bad");}
+  }
   renderResourceFlowHud(){
+    const ship=this.expansion.hudShip(this.state);
     for(const type of Object.keys(RESOURCE_FLOW_METRICS)){
-      const flow=this.resourceFlow(type),value=document.querySelector(`#${type}Stock`),days=document.querySelector(`#${type}DaysHud`),card=document.querySelector(`#${type}ResourceHud`);if(value)value.textContent=this.resourceFlowText(flow);if(days){days.textContent=this.resourceDaysText(flow.days);days.classList.remove("warn");}if(card){card.classList.toggle("good",!flow.declining);card.classList.toggle("bad",flow.declining);card.title=`Stock ${formatNumber(flow.stock)} • Production +${formatNumber(flow.production)}/d • Consumed -${formatNumber(flow.consumption)}/d • Surplus ${flow.surplus>=0?"+":"-"}${formatNumber(Math.abs(flow.surplus))}/d`;}
+      const flow=this.resourceFlow(type),colonyRow=document.querySelector(`#${type}ColonyRow`),value=document.querySelector(`#${type}Stock`),days=document.querySelector(`#${type}DaysHud`),card=document.querySelector(`#${type}ResourceHud`);if(value)value.textContent=this.resourceFlowText(flow);if(days)days.textContent=this.resourceDaysText(flow.days);if(colonyRow){colonyRow.classList.toggle("good",!flow.declining);colonyRow.classList.toggle("bad",flow.declining);}const shipRow=document.querySelector(`#${type}ShipRow`);if(ship){const shipFlow=this.shipResourceFlow(type,ship),tone=shipFlow.days===null||shipFlow.days>=10?"good":"bad";this.renderFlowRow(type,"Ship",shipFlow,tone);if(card)card.title=`SHIP: ${formatNumber(shipFlow.stock)} stock • ${this.resourceDaysText(shipFlow.days)}. COLONY: ${formatNumber(flow.stock)} stock • Production +${formatNumber(flow.production)}/d • Consumed -${formatNumber(flow.consumption)}/d • Surplus ${flow.surplus>=0?"+":"-"}${formatNumber(Math.abs(flow.surplus))}/d`;}else{if(shipRow)shipRow.hidden=true;if(card)card.removeAttribute("title");}
     }
   }
 
   async checkCriticalResourceWarnings(){
     if(this.state.company?.gameOver||this.state.status==="dead"||!this.modal?.classList.contains("hidden"))return;
-    const critical=[];for(const [type,days] of [["food",this.state.metrics?.foodDays],["fuel",this.state.metrics?.fuelDays]]){const isCritical=days!==null&&days!==undefined&&Number(days)<=10;if(!isCritical){this.criticalResourceWarnings[type]=false;continue;}if(!this.criticalResourceWarnings[type]){this.criticalResourceWarnings[type]=true;critical.push(type);}}
-    if(!critical.length)return;const revision=++this.criticalWarningRevision,colonyId=this.state.colonyId,foodDays=this.state.metrics?.foodDays,fuelDays=this.state.metrics?.fuelDays,summary=critical.map(type=>`${type.toUpperCase()} has 10 days or less remaining`).join(" • ");
-    let body;try{body=await renderViewTemplate("./views/critical-resource-warning.html",{SUMMARY:summary,FOOD_CLASS:foodDays!==null&&foodDays!==undefined&&foodDays<=10?"bad":"good",FOOD_DAYS:displayDays(foodDays),FUEL_CLASS:fuelDays!==null&&fuelDays!==undefined&&fuelDays<=10?"bad":"good",FUEL_DAYS:displayDays(fuelDays)});}catch(error){if(revision===this.criticalWarningRevision)this.diagnostics?.error?.("critical resource warning view failed",error);return;}
+    const shipFood=this.expansion.shipResidentFoodStatus(this.state),shipDays=shipFood.shortestDays,critical=[];let cleared=false;for(const [type,days] of [["food",this.state.metrics?.foodDays],["fuel",this.state.metrics?.fuelDays],["shipFood",shipDays]]){const isCritical=days!==null&&days!==undefined&&(type==="shipFood"?Number(days)<10:Number(days)<=10);if(!isCritical){cleared=cleared||this.criticalResourceWarnings[type];this.criticalResourceWarnings[type]=false;continue;}if(!this.criticalResourceWarnings[type]){this.criticalResourceWarnings[type]=true;critical.push(type);}}
+    if(cleared)this.criticalWarningRevision++;if(!critical.length)return;const revision=++this.criticalWarningRevision,colonyId=this.state.colonyId,foodDays=this.state.metrics?.foodDays,fuelDays=this.state.metrics?.fuelDays,summary=critical.map(type=>type==="shipFood"?"SHIP FOOD has less than 10 days remaining":`${type.toUpperCase()} has 10 days or less remaining`).join(" • ");
+    let body;try{body=await renderViewTemplate("./views/critical-resource-warning.html",{SUMMARY:summary,SHIP_HIDDEN:shipFood.shortest?"":"hidden",SHIP_CLASS:shipDays!==null&&shipDays<10?"bad":"good",SHIP_DAYS:displayDays(shipDays),SHIP_NAME:shipFood.shortest?.shipName||"No occupied ship",FOOD_CLASS:foodDays!==null&&foodDays!==undefined&&foodDays<=10?"bad":"good",FOOD_DAYS:displayDays(foodDays),FUEL_CLASS:fuelDays!==null&&fuelDays!==undefined&&fuelDays<=10?"bad":"good",FUEL_DAYS:displayDays(fuelDays)});}catch(error){if(revision===this.criticalWarningRevision)this.diagnostics?.error?.("critical resource warning view failed",error);return;}
     if(revision!==this.criticalWarningRevision||this.state.colonyId!==colonyId||!this.modal?.classList.contains("hidden"))return;this.open("Critical Resource Warning",body);
   }
 

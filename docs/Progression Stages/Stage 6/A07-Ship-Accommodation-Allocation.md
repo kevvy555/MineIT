@@ -60,3 +60,4 @@ A resident assignment must remain valid across:
 - The ship interface supports capacity-checked manual moves ashore and aboard and displays each accommodation pool separately.
 - Launching with residents still aboard warns the player but remains possible; confirmed launch leaves those residents homeless at the colony.
 - Behavioural regression coverage is provided by `tests/priority-colony-bug-fixes.test.js` and the strengthened expansion/save tests.
+- [N05](../Stage%201/N05-Ship-To-Colony-Establishment-Transition.md) makes this allocation the normal founding state: passengers become colony residents assigned aboard the founding ship, while ship crew remain separate vessel crew and are never added to colony population.

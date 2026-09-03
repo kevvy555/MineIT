@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>MineIT — Dual HUD Flow Mockup (N05)</title>
+<style>
+:root{
+  --line:#273741;--text:#eef5f7;--muted:#8fa1ab;--accent:#76c6ff;
+  --warn:#ffd166;--bad:#ff7777;
+  --food:#6ecf8e;--build:#5ec8d8;--fuel:#e0a35a;--ore:#b48cff;
+  --row-good:#102919;--row-bad:#3a1416;--op-bg:#0a1116;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:#020405;color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button{font:inherit;color:inherit;border:1px solid var(--line);background:#111a20;border-radius:7px;touch-action:manipulation}
+#frame{
+  min-height:100vh;min-height:100dvh;max-width:430px;margin:auto;
+  padding:calc(env(safe-area-inset-top) + 8px) 8px calc(env(safe-area-inset-bottom) + 12px);
+  display:grid;gap:8px;background:#020405;
+}
+.review{padding:8px;border:1px solid #355062;border-radius:10px;background:#0a1014;display:grid;gap:6px}
+.review small{display:block;font-size:9px;color:var(--muted);letter-spacing:.08em;font-weight:800;text-transform:uppercase}
+.review h1{margin:0;font-size:15px;line-height:1.2}
+.review p{margin:0;font-size:11px;line-height:1.35;color:#b7c7d2}
+.scenarios{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.scenarios button{min-height:36px;font-size:10px;font-weight:800;padding:6px 8px;text-align:left}
+.scenarios button.active{border-color:#1da8d6;background:#0d2631;color:#62ddff}
+.phone{
+  border:1px solid #436376;border-radius:14px;overflow:hidden;
+  background:#081015;box-shadow:0 18px 50px rgba(0,0,0,.45);
+}
+.shell{padding:5px 6px 0;background:#081015}
+.topbar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px;align-items:center}
+.brand{font-size:12px;font-weight:900}.brand span{margin-left:4px;font-size:9px;color:var(--muted);font-weight:700}
+.contract strong{display:block;font-size:8px}.contract small{display:block;font-size:8px;color:var(--muted)}
+.cash{padding:2px 5px;border-radius:5px;background:#0d171d;text-align:right}
+.cash strong{display:block;font-size:10px}.cash span{display:block;font-size:6px;color:var(--muted)}
+.progress-row{display:grid;grid-template-columns:1fr auto;gap:5px;align-items:center;margin-top:4px}
+.progress{height:3px;background:#162029;border-radius:99px;overflow:hidden}
+.progress i{display:block;height:100%;background:linear-gradient(90deg,#1da8d6,#62ddff)}
+.stock-value{font-size:7px;color:var(--muted)}.stock-value b{color:var(--text);font-weight:800}
+.goals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:4px}
+.goal{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:4px;padding:2px 4px}
+.goal small{font-size:7px;font-weight:800}.goal strong{font-size:8px;text-align:right}
+.goal .mini{height:3px;background:#162029;border-radius:99px;overflow:hidden}.goal .mini i{display:block;height:100%;background:#62ddff}
+.goal.warn small,.goal.warn strong{color:var(--warn)}.goal.bad small,.goal.bad strong{color:var(--bad)}.goal.ok small,.goal.ok strong{color:#8fdca3}
+.attention{
+  margin:4px -6px 0;padding:5px 7px;min-height:32px;display:none;
+  grid-template-columns:auto minmax(0,1fr) auto;gap:6px;align-items:center;
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:#211b0e;
+}
+.attention.show{display:grid}
+.attention.bad{background:#241011;border-color:#6d2d31}
+.attention .icon{font-size:13px;color:var(--warn)}
+.attention.bad .icon,.attention.bad .go{color:var(--bad)}
+.attention strong{display:block;font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.attention small{display:block;font-size:7px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.attention .go{font-size:7px;font-weight:900;color:var(--warn)}
+
+.operational-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin:0 -6px;
+  background:var(--line);border-bottom:1px solid var(--line);
+}
+.op-card{min-width:0;padding:4px 2px;text-align:center;background:var(--op-bg)}
+.op-card > small.label{display:block;font-size:6px;color:var(--muted);letter-spacing:.04em}
+.op-row{display:grid;grid-template-columns:10px minmax(0,1fr);gap:2px;align-items:center;margin-top:2px;text-align:left;padding:0 2px}
+.op-row .tag{font-size:6px;font-weight:950;color:var(--accent)}
+.op-row strong{font-size:8px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#dce6e9}
+.op-row.good strong{color:#bce8c8}.op-row.warn strong{color:var(--warn)}.op-row.bad strong{color:var(--bad)}
+
+.resource-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin:0 -6px 0;
+  background:var(--line);
+}
+.resource-hud{min-width:0;padding:0;background:#0a1116;display:grid}
+.resource-hud > .head{
+  display:flex;align-items:center;justify-content:space-between;gap:3px;
+  padding:3px 4px 2px;font-size:6px;color:#dce6e9;
+}
+.resource-hud > .head .name{font-weight:900;letter-spacing:.03em}
+.resource-hud.food > .head .name{color:var(--food)}
+.resource-hud.build > .head .name{color:var(--build)}
+.resource-hud.fuel > .head .name{color:var(--fuel)}
+.resource-hud.ore > .head .name{color:var(--ore)}
+.flow-row{
+  padding:2px 3px 3px;text-align:center;min-width:0;
+}
+.flow-row.good{background:var(--row-good)}
+.flow-row.bad{background:var(--row-bad)}
+.flow-row.neutral{background:#0d1419}
+.flow-meta{
+  display:flex;align-items:center;justify-content:space-between;gap:2px;
+  font-size:5.5px;line-height:1;margin-bottom:1px;color:#c5d0d6;
+}
+.flow-meta .tag{font-weight:950;color:var(--accent)}
+.flow-meta .days{font-weight:900;color:#eef5f7}
+.flow-row.bad .days{color:#ffb4b4}
+.flow-row strong{
+  display:block;font-size:6.4px;line-height:1.15;color:var(--text);
+  font-variant-numeric:tabular-nums;letter-spacing:-.03em;
+  white-space:nowrap;overflow:hidden;text-overflow:clip;font-weight:800;
+}
+.map-fake{
+  height:140px;position:relative;border-top:1px solid var(--line);
+  background:
+    radial-gradient(circle at 28% 42%,rgba(90,140,80,.22),transparent 42%),
+    radial-gradient(circle at 72% 58%,rgba(120,90,50,.18),transparent 38%),
+    linear-gradient(180deg,#1a2830,#0c1418);
+}
+.map-fake::after{
+  content:"MAP";position:absolute;inset:0;display:grid;place-items:center;
+  font-size:10px;letter-spacing:.14em;font-weight:900;color:rgba(143,161,171,.4);
+}
+.notes{
+  padding:10px;border:1px solid #273741;border-radius:10px;background:#0a1014;
+  font-size:11px;line-height:1.45;color:#b7c7d2;display:grid;gap:6px;
+}
+.notes h2{margin:0;font-size:12px;color:var(--text)}
+.notes ul{margin:0;padding-left:16px}
+.notes code{font-family:ui-monospace,Consolas,monospace;font-size:10px;color:var(--accent)}
+.legend{font-size:10px;color:#9eb0ba}
+</style>
+</head>
+<body>
+<div id="frame">
+  <section class="review">
+    <small>N05 mockup v2 · flow encoding · not production</small>
+    <h1>Dual HUD — full flow rows</h1>
+    <p>Each resource card stacks <strong>S</strong> then <strong>C</strong> in the live format <code>stock +prod −use S±</code> with per-row days. Colony row: green/red by rising/falling. Ship row: green while runway ≥ 10d, red under 10d.</p>
+    <div class="scenarios" id="scenarios">
+      <button type="button" data-scene="start" class="active">Day 1 — all aboard</button>
+      <button type="button" data-scene="hybrid">Day 18 — hybrid</button>
+      <button type="button" data-scene="warn">Ship Food &lt; 10d</button>
+      <button type="button" data-scene="independent">Colony independent</button>
+    </div>
+  </section>
+
+  <div class="phone">
+    <div class="shell">
+      <div class="topbar">
+        <div class="brand">MINEIT<span>v5.14.x</span></div>
+        <div class="contract">
+          <strong>Colony 01</strong>
+          <small id="dateLine">Y1 D1</small>
+        </div>
+        <div class="cash"><strong id="cash">$50.0K</strong><span>CASH</span></div>
+      </div>
+      <div class="progress-row">
+        <div class="progress"><i id="prog"></i></div>
+        <div class="stock-value">STOCK <b id="stockVal">$0</b></div>
+      </div>
+      <div class="goals">
+        <div class="goal" id="gFood"><small>FOOD</small><div class="mini"><i style="width:40%"></i></div><strong>—</strong></div>
+        <div class="goal" id="gInd"><small>IND</small><div class="mini"><i style="width:10%"></i></div><strong>—</strong></div>
+        <div class="goal" id="gPop"><small>POP</small><div class="mini"><i style="width:100%"></i></div><strong>—</strong></div>
+      </div>
+      <div class="attention" id="attention">
+        <div class="icon">!</div>
+        <div>
+          <strong id="attTitle">SHIP FOOD LOW</strong>
+          <small id="attDetail">Founding ship runway critical. Colony Food does not feed ship residents.</small>
+        </div>
+        <div class="go">OPEN</div>
+      </div>
+
+      <div class="operational-grid" id="ops"></div>
+      <div class="resource-grid" id="res"></div>
+    </div>
+    <div class="map-fake" aria-hidden="true"></div>
+  </div>
+
+  <section class="notes">
+    <h2>Encoding rules (this mock)</h2>
+    <ul>
+      <li><strong>Colony row:</strong> green when <code>surplus ≥ 0</code> (increasing / stable), red when declining. Days = <code>∞d</code> when not declining, else runway.</li>
+      <li><strong>Ship row:</strong> green while days left ≥ 10 (or no daily drain → treat as plenty). Red when days &lt; 10. Same <code>stock +prod −use S±</code> string as colony.</li>
+      <li><strong>Card shell</strong> stays neutral; trend color is per-row so ship-falling + colony-surplus can both be visible.</li>
+      <li>Ops cards stay capacity-style with S/C text color (good/warn/bad), not flow backgrounds.</li>
+      <li>Independent scene drops every S row.</li>
+    </ul>
+    <p class="legend">Compare with the earlier stock-only mock: <code>N05-Dual-HUD-Mockup.html</code></p>
+  </section>
+</div>
+
+<script>
+/** Ship tint: green if days == null (∞ / no drain) OR days >= 10; else red. */
+function shipTone(days) {
+  if (days == null || days >= 10) return 'good';
+  return 'bad';
+}
+/** Colony tint: green if not declining, red if declining. */
+function colonyTone(declining) {
+  return declining ? 'bad' : 'good';
+}
+
+function fmtFlow(stock, prod, use) {
+  const surplus = prod - use;
+  const sSign = surplus > 0.0001 ? '+' : surplus < -0.0001 ? '' : '';
+  // Match live HUD: S+12 / S-4 / S0
+  const sPart = surplus === 0 ? 'S0' : `S${sSign}${Math.round(surplus)}`;
+  return `${stock} +${prod} -${use} ${sPart}`;
+}
+
+function daysLabel(days, declining) {
+  if (!declining && (days == null || days === Infinity)) return '∞d';
+  if (days == null) return '∞d';
+  if (days <= 0) return '0d';
+  return `${Math.floor(days)}d`;
+}
+
+const scenes = {
+  start: {
+    date: 'Y1 D1 · Founding',
+    cash: '$50.0K',
+    prog: '12%',
+    goals: [
+      { id: 'gFood', cls: 'warn', text: 'SHIP' },
+      { id: 'gInd', cls: '', text: '0/20' },
+      { id: 'gPop', cls: 'ok', text: '120' }
+    ],
+    attention: null,
+    ops: [
+      { label: 'HOUSING', rows: [
+        { tag: 'S', text: '120 / 290', tone: 'good' },
+        { tag: 'C', text: '0 / 0', tone: 'good' }
+      ]},
+      { label: 'POWER', rows: [
+        { tag: 'S', text: 'SELF', tone: 'good' },
+        { tag: 'C', text: '0 / 0 · 0', tone: 'good' }
+      ]},
+      { label: 'INDUSTRY', rows: [
+        { tag: 'S', text: '+50', tone: 'good' },
+        { tag: 'C', text: '0 / 0', tone: 'warn' }
+      ]},
+      { label: 'WORKFORCE', rows: [
+        { tag: 'S', text: 'CREW 10', tone: 'good' },
+        { tag: 'C', text: '0 FREE', tone: 'warn' }
+      ]}
+    ],
+    // Food: 1300 stock, 0 prod, ~14/d use for 120 residents → surplus -14, ~92d
+    res: [
+      { type: 'food', name: 'FOOD', ship: { stock: '1.3K', prod: 0, use: 14, days: 92 }, colony: { stock: '0', prod: 0, use: 0, days: null } },
+      { type: 'build', name: 'BUILD', ship: { stock: '520', prod: 0, use: 0, days: null }, colony: { stock: '0', prod: 0, use: 0, days: null } },
+      { type: 'fuel', name: 'FUEL', ship: { stock: '675', prod: 0, use: 0, days: null }, colony: { stock: '0', prod: 0, use: 0, days: null } },
+      { type: 'ore', name: 'ORE', ship: { stock: '260', prod: 0, use: 0, days: null }, colony: { stock: '0', prod: 0, use: 0, days: null } }
+    ]
+  },
+  hybrid: {
+    date: 'Y1 D18 · Establishing',
+    cash: '$46.8K',
+    prog: '38%',
+    goals: [
+      { id: 'gFood', cls: 'ok', text: 'OK' },
+      { id: 'gInd', cls: 'warn', text: '50/20' },
+      { id: 'gPop', cls: 'ok', text: '120' }
+    ],
+    attention: null,
+    ops: [
+      { label: 'HOUSING', rows: [
+        { tag: 'S', text: '90 / 290', tone: 'good' },
+        { tag: 'C', text: '30 / 160', tone: 'good' }
+      ]},
+      { label: 'POWER', rows: [
+        { tag: 'S', text: 'SELF', tone: 'good' },
+        { tag: 'C', text: '40 / 60 · 35', tone: 'good' }
+      ]},
+      { label: 'INDUSTRY', rows: [
+        { tag: 'S', text: '+50', tone: 'good' },
+        { tag: 'C', text: '0 / 0', tone: 'warn' }
+      ]},
+      { label: 'WORKFORCE', rows: [
+        { tag: 'S', text: 'CREW 10', tone: 'good' },
+        { tag: 'C', text: '18 FREE', tone: 'good' }
+      ]}
+    ],
+    res: [
+      { type: 'food', name: 'FOOD',
+        ship: { stock: '1.05K', prod: 0, use: 11, days: 95 },
+        colony: { stock: '180', prod: 8, use: 6, days: null } },
+      { type: 'build', name: 'BUILD',
+        ship: { stock: '210', prod: 0, use: 0, days: null },
+        colony: { stock: '310', prod: 4, use: 0, days: null } },
+      { type: 'fuel', name: 'FUEL',
+        ship: { stock: '420', prod: 0, use: 0, days: null },
+        colony: { stock: '255', prod: 6, use: 9, days: 85 } },
+      { type: 'ore', name: 'ORE',
+        ship: { stock: '80', prod: 0, use: 0, days: null },
+        colony: { stock: '180', prod: 12, use: 2, days: null } }
+    ]
+  },
+  warn: {
+    date: 'Y1 D55 · Establishing',
+    cash: '$44.1K',
+    prog: '44%',
+    goals: [
+      { id: 'gFood', cls: 'bad', text: 'SHIP' },
+      { id: 'gInd', cls: 'ok', text: '50/20' },
+      { id: 'gPop', cls: 'warn', text: '118' }
+    ],
+    attention: {
+      bad: true,
+      title: 'SHIP FOOD CRITICAL — 8d',
+      detail: 'Ship runway under 10d (red). Colony Food still surplus — separate inventory.'
+    },
+    ops: [
+      { label: 'HOUSING', rows: [
+        { tag: 'S', text: '88 / 290', tone: 'warn' },
+        { tag: 'C', text: '30 / 160', tone: 'good' }
+      ]},
+      { label: 'POWER', rows: [
+        { tag: 'S', text: 'SELF', tone: 'good' },
+        { tag: 'C', text: '40 / 60 · 35', tone: 'good' }
+      ]},
+      { label: 'INDUSTRY', rows: [
+        { tag: 'S', text: '+50', tone: 'good' },
+        { tag: 'C', text: '0 / 0', tone: 'warn' }
+      ]},
+      { label: 'WORKFORCE', rows: [
+        { tag: 'S', text: 'CREW 10', tone: 'good' },
+        { tag: 'C', text: '18 FREE', tone: 'good' }
+      ]}
+    ],
+    res: [
+      { type: 'food', name: 'FOOD',
+        ship: { stock: '112', prod: 0, use: 14, days: 8 },
+        colony: { stock: '640', prod: 22, use: 6, days: null } },
+      { type: 'build', name: 'BUILD',
+        ship: { stock: '40', prod: 0, use: 0, days: null },
+        colony: { stock: '280', prod: 4, use: 0, days: null } },
+      { type: 'fuel', name: 'FUEL',
+        ship: { stock: '380', prod: 0, use: 0, days: null },
+        colony: { stock: '90', prod: 4, use: 12, days: 11 } },
+      { type: 'ore', name: 'ORE',
+        ship: { stock: '20', prod: 0, use: 0, days: null },
+        colony: { stock: '410', prod: 12, use: 3, days: null } }
+    ]
+  },
+  independent: {
+    date: 'Y1 D96 · Established',
+    cash: '$61.4K',
+    prog: '72%',
+    goals: [
+      { id: 'gFood', cls: 'ok', text: 'OK' },
+      { id: 'gInd', cls: 'ok', text: '80/20' },
+      { id: 'gPop', cls: 'ok', text: '120' }
+    ],
+    attention: null,
+    ops: [
+      { label: 'HOUSING', rows: [
+        { tag: 'C', text: '120 / 320', tone: 'good' }
+      ]},
+      { label: 'POWER', rows: [
+        { tag: 'C', text: '95 / 120 · 88', tone: 'good' }
+      ]},
+      { label: 'INDUSTRY', rows: [
+        { tag: 'C', text: '80 / 80', tone: 'good' }
+      ]},
+      { label: 'WORKFORCE', rows: [
+        { tag: 'C', text: '42 FREE', tone: 'good' }
+      ]}
+    ],
+    res: [
+      { type: 'food', name: 'FOOD', colony: { stock: '1.8K', prod: 22, use: 18, days: null } },
+      { type: 'build', name: 'BUILD', colony: { stock: '640', prod: 8, use: 0, days: null } },
+      { type: 'fuel', name: 'FUEL', colony: { stock: '510', prod: 14, use: 10, days: null } },
+      { type: 'ore', name: 'ORE', colony: { stock: '920', prod: 18, use: 4, days: null } }
+    ]
+  }
+};
+
+function flowRowHtml(tag, data, kind) {
+  const prod = data.prod;
+  const use = data.use;
+  const surplus = prod - use;
+  const declining = surplus < -0.0001;
+  const days = data.days;
+  const tone = kind === 'ship' ? shipTone(days) : colonyTone(declining);
+  // Ship with no drain: days null → green (plenty). Ship with drain uses days threshold.
+  // For ship declining display, still show runway days even when green (>=10).
+  const showDecliningDays = kind === 'ship' ? (days != null) : declining;
+  const daysText = kind === 'ship'
+    ? (days == null ? '∞d' : daysLabel(days, true))
+    : daysLabel(days, declining);
+  return `<div class="flow-row ${tone}">
+    <div class="flow-meta"><span class="tag">${tag}</span><span class="days">${daysText}</span></div>
+    <strong>${fmtFlow(data.stock, prod, use)}</strong>
+  </div>`;
+}
+
+function resCardHtml(card) {
+  const parts = [];
+  if (card.ship) parts.push(flowRowHtml('S', card.ship, 'ship'));
+  if (card.colony) parts.push(flowRowHtml('C', card.colony, 'colony'));
+  return `<div class="resource-hud ${card.type}">
+    <div class="head"><span class="name">${card.name}</span></div>
+    ${parts.join('')}
+  </div>`;
+}
+
+function opCardHtml(card) {
+  const rows = card.rows.map(r =>
+    `<div class="op-row ${r.tone || ''}"><span class="tag">${r.tag}</span><strong>${r.text}</strong></div>`
+  ).join('');
+  return `<div class="op-card"><small class="label">${card.label}</small>${rows}</div>`;
+}
+
+function applyScene(key) {
+  const scene = scenes[key];
+  if (!scene) return;
+  document.getElementById('dateLine').textContent = scene.date;
+  document.getElementById('cash').textContent = scene.cash;
+  document.getElementById('prog').style.width = scene.prog;
+
+  scene.goals.forEach(g => {
+    const el = document.getElementById(g.id);
+    el.className = 'goal ' + (g.cls || '');
+    el.querySelector('strong').textContent = g.text;
+  });
+
+  const att = document.getElementById('attention');
+  if (scene.attention) {
+    att.className = 'attention show' + (scene.attention.bad ? ' bad' : '');
+    document.getElementById('attTitle').textContent = scene.attention.title;
+    document.getElementById('attDetail').textContent = scene.attention.detail;
+  } else {
+    att.className = 'attention';
+  }
+
+  document.getElementById('ops').innerHTML = scene.ops.map(opCardHtml).join('');
+  document.getElementById('res').innerHTML = scene.res.map(resCardHtml).join('');
+  document.querySelectorAll('#scenarios button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.scene === key);
+  });
+}
+
+document.getElementById('scenarios').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-scene]');
+  if (!btn) return;
+  applyScene(btn.dataset.scene);
+});
+
+applyScene('start');
+</script>
+</body>
+</html>
