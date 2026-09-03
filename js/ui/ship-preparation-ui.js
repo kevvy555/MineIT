@@ -193,25 +193,26 @@ export class UIController extends ShipNavigationUIController{
   }
 
   async colonyControl({tile=null}={}){
-    const revision=++this.colonyControlRevision,hqTile=this.primaryHeadquartersTile(tile),source=await this.loadPresentationView("./views/colony-control.html","colony control");
+    const revision=++this.colonyControlRevision,hqTile=this.primaryHeadquartersTile(tile||this.colonyControlTile),source=await this.loadPresentationView("./views/colony-control.html","colony control");
     if(!source||revision!==this.colonyControlRevision)return false;
     const returnTo=this._panelReturn;this._panelReturn=null;this.colonyControlTile=hqTile;this.open(`${this.state.contract?.colonyName||"Colony"} — Colony Control`,source);this.modal.classList.add("colony-control-modal","full-screen-panel");
     if(returnTo==="ship"){this._panelReturn="ship";const bar=this.modal.querySelector(".panel-title"),close=this.modal.querySelector("[data-close]");if(bar&&close&&!bar.querySelector("[data-ship-back]")){const back=document.createElement("button");back.type="button";back.className="ship-panel-back";back.dataset.shipBack="1";back.textContent="‹ BACK";back.onclick=()=>{this._panelReturn=null;this.playerShipPanel();};bar.insertBefore(back,close);}}
     const root=this.modal.querySelector("[data-colony-control]");if(!root||revision!==this.colonyControlRevision)return false;
     const command=this.colony.commandStatus(this.state),continuity=this.colony.headquartersContinuity(this.state,{command});
     const setText=(sel,value)=>{const node=root.querySelector(sel);if(node)node.textContent=String(value??"");};
+    const setHidden=(sel,hide)=>{const node=root.querySelector(sel);if(node)node.hidden=!!hide;};
     if(hqTile&&this.isAdaptiveBuilding?.(hqTile)){
       const data=this.localBuildingData(hqTile),heroLabel=`${data.label} L${data.level}`;
       this.populateAdaptiveArt?.(root,data,heroLabel);this.populateAdaptiveBadges?.(root,[...data.meta,"COLONY CONTROL"]);this.populateAdaptiveAlert?.(root,data.alert);
       setText("[data-adaptive-kicker]","COLONY CONTROL • HEADQUARTERS");
       const overview=root.querySelector("[data-colony-overview]"),operations=root.querySelector("[data-colony-operations]");
       if(overview)overview.innerHTML=data.overview;if(operations)operations.innerHTML=data.operations||"";
-      root.querySelector("[data-colony-hq-overview]")?.removeAttribute("hidden");
-      const opsSection=root.querySelector("[data-colony-hq-operations]");if(opsSection)opsSection.hidden=!data.operations;
+      setHidden("[data-colony-hq-overview]",false);
+      setHidden("[data-colony-hq-operations]",!data.operations);
       const upgradeHost=root.querySelector("[data-colony-upgrade]"),reqHost=root.querySelector("[data-colony-requirements]");
       if(upgradeHost)upgradeHost.innerHTML=data.upgrade;if(reqHost)reqHost.innerHTML=data.requirements;
-      root.querySelector("[data-colony-hq-upgrade]")?.removeAttribute("hidden");root.querySelector("[data-colony-hq-requirements]")?.removeAttribute("hidden");
-      const actions=root.querySelector("[data-colony-hq-actions]");if(actions){actions.hidden=false;root.querySelector("[data-colony-close-only]")?.setAttribute("hidden","");}
+      setHidden("[data-colony-hq-upgrade]",false);setHidden("[data-colony-hq-requirements]",false);
+      setHidden("[data-colony-hq-actions]",false);setHidden("[data-colony-close-only]",true);
       const primaryAction=root.querySelector("[data-colony-primary]");
       if(primaryAction){primaryAction.hidden=!!data.primary;primaryAction.disabled=!data.primaryEligible;primaryAction.onclick=()=>{const result=this.colony.setPrimaryHeadquarters(this.state,hqTile);if(!result.ok){this.toast(result.reason);this.colonyControl({tile:hqTile});return;}this.onRecalculate?.();this.repo.save(this.state);this.toast("Primary Headquarters selected.");this.renderContext?.();this.colonyControl({tile:hqTile});};}
       const upgrade=root.querySelector("[data-colony-upgrade-action]");
@@ -223,7 +224,8 @@ export class UIController extends ShipNavigationUIController{
       if(continuity.phase==="outage")this.populateAdaptiveAlert?.(root,{level:"bad",title:"CONGLOMERATE NETWORK OFFLINE",text:continuity.reason});
       else if(continuity.phase==="recovery")this.populateAdaptiveAlert?.(root,{level:"warn",title:"HEADQUARTERS RECOVERY",text:continuity.reason});
       else this.populateAdaptiveAlert?.(root,null);
-      root.querySelector("[data-colony-hq-actions]")?.setAttribute("hidden","");root.querySelector("[data-colony-close-only]")?.removeAttribute("hidden");
+      setHidden("[data-colony-hq-overview]",true);setHidden("[data-colony-hq-operations]",true);setHidden("[data-colony-hq-upgrade]",true);setHidden("[data-colony-hq-requirements]",true);
+      setHidden("[data-colony-hq-actions]",true);setHidden("[data-colony-close-only]",false);
     }
     const networkOnline=continuity.networkAvailable!==false,koplinStatus=root.querySelector("[data-koplin-status]"),connect=root.querySelector("[data-koplin-connect]");
     if(koplinStatus){koplinStatus.textContent=networkOnline?"LINK ONLINE":"LINK OFFLINE";koplinStatus.className=`koplin-status${networkOnline?" online":" offline"}`;}

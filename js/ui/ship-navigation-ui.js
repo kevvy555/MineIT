@@ -15,7 +15,7 @@ export class UIController extends PlayerShipUIController{
   open(title,body){
     this.modal.className="panel modal hidden";super.open(title,body);const close=this.modal.querySelector("[data-close]");
     if(close){close.classList.add("danger-close");close.onclick=()=>{this._shipNavActive=false;this._panelReturn=null;this.modal.classList.add("hidden");};}
-    if(this._panelReturn){const bar=this.modal.querySelector(".panel-title");if(bar&&close&&!bar.querySelector("[data-ship-back]")){const back=document.createElement("button");back.type="button";back.className="ship-panel-back";back.dataset.shipBack="1";back.textContent="‹ BACK";back.onclick=()=>{const ret=this._panelReturn;this._panelReturn=null;this._shipNavActive=false;if(ret==="colony")this.colonyControl?.();else if(ret==="fleet")this.fleetManager?.();else this.playerShipPanel();};bar.insertBefore(back,close);}}
+    if(this._panelReturn){const bar=this.modal.querySelector(".panel-title");if(bar&&close&&!bar.querySelector("[data-ship-back]")){const back=document.createElement("button");back.type="button";back.className="ship-panel-back";back.dataset.shipBack="1";back.textContent="‹ BACK";back.onclick=()=>{const ret=this._panelReturn;this._panelReturn=null;this._shipNavActive=false;if(ret==="colony")this.colonyControl?.({tile:this.colonyControlTile});else if(ret==="fleet")this.fleetManager?.();else this.playerShipPanel();};bar.insertBefore(back,close);}}
   }
 
   shipControlStatusLabel(ship){
