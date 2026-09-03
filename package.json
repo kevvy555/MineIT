@@ -1,6 +1,6 @@
 {
   "name": "mineit",
-  "version": "5.13.20",
+  "version": "5.13.21",
   "private": true,
   "type": "module",
   "scripts": {

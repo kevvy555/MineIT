@@ -21,8 +21,10 @@ assert.match(shipPrep,/colonyControlTile/);
 assert.match(shipPrep,/primaryHeadquartersTile\(tile\|\|this\.colonyControlTile\)/);
 assert.match(shipPrep,/setHidden\(/);
 assert.match(shipNav,/colonyControl\?\.\(\{tile:this\.colonyControlTile\}\)/);
+assert.match(shipPrep,/querySelectorAll\("\.koplin-creds"\)\.forEach/);
 assert.match(colonyView,/COLONY SERVICES/);assert.match(colonyView,/data-koplin-connect/);
 assert.doesNotMatch(colonyView,/koplin-creds|USERNAME|PASSWORD/);
+assert.doesNotMatch(colonyView,/<input[^>]*(?:password|deepreach\.ops)/i);
 assert.match(koplinView,/BUYERS SERVICE/);assert.match(koplinView,/FLEET PROCUREMENT/);assert.match(koplinView,/data-koplin-service="star-map"/);
 
 assert.match(adaptive,/openHeadquartersColonyControl/);assert.match(adaptive,/openPrimaryHeadquarters/);assert.match(adaptive,/isPrimaryHeadquarters/);

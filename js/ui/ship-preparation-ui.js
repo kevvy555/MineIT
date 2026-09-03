@@ -198,6 +198,7 @@ export class UIController extends ShipNavigationUIController{
     const returnTo=this._panelReturn;this._panelReturn=null;this.colonyControlTile=hqTile;this.open(`${this.state.contract?.colonyName||"Colony"} — Colony Control`,source);this.modal.classList.add("colony-control-modal","full-screen-panel");
     if(returnTo==="ship"){this._panelReturn="ship";const bar=this.modal.querySelector(".panel-title"),close=this.modal.querySelector("[data-close]");if(bar&&close&&!bar.querySelector("[data-ship-back]")){const back=document.createElement("button");back.type="button";back.className="ship-panel-back";back.dataset.shipBack="1";back.textContent="‹ BACK";back.onclick=()=>{this._panelReturn=null;this.playerShipPanel();};bar.insertBefore(back,close);}}
     const root=this.modal.querySelector("[data-colony-control]");if(!root||revision!==this.colonyControlRevision)return false;
+    root.querySelectorAll(".koplin-creds").forEach(node=>node.remove());
     const command=this.colony.commandStatus(this.state),continuity=this.colony.headquartersContinuity(this.state,{command});
     const setText=(sel,value)=>{const node=root.querySelector(sel);if(node)node.textContent=String(value??"");};
     const setHidden=(sel,hide)=>{const node=root.querySelector(sel);if(node)node.hidden=!!hide;};
