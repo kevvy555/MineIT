@@ -91,18 +91,21 @@ export class UIController extends ResourceDevelopmentUIController{
   }
   populateAdaptiveHarvest(root,harvest){const block=root.querySelector("[data-adaptive-harvest]");if(!block)return;block.hidden=harvest===null||harvest===undefined;if(block.hidden)return;this.setAdaptiveText(block,"[data-adaptive-harvest-value]",`${harvest}%`);const down=block.querySelector('[data-harvest-delta="-25"]'),up=block.querySelector('[data-harvest-delta="25"]');if(down)down.disabled=harvest<=25;if(up)up.disabled=harvest>=200;}
 
+  adaptiveActionRoot(){return this.modal?.querySelector("[data-adaptive-building-shell]")||this.tilePanel?.querySelector("[data-adaptive-building-shell]")||null;}
+
   renderAdaptiveBuilding(tile){
-    const panel=this.tilePanel;if(!panel||!this.isAdaptiveBuilding(tile))return false;this.activeAdaptiveTile=tile;
-    const source=this.adaptiveViewSource(tile);if(!source){panel.classList.add("hidden");return false;}
+    if(!this.isAdaptiveBuilding(tile))return false;this.activeAdaptiveTile=tile;this.tilePanel?.classList.add("hidden");
+    const source=this.adaptiveViewSource(tile);if(!source)return false;
     const extract=tile.development.kind==="extract",data=extract?this.extractionBuildingData(tile):this.localBuildingData(tile),heroLabel=`${data.label} L${data.level}`,html=renderViewSource(source,{OVERVIEW:data.overview,OPERATIONS:data.operations||"",UPGRADE:data.upgrade,REQUIREMENTS:data.requirements,UPGRADE_DISABLED:data.next.ok&&!data.max?"":"disabled",UPGRADE_LABEL:data.upgradeLabel}),fragment=document.createRange().createContextualFragment(html),root=fragment.querySelector("[data-adaptive-building-shell]");if(!root)return false;
-    this.populateAdaptiveArt(root,data,heroLabel);this.populateAdaptiveBadges(root,data.meta);this.populateAdaptiveAlert(root,data.alert);this.populateAdaptiveMode(root,data.modeControl);this.populateAdaptiveHarvest(root,data.harvestControl);const operations=root.querySelector("[data-adaptive-operations-section]");if(operations)operations.hidden=!data.operations;
-    panel.classList.remove("resource-detail-panel","building-detail-panel");panel.classList.add("adaptive-building-panel");panel.replaceChildren(fragment);panel.classList.remove("hidden");
-    panel.querySelector("[data-adaptive-close]").onclick=()=>{this.activeAdaptiveTile=null;panel.classList.add("hidden");};
+    this.populateAdaptiveArt(root,data,heroLabel);this.populateAdaptiveBadges(root,data.meta);this.populateAdaptiveAlert(root,data.alert);this.populateAdaptiveMode(root,data.dev.kind==="headquarters"?null:data.modeControl);this.populateAdaptiveHarvest(root,data.dev.kind==="headquarters"?null:data.harvestControl);const operations=root.querySelector("[data-adaptive-operations-section]");if(operations)operations.hidden=!data.operations;
+    const mount=document.createElement("div");mount.appendChild(root);this.open(heroLabel,mount.innerHTML);this.modal.classList.add("adaptive-building-modal","full-screen-panel");
+    const panel=this.adaptiveActionRoot();if(!panel)return false;
+    panel.querySelector("[data-adaptive-close]").onclick=()=>{this.activeAdaptiveTile=null;this.modal.classList.add("hidden");};
     const primaryAction=panel.querySelector("[data-adaptive-primary]");
     if(primaryAction){primaryAction.hidden=data.dev.kind!=="headquarters"||data.primary;primaryAction.disabled=!data.primaryEligible;primaryAction.onclick=()=>{const result=this.colony.setPrimaryHeadquarters(this.state,tile);if(!result.ok){this.toast(result.reason);this.renderAdaptiveBuilding(tile);return;}this.onRecalculate?.();this.repo.save(this.state);this.toast("Primary Headquarters selected.");this.renderContext?.();this.renderAdaptiveBuilding(tile);};}
     const upgrade=panel.querySelector("[data-adaptive-upgrade]");
     if(upgrade&&data.next.ok&&!data.max)upgrade.onclick=()=>{const before=data.level,result=extract?this.sites.upgrade(this.state,tile):this.development.upgrade(this.state,tile);if(!result.ok){this.toast(result.reason);this.renderAdaptiveBuilding(tile);return;}if(extract)this.land.syncExtraction(tile,result.build);this.onRecalculate?.();this.logEvent?.(extract?"site-upgraded":"land-development-upgraded",`${data.label} at ${tile.x},${tile.y} upgraded to L${extract?tile.level:tile.development.level}.`,{x:tile.x,y:tile.y,kind:tile.development?.kind,resource:tile.name,fromLevel:before,level:extract?tile.level:tile.development.level,buildCost:result.build,oreCost:result.ore||0});this.repo.save(this.state);this.toast(`${data.label} upgraded.`);this.renderContext?.();this.renderAdaptiveBuilding(tile);};
-    panel.querySelector("[data-adaptive-demolish]").onclick=()=>{if(data.primary||confirm(`Demolish ${data.label} L${data.level}?${extract?" The resource remains if it is not exhausted.":""}`))this.onDemolishDevelopment?.(tile);};
+    panel.querySelector("[data-adaptive-demolish]").onclick=()=>{if(typeof this.demolitionPanel==="function")this.demolitionPanel(tile);else this.onDemolishDevelopment?.(tile);};
     panel.querySelectorAll("button[data-adaptive-mode]").forEach(button=>button.onclick=()=>{const before=operatingMode(tile),result=this.collection.setOperatingMode(this.state,tile,button.dataset.adaptiveMode);if(!result.ok){this.toast(result.reason);return;}this.onRecalculate?.();this.logEvent?.("site-operating-mode",`${tile.name} changed from ${before.toUpperCase()} to ${result.profile.label} operation.`,{x:tile.x,y:tile.y,resource:tile.name,before,after:button.dataset.adaptiveMode,riskExposure:riskExposure(tile)});this.repo.save(this.state);this.toast(`${tile.name}: ${result.profile.label} selected.`);this.renderContext?.();this.renderAdaptiveBuilding(tile);});
     panel.querySelectorAll("[data-harvest-delta]").forEach(button=>button.onclick=()=>{const result=this.resources.adjustHarvestIntensity(tile,Number(button.dataset.harvestDelta));if(!result.ok){this.toast(result.reason);return;}this.onRecalculate?.();this.logEvent?.("harvest-intensity",`${tile.name} harvest changed from ${result.before}% to ${result.after}%.`,{x:tile.x,y:tile.y,resource:tile.name,before:result.before,after:result.after,sustainableRate:result.sustainableRate});this.repo.save(this.state);this.toast(`${tile.name} harvest set to ${result.after}%.`);this.renderContext?.();this.renderAdaptiveBuilding(tile);});
     return true;
@@ -114,12 +117,13 @@ export class UIController extends ResourceDevelopmentUIController{
     return !!tileKey&&this.state.colony?.primaryHeadquartersId===tileKey;
   }
 
-  openPrimaryHeadquarters(tile){
-    if(!this.isPrimaryHeadquarters(tile)||typeof this.colonyControl!=="function")return false;
+  openHeadquartersColonyControl(tile){
+    if(tile?.development?.kind!=="headquarters"||typeof this.colonyControl!=="function")return false;
     this.activeAdaptiveTile=tile;this.tilePanel?.classList.add("hidden");this.colonyControl({tile});return true;
   }
+  openPrimaryHeadquarters(tile){return this.openHeadquartersColonyControl(tile);}
 
-  localBuildingPanel(tile){if(this.openPrimaryHeadquarters(tile))return;this.activeAdaptiveTile=tile;this.renderAdaptiveBuilding(tile);}
-  tile(tile){this.tilePanel?.classList.remove("adaptive-building-panel");if(this.openPrimaryHeadquarters(tile))return;if(this.isAdaptiveBuilding(tile)){this.activeAdaptiveTile=tile;this.renderAdaptiveBuilding(tile);return;}this.activeAdaptiveTile=null;super.tile(tile);}
-  landTile(tile){if(this.openPrimaryHeadquarters(tile))return;if(this.isAdaptiveBuilding(tile)){this.activeAdaptiveTile=tile;this.renderAdaptiveBuilding(tile);return;}this.activeAdaptiveTile=null;super.landTile(tile);}
+  localBuildingPanel(tile){if(this.openHeadquartersColonyControl(tile))return;this.activeAdaptiveTile=tile;this.renderAdaptiveBuilding(tile);}
+  tile(tile){this.tilePanel?.classList.remove("adaptive-building-panel");if(this.openHeadquartersColonyControl(tile))return;if(this.isAdaptiveBuilding(tile)){this.activeAdaptiveTile=tile;this.renderAdaptiveBuilding(tile);return;}this.activeAdaptiveTile=null;super.tile(tile);}
+  landTile(tile){if(this.openHeadquartersColonyControl(tile))return;if(this.isAdaptiveBuilding(tile)){this.activeAdaptiveTile=tile;this.renderAdaptiveBuilding(tile);return;}this.activeAdaptiveTile=null;super.landTile(tile);}
 }

@@ -16,6 +16,14 @@ export class DevelopmentService{
   techLevel(state,kind){const category=buildingTechCategory(kind);return Math.max(1,Number(state.colony?.tech?.[category])||1);}
   checkResources(state,cost){if(this.inventory.amount(state,"build")<cost.build)return`Need ${cost.build} Build materials.`;if((cost.ore||0)>0&&this.inventory.amount(state,"ore")<cost.ore)return`Need ${cost.ore} Ore.`;return null;}
   contribution(kind,level){return buildingCapacity(kind,level);}
+  headquartersAdjacency(state,tile){
+    const primaryId=state.colony?.primaryHeadquartersId,primary=primaryId?state.tiles?.[primaryId]:null;
+    if(!primary?.development||primary.development.kind!=="headquarters")return{ok:true};
+    const dx=Math.abs((Number(tile?.x)||0)-(Number(primary.x)||0)),dy=Math.abs((Number(tile?.y)||0)-(Number(primary.y)||0));
+    if(dx===0&&dy===0)return{ok:false,reason:"Choose an empty tile adjacent to the Primary Headquarters."};
+    if(dx>1||dy>1)return{ok:false,reason:"Headquarters expansions must be adjacent to the Primary Headquarters."};
+    return{ok:true};
+  }
   canPlace(state,tile,kind){
     if(!BUILDING_MODEL[kind])return{ok:false,reason:"Unknown development type."};
     if(state.status==="dead")return{ok:false,reason:"This colony has been lost."};
@@ -24,6 +32,7 @@ export class DevelopmentService{
     if(this.land.isShipTile(tile.x,tile.y))return{ok:false,reason:"The Spaceport occupies this tile."};
     if(tile.development||tile.developed)return{ok:false,reason:"Demolish the existing development first."};
     if(tile.terrain==="lake")return{ok:false,reason:`Standard ${this.label(kind)} cannot be built on lakes.`};
+    if(kind==="headquarters"){const adjacent=this.headquartersAdjacency(state,tile);if(!adjacent.ok)return adjacent;}
     const cost=this.cost(state,tile,kind,1),resourceReason=this.checkResources(state,cost);if(resourceReason)return{ok:false,reason:resourceReason,...cost,nextLevel:1};
     if(buildingTechCategory(kind)&&this.techLevel(state,kind)<1)return{ok:false,reason:`Requires deployed ${this.label(kind)} technology L1.`,...cost,nextLevel:1};
     return{ok:true,...cost,nextLevel:1,capacity:buildingCapacity(kind,1),coversResource:!!tile.resourceId};

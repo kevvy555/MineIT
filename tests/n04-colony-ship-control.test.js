@@ -2,20 +2,29 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 const read=p=>fs.readFileSync(new URL(`../${p}`,import.meta.url),"utf8");
 
-const shipNav=read("js/ui/ship-navigation-ui.js"),shipPrep=read("js/ui/ship-preparation-ui.js"),adaptive=read("js/ui/adaptive-building-ui.js"),shipView=read("views/ship-control.html"),colonyView=read("views/colony-control.html"),koplinView=read("views/koplin-terminal.html"),css=read("css/ship-expansion.css");
+const shipNav=read("js/ui/ship-navigation-ui.js"),shipPrep=read("js/ui/ship-preparation-ui.js"),adaptive=read("js/ui/adaptive-building-ui.js"),shipView=read("views/ship-control.html"),colonyView=read("views/colony-control.html"),koplinView=read("views/koplin-terminal.html"),css=read("css/ship-expansion.css"),sounds=read("js/core/ui-sounds.js"),ui=read("js/ui/ui-controller.js");
 
 assert.match(shipNav,/views\/ship-control\.html/);
 assert.match(shipNav,/data-csm-open|csmLinked|commandStatus/);
+assert.match(shipNav,/ship-control-modal","full-screen-panel/);
 assert.match(shipView,/CARGO BAY/);assert.match(shipView,/FLEET MANAGER/);assert.match(shipView,/OPEN COLONY CONTROL|data-csm-open/);
+assert.match(shipView,/data-ship-metrics/);assert.match(shipView,/data-m-cargo/);
+assert.doesNotMatch(shipView,/data-ship-status-strip/);assert.doesNotMatch(shipView,/ship-control-note/);
 assert.doesNotMatch(shipView,/BUYERS SERVICE/);assert.doesNotMatch(shipView,/>SPACEPORT</);
 
 assert.match(shipPrep,/colonyControl\(/);assert.match(shipPrep,/koplinTerminal\(/);assert.match(shipPrep,/fleetManager\(/);assert.match(shipPrep,/openFleetManager\(/);
 assert.match(shipPrep,/networkAvailable/);assert.match(shipPrep,/headquartersContinuity/);
 assert.match(shipPrep,/views\/fleet-manager\.html/);
+assert.match(shipPrep,/demolitionPanel\(hqTile\)/);
+assert.doesNotMatch(shipPrep,/confirm\(`Demolish/);
 assert.match(colonyView,/COLONY SERVICES/);assert.match(colonyView,/data-koplin-connect/);
 assert.match(koplinView,/BUYERS SERVICE/);assert.match(koplinView,/FLEET PROCUREMENT/);assert.match(koplinView,/data-koplin-service="star-map"/);
 
-assert.match(adaptive,/openPrimaryHeadquarters/);assert.match(adaptive,/isPrimaryHeadquarters/);
-assert.match(css,/\.csm-module-bay/);assert.match(css,/\.koplin-os/);
+assert.match(adaptive,/openHeadquartersColonyControl/);assert.match(adaptive,/openPrimaryHeadquarters/);assert.match(adaptive,/isPrimaryHeadquarters/);
+assert.match(adaptive,/adaptive-building-modal","full-screen-panel/);
+assert.match(adaptive,/kind==="headquarters"\?null:data\.modeControl/);
+assert.match(adaptive,/kind==="headquarters"\?null:data\.harvestControl/);
+assert.match(css,/\.csm-module-bay/);assert.match(css,/\.koplin-os/);assert.match(css,/\.ship-control-strip/);
+assert.match(sounds,/playUiClick/);assert.match(ui,/playUiClick/);
 
 console.log("N04 Colony Control / Ship Control / Koplin surface ownership passed");

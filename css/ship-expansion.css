@@ -15,13 +15,19 @@
 @media(max-width:520px){.compact-ship-prep.full-screen-panel{padding:calc(env(safe-area-inset-top) + 3px) 3px calc(env(safe-area-inset-bottom) + 3px)!important}.compact-ship-prep>.panel-title{margin-bottom:2px}.compact-prep .exp-load-row{flex-direction:row;align-items:center}.compact-prep .exp-load-row>div{width:auto;justify-content:flex-end}.compact-prep .exp-load-row button{flex:0 0 auto}.compact-prep .exp-passengers{grid-template-columns:repeat(3,1fr)}.exp-load-overview{grid-template-columns:repeat(2,minmax(0,1fr));padding:3px}.exp-load-meter{padding:3px}.exp-resource-load{width:100%}}
 
 /* N04 Ship Control / Colony Control / Koplin OS */
-.ship-control-modal .modal-body,.colony-control-modal .modal-body,.koplin-terminal-modal .modal-body{padding:8px;overflow:auto}
-.ship-control-shell{display:grid;gap:7px}
+.ship-control-modal .modal-body,.colony-control-modal .modal-body,.koplin-terminal-modal .modal-body,.adaptive-building-modal .modal-body,.demolition-confirm-modal.full-screen-panel .modal-body{padding:8px;overflow:auto}
+.ship-control-modal.full-screen-panel{display:flex;flex-direction:column}
+.ship-control-modal.full-screen-panel>.modal-body{flex:1;min-height:0;overflow:hidden;padding:6px 8px 8px;display:flex;flex-direction:column}
+.ship-control-shell{height:100%;min-height:0;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:7px}
 .ship-control-hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;padding:8px;border:1px solid #2f4a5c;border-radius:9px;background:linear-gradient(135deg,#102030,#0a1418)}
 .ship-control-hero h1{margin:0;font-size:13px}.ship-control-hero p{margin:3px 0 0;font-size:10px;color:#8fa1ab;line-height:1.3}
 .ship-control-status{align-self:start;padding:5px 8px;border-radius:5px;border:1px solid #3d6a52;background:#102418;color:#a8e6bc;font-size:9px;font-weight:950;text-align:center;white-space:nowrap}
 .ship-control-status.warn{border-color:#6e5926;background:#211b0c;color:#ffe39a}
 .ship-control-status.transit{border-color:#4c88aa;background:#14344a;color:#b7e0ff}
+.ship-control-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.ship-control-metric{min-width:0;padding:5px;background:#0e171d;border:1px solid #1d2b34;border-radius:5px}
+.ship-control-metric small{display:block;font-size:8px;color:#8fa1ab}.ship-control-metric strong{display:block;font-size:11px;font-variant-numeric:tabular-nums}
+.ship-control-scroll{min-height:0;overflow:auto;display:flex;flex-direction:column;gap:7px;align-content:start}
 .ship-control-section-title{display:flex;align-items:center;gap:6px;font-size:9px;letter-spacing:.1em;font-weight:900;color:#9db8c9}
 .ship-control-section-title i{flex:1;height:1px;background:#243642}
 .ship-control-section-title.module{color:#5ec4a8}.ship-control-section-title.module i{background:#3d8a6e}
@@ -47,9 +53,11 @@
 .ship-control-route{padding:7px;border:1px solid #293b45;border-radius:6px;background:#0a1217;display:grid;gap:4px}
 .ship-control-route-row{display:grid;grid-template-columns:1fr auto;gap:4px;font-size:11px}
 .ship-control-route-row span{color:#8fa1ab}.ship-control-route-row b{text-align:right}
-.ship-control-note{margin:0;font-size:10px;line-height:1.35;color:#aebcc3;padding:6px;border-left:2px solid #4c88aa;background:#091116}
 .ship-control-actions{display:grid}
 .ship-control-launch{min-height:42px;border-color:#6e5926;background:#211b0c;color:#ffe39a;font-size:12px;font-weight:950}
+.adaptive-building-modal.full-screen-panel>.modal-body{overflow:auto}
+.demolition-confirm-modal.full-screen-panel{display:flex;flex-direction:column}
+.demolition-confirm-modal.full-screen-panel .demolition-confirm{max-width:520px;margin:auto}
 .colony-control-shell{display:grid;gap:8px}
 .adaptive-building-section-title.koplin i{background:#c9a46a}
 .colony-service-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
