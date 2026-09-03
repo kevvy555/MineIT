@@ -103,8 +103,8 @@ export class UIController extends BaseUIController{
   appendDepletedDemolish(tile){
     const panel=this.tilePanel;if(!tile?.depleted||tile.development?.kind!=="extract"||!panel||panel.classList.contains("hidden"))return false;
     if(panel.querySelector("[data-depleted-demolish]"))return true;
-    const resourceName=tile.name||"resource",terrain=this.land.terrainLabel(tile.terrain).toLowerCase(),demolish=document.createElement("button");demolish.className="bad";demolish.dataset.depletedDemolish="1";demolish.textContent="DEMOLISH DEPLETED SITE";panel.appendChild(demolish);
-    demolish.onclick=()=>{if(confirm(`Demolish the depleted ${resourceName} extraction site? The exhausted deposit will be removed and the tile will return to ${terrain}.`))this.onDemolishDevelopment?.(tile);};
+    const demolish=document.createElement("button");demolish.className="bad";demolish.dataset.depletedDemolish="1";demolish.textContent="DEMOLISH DEPLETED SITE";panel.appendChild(demolish);
+    demolish.onclick=()=>{if(typeof this.demolitionPanel==="function")this.demolitionPanel(tile);else this.onDemolishDevelopment?.(tile);};
     return true;
   }
 

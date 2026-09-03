@@ -55,7 +55,7 @@ export class LandUIMixin{
       this.tile(tile);const panel=this.tilePanel,heading=panel?.querySelector(".panel-title");if(!panel||panel.classList.contains("hidden"))return false;
       const terrainInfo=document.createElement("div");terrainInfo.className="effect";terrainInfo.textContent=`Terrain: ${terrain} • ${deep}`;heading?.insertAdjacentElement("afterend",terrainInfo);
       if(tile.depleted){this.appendDepletedDemolish?.(tile);return true;}
-      const demolish=document.createElement("button");demolish.className="bad";demolish.dataset.landDemolish="1";demolish.textContent="DEMOLISH EXTRACTION SITE";panel.appendChild(demolish);demolish.onclick=()=>{if(confirm(`Demolish the ${tile.name} extraction site? The resource remains.`))this.onDemolishDevelopment?.(tile);};return true;
+      const demolish=document.createElement("button");demolish.className="bad";demolish.dataset.landDemolish="1";demolish.textContent="DEMOLISH EXTRACTION SITE";panel.appendChild(demolish);demolish.onclick=()=>{if(typeof this.demolitionPanel==="function")this.demolitionPanel(tile);else this.onDemolishDevelopment?.(tile);};return true;
     }
     if(tile.resourceId)return this.openLandResourceDetails(tile,terrain);
     return this.buildChoice(tile);

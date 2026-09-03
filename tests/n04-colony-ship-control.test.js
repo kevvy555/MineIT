@@ -21,10 +21,22 @@ assert.match(colonyView,/COLONY SERVICES/);assert.match(colonyView,/data-koplin-
 assert.match(koplinView,/BUYERS SERVICE/);assert.match(koplinView,/FLEET PROCUREMENT/);assert.match(koplinView,/data-koplin-service="star-map"/);
 
 assert.match(adaptive,/openHeadquartersColonyControl/);assert.match(adaptive,/openPrimaryHeadquarters/);assert.match(adaptive,/isPrimaryHeadquarters/);
+assert.match(adaptive,/selectMapTile\(x,y\)/);
+assert.match(adaptive,/openHeadquartersColonyControl\(this\.selectedTile\)/);
 assert.match(adaptive,/adaptive-building-modal","full-screen-panel/);
 assert.match(adaptive,/kind==="headquarters"\?null:data\.modeControl/);
 assert.match(adaptive,/kind==="headquarters"\?null:data\.harvestControl/);
 assert.match(css,/\.csm-module-bay/);assert.match(css,/\.koplin-os/);assert.match(css,/\.ship-control-strip/);
 assert.match(sounds,/playUiClick/);assert.match(ui,/playUiClick/);
+
+const mapFirst=read("js/ui/map-first-ui.js"),tech=read("js/ui/technology-presentation-ui.js"),landUi=read("js/ui/land-ui.js"),resourceDev=read("js/ui/resource-development-ui.js");
+assert.match(mapFirst,/COLONY CONTROL/);
+assert.match(tech,/build-choice-modal","full-screen-panel/);
+assert.match(tech,/demolitionPanel\(tile\)/);
+assert.doesNotMatch(tech,/confirm\(`Demolish/);
+assert.match(landUi,/demolitionPanel\(tile\)/);
+assert.doesNotMatch(landUi,/confirm\(`Demolish the \$\{tile\.name\}/);
+assert.match(resourceDev,/demolitionPanel\(tile\)/);
+assert.doesNotMatch(resourceDev,/confirm\(`Demolish the depleted/);
 
 console.log("N04 Colony Control / Ship Control / Koplin surface ownership passed");

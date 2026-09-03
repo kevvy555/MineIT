@@ -123,6 +123,12 @@ export class UIController extends ResourceDevelopmentUIController{
   }
   openPrimaryHeadquarters(tile){return this.openHeadquartersColonyControl(tile);}
 
+  /** Map-first selection only selects the tile; HQ must still open Colony Control on tap. */
+  selectMapTile(x,y){
+    super.selectMapTile(x,y);
+    if(this.selectedTile?.development?.kind==="headquarters")this.openHeadquartersColonyControl(this.selectedTile);
+  }
+
   localBuildingPanel(tile){if(this.openHeadquartersColonyControl(tile))return;this.activeAdaptiveTile=tile;this.renderAdaptiveBuilding(tile);}
   tile(tile){this.tilePanel?.classList.remove("adaptive-building-panel");if(this.openHeadquartersColonyControl(tile))return;if(this.isAdaptiveBuilding(tile)){this.activeAdaptiveTile=tile;this.renderAdaptiveBuilding(tile);return;}this.activeAdaptiveTile=null;super.tile(tile);}
   landTile(tile){if(this.openHeadquartersColonyControl(tile))return;if(this.isAdaptiveBuilding(tile)){this.activeAdaptiveTile=tile;this.renderAdaptiveBuilding(tile);return;}this.activeAdaptiveTile=null;super.landTile(tile);}

@@ -81,7 +81,7 @@ export class UIController extends LegacyUIController{
     if(!tile?.revealed){this.toast("Survey this tile before construction.");return;}
     const source=await this.loadPresentationView(VIEW_PATHS.buildChoice,"construction choices");if(!source||!tile?.revealed)return;
     const covered=!!tile.resourceId,checks=Object.fromEntries(LOCAL_KINDS.map(kind=>[kind,this.development.canPlace(this.state,tile,kind)]));
-    this.open(`Develop ${this.land.terrainLabel(tile.terrain)} Tile`,source);
+    this.open(`Develop ${this.land.terrainLabel(tile.terrain)} Tile`,source);this.modal.classList.add("build-choice-modal","full-screen-panel");
     const body=this.modal.querySelector(".modal-body");if(!body)return;
     this.setPresentationText(body,"[data-build-choice-title]",covered?`${tile.name} • Q${formatNumber(tile.quality)}`:"CLEAR SURVEYED LAND");
     this.setPresentationText(body,"[data-build-choice-copy]",covered?(tile.type==="food"?"Building here permanently destroys this natural Food resource.":"Local infrastructure can be built here, but the known resource becomes inaccessible until the building is demolished."):"Choose an individual building. Multiple buildings stack; higher-level buildings provide more capacity per tile.");
@@ -113,13 +113,13 @@ export class UIController extends LegacyUIController{
     const dev=tile?.development;if(!dev)return;
     const kind=dev.kind,level=Math.max(1,Number(dev.level)||1),source=await this.loadPresentationView(VIEW_PATHS.localBuilding,"building details");if(!source||tile.development?.kind!==kind)return;
     const current=buildingCapacity(kind,level),next=this.development.canUpgrade(this.state,tile),tech=this.development.techLevel(this.state,kind),terrain=this.land.terrainLabel(tile.terrain),covered=tile.resourceId?`${tile.name} • Q${formatNumber(tile.quality)} (covered)`:"No known surface resource",nextCapacity=level<5?buildingCapacity(kind,level+1):current;
-    this.open(`${this.development.label(kind)} L${level}`,source);const body=this.modal.querySelector(".modal-body");if(!body)return;
+    this.open(`${this.development.label(kind)} L${level}`,source);this.modal.classList.add("local-building-modal","full-screen-panel");const body=this.modal.querySelector(".modal-body");if(!body)return;
     this.setPresentationText(body,"[data-local-terrain]",terrain);this.setPresentationText(body,"[data-local-contribution]",this.capacityText(kind,current));this.setPresentationText(body,"[data-local-tech-label]",`${TECH_LABELS[kind]} Tech`);this.setPresentationText(body,"[data-local-tech-level]",`L${tech}`);this.setPresentationText(body,"[data-local-geology]",covered);
     const upgradeBlock=body.querySelector("[data-local-upgrade-block]"),maxBlock=body.querySelector("[data-local-max-block]"),upgrade=body.querySelector("[data-local-upgrade]");
     if(level<5){maxBlock.hidden=true;upgradeBlock.hidden=false;upgradeBlock.classList.toggle("good",next.ok);upgradeBlock.classList.toggle("warn",!next.ok);this.setPresentationText(upgradeBlock,"[data-local-upgrade-copy]",next.ok?`L${level+1} provides ${this.capacityText(kind,nextCapacity)} (+${formatNumber(nextCapacity-current)}). Upgrade cost: ${this.localCost(next)}.`:next.reason);upgrade.disabled=!next.ok;this.setPresentationText(upgrade,"[data-local-upgrade-label]",`UPGRADE TO L${level+1}${next.ok?` • ${this.localCost(next)}`:""}`);}
     else{upgradeBlock.hidden=true;maxBlock.hidden=false;}
     if(upgrade)upgrade.onclick=()=>this.upgradeLocalBuilding(tile);
-    body.querySelector("[data-demolish]").onclick=()=>{if(confirm(`Demolish ${this.development.label(kind)} L${level}?`))this.onDemolishDevelopment?.(tile);};
+    body.querySelector("[data-demolish]").onclick=()=>{if(typeof this.demolitionPanel==="function")this.demolitionPanel(tile);else this.onDemolishDevelopment?.(tile);};
   }
   upgradeLocalBuilding(tile){const r=this.development.upgrade(this.state,tile);if(!r.ok){this.toast(r.reason);return;}this.onRecalculate?.();this.repo.save(this.state);this.toast(`${this.development.label(tile.development.kind)} upgraded to L${tile.development.level}.`);this.localBuildingPanel(tile);}
 
