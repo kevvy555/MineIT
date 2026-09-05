@@ -43,7 +43,7 @@ export class UIController extends LegacyUIController{
     this.currentAttention=this.attentionStatus();const strip=document.querySelector("#attentionStrip"),attentionKey=[this.currentAttention.level,this.currentAttention.title,this.currentAttention.detail,this.currentAttention.label].join("|");if(strip&&attentionKey!==this.renderedAttentionKey){this.renderedAttentionKey=attentionKey;strip.className=`attention-strip ${this.currentAttention.level||"good"}`;this.setText("attentionTitle",this.currentAttention.title);this.setText("attentionDetail",this.currentAttention.detail);this.setText("attentionAction",this.currentAttention.label||"VIEW ›");}
   }
   attentionStatus(){
-    const s=this.state,m=s.metrics||{},totals=syncBuildingTotals(s),foodDays=m.foodDays,fuelDays=m.fuelDays,oreDays=m.oreDays;
+    const s=this.state,m=s.metrics||{},totals=syncBuildingTotals(s),foodDays=m.foodDays,fuelDays=m.fuelDays,oreDays=m.oreDays,planetary=this.expansion.planetaryResidentCount(s);
     if(s.status==="dead")return{level:"bad",title:"COLONY LOST",detail:"Population has reached zero.",label:"OPEN COLONY",action:"colony"};
     if(s.status==="site-selection")return{level:"warn",title:"CHOOSE A LANDING SITE",detail:"Select one of the surveyed terrain candidates before starting colony operations.",label:"SELECT SITE ›",action:"land-selection"};
     if(s.trade?.active)return{level:"warn",title:"CORPORATE SHIP DOCKED",detail:"Resolve trade before corporation time can continue.",label:"OPEN SHIP ›",action:"ship"};
@@ -54,7 +54,7 @@ export class UIController extends LegacyUIController{
     if((m.fuelSupply??1)<.9||fuelDays!==null&&fuelDays!==undefined&&fuelDays<=30)return{level:(m.fuelSupply??1)<.5||fuelDays<=10?"bad":"warn",title:`FUEL LOW — ${this.daysText(fuelDays)}`,detail:"Power demand is drawing Fuel reserves down.",label:"SHOW FUEL ›",focus:"fuel"};
     if((m.workforceShortfall||0)>0)return{level:"warn",title:"WORKFORCE SHORTAGE",detail:`${formatNumber(m.workforceRequired||0)} required • ${formatNumber(m.workforceAvailable||0)} available.`,label:"COLONY ›",action:"colony"};
     if((m.industryCommercialFactor??1)<.999)return{level:"warn",title:"INDUSTRY OVERLOAD",detail:`Build/Ore operations are running at ${Math.round((m.industryCommercialFactor??1)*100)}%.`,label:"SHOW INDUSTRY ›",focus:"industry"};
-    if(totals.housing>0&&(Number(s.pop)||0)/totals.housing>.9)return{level:"warn",title:"HOUSING NEAR CAPACITY",detail:`${formatNumber(Math.max(0,totals.housing-s.pop))} spaces remain.`,label:"SHOW HOUSING ›",focus:"housing"};
+    if(totals.housing>0&&planetary/totals.housing>.9)return{level:"warn",title:"HOUSING NEAR CAPACITY",detail:`${formatNumber(Math.max(0,totals.housing-planetary))} spaces remain.`,label:"SHOW HOUSING ›",focus:"housing"};
     if(oreDays!==null&&oreDays!==undefined&&oreDays<=20)return{level:"warn",title:`ORE LOW — ${this.daysText(oreDays)}`,detail:"Industry is consuming Ore reserves faster than replacement.",label:"SHOW ORE ›",focus:"ore"};
     const establishment=this.expansion.establishmentAssessment(s);if(establishment.required&&!establishment.acknowledged)return{level:"warn",title:"BEGIN COLONY ESTABLISHMENT",detail:"Review the founding handover before starting time.",label:"OPEN CHECKLIST ›",action:"establishment"};
     return{level:"good",title:"COLONY STABLE",detail:"No immediate operational constraint needs attention.",label:"PROBLEMS ›",focus:"problems"};
