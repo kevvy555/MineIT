@@ -10,6 +10,7 @@ import { ColonyService } from "../js/domain/colony-service.js";
 import { TradeService } from "../js/domain/trade-service.js";
 import { SimulationEngine } from "../js/domain/simulation-engine.js";
 import { createGameState,normalizeState } from "../js/domain/game-state-runtime.js";
+import { WorldView } from "../js/ui/world-view-runtime.js";
 
 const contracts=new ContractService(),resources=new ResourceService();
 function setup(){
@@ -63,6 +64,16 @@ function addShipFood(state,inventory,expansion,amount=200){const key=Object.keys
 }
 {
   const{state,engine,expansion}=setup(),starter=expansion.ship(state);state.tiles.house={x:4,y:4,revealed:true,development:{kind:"housing",level:1}};state.pop=starter.accommodationCapacity+25;delete state.colony.shipAccommodation;delete state.colony.planetaryAccommodationResidents;delete state.colony.housingBuildingCapacity;const loaded=normalizeState(JSON.parse(JSON.stringify(state)));assert.equal(expansion.shipResidentCount(loaded,starter.id),starter.accommodationCapacity);assert.equal(expansion.planetaryAccommodationResidentCount(loaded),25,"migration must derive planetary capacity from real building tiles when cached totals are absent");assert.equal(expansion.homelessCount(loaded),0);
+}
+
+// N05: map PROBLEMS Housing must count only residents living ashore.
+{
+  const view=Object.create(WorldView.prototype),tile={revealed:true,development:{kind:"housing"}};
+  view.resources={isRenewable:()=>false};
+  view.state={pop:120,colony:{housingCapacity:100},metrics:{planetaryResidents:20}};
+  assert.equal(view.hasProblem(tile),false,"ship residents must not make planetary Housing look overloaded");
+  view.state.metrics.planetaryResidents=91;
+  assert.equal(view.hasProblem(tile),true,"Housing above 90% planetary occupancy must appear in PROBLEMS");
 }
 
 const buildingModel=readFileSync(new URL("../js/domain/building-model.js",import.meta.url),"utf8"),passengerView=readFileSync(new URL("../views/player-ship-passengers.html",import.meta.url),"utf8"),foodView=readFileSync(new URL("../views/emergency-ship-food.html",import.meta.url),"utf8"),colonistView=readFileSync(new URL("../views/quick-trade-colonists.html",import.meta.url),"utf8");
